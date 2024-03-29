@@ -74,7 +74,7 @@ for name in nn:
         # Create a 2D plot using imshow
         plt.figure(figsize=(8, 6))
         # plt.imshow(z, extent=[x.min(), x.max(), y.min(), y.max()], cmap='inferno', aspect='auto', origin='lower', vmin=0, vmax=1)
-        plt.scatter(x, y, s=20, c=z, cmap="inferno")
+        plt.scatter(x[::5], y[::5], s=20, c=z[::5], cmap="inferno", vmin=0, vmax=1)
         plt.colorbar(label="theta")
 
         # Set labels and title
