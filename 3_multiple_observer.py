@@ -167,13 +167,13 @@ def mu(o, tau, d, p):
     XO_all = XO[XO[:, 0]==np.max(XO[:, 0])]
 
     y1 = XO_all[:, 1:2].reshape(len(instants),)
-    f1 = interp1d(instants, y1, kind='cubic')
+    f1 = interp1d(instants, y1, kind='previous')
 
     y2 = XO_all[:, 2:3].reshape(len(instants),)
-    f2 = interp1d(instants, y2, kind='cubic')
+    f2 = interp1d(instants, y2, kind='previous')
 
     y3 = XO_all[:, 3:4].reshape(len(instants),)
-    f3 = interp1d(instants, y3, kind='cubic')
+    f3 = interp1d(instants, y3, kind='previous')
 
     tm = 0.996268656716418
     if tau > tm:

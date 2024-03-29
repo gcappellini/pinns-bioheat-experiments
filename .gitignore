@@ -198,5 +198,6 @@ measurements/
 !measurements/240125b.xlsx
 !measurements/240130.xlsx
 !measurements/240202.xlsx
+identification/
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,python
