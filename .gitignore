@@ -192,4 +192,11 @@ pyrightconfig.json
 .history
 .ionide
 
+measurements/
+!measurements/240124.xlsx
+!measurements/240125.xlsx
+!measurements/240125b.xlsx
+!measurements/240130.xlsx
+!measurements/240202.xlsx
+
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,python

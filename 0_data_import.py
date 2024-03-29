@@ -8,17 +8,17 @@ current_file = os.path.abspath(__file__)
 script_directory = os.path.dirname(current_file)
 
 nn = ["240124", "240125", "240125b", "240130", "240202"]
-pp = ["P1"]
+pp = ["P1", "P2"]
 
 for name in nn:
     for phantom in pp:
 
-        output_dir = f"{script_directory}/measurements/{name}"
+        output_dir = f"{script_directory}/measurements/{name}_{phantom}"
 
         os.makedirs(output_dir, exist_ok=True)
 
         # Read from a specific sheet
-        df = pd.read_excel(f'{script_directory}/measurements/{name}.xlsx', sheet_name=f'{phantom}', header=0)
+        df = pd.read_excel(f'{script_directory}/measurements/{name}.xlsx', sheet_name=f'{phantom}', header=0, nrows=270)
         # Scaling time
         first_date_value = df['date'].iloc[0]
 
