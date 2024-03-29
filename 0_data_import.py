@@ -36,7 +36,7 @@ for name in nn:
 
         # Combine the transformed DataFrame with the 'time' column
         df_result = pd.concat([df['time'], df_transformed], axis=1)
-        print(df_result)
+        # print(df_result)
 
         # Create a new DataFrame to store the transformed values
         dfs = []
@@ -63,7 +63,7 @@ for name in nn:
         # Concatenate all DataFrames in the list into a single DataFrame
         new_df = pd.concat(dfs, ignore_index=True)
 
-        print(new_df)
+        # print(new_df)
 
         np.savez(f"{output_dir}/meas_{name}_{phantom}.npz", x=new_df['position'], t=new_df['time'], theta=new_df['theta'])
 
@@ -73,7 +73,9 @@ for name in nn:
 
         # Create a 2D plot using imshow
         plt.figure(figsize=(8, 6))
-        plt.imshow(z, extent=[x.min(), x.max(), y.min(), y.max()], cmap='inferno', aspect='auto', origin='lower', vmin=0, vmax=1)
+        # plt.imshow(z, extent=[x.min(), x.max(), y.min(), y.max()], cmap='inferno', aspect='auto', origin='lower', vmin=0, vmax=1)
+        plt.scatter(x, y, s=20, c=z, cmap="inferno")
+        plt.colorbar(label="theta")
 
         # Set labels and title
         plt.xlabel('Position')
@@ -116,7 +118,7 @@ for name in nn:
 
         # Concatenate all DataFrames in the list into a single DataFrame
         observing = pd.concat(obs_dfs, ignore_index=True)
-        print(observing)
+        # print(observing)
         np.savez(f"{output_dir}/observed_{name}_{phantom}.npz", x=observing['position'], t=observing['time'],
                  t_0=observing['t_0'], t_1=observing['t_1'], t_bolus=observing['t_bolus'])
 
@@ -125,21 +127,21 @@ for name in nn:
 
         # Plot observing['t_inf'] vs observing['time'] on the left subplot
         axs[0].plot(observing['time'], observing['t_0'], 'r-', label='t_inf')
-        axs[0].set_xlabel('Time')
-        axs[0].set_title('$y_1(\tau)$')
+        axs[0].set_xlabel('time')
+        axs[0].set_title(r'$y_1(\tau)$')
         # axs[0].set_title('t_0 vs Time')
 
         # Plot observing['t_sup'] vs observing['time'] on the center subplot
         axs[1].plot(observing['time'], observing['t_1'], 'g-', label='t_sup')
-        axs[1].set_xlabel('Time')
+        axs[1].set_xlabel('time')
         # axs[1].set_ylabel('t_1')
-        axs[1].set_title('$y_2(\tau)$')
+        axs[1].set_title(r'$y_2(\tau)$')
 
         # Plot observing['t_bolus'] vs observing['time'] on the right subplot
         axs[2].plot(observing['time'], observing['t_bolus'], 'b-', label='t_bolus')
-        axs[2].set_xlabel('Time')
-        axs[2].set_ylabel('t_bolus')
-        axs[2].set_title('$y_3(\tau)$')
+        axs[2].set_xlabel('time')
+        # axs[2].set_ylabel(r'$t_bolus$')
+        axs[2].set_title(r'$y_3(\tau)$')
 
         # Adjust layout to prevent overlap
         plt.tight_layout()
