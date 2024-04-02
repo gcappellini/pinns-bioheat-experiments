@@ -10,15 +10,16 @@ script_directory = os.path.dirname(current_file)
 nn = ["240124", "240125", "240125b", "240130", "240202"]
 pp = ["P1", "P2"]
 
-for name in nn:
+for date in nn:
     for phantom in pp:
 
-        output_dir = f"{script_directory}/measurements/{name}_{phantom}"
+        name = f"{date}_{phantom}"
+        output_dir = f"{script_directory}/measurements/{name}"
 
         os.makedirs(output_dir, exist_ok=True)
 
         # Read from a specific sheet
-        df = pd.read_excel(f'{script_directory}/measurements/{name}.xlsx', sheet_name=f'{phantom}', header=0, nrows=270)
+        df = pd.read_excel(f'{script_directory}/measurements/{date}.xlsx', sheet_name=f'{phantom}', header=0, nrows=270)
         # Scaling time
         first_date_value = df['date'].iloc[0]
 
@@ -65,7 +66,7 @@ for name in nn:
 
         # print(new_df)
 
-        np.savez(f"{output_dir}/meas_{name}_{phantom}.npz", x=new_df['position'], t=new_df['time'], theta=new_df['theta'])
+        np.savez(f"{output_dir}/meas_{name}.npz", x=new_df['position'], t=new_df['time'], theta=new_df['theta'])
 
         x = new_df['position'].values.reshape(-1, 1)
         y = new_df['time'].values.reshape(-1, 1)
@@ -83,7 +84,7 @@ for name in nn:
         plt.title('2D Plot')
 
         # Save the plot
-        plt.savefig(f'{output_dir}/2d_plot_{name}_{phantom}.png')
+        plt.savefig(f'{output_dir}/2d_plot_{name}.png')
 
         # Show the plot
         plt.show()
@@ -147,7 +148,7 @@ for name in nn:
         plt.tight_layout()
 
         # Save the figure
-        plt.savefig(f'{output_dir}/observer_{name}_{phantom}.png')
+        plt.savefig(f'{output_dir}/observer_{name}.png')
 
         # Show the plot
         plt.show()

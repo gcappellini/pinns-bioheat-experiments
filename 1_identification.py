@@ -33,7 +33,7 @@ with open(file_path, "w") as log_file:
             epochs = 20000
 
             def meas_data():
-                data = np.load(f"{script_directory}/measurements/{date}_{phantom}/meas_{date}_{phantom}.npz")
+                data = np.load(f"{script_directory}/measurements/{name}/meas_{name}.npz")
                 x, t, exact = data["x"], data["t"], data["theta"].T
                 X = np.vstack((x, t)).T
                 y = exact.flatten()[:, None]
@@ -41,7 +41,7 @@ with open(file_path, "w") as log_file:
 
 
             def obs_data():
-                data = np.load(f"{script_directory}/measurements/{date}_{phantom}/observed_{date}_{phantom}.npz")
+                data = np.load(f"{script_directory}/measurements/{name}/observed_{name}.npz")
                 x, t, _, _, t_bolus = data["x"], data["t"], data["t_0"], data["t_1"], data["t_bolus"]
                 X = np.vstack((x, t, t_bolus)).T
                 return X
