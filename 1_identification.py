@@ -10,14 +10,15 @@ from scipy.interpolate import interp1d
 h = dde.Variable(1.0)
 alpha = dde.Variable(1.0)
 
+epochs = 1
+
 current_file = os.path.abspath(__file__)
 script_directory = os.path.dirname(current_file)
 
 
 nn = ["240124", "240125", "240125b", "240130", "240202"]
 pp = ["P1", "P2"]
-# nn = ["240124"]
-# pp = ["P1"]
+
 os.makedirs(f"{script_directory}/identification", exist_ok=True)
 file_path = f"{script_directory}/identification/var_eval.txt"
 
@@ -29,8 +30,6 @@ with open(file_path, "w") as log_file:
             output_dir = f"{script_directory}/identification/{name}"
 
             os.makedirs(output_dir, exist_ok=True)
-
-            epochs = 20000
 
             def meas_data():
                 data = np.load(f"{script_directory}/measurements/{name}/meas_{name}.npz")
