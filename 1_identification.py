@@ -10,7 +10,7 @@ from scipy.interpolate import interp1d
 h = dde.Variable(1.0)
 alpha = dde.Variable(1.0)
 
-epochs = 1
+epochs = 50000
 
 current_file = os.path.abspath(__file__)
 script_directory = os.path.dirname(current_file)
@@ -154,4 +154,4 @@ with open(file_path, "w") as log_file:
             plt.savefig(f'{output_dir}/var_{name}.png')
             plt.show()
 
-            log_file.write('{}, {}, h:{}, alpha:{}\n'.format(date, phantom, variable_value1[-1], variable_value2[-1]))
+            log_file.write('{}_{}: h = {}, alpha = {}\n'.format(date, phantom, variable_values1[-1], variable_values2[-1]))
