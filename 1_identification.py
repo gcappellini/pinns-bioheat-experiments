@@ -96,7 +96,7 @@ with open(file_path, "w") as log_file:
                 geomtime,
                 pde,
                 [bc, observe_y],
-                num_domain=400,
+                num_domain=0,
                 num_boundary=200,
                 # num_initial=100,
                 anchors=ob_x,
@@ -146,7 +146,7 @@ with open(file_path, "w") as log_file:
             plt.plot(aa_processed['Iteration'], aa_processed['alpha'], "b-", label='alpha')
             plt.xlabel("Iteration")
             plt.ylabel("Variable Value")
-            plt.title("Variables vs Iteration")
+            plt.title(f"Variables vs Iteration, {name}")
             plt.yscale('log')
             plt.legend()
             plt.yticks([0.1, 0.5, 1, 5, 10])
