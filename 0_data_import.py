@@ -83,7 +83,7 @@ for name in nn:
         plt.title('2D Plot')
 
         # Save the plot
-        plt.savefig(f'{output_dir}/2d_plot_{phantom}.png')
+        plt.savefig(f'{output_dir}/2d_plot_{name}_{phantom}.png')
 
         # Show the plot
         plt.show()
@@ -147,7 +147,7 @@ for name in nn:
         plt.tight_layout()
 
         # Save the figure
-        plt.savefig(f'{output_dir}/check_{phantom}.png')
+        plt.savefig(f'{output_dir}/observer_{name}_{phantom}.png')
 
         # Show the plot
         plt.show()
