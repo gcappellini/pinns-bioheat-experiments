@@ -10,7 +10,7 @@ from scipy.interpolate import interp1d
 h = dde.Variable(1.0)
 alpha = dde.Variable(1.0)
 
-epochs = 50000
+epochs = 30000
 
 current_file = os.path.abspath(__file__)
 script_directory = os.path.dirname(current_file)
