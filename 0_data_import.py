@@ -17,7 +17,26 @@ os.makedirs(output_dir, exist_ok=True)
 for date in nn:
     for phantom in pp:
 
-        name = f"{date}_{phantom}"
+        # Rename according to provided mapping
+        if date == "240125b" and phantom == "P1":
+            name = "AX1"
+        elif date == "240124" and phantom == "P1":
+            name = "AX2"
+        elif date == "240125b" and phantom == "P2":
+            name = "BX1"
+        elif date == "240125" and phantom == "P2":
+            name = "BX2"
+        elif date == "240130" and phantom == "P1":
+            name = "AY1"
+        elif date == "240202" and phantom == "P1":
+            name = "AY2"
+        elif date == "240130" and phantom == "P2":
+            name = "BY1"
+        elif date == "240124" and phantom == "P2":
+            name = "BY2"
+        else:
+            # Skip storing 240202_P2
+            continue
 
         # Read from a specific sheet
         df = pd.read_excel(f'{script_directory}/measurements/{date}.xlsx', sheet_name=f'{phantom}', header=0, nrows=235)
@@ -32,7 +51,7 @@ for date in nn:
         df['time'] = df['time']/len(df['time'])
 
         # Scaling temperature
-        max_T = 36.7
+        max_T = 37.8
         min_T = 22.0
         df_transformed = (df.drop('time', axis=1) - min_T) / (max_T - min_T)
 
@@ -101,69 +120,112 @@ for date in nn:
         np.savez(f"{output_dir}/obs_{name}.npz", x=observing['position'], t=observing['time'],
                  t_0=observing['t_0'], t_1=observing['t_1'], t_bolus=observing['t_bolus'])
 
-# Initialize a figure with subplots based on the number of elements in nn and pp
-fig, axs = plt.subplots(len(pp), len(nn), figsize=(13, 7))
+labels = [["AX1", "AX2", "BX1", "BX2"], ["AY1", "AY2", "BY1", "BY2"]]
 
-for i, date in enumerate(nn):
-    for j, phantom in enumerate(pp):
-        # Load the saved data
-        data = np.load(f"{output_dir}/meas_{date}_{phantom}.npz")
-        x = data['x']
-        t = data['t']
-        theta = data['theta']
+# Create figure 1
+fig1, axs1 = plt.subplots(2, 2, figsize=(13, 7))
 
-        la = len(np.unique(x))
-        le = len(np.unique(t))
+# Load and plot data for figure 1
+for j, label in enumerate(labels[0]):
+    # Load the saved data
+    data = np.load(f"{output_dir}/meas_{label}.npz")
+    x = data['x']
+    t = data['t']
+    theta = data['theta']
 
-        d = theta.max() if theta.max() > 1 else 1
-        # Plot theta vs x and t using imshow
-        im = axs[j, i].imshow(theta.reshape((le, la)), aspect='auto', origin='lower', 
-                              extent=[np.unique(x).min(), np.unique(x).max(), np.unique(t).min(), 1], cmap='inferno', vmin=0, vmax=d)
-        axs[j, i].set_title(f"{date}_{phantom}")
-        axs[j, i].set_xlabel('z')
-        axs[j, i].set_ylabel('t')
-        plt.colorbar(im, ax=axs[j, i])
+    la = len(np.unique(x))
+    le = len(np.unique(t))
+
+    # Plot theta vs x and t using imshow
+    axs1[j//2, j%2].scatter(x, t, c=theta, cmap='inferno', vmin=0, vmax=1, s=60, marker='o', edgecolors='none')
+    axs1[j//2, j%2].set_title(f"{label}", fontweight="bold")
+    axs1[j//2, j%2].set_xlabel('Z', fontsize=12)
+    axs1[j//2, j%2].set_ylabel(r'$\tau$', fontsize=12)
+    plt.colorbar(axs1[j//2, j%2].scatter([], [], c=[], cmap='inferno', vmin=0, vmax=1), ax=axs1[j//2, j%2], label=r'$\theta$')
+
+
+# Adjust layout and save figure 1
+plt.tight_layout()
+plt.savefig(f'{output_dir}/meas_X.png')
+plt.close()
+
+# Create figure 2
+fig2, axs2 = plt.subplots(2, 2, figsize=(13, 7))
+
+# Load and plot data for figure 2
+for j, label in enumerate(labels[1]):
+    # Load the saved data
+    data = np.load(f"{output_dir}/meas_{label}.npz")
+    x = data['x']
+    t = data['t']
+    theta = data['theta']
+
+    la = len(np.unique(x))
+    le = len(np.unique(t))
+
+    d = theta.max() if theta.max() > 1 else 1
+    # Plot theta vs x and t using imshow
+    axs2[j//2, j%2].scatter(x, t, c=theta, cmap='inferno', vmin=0, vmax=d, s=60, marker='o', edgecolors='none')
+    axs2[j//2, j%2].set_title(f"{label}", fontweight="bold")
+    axs2[j//2, j%2].set_xlabel('Z', fontsize=12)
+    axs2[j//2, j%2].set_ylabel(r'$\tau$', fontsize=12)
+    plt.colorbar(axs2[j//2, j%2].scatter([], [], c=[], cmap='inferno', vmin=0, vmax=d), ax=axs2[j//2, j%2], label=r'$\theta$')
+
+# Adjust layout and save figure 2
+plt.tight_layout()
+plt.savefig(f'{output_dir}/meas_Y.png')
+plt.close()
+
+# Create figure 3
+fig3, axs3 = plt.subplots(2, 2, figsize=(13, 7))
+
+# Load and plot data for figure 3
+# Load and plot data for figure 3
+for i, label in enumerate(labels[0]):
+    # Load the saved data
+    obs = np.load(f"{output_dir}/obs_{label}.npz")
+    t, t_0, t_1, t_bolus = obs["t"], obs["t_0"], obs["t_1"], obs["t_bolus"] 
+
+    # Plot t_0, t_1, and t_bolus against t on each subplot
+    axs3[i//2, i%2].plot(t, t_0, 'r-', label=r'$\tilde y_1(\tau)$')
+    axs3[i//2, i%2].plot(t, t_1, 'g-', label=r'$\tilde y_2(\tau)$')
+    axs3[i//2, i%2].plot(t, t_bolus, 'b-', label=r'$\tilde y_3(\tau)$')
+    axs3[i//2, i%2].set_xlabel(r"$\tau$", fontsize=12)
+    axs3[i//2, i%2].set_ylabel(r"$\tilde y(\tau)$", fontsize=12)
+    axs3[i//2, i%2].set_title(f"{label}", fontsize=14, fontweight="bold")
+    axs3[i//2, i%2].tick_params(axis='both', which='major', labelsize=10)
+    axs3[i//2, i%2].legend()
 
 # Adjust layout
 plt.tight_layout()
-plt.savefig(f'{output_dir}/all_measurements.png')
+plt.savefig(f'{output_dir}/obs_X.png')
 plt.show()
+plt.close()
 
 
-# Initialize a figure with subplots based on the number of elements in nn and pp
+# Create figure 3
+fig4, axs4 = plt.subplots(2, 2, figsize=(13, 7))
 
+# Load and plot data for figure 4
+for i, label in enumerate(labels[1]):
+    # Load the saved data
+    obs = np.load(f"{output_dir}/obs_{label}.npz")
+    t, t_0, t_1, t_bolus = obs["t"], obs["t_0"], obs["t_1"], obs["t_bolus"] 
 
-for j, phantom in enumerate(pp):
-    fig, axs = plt.subplots(len(nn), 3, figsize=(10, 9))
-    fig.subplots_adjust(hspace=1.5) 
-    for i, date in enumerate(nn):
-        # Load the saved data
-        obs = np.load(f"{output_dir}/obs_{date}_{phantom}.npz")
-        t, t_0, t_1, t_bolus = obs["t"], obs["t_0"], obs["t_1"], obs["t_bolus"] 
+    # Plot observing['t_inf'] vs observing['time'] on the left subplot
+    axs4[i//2, i%2].plot(t, t_0, 'r-', label=r'$\tilde y_1(\tau)$')
+    axs4[i//2, i%2].plot(t, t_1, 'g-', label=r'$\tilde y_2(\tau)$')
+    axs4[i//2, i%2].plot(t, t_bolus, 'b-', label=r'$\tilde y_3(\tau)$')
+    axs4[i//2, i%2].set_xlabel(r"$\tau$", fontsize=12)
+    axs4[i//2, i%2].set_ylabel(r"$\tilde y(\tau)$", fontsize=12)
+    axs4[i//2, i%2].set_title(f"{label}", fontsize=14, fontweight="bold")
+    axs4[i//2, i%2].tick_params(axis='both', which='major', labelsize=10)
+    axs4[i//2, i%2].legend()
 
-        # Plot observing['t_inf'] vs observing['time'] on the left subplot
-        axs[i, 0].plot(t, t_0, 'r-', label='t_inf')
-        axs[i, 0].set_xlabel('time')
-        axs[i, 0].set_title(r'$\tilde y_1(\tau)$')
-        # axs[0].set_title('t_0 vs Time')
-
-        # Plot observing['t_sup'] vs observing['time'] on the center subplot
-        axs[i, 1].plot(t, t_1, 'g-', label='t_sup')
-        axs[i, 1].set_xlabel('time')
-        # axs[1].set_ylabel('t_1')
-        axs[i, 1].set_title(r'$\tilde y_2(\tau)$')
-
-        # Plot observing['t_bolus'] vs observing['time'] on the right subplot
-        axs[i, 2].plot(t, t_bolus, 'b-', label='t_bolus')
-        axs[i, 2].set_xlabel('time')
-        # axs[2].set_ylabel(r'$t_bolus$')
-        axs[i, 2].set_title(r'$\tilde y_3(\tau)$')
-
-        axs[i, 0].text(0.0, 1.3, f'{date}', horizontalalignment='center', verticalalignment='center', transform=axs[i, 0].transAxes, fontweight='bold')
-
-    # Adjust layout
-    plt.tight_layout()
-    plt.savefig(f'{output_dir}/obs_{phantom}.png')
-    plt.show()
+# Adjust layout
+plt.tight_layout()
+plt.savefig(f'{output_dir}/obs_Y.png')
+plt.show()
+plt.close()
 
 
