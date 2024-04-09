@@ -18,6 +18,10 @@ model_dir = os.path.join(output_dir, "model")
 if not os.path.exists(model_dir):
     os.makedirs(model_dir)
 
+figures_dir = os.path.join(output_dir, "figures")
+if not os.path.exists(figures_dir):
+    os.makedirs(figures_dir)
+
 epochs = 50000
 K = 4
 L_0 = 0.15
@@ -25,19 +29,21 @@ L_0 = 0.15
 rho, cp, k = 1000, 4181, 0.563
 alpha = k/(rho*cp)
 
+experiments = ["AX1", "AX2", "BX1", "BX2", "AY1", "AY2", "BY1", "BY2"]
 
-def meas_data(date, phantom):
-    data = np.load(f"{script_directory}/measurements/{date}/meas_{date}_{phantom}.npz")
+
+def meas_data(date):
+    data = np.load(f"{script_directory}/measurements/meas_{date}.npz")
     x, t, exact = data["x"], data["t"], data["theta"].T
     X = np.vstack((x, t)).T
     y = exact.flatten()[:, None]
     return X, y
 
 
-def obs_data(date, phantom):
-    data = np.load(f"{script_directory}/measurements/{date}/observed_{date}_{phantom}.npz")
-    x, t, t_0, t_1, t_bolus = data["x"], data["t"], data["t_0"], data["t_1"], data["t_bolus"]
-    X = np.vstack((x, t_0, t_1, t_bolus, t)).T
+def obs_data(date):
+    data = np.load(f"{script_directory}/measurements/obs_{date}.npz")
+    x, t, y_0, y_1, y_2 = data["x"], data["t"], data["t_0"], data["t_1"], data["t_bolus"]
+    X = np.vstack((x, y_0, y_1, y_2, t)).T
     return X
 
 
@@ -276,54 +282,41 @@ def plot_weights():
 #     plt.close(fig)
 
 
-# def plot_observers_l2(multi_obs, lam, results_dir, d, p):
-#     a = np.load(f'{results_dir}/weights_lambda_{lam}.npy', allow_pickle=True)
-
-#     """Plotting l2 error over time"""
-#     l2_k = []
-    # XO = obs_data(d, p)
-    # _, stot = meas_data(d, p)
-    # XO = np.concatenate((XO, stot), axis=1)
-
-    # num_observers = len(multi_obs)
-    # tt = a[0]
-
-    # for te in range(len(tt)):
-    #     tm = 0.9990108803165183
-    #     if te > tm:
-    #         te = tm
+def plot_observer_l2(grid, pred, truth, name):
+    together = np.concatenate((grid, pred, truth), axis=1)
+    l2_k = []
+    tt = np.unique(grid[-1])
+    for te in tt:
+        tm = 0.9990108803165183
+        if te > tm:
+            te = tm
         
-    #     # Find the index of the value in XO[:, 4] closest to tt[te]
-    #     idx_closest = np.where(np.isclose(XO[:, 4], tt[int(te)]))[0]
+        # Find the index of the value in XO[:, 4] closest to tt[te]
+        idx_closest = np.where(np.isclose(grid[-1], te))[0]
         
-    #     # Select the corresponding row from XO
-    #     XOt = XO[idx_closest]
-    #     sf = XOt[:, 5:]
+        # Select the corresponding row from XO
+        XOt = together[idx_closest]
+        sf = XOt[:, 5]
+        o = XOt[:, 4]
 
-    #     observer_predictions = [modelu.predict(XOt[:, :5]) for modelu in multi_obs.values()]
-    #     if te == tm:
-    #         te = 1
-    #     o = sum(a[i + 1, te] * observer_predictions[i] for i in range(num_observers))
+        l2_k.append(dde.metrics.l2_relative_error(sf, o))
 
-        # l2_k.append(dde.metrics.l2_relative_error(sf, o))
+    fig = plt.figure()
+    ax1 = fig.add_subplot(121)
+    ax1.plot(tt, l2_k, alpha=1.0, linewidth=1.8, color='C0')
 
-#     fig = plt.figure()
-#     ax1 = fig.add_subplot(121)
-#     ax1.plot(tt, l2_k, alpha=1.0, linewidth=1.8, color='C0')
+    ax1.set_xlabel(xlabel=r"Time t", fontsize=7)  # xlabel
+    ax1.set_ylabel(ylabel=r"$L^2$ norm", fontsize=7)  # ylabel
+    ax1.set_title(r"Prediction error norm", fontsize=7, weight='semibold')
+    ax1.set_ylim(bottom=0.0)
+    ax1.set_xlim(0, 1.01)
+    plt.yticks(fontsize=7)
 
-#     ax1.set_xlabel(xlabel=r"Time t", fontsize=7)  # xlabel
-#     ax1.set_ylabel(ylabel=r"$L^2$ norm", fontsize=7)  # ylabel
-#     ax1.set_title(r"Prediction error norm", fontsize=7, weight='semibold')
-#     ax1.set_ylim(bottom=0.0)
-#     ax1.set_xlim(0, 1.01)
-#     plt.yticks(fontsize=7)
+    plt.grid()
+    plt.savefig(f"{figures_dir}/l2_observer_{name}.png", dpi=300, bbox_inches='tight')
+    plt.show()
 
-#     plt.grid()
-#     # ax1.set_box_aspect(1)
-#     plt.savefig(f"{results_dir}/l2_observers_{lam}.png", dpi=300, bbox_inches='tight')
-#     plt.show()
-
-#     plt.close(fig)
+    plt.close(fig)
 
 
 def mm_ode(multi_obs, pp):
@@ -359,35 +352,34 @@ def mm_ode(multi_obs, pp):
             np.save(f'{weights_dir}/weights_{dd}_lambda_{lam}.npy', weights)
 
 
-def all_l2_errors(model, pp):
-    dates = ["240124", "240125", "240125b", "240130", "240202"]
+def all_l2_errors(model):
+
     observer_numbers = range(1, len(model) + 1)
-    kk_values = [key[0] for key in model.keys()]
-    hh_values = [key[1] for key in model.keys()]
+    hh_values = model.keys()
 
-    df = pd.DataFrame({'Obs #': observer_numbers, 'k': kk_values, 'h': hh_values})
+    df = pd.DataFrame({'Obs #': observer_numbers, 'h': hh_values})
 
-    for dd in dates:
-        PO = obs_data(dd, pp)
-        _, tmeas = meas_data(dd, pp)
-        PO = np.concatenate((PO, tmeas), axis=1)
+    for dd in experiments:
+        PO = obs_data(dd)
+        _, tmeas = meas_data(dd)
+        # PO = np.concatenate((PO, tmeas), axis=1)
 
         l2_errors = []
         
-
-        for (kk, hh), modelu in model.items():
-            e = modelu.predict(PO[:, :5])
+        for key, modelu in model.items():
+            e = modelu.predict(PO)
             l2_err = dde.metrics.l2_relative_error(e, tmeas)
             l2_errors.append(l2_err)
+            plot_observer_l2(PO, e, tmeas, key)
 
         df[f'{dd}'] = l2_errors
 
     # Specify the columns over which to compute the L2 norm
-    columns_to_include = dates
+    columns_to_include = experiments
 
     # Calculate the L2 norm across the specified columns for each row
     df['Overall error'] = np.linalg.norm(df[columns_to_include], axis=1)
-    df.to_excel(f'{output_dir}/l2_errors_{pp}.xlsx', index=False)
+    df.to_excel(f'{output_dir}/l2_errors.xlsx', index=False)
 
 
 def mm_predict(m_obs, da, xob):
@@ -468,6 +460,7 @@ def plot_mm_observer(model, phantom):
 
 
 h_unk = np.linspace(8, 160, num=10)
+# Arrotondare
 
 multi_obs = {}
 
@@ -476,9 +469,7 @@ for hh in h_unk:
     modelu = restore_model(modelu, f"obs_{hh}")
     multi_obs[hh] = modelu
 
-
-    
-# all_l2_errors(multi_obs, "P1")
+all_l2_errors(multi_obs)
 # mm_ode(multi_obs, "P1")
 # plot_weights()
 # plot_mm_observer(multi_obs, "P1")
