@@ -16,6 +16,10 @@ min_T = 22.0
 
 os.makedirs(output_dir, exist_ok=True)
 
+figures_dir = os.path.join(output_dir, "figures")
+if not os.path.exists(figures_dir):
+    os.makedirs(figures_dir)
+
 
 for date in nn:
     for phantom in pp:
@@ -148,7 +152,7 @@ for j, label in enumerate(labels[0]):
 
 # Adjust layout and save figure 1
 plt.tight_layout()
-plt.savefig(f'{output_dir}/meas_X.png')
+plt.savefig(f'{figures_dir}/meas_X.png')
 plt.close()
 
 # Create figure 2
@@ -175,7 +179,7 @@ for j, label in enumerate(labels[1]):
 
 # Adjust layout and save figure 2
 plt.tight_layout()
-plt.savefig(f'{output_dir}/meas_Y.png')
+plt.savefig(f'{figures_dir}/meas_Y.png')
 plt.close()
 
 # Create figure 3
@@ -200,7 +204,7 @@ for i, label in enumerate(labels[0]):
 
 # Adjust layout
 plt.tight_layout()
-plt.savefig(f'{output_dir}/obs_X.png')
+plt.savefig(f'{figures_dir}/obs_X.png')
 plt.show()
 plt.close()
 
@@ -226,7 +230,7 @@ for i, label in enumerate(labels[1]):
 
 # Adjust layout
 plt.tight_layout()
-plt.savefig(f'{output_dir}/obs_Y.png')
+plt.savefig(f'{figures_dir}/obs_Y.png')
 plt.show()
 plt.close()
 
