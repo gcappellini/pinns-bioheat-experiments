@@ -161,9 +161,9 @@ def train_model(model, name):
 
 def restore_model(model, name):
 
-    checkpoint_path = f"{model_dir}/model_{name}-{epochs}.ckpt"
-    if os.path.exists(checkpoint_path + ".index"):
-        model.restore(f"{model_dir}/model_{name}-{epochs}.ckpt", verbose=0)
+    checkpoint_path = f"{model_dir}/model_{name}-{epochs}.pt"
+    if os.path.exists(checkpoint_path):
+        model.restore(f"{model_dir}/model_{name}-{epochs}.pt", verbose=0)
         print(f"Model {model, name} restored from checkpoint.")
     else:
         train_model(model, name)
