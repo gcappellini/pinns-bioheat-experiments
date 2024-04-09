@@ -460,7 +460,6 @@ def plot_mm_observer(model, phantom):
 
 
 h_unk = np.linspace(8, 160, num=10).round(1)
-# Arrotondare
 
 multi_obs = {}
 
