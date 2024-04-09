@@ -11,6 +11,9 @@ pp = ["P1", "P2"]
 
 output_dir = f"{script_directory}/measurements"
 
+max_T = 37.8
+min_T = 22.0
+
 os.makedirs(output_dir, exist_ok=True)
 
 
@@ -35,7 +38,7 @@ for date in nn:
         elif date == "240124" and phantom == "P2":
             name = "BY2"
         else:
-            # Skip storing 240202_P2
+            # Skip storing 240202_P2 and 240125_P1
             continue
 
         # Read from a specific sheet
@@ -51,8 +54,7 @@ for date in nn:
         df['time'] = df['time']/len(df['time'])
 
         # Scaling temperature
-        max_T = 37.8
-        min_T = 22.0
+
         df_transformed = (df.drop('time', axis=1) - min_T) / (max_T - min_T)
 
         # df_transformed = df.drop('time', axis=1)
