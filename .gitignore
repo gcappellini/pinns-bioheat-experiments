@@ -200,5 +200,6 @@ measurements/
 !measurements/240202.xlsx
 identification/
 multiple_observer/
+multiple_observer_k4/
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,python

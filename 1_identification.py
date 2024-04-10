@@ -77,7 +77,7 @@ good_labels = ["AY1", "AY2", "BY1", "BX2"]
 # Create figure 7
 fig7, axs7 = plt.subplots(2, 2, figsize=(13, 7))
 
-# Load and plot data for figure 4
+# Load and plot data for figure 7
 for i, label in enumerate(good_labels):
     # Load the saved data
     obs = np.load(f"{meas_dir}/obs_{label}.npz")
