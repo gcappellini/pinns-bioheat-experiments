@@ -282,24 +282,22 @@ def plot_weights():
 #     plt.close(fig)
 
 
-def plot_observer_l2(grid, pred, truth, name):
+def plot_observer_l2(grid, pred, truth, name, dd):
     together = np.concatenate((grid, pred, truth), axis=1)
+    # together[:, 0] = x, together[:, 1] = y1, together[:, 2] = y2, together[:, 3] = y3, together[:, 4] = t, together[:, 5] = pred, together[:, 6] = truth
     l2_k = []
-    tt = np.unique(grid[-1])
+    tt = np.unique(together[:, 4])
     for te in tt:
         tm = 0.9990108803165183
         if te > tm:
             te = tm
         
-        # Find the index of the value in XO[:, 4] closest to tt[te]
-        idx_closest = np.where(np.isclose(grid[-1], te))[0]
-        
         # Select the corresponding row from XO
-        XOt = together[idx_closest]
-        sf = XOt[:, 5]
-        o = XOt[:, 4]
+        XOt = together[together[:, 4] == te]
+        pr = XOt[:, 5]
+        tr = XOt[:, 6]
 
-        l2_k.append(dde.metrics.l2_relative_error(sf, o))
+        l2_k.append(dde.metrics.l2_relative_error(pr, tr))
 
     fig = plt.figure()
     ax1 = fig.add_subplot(121)
@@ -308,12 +306,12 @@ def plot_observer_l2(grid, pred, truth, name):
     ax1.set_xlabel(xlabel=r"Time t", fontsize=7)  # xlabel
     ax1.set_ylabel(ylabel=r"$L^2$ norm", fontsize=7)  # ylabel
     ax1.set_title(r"Prediction error norm", fontsize=7, weight='semibold')
-    ax1.set_ylim(bottom=0.0)
-    ax1.set_xlim(0, 1.01)
-    plt.yticks(fontsize=7)
+    # ax1.set_ylim(bottom=0.0)
+    # ax1.set_xlim(0, 1.01)
+    # plt.yticks(fontsize=7)
 
     plt.grid()
-    plt.savefig(f"{figures_dir}/l2_observer_{name}.png", dpi=300, bbox_inches='tight')
+    plt.savefig(f"{figures_dir}/l2_observer_{name}_{dd}.png", dpi=300, bbox_inches='tight')
     plt.show()
 
     plt.close(fig)
@@ -370,7 +368,7 @@ def all_l2_errors(model):
             e = modelu.predict(PO)
             l2_err = dde.metrics.l2_relative_error(e, tmeas)
             l2_errors.append(l2_err)
-            plot_observer_l2(PO, e, tmeas, key)
+            plot_observer_l2(PO, e, tmeas, key, dd)
 
         df[f'{dd}'] = l2_errors
 
