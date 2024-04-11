@@ -9,9 +9,11 @@ from scipy.interpolate import interp1d
 import matplotlib.cm as cm
 
 
+K = 1
+
 current_file = os.path.abspath(__file__)
 script_directory = os.path.dirname(current_file)
-output_dir = f"{script_directory}/multiple_observer"
+output_dir = f"{script_directory}/multiple_observer_k{K}"
 os.makedirs(output_dir, exist_ok=True)
 
 model_dir = os.path.join(output_dir, "model")
@@ -29,7 +31,6 @@ if not os.path.exists(weights_dir):
 meas_dir = f"{script_directory}/measurements"
 
 epochs = 50000
-K = 4
 L_0 = 0.15
 
 rho, cp, k = 1000, 4181, 0.563
@@ -436,12 +437,12 @@ multi_obs = {}
 for hh in h_unk:
     modelu = create_observer(hh)
     modelu = restore_model(modelu, f"obs_{hh}")
-    # test_observer(modelu, f"obs_{hh}")
+    test_observer(modelu, f"obs_{hh}")
     multi_obs[hh] = modelu
 
 lambdas = [10, 200, 1000]
 # all_l2_errors(multi_obs)
-# mm_ode(multi_obs, lambdas)
+mm_ode(multi_obs, lambdas)
 plot_weights(lambdas)
 # plot_mm_observer(multi_obs, "P1")
 
