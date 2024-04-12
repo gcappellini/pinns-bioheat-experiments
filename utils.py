@@ -695,7 +695,7 @@ def plot_mm_observer(hh_unk, gain, la):
 
     # Adjust layout
     plt.tight_layout()
-    plt.savefig(f'{figures_dir}/plot_mm_l2_X.png')
+    plt.savefig(f'{figures_dir}/l2_mm_X_k{gain}.png')
     plt.show()
     plt.close()
 
@@ -735,7 +735,7 @@ def plot_mm_observer(hh_unk, gain, la):
 
     # Adjust layout
     plt.tight_layout()
-    plt.savefig(f'{figures_dir}/plot_mm_l2_Y.png')
+    plt.savefig(f'{figures_dir}/l2_mm_Y_k{gain}.png')
     plt.show()
     plt.close()
 
