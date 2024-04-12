@@ -660,3 +660,83 @@ def plot_mm_observer(hh_unk, gain, la):
     plt.close()
 
 
+    # Create figure 3
+    fig3, axs3 = plt.subplots(2, 2, figsize=(13, 7))
+
+    # Load and plot data for figure 3
+    for i, label in enumerate(labels[0]):
+        x_sys, theta = meas_data(label)
+        x = x_sys[:, 0]
+        t = x_sys[:, 1]
+        x_obs = obs_data(label)
+        theta_pred = mm_predict(m_obs, gain, label, la, xob)
+        together = np.concatenate((x_obs, theta_pred, theta), axis=1)
+        l2_k = []
+        tt = np.unique(together[:, 4])
+        for te in tt:
+            tm = 0.9990108803165183
+            if te > tm:
+                te = tm
+            
+            # Select the corresponding row from XO
+            XOt = together[together[:, 4] == te]
+            pr = XOt[:, 5]
+            tr = XOt[:, 6]
+
+            l2_k.append(dde.metrics.l2_relative_error(pr, tr))
+
+        # Plot t_0, t_1, and t_bolus against t on each subplot
+        axs3[i//2, i%2].plot(tt, l2_k, 'r-', label=r'$L^2$ norm')
+        axs3[i//2, i%2].set_xlabel(r"$\tau$", fontsize=12)
+        axs3[i//2, i%2].set_ylabel(r"$L^2$ norm", fontsize=12)
+        axs3[i//2, i%2].set_title(f"{label}", fontsize=14, fontweight="bold")
+        axs3[i//2, i%2].tick_params(axis='both', which='major', labelsize=10)
+        axs3[i//2, i%2].legend()
+
+    # Adjust layout
+    plt.tight_layout()
+    plt.savefig(f'{figures_dir}/plot_mm_l2_X.png')
+    plt.show()
+    plt.close()
+
+
+    # Create figure 4
+    fig4, axs4 = plt.subplots(2, 2, figsize=(13, 7))
+
+    # Load and plot data for figure 4
+    for i, label in enumerate(labels[1]):
+        x_sys, theta = meas_data(label)
+        x = x_sys[:, 0]
+        t = x_sys[:, 1]
+        x_obs = obs_data(label)
+        theta_pred = mm_predict(m_obs, gain, label, la, xob)
+        together = np.concatenate((x_obs, theta_pred, theta), axis=1)
+        l2_k = []
+        tt = np.unique(together[:, 4])
+        for te in tt:
+            tm = 0.9990108803165183
+            if te > tm:
+                te = tm
+            
+            # Select the corresponding row from XO
+            XOt = together[together[:, 4] == te]
+            pr = XOt[:, 5]
+            tr = XOt[:, 6]
+
+            l2_k.append(dde.metrics.l2_relative_error(pr, tr))
+
+        # Plot observing['t_inf'] vs observing['time'] on the left subplot
+        axs4[i//2, i%2].plot(tt, l2_k, 'r-', label=r'$L^2$ norm')
+        axs4[i//2, i%2].set_xlabel(r"$\tau$", fontsize=12)
+        axs4[i//2, i%2].set_ylabel(r"$L^2$ norm", fontsize=12)
+        axs4[i//2, i%2].set_title(f"{label}", fontsize=14, fontweight="bold")
+        axs4[i//2, i%2].tick_params(axis='both', which='major', labelsize=10)
+        axs4[i//2, i%2].legend()
+
+    # Adjust layout
+    plt.tight_layout()
+    plt.savefig(f'{figures_dir}/plot_mm_l2_Y.png')
+    plt.show()
+    plt.close()
+
+
