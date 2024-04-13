@@ -496,6 +496,24 @@ def compute_l2(model):
     return np.array([l2_x, l2_y])
 
 
+def compute_mm_l2(multi_obs, gain, la):
+    l2_x = []
+    for el in labels[0]:
+        _, theta = meas_data(el)
+        x = obs_data(el)
+        pr = mm_predict(multi_obs, gain, el, la, x) 
+        l2_x.append(dde.metrics.l2_relative_error(pr, theta))
+
+    l2_y = []
+    for el in labels[1]:
+        _, theta = meas_data(el)
+        x = obs_data(el)
+        pr = mm_predict(multi_obs, gain, el, la, x) 
+        l2_y.append(dde.metrics.l2_relative_error(pr, theta))
+
+    return np.array([l2_x, l2_y])
+
+
 def plot_l2_vs_k(dict):
     k = []
     h = []
@@ -528,7 +546,7 @@ def plot_l2_vs_k(dict):
     # Adjust layout
     plt.tight_layout()
     plt.legend()
-    plt.savefig(f'{script_directory}/l2_k_X.png')
+    plt.savefig(f'{script_directory}/l2_vs_k_X.png')
     
     plt.show()
     plt.close()
@@ -554,7 +572,7 @@ def plot_l2_vs_k(dict):
     # Adjust layout
     plt.tight_layout()
     plt.legend(loc='lower right')
-    plt.savefig(f'{script_directory}/l2_k_Y.png')
+    plt.savefig(f'{script_directory}/l2_vs_k_Y.png')
     plt.show()
     plt.close()
 
@@ -599,103 +617,196 @@ def mm_predict(m_obs, gain, da, la, xob):
         return o
 
 
-def plot_mm_observer(hh_unk, gain, la):
-    global K
-    K = gain
-    set_K(gain)
-    # Create figure 1
-    fig1, axs1 = plt.subplots(2, 2, figsize=(13, 7))
-    m_obs = create_mm_observer(hh_unk, K)
+def plot_mm_observer(hh_unk, gg, lll):
+    
+    for gain in gg:
+        K = gain
+        set_K(gain)
+        for la in lll:
 
-    # Load and plot data for figure 1
-    for j, label in enumerate(labels[0]):
-        # Load the saved data
-        xob = obs_data(label)
-        x = xob[:, 0]
-        t = xob[:, -1]
+            # Create figure 1
+            fig1, axs1 = plt.subplots(2, 2, figsize=(13, 7))
+            m_obs = create_mm_observer(hh_unk, K)
+
+            # Load and plot data for figure 1
+            for j, label in enumerate(labels[0]):
+                # Load the saved data
+                _, theta_true = meas_data(label)
+                xob = obs_data(label)
+                x = xob[:, 0]
+                t = xob[:, -1]
+
+                # la = len(np.unique(x))
+                # le = len(np.unique(t))
+
+                theta_pred = mm_predict(m_obs, gain, label, la, xob)
+                diff = np.abs(theta_pred - theta_true)
+
+                # Plot theta vs x and t using imshow
+                axs1[j//2, j%2].scatter(x, t, c=diff, cmap='inferno')
+                axs1[j//2, j%2].set_title(f"{label}", fontweight="bold")
+                axs1[j//2, j%2].set_xlabel('Z', fontsize=12)
+                axs1[j//2, j%2].set_ylabel(r'$\tau$', fontsize=12)
+                plt.colorbar(axs1[j//2, j%2].scatter([], [], c=[], cmap='inferno'), ax=axs1[j//2, j%2], label=r'$|\theta_{pred} - \theta_{true}|$')
+
+            plt.tight_layout()
+            plt.savefig(f'{figures_dir}/plot_mm_X_lambda{la}.png')
+            plt.close()
+
+            # Create figure 2
+            fig2, axs2 = plt.subplots(2, 2, figsize=(13, 7))
+
+            # Load and plot data for figure 2
+            for j, label in enumerate(labels[1]):
+                # Load the saved data
+                _, theta_true = meas_data(label)
+                xob = obs_data(label)
+                x = xob[:, 0]
+                t = xob[:, -1]
+
+                # la = len(np.unique(x))
+                # le = len(np.unique(t))
+
+                theta_pred = mm_predict(m_obs, gain, label, la, xob)
+                diff = np.abs(theta_pred - theta_true)
+                # Plot theta vs x and t using imshow
+                axs2[j//2, j%2].scatter(x, t, c=diff, cmap='inferno')
+                axs2[j//2, j%2].set_title(f"{label}", fontweight="bold")
+                axs2[j//2, j%2].set_xlabel('Z', fontsize=12)
+                axs2[j//2, j%2].set_ylabel(r'$\tau$', fontsize=12)
+                plt.colorbar(axs2[j//2, j%2].scatter([], [], c=[], cmap='inferno'), ax=axs2[j//2, j%2], label=r'$|\theta_{pred} - \theta_{true}|$')
+
+            # Adjust layout and save figure 2
+            plt.tight_layout()
+            plt.savefig(f'{figures_dir}/plot_mm_Y_lambda{la}.png')
+            plt.close()
 
 
-        # la = len(np.unique(x))
-        # le = len(np.unique(t))
+            # Create figure 3
+            fig3, axs3 = plt.subplots(2, 2, figsize=(13, 7))
 
-        theta = mm_predict(m_obs, gain, label, la, xob)
+            # Load and plot data for figure 3
+            for i, label in enumerate(labels[0]):
+                x_sys, theta = meas_data(label)
+                x = x_sys[:, 0]
+                t = x_sys[:, 1]
+                x_obs = obs_data(label)
+                theta_pred = mm_predict(m_obs, gain, label, la, xob)
+                together = np.concatenate((x_obs, theta_pred, theta), axis=1)
+                l2_k = []
+                tt = np.unique(together[:, 4])
+                for te in tt:
+                    tm = 0.9990108803165183
+                    if te > tm:
+                        te = tm
+                    
+                    # Select the corresponding row from XO
+                    XOt = together[together[:, 4] == te]
+                    pr = XOt[:, 5]
+                    tr = XOt[:, 6]
 
-        # Plot theta vs x and t using imshow
-        axs1[j//2, j%2].scatter(x, t, c=theta, cmap='inferno')
-        axs1[j//2, j%2].set_title(f"{label}", fontweight="bold")
-        axs1[j//2, j%2].set_xlabel('Z', fontsize=12)
-        axs1[j//2, j%2].set_ylabel(r'$\tau$', fontsize=12)
-        plt.colorbar(axs1[j//2, j%2].scatter([], [], c=[], cmap='inferno', vmin=0, vmax=1), ax=axs1[j//2, j%2], label=r'$\theta$')
+                    l2_k.append(dde.metrics.l2_relative_error(pr, tr))
+
+                # Plot t_0, t_1, and t_bolus against t on each subplot
+                axs3[i//2, i%2].plot(tt, l2_k, 'r-', label=r'$L^2$ norm')
+                axs3[i//2, i%2].set_xlabel(r"$\tau$", fontsize=12)
+                axs3[i//2, i%2].set_ylabel(r"$L^2$ norm", fontsize=12)
+                axs3[i//2, i%2].set_title(f"{label}", fontsize=14, fontweight="bold")
+                axs3[i//2, i%2].tick_params(axis='both', which='major', labelsize=10)
+                axs3[i//2, i%2].legend()
+
+            # Adjust layout
+            plt.tight_layout()
+            plt.savefig(f'{figures_dir}/l2_mm_X_lambda{la}.png')
+            plt.show()
+            plt.close()
 
 
-    # Adjust layout and save figure 1
-    plt.tight_layout()
-    plt.savefig(f'{figures_dir}/plot_mm_X_k{gain}.png')
-    plt.close()
+            # Create figure 4
+            fig4, axs4 = plt.subplots(2, 2, figsize=(13, 7))
 
-    # Create figure 2
-    fig2, axs2 = plt.subplots(2, 2, figsize=(13, 7))
+            # Load and plot data for figure 4
+            for i, label in enumerate(labels[1]):
+                x_sys, theta = meas_data(label)
+                x = x_sys[:, 0]
+                t = x_sys[:, 1]
+                x_obs = obs_data(label)
+                theta_pred = mm_predict(m_obs, gain, label, la, xob)
+                together = np.concatenate((x_obs, theta_pred, theta), axis=1)
+                l2_k = []
+                tt = np.unique(together[:, 4])
+                for te in tt:
+                    tm = 0.9990108803165183
+                    if te > tm:
+                        te = tm
+                    
+                    # Select the corresponding row from XO
+                    XOt = together[together[:, 4] == te]
+                    pr = XOt[:, 5]
+                    tr = XOt[:, 6]
 
-    # Load and plot data for figure 2
-    for j, label in enumerate(labels[1]):
-        # Load the saved data
-        xob = obs_data(label)
-        x = xob[:, 0]
-        t = xob[:, -1]
+                    l2_k.append(dde.metrics.l2_relative_error(pr, tr))
 
-        # la = len(np.unique(x))
-        # le = len(np.unique(t))
+                # Plot observing['t_inf'] vs observing['time'] on the left subplot
+                axs4[i//2, i%2].plot(tt, l2_k, 'r-', label=r'$L^2$ norm')
+                axs4[i//2, i%2].set_xlabel(r"$\tau$", fontsize=12)
+                axs4[i//2, i%2].set_ylabel(r"$L^2$ norm", fontsize=12)
+                axs4[i//2, i%2].set_title(f"{label}", fontsize=14, fontweight="bold")
+                axs4[i//2, i%2].tick_params(axis='both', which='major', labelsize=10)
+                axs4[i//2, i%2].legend()
 
-        theta = mm_predict(m_obs, gain, label, la, xob)
-        # Plot theta vs x and t using imshow
-        axs2[j//2, j%2].scatter(x, t, c=theta, cmap='inferno')
-        axs2[j//2, j%2].set_title(f"{label}", fontweight="bold")
-        axs2[j//2, j%2].set_xlabel('Z', fontsize=12)
-        axs2[j//2, j%2].set_ylabel(r'$\tau$', fontsize=12)
-        plt.colorbar(axs2[j//2, j%2].scatter([], [], c=[], cmap='inferno'), ax=axs2[j//2, j%2], label=r'$\theta$')
+            # Adjust layout
+            plt.tight_layout()
+            plt.savefig(f'{figures_dir}/l2_mm_Y_lambda{la}.png')
+            plt.show()
+            plt.close()
 
-    # Adjust layout and save figure 2
-    plt.tight_layout()
-    plt.savefig(f'{figures_dir}/plot_mm_Y_k{gain}.png')
-    plt.close()
 
+def compute_mm_errors(hh_unk, gg, lll):
+    mm_errs = {}
+    for gain in gg:
+        K = gain
+        set_K(gain)
+        e = create_mm_observer(hh_unk, gain)
+        for la in lll:
+            mm_errs[(gain, la)] = compute_mm_l2(e, gain, la)
+    return mm_errs        
+
+
+def plot_mm_l2_vs_k(dict):
+    k = []
+    l = []
+    for key in dict:
+        k.append(key[0])
+        l.append(key[1])
+        
+    kk = np.unique(np.array(k))
+    ll = np.unique(np.array(l))
 
     # Create figure 3
-    fig3, axs3 = plt.subplots(2, 2, figsize=(13, 7))
+    fig9, axs9 = plt.subplots(2, 2, figsize=(13, 7))
 
     # Load and plot data for figure 3
     for i, label in enumerate(labels[0]):
-        x_sys, theta = meas_data(label)
-        x = x_sys[:, 0]
-        t = x_sys[:, 1]
-        x_obs = obs_data(label)
-        theta_pred = mm_predict(m_obs, gain, label, la, xob)
-        together = np.concatenate((x_obs, theta_pred, theta), axis=1)
-        l2_k = []
-        tt = np.unique(together[:, 4])
-        for te in tt:
-            tm = 0.9990108803165183
-            if te > tm:
-                te = tm
-            
-            # Select the corresponding row from XO
-            XOt = together[together[:, 4] == te]
-            pr = XOt[:, 5]
-            tr = XOt[:, 6]
+        f = np.zeros((len(ll), len(kk))) 
+        for j, el in enumerate(ll):
+            for y, il in enumerate(kk):
+                f[j, y]=dict[(il, el)][0][i]
 
-            l2_k.append(dde.metrics.l2_relative_error(pr, tr))
+            axs9[i//2, i%2].plot(kk, f[j, :], label=f'{el}', marker='o')
+            # axs3[i//2, i%2].scatter(kk[:-1], f[j, :], s=20, marker='o', edgecolors='none')
 
-        # Plot t_0, t_1, and t_bolus against t on each subplot
-        axs3[i//2, i%2].plot(tt, l2_k, 'r-', label=r'$L^2$ norm')
-        axs3[i//2, i%2].set_xlabel(r"$\tau$", fontsize=12)
-        axs3[i//2, i%2].set_ylabel(r"$L^2$ norm", fontsize=12)
-        axs3[i//2, i%2].set_title(f"{label}", fontsize=14, fontweight="bold")
-        axs3[i//2, i%2].tick_params(axis='both', which='major', labelsize=10)
-        axs3[i//2, i%2].legend()
+        axs9[i//2, i%2].set_xlabel(r"$\mathcal{K}$", fontsize=12)
+        axs9[i//2, i%2].set_ylabel(r"$L^2$ error", fontsize=12)
+        axs9[i//2, i%2].set_title(f"{label}", fontsize=14, fontweight="bold")
+        axs9[i//2, i%2].tick_params(axis='both', which='major', labelsize=10)
+        axs9[i//2, i%2].set_xscale('log')
 
     # Adjust layout
     plt.tight_layout()
-    plt.savefig(f'{figures_dir}/l2_mm_X_k{gain}.png')
+    plt.legend()
+    plt.savefig(f'{script_directory}/mm_l2_vs_k_X.png')
+    
     plt.show()
     plt.close()
 
@@ -705,38 +816,22 @@ def plot_mm_observer(hh_unk, gain, la):
 
     # Load and plot data for figure 4
     for i, label in enumerate(labels[1]):
-        x_sys, theta = meas_data(label)
-        x = x_sys[:, 0]
-        t = x_sys[:, 1]
-        x_obs = obs_data(label)
-        theta_pred = mm_predict(m_obs, gain, label, la, xob)
-        together = np.concatenate((x_obs, theta_pred, theta), axis=1)
-        l2_k = []
-        tt = np.unique(together[:, 4])
-        for te in tt:
-            tm = 0.9990108803165183
-            if te > tm:
-                te = tm
-            
-            # Select the corresponding row from XO
-            XOt = together[together[:, 4] == te]
-            pr = XOt[:, 5]
-            tr = XOt[:, 6]
+        f = np.zeros((len(ll), len(kk)))
+        for j, el in enumerate(ll):
+            for y, il in enumerate(kk):
+                f[j, y]=dict[(il, el)][1][i]
 
-            l2_k.append(dde.metrics.l2_relative_error(pr, tr))
-
-        # Plot observing['t_inf'] vs observing['time'] on the left subplot
-        axs4[i//2, i%2].plot(tt, l2_k, 'r-', label=r'$L^2$ norm')
-        axs4[i//2, i%2].set_xlabel(r"$\tau$", fontsize=12)
-        axs4[i//2, i%2].set_ylabel(r"$L^2$ norm", fontsize=12)
+            axs4[i//2, i%2].plot(kk, f[j, :], label=f'{el}', marker='o')
+        axs4[i//2, i%2].set_xlabel(r"$\mathcal{K}$", fontsize=12)
+        axs4[i//2, i%2].set_ylabel(r"$L^2$ error", fontsize=12)
         axs4[i//2, i%2].set_title(f"{label}", fontsize=14, fontweight="bold")
         axs4[i//2, i%2].tick_params(axis='both', which='major', labelsize=10)
-        axs4[i//2, i%2].legend()
+        axs4[i//2, i%2].set_xscale('log')
 
     # Adjust layout
     plt.tight_layout()
-    plt.savefig(f'{figures_dir}/l2_mm_Y_k{gain}.png')
+    plt.legend(loc='lower right')
+    plt.savefig(f'{script_directory}/mm_l2_vs_k_Y.png')
     plt.show()
     plt.close()
-
 
