@@ -497,6 +497,7 @@ def compute_l2(model):
 
 
 def compute_mm_l2(multi_obs, gain, la):
+    set_K(gain)
     l2_x = []
     for el in labels[0]:
         _, theta = meas_data(el)
@@ -510,6 +511,25 @@ def compute_mm_l2(multi_obs, gain, la):
         x = obs_data(el)
         pr = mm_predict(multi_obs, gain, el, la, x) 
         l2_y.append(dde.metrics.l2_relative_error(pr, theta))
+
+    return np.array([l2_x, l2_y])
+
+
+def compute_mm_max(multi_obs, gain, la):
+    set_K(gain)
+    l2_x = []
+    for el in labels[0]:
+        _, theta = meas_data(el)
+        x = obs_data(el)
+        pr = mm_predict(multi_obs, gain, el, la, x) 
+        l2_x.append(np.max(np.abs(pr - theta)))
+
+    l2_y = []
+    for el in labels[1]:
+        _, theta = meas_data(el)
+        x = obs_data(el)
+        pr = mm_predict(multi_obs, gain, el, la, x) 
+        l2_y.append(np.max(np.abs(pr - theta)))
 
     return np.array([l2_x, l2_y])
 
@@ -765,12 +785,21 @@ def plot_mm_observer(hh_unk, gg, lll):
 def compute_mm_errors(hh_unk, gg, lll):
     mm_errs = {}
     for gain in gg:
-        K = gain
         set_K(gain)
         e = create_mm_observer(hh_unk, gain)
         for la in lll:
             mm_errs[(gain, la)] = compute_mm_l2(e, gain, la)
     return mm_errs        
+
+
+def compute_mm_max_errors(hh_unk, gg, lll):
+    mm_errs = {}
+    for gain in gg:
+        set_K(gain)
+        e = create_mm_observer(hh_unk, gain)
+        for la in lll:
+            mm_errs[(gain, la)] = compute_mm_max(e, gain, la)
+    return mm_errs      
 
 
 def plot_mm_l2_vs_k(dict):
@@ -832,6 +861,69 @@ def plot_mm_l2_vs_k(dict):
     plt.tight_layout()
     plt.legend(loc='lower right')
     plt.savefig(f'{script_directory}/mm_l2_vs_k_Y.png')
+    plt.show()
+    plt.close()
+
+
+def plot_mm_max_vs_k(dict):
+    k = []
+    l = []
+    for key in dict:
+        k.append(key[0])
+        l.append(key[1])
+        
+    kk = np.unique(np.array(k))
+    ll = np.unique(np.array(l))
+
+    # Create figure 3
+    fig9, axs9 = plt.subplots(2, 2, figsize=(13, 7))
+
+    # Load and plot data for figure 3
+    for i, label in enumerate(labels[0]):
+        f = np.zeros((len(ll), len(kk))) 
+        for j, el in enumerate(ll):
+            for y, il in enumerate(kk):
+                f[j, y]=dict[(il, el)][0][i]
+
+            axs9[i//2, i%2].plot(kk, f[j, :], label=f'{el}', marker='o')
+            # axs3[i//2, i%2].scatter(kk[:-1], f[j, :], s=20, marker='o', edgecolors='none')
+
+        axs9[i//2, i%2].set_xlabel(r"$\mathcal{K}$", fontsize=12)
+        axs9[i//2, i%2].set_ylabel(r"Max error", fontsize=12)
+        axs9[i//2, i%2].set_title(f"{label}", fontsize=14, fontweight="bold")
+        axs9[i//2, i%2].tick_params(axis='both', which='major', labelsize=10)
+        axs9[i//2, i%2].set_xscale('log')
+
+    # Adjust layout
+    plt.tight_layout()
+    plt.legend()
+    plt.savefig(f'{script_directory}/mm_max_vs_k_X.png')
+    
+    plt.show()
+    plt.close()
+
+
+    # Create figure 4
+    fig4, axs4 = plt.subplots(2, 2, figsize=(13, 7))
+
+    # Load and plot data for figure 4
+    for i, label in enumerate(labels[1]):
+        f = np.zeros((len(ll), len(kk)))
+        for j, el in enumerate(ll):
+            for y, il in enumerate(kk):
+                f[j, y]=dict[(il, el)][1][i]
+
+            axs4[i//2, i%2].plot(kk, f[j, :], label=f'{el}', marker='o')
+        axs4[i//2, i%2].set_xlabel(r"$\mathcal{K}$", fontsize=12)
+        axs4[i//2, i%2].set_ylabel(r"Max error", fontsize=12)
+        axs4[i//2, i%2].set_title(f"{label}", fontsize=14, fontweight="bold")
+        axs4[i//2, i%2].tick_params(axis='both', which='major', labelsize=10)
+        axs4[i//2, i%2].set_xscale('log')
+
+    # Adjust layout
+    plt.tight_layout()
+    plt.legend(loc='lower right')
+    plt.savefig(f'{script_directory}/mm_max_vs_k_Y.png')
     plt.show()
     plt.close()
 
