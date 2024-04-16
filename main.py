@@ -1,41 +1,32 @@
 import numpy as np
 import utils
 
-gains =  [1, 4, 20, 100, 500, 10000]
 U = 369
-errs = {}
+gain = 100
 
-for ii in gains:
-    utils.set_K(ii)
-    
-    modelu = utils.create_observer(U)
-    modelu = utils.restore_model(modelu, f"obs_{U}")
-    # utils.test_observer(modelu, f"obs_{U}")
-    # errs[(ii)] = utils.compute_l2(modelu)
+n_observers = 8
+gains =  [1, 4, 20, 100, 500, 10000]
+lambdas = [10, 200, 1000]
+U_unk = np.linspace(U/2, U, num=n_observers).round(1)
+
+utils.set_K(gain)
+
+multi_obs, errs = utils.create_mm_observer(U_unk, 100)
 
 # utils.plot_l2_vs_k(errs)
-utils.plot_continuous(100, 369)
+utils.plot_l2_vs_u(errs)
 
-# h_unk = np.linspace(8, 160, num=10).round(1)
-# gains =  [1, 4, 20, 100, 500, 10000]
-# lambdas = [10, 200, 1000]
+utils.mm_ode(multi_obs, lambdas)
+utils.plot_weights(U_unk, lambdas)
 
 
-# for ii in gains:
-#     utils.set_K(ii)
-#     errs = {}
-#     multi_obs = {}  
+# utils.plot_continuous(100, 369)
 
-#     for hh in h_unk:
-#         modelu = utils.create_observer(hh)
-#         modelu = utils.restore_model(modelu, f"obs_{hh}")
-#         # utils.test_observer(modelu, f"obs_{hh}")
-#         multi_obs[hh] = modelu
-#         errs[(utils.K, hh)] = utils.compute_l2(modelu)
-   
-#     utils.mm_ode(multi_obs, lambdas)
-#     utils.plot_weights(lambdas)
 
+
+
+
+# utils.plot_mm_observer(U_unk, gains, lambdas)
 # utils.plot_l2_vs_k(errs)
 # utils.plot_mm_observer(h_unk, gains, lambdas)
 # errs_mm = utils.compute_mm_errors(h_unk, gains, lambdas)

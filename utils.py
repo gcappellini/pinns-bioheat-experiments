@@ -698,18 +698,75 @@ def plot_l2_vs_k(dict):
     plt.close()
 
 
+def plot_l2_vs_u(dict):
+    k = list(dict.keys())
+    kk = np.unique(np.array(k))
+
+    # Create figure 3
+    fig3, axs3 = plt.subplots(2, 2, figsize=(13, 7))
+
+    # Load and plot data for figure 3
+    for i, label in enumerate(labels[0]):
+        f = np.zeros((len(kk))) 
+        for j, el in enumerate(kk):
+                f[j]=dict[el][0][i]
+        axs3[i//2, i%2].plot(kk, f, label=f'{el}', marker='o')
+            # axs3[i//2, i%2].scatter(kk[:-1], f[j, :], s=20, marker='o', edgecolors='none')
+
+        axs3[i//2, i%2].set_xlabel(r"$U$", fontsize=12)
+        axs3[i//2, i%2].set_ylabel(r"$L^2$ error", fontsize=12)
+        axs3[i//2, i%2].set_title(f"{label}", fontsize=14, fontweight="bold")
+        axs3[i//2, i%2].tick_params(axis='both', which='major', labelsize=10)
+        axs3[i//2, i%2].set_xscale('log')
+
+    # Adjust layout
+    plt.tight_layout()
+    # plt.legend()
+    plt.savefig(f'{script_directory}/l2_vs_u_X.png')
+    
+    plt.show()
+    plt.close()
+
+
+    # Create figure 4
+    fig4, axs4 = plt.subplots(2, 2, figsize=(13, 7))
+
+    # Load and plot data for figure 4
+    for i, label in enumerate(labels[1]):
+        f = np.zeros((len(kk)))
+        for y, il in enumerate(kk):
+            f[y]=dict[(il)][1][i]
+
+        axs4[i//2, i%2].plot(kk, f, label=f'{el}', marker='o')
+        axs4[i//2, i%2].set_xlabel(r"$U$", fontsize=12)
+        axs4[i//2, i%2].set_ylabel(r"$L^2$ error", fontsize=12)
+        axs4[i//2, i%2].set_title(f"{label}", fontsize=14, fontweight="bold")
+        axs4[i//2, i%2].tick_params(axis='both', which='major', labelsize=10)
+        axs4[i//2, i%2].set_xscale('log')
+
+    # Adjust layout
+    plt.tight_layout()
+    # plt.legend(loc='lower right')
+    plt.savefig(f'{script_directory}/l2_vs_u_Y.png')
+    plt.show()
+    plt.close()
+
+
 def create_mm_observer(h_unk, gain):
     global K
     K = gain
     set_K(gain)
     multi_obs = {}  
+    errs = {}  
 
     for hh in h_unk:
         modelu = create_observer(hh)
         modelu = restore_model(modelu, f"obs_{hh}")
+        test_observer(modelu, f"obs_{hh}")
         multi_obs[hh] = modelu
+        errs[(hh)] = compute_l2(modelu)
 
-    return multi_obs
+    return multi_obs, errs
 
 
 def mm_predict(m_obs, gain, da, la, xob):
