@@ -190,10 +190,10 @@ def train_model(model, name):
     fig = plt.figure(figsize=(6, 5))
     iters = 500 * np.arange(len(loss_res))
     with sns.axes_style("darkgrid"):
-        plt.plot(iters, loss_res, label='$\mathcal{L}_{r}$')
-        plt.plot(iters, loss_bc0, label='$\mathcal{L}_{u_0}$')
-        plt.plot(iters, loss_bc1, label='$\mathcal{L}_{u_t}$')
-        plt.plot(iters, loss_ic, label='$\mathcal{L}_{u_t}$')
+        plt.plot(iters, loss_res, label='$\mathcal{L}_{res}$')
+        plt.plot(iters, loss_bc0, label='$\mathcal{L}_{bc_0}$')
+        plt.plot(iters, loss_bc1, label='$\mathcal{L}_{bc_1}$')
+        plt.plot(iters, loss_ic, label='$\mathcal{L}_{ic}$')
         # plt.plot(iters, l2_error, label='$\mathcal{L}^2 error$')
         plt.yscale('log')
         plt.xlabel('iterations')
@@ -535,33 +535,26 @@ def compute_mm_max(multi_obs, gain, la):
 
 
 def plot_l2_vs_k(dict):
-    k = []
-    h = []
-    for key in dict:
-        k.append(key[0])
-        h.append(key[1])
-        
+    k = dict.keys()
     kk = np.unique(np.array(k))
-    hh = np.unique(np.array(h))
 
     # Create figure 3
     fig3, axs3 = plt.subplots(2, 2, figsize=(13, 7))
 
     # Load and plot data for figure 3
     for i, label in enumerate(labels[0]):
-        f = np.zeros((len(hh), len(kk))) 
-        for j, el in enumerate(hh):
-            for y, il in enumerate(kk):
-                f[j, y]=dict[(il, el)][0][i]
+        f = np.zeros((len(kk))) 
+        for j, el in enumerate(kk):
+                f[j]=dict[el][0][i]
 
-            axs3[i//2, i%2].plot(kk, f[j, :], label=f'{el}', marker='o')
+        axs3[i//2, i%2].plot(kk, f[j, :], label=f'{el}', marker='o')
             # axs3[i//2, i%2].scatter(kk[:-1], f[j, :], s=20, marker='o', edgecolors='none')
 
-        axs3[i//2, i%2].set_xlabel(r"$\mathcal{K}$", fontsize=12)
-        axs3[i//2, i%2].set_ylabel(r"$L^2$ error", fontsize=12)
-        axs3[i//2, i%2].set_title(f"{label}", fontsize=14, fontweight="bold")
-        axs3[i//2, i%2].tick_params(axis='both', which='major', labelsize=10)
-        axs3[i//2, i%2].set_xscale('log')
+    axs3[i//2, i%2].set_xlabel(r"$\mathcal{K}$", fontsize=12)
+    axs3[i//2, i%2].set_ylabel(r"$L^2$ error", fontsize=12)
+    axs3[i//2, i%2].set_title(f"{label}", fontsize=14, fontweight="bold")
+    axs3[i//2, i%2].tick_params(axis='both', which='major', labelsize=10)
+    axs3[i//2, i%2].set_xscale('log')
 
     # Adjust layout
     plt.tight_layout()
@@ -577,17 +570,16 @@ def plot_l2_vs_k(dict):
 
     # Load and plot data for figure 4
     for i, label in enumerate(labels[1]):
-        f = np.zeros((len(hh), len(kk)))
-        for j, el in enumerate(hh):
-            for y, il in enumerate(kk):
-                f[j, y]=dict[(il, el)][1][i]
+        f = np.zeros((len(kk)))
+        for y, il in enumerate(kk):
+            f[y]=dict[(il)][1][i]
 
-            axs4[i//2, i%2].plot(kk, f[j, :], label=f'{el}', marker='o')
-        axs4[i//2, i%2].set_xlabel(r"$\mathcal{K}$", fontsize=12)
-        axs4[i//2, i%2].set_ylabel(r"$L^2$ error", fontsize=12)
-        axs4[i//2, i%2].set_title(f"{label}", fontsize=14, fontweight="bold")
-        axs4[i//2, i%2].tick_params(axis='both', which='major', labelsize=10)
-        axs4[i//2, i%2].set_xscale('log')
+    axs4[i//2, i%2].plot(kk, f[y, :], label=f'{el}', marker='o')
+    axs4[i//2, i%2].set_xlabel(r"$\mathcal{K}$", fontsize=12)
+    axs4[i//2, i%2].set_ylabel(r"$L^2$ error", fontsize=12)
+    axs4[i//2, i%2].set_title(f"{label}", fontsize=14, fontweight="bold")
+    axs4[i//2, i%2].tick_params(axis='both', which='major', labelsize=10)
+    axs4[i//2, i%2].set_xscale('log')
 
     # Adjust layout
     plt.tight_layout()
