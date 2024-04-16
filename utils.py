@@ -535,7 +535,7 @@ def compute_mm_max(multi_obs, gain, la):
 
 
 def plot_l2_vs_k(dict):
-    k = dict.keys()
+    k = list(dict.keys())
     kk = np.unique(np.array(k))
 
     # Create figure 3
@@ -547,7 +547,7 @@ def plot_l2_vs_k(dict):
         for j, el in enumerate(kk):
                 f[j]=dict[el][0][i]
 
-        axs3[i//2, i%2].plot(kk, f[j, :], label=f'{el}', marker='o')
+        axs3[i//2, i%2].plot(kk, f[j], label=f'{el}', marker='o')
             # axs3[i//2, i%2].scatter(kk[:-1], f[j, :], s=20, marker='o', edgecolors='none')
 
     axs3[i//2, i%2].set_xlabel(r"$\mathcal{K}$", fontsize=12)
@@ -574,7 +574,7 @@ def plot_l2_vs_k(dict):
         for y, il in enumerate(kk):
             f[y]=dict[(il)][1][i]
 
-    axs4[i//2, i%2].plot(kk, f[y, :], label=f'{el}', marker='o')
+    axs4[i//2, i%2].plot(kk, f[y], label=f'{el}', marker='o')
     axs4[i//2, i%2].set_xlabel(r"$\mathcal{K}$", fontsize=12)
     axs4[i//2, i%2].set_ylabel(r"$L^2$ error", fontsize=12)
     axs4[i//2, i%2].set_title(f"{label}", fontsize=14, fontweight="bold")

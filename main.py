@@ -9,7 +9,7 @@ for ii in gains:
     errs = {}
     modelu = utils.create_observer(U)
     modelu = utils.restore_model(modelu, f"obs_{U}")
-    utils.test_observer(modelu, f"obs_{U}")
+    # utils.test_observer(modelu, f"obs_{U}")
     errs[(ii)] = utils.compute_l2(modelu)
 
 utils.plot_l2_vs_k(errs)
