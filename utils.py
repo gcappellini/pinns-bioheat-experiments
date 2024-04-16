@@ -239,7 +239,7 @@ def test_observer(mm, name):
         axs1[j//2, j%2].set_title(f"{label}", fontweight="bold")
         axs1[j//2, j%2].set_xlabel('Z', fontsize=12)
         axs1[j//2, j%2].set_ylabel(r'$\tau$', fontsize=12)
-        plt.colorbar(axs1[j//2, j%2].scatter([], [], c=[], cmap='inferno'), ax=axs1[j//2, j%2], label=r'$|\theta_{pred} - \theta_{true}|$')
+        plt.colorbar(axs1[j//2, j%2].scatter([], [], c=[], cmap='inferno'), ax=axs1[j//2, j%2], label=r'$|\hat{\theta} - \theta|$')
 
 
     # Adjust layout and save figure 1
@@ -266,7 +266,7 @@ def test_observer(mm, name):
         axs2[j//2, j%2].set_title(f"{label}", fontweight="bold")
         axs2[j//2, j%2].set_xlabel('Z', fontsize=12)
         axs2[j//2, j%2].set_ylabel(r'$\tau$', fontsize=12)
-        plt.colorbar(axs2[j//2, j%2].scatter([], [], c=[], cmap='inferno'), ax=axs2[j//2, j%2], label=r'$|\theta_{pred} - \theta_{true}|$')
+        plt.colorbar(axs2[j//2, j%2].scatter([], [], c=[], cmap='inferno'), ax=axs2[j//2, j%2], label=r'$|\hat{\theta} - \theta|$')
 
     # Adjust layout and save figure 2
     plt.tight_layout()
@@ -350,6 +350,116 @@ def test_observer(mm, name):
     plt.tight_layout()
     plt.savefig(f'{obs_dir}/l2_Y.png')
     plt.show()
+    plt.close()
+
+
+def plot_continuous(gain, U):
+
+    set_K(gain)
+    modelu = create_observer(U)
+    modelu = restore_model(modelu, f"obs_{U}")
+
+    # Create figure 1
+    fig1, axs1 = plt.subplots(2, 2, figsize=(13, 7))
+
+    # Load and plot data for figure 1
+    for j, label in enumerate(labels[0]):
+        XO = obs_data(label)
+        instants = np.unique(XO[:, 4])
+        # instants = XO[:, 4:5]
+        XO_all = XO[XO[:, 0]==np.max(XO[:, 0])]
+
+        y1 = XO_all[:, 1:2].reshape(len(instants),)
+        f1 = interp1d(instants, y1, kind='previous')
+
+        y2 = XO_all[:, 2:3].reshape(len(instants),)
+        f2 = interp1d(instants, y2, kind='previous')
+
+        y3 = XO_all[:, 3:4].reshape(len(instants),)
+        f3 = interp1d(instants, y3, kind='previous')
+
+        x = np.linspace(0, 1, num=50)
+        t = np.linspace(0, 1, num=50)
+        X, T = np.meshgrid(x, t)
+
+        tt0 = np.zeros_like(np.ravel(T))
+        tm = 0.9957446808510638
+        for j, tau in enumerate(np.ravel(T)):
+            if tau <= tm:
+                tt0[j] = tau
+            else:
+                tt0[j] = tm
+        XOt = np.vstack((np.ravel(X), f1(tt0), f2(tt0), f3(tt0), np.ravel(T))).T
+        ttheta_pred = modelu.predict(XOt)
+        la = len(x)
+        le = len(t)
+
+        theta_pred = ttheta_pred.reshape((le, la))
+        print(theta_pred.shape)
+
+        # Plot theta vs x and t using imshow
+        axs1[j//2, j%2].imshow(theta_pred, extent=[x.min(), x.max(), t.min(), t.max()], aspect='auto', cmap='inferno', origin='lower')
+        axs1[j//2, j%2].set_title(f"{label}", fontweight="bold")
+        axs1[j//2, j%2].set_xlabel('Z', fontsize=12)
+        axs1[j//2, j%2].set_ylabel(r'$\tau$', fontsize=12)
+        plt.colorbar(label=r'$\hat{\theta}$')
+
+
+    # Adjust layout and save figure 1
+    plt.tight_layout()
+    plt.savefig(f'{output_dir}/continuous_X.png')
+    plt.close()
+
+    # Create figure 2
+    fig2, axs2 = plt.subplots(2, 2, figsize=(13, 7))
+
+    # Load and plot data for figure 2
+    for j, label in enumerate(labels[1]):
+        XO = obs_data(label)
+        instants = np.unique(XO[:, 4])
+        # instants = XO[:, 4:5]
+        XO_all = XO[XO[:, 0]==np.max(XO[:, 0])]
+
+        y1 = XO_all[:, 1:2].reshape(len(instants),)
+        f1 = interp1d(instants, y1, kind='previous')
+
+        y2 = XO_all[:, 2:3].reshape(len(instants),)
+        f2 = interp1d(instants, y2, kind='previous')
+
+        y3 = XO_all[:, 3:4].reshape(len(instants),)
+        f3 = interp1d(instants, y3, kind='previous')
+
+        tm = 0.9957446808510638
+        if tau > tm:
+            tau = tm
+        x = np.linspace(0, 1, num=100)
+        t = np.linspace(0, 1, num=100)
+        X, T = np.meshgrid(x, t)
+
+        tt0 = np.zeros_like(np.ravel(T))
+        tm = 0.9957446808510638
+        for j, tau in enumerate(np.ravel(T)):
+            if tau <= tm:
+                tt0[j] = tau
+            else:
+                tt0[j] = tm
+        XOt = np.vstack((np.ravel(X), f1(tt0), f2(tt0), f3(tt0), np.ravel(T))).T
+        ttheta_pred = modelu.predict(XOt)
+
+        la = len(x)
+        le = len(t)
+
+        theta_pred = ttheta_pred.reshape((le, la))
+
+        axs2[j//2, j%2].scatter(x, t, c=theta_pred, cmap='inferno')
+        axs2[j//2, j%2].set_title(f"{label}", fontweight="bold")
+        axs2[j//2, j%2].set_xlabel('Z', fontsize=12)
+        axs2[j//2, j%2].set_ylabel(r'$\tau$', fontsize=12)
+        plt.colorbar(label=r'$\hat{\theta}$')
+
+    # Adjust layout and save figure 2
+    plt.tight_layout()
+    plt.savefig(f'{output_dir}/continuous_Y.png')
     plt.close()
 
 
@@ -546,19 +656,18 @@ def plot_l2_vs_k(dict):
         f = np.zeros((len(kk))) 
         for j, el in enumerate(kk):
                 f[j]=dict[el][0][i]
-
-        axs3[i//2, i%2].plot(kk, f[j], label=f'{el}', marker='o')
+        axs3[i//2, i%2].plot(kk, f, label=f'{el}', marker='o')
             # axs3[i//2, i%2].scatter(kk[:-1], f[j, :], s=20, marker='o', edgecolors='none')
 
-    axs3[i//2, i%2].set_xlabel(r"$\mathcal{K}$", fontsize=12)
-    axs3[i//2, i%2].set_ylabel(r"$L^2$ error", fontsize=12)
-    axs3[i//2, i%2].set_title(f"{label}", fontsize=14, fontweight="bold")
-    axs3[i//2, i%2].tick_params(axis='both', which='major', labelsize=10)
-    axs3[i//2, i%2].set_xscale('log')
+        axs3[i//2, i%2].set_xlabel(r"$\mathcal{K}$", fontsize=12)
+        axs3[i//2, i%2].set_ylabel(r"$L^2$ error", fontsize=12)
+        axs3[i//2, i%2].set_title(f"{label}", fontsize=14, fontweight="bold")
+        axs3[i//2, i%2].tick_params(axis='both', which='major', labelsize=10)
+        axs3[i//2, i%2].set_xscale('log')
 
     # Adjust layout
     plt.tight_layout()
-    plt.legend()
+    # plt.legend()
     plt.savefig(f'{script_directory}/l2_vs_k_X.png')
     
     plt.show()
@@ -574,16 +683,16 @@ def plot_l2_vs_k(dict):
         for y, il in enumerate(kk):
             f[y]=dict[(il)][1][i]
 
-    axs4[i//2, i%2].plot(kk, f[y], label=f'{el}', marker='o')
-    axs4[i//2, i%2].set_xlabel(r"$\mathcal{K}$", fontsize=12)
-    axs4[i//2, i%2].set_ylabel(r"$L^2$ error", fontsize=12)
-    axs4[i//2, i%2].set_title(f"{label}", fontsize=14, fontweight="bold")
-    axs4[i//2, i%2].tick_params(axis='both', which='major', labelsize=10)
-    axs4[i//2, i%2].set_xscale('log')
+        axs4[i//2, i%2].plot(kk, f, label=f'{el}', marker='o')
+        axs4[i//2, i%2].set_xlabel(r"$\mathcal{K}$", fontsize=12)
+        axs4[i//2, i%2].set_ylabel(r"$L^2$ error", fontsize=12)
+        axs4[i//2, i%2].set_title(f"{label}", fontsize=14, fontweight="bold")
+        axs4[i//2, i%2].tick_params(axis='both', which='major', labelsize=10)
+        axs4[i//2, i%2].set_xscale('log')
 
     # Adjust layout
     plt.tight_layout()
-    plt.legend(loc='lower right')
+    # plt.legend(loc='lower right')
     plt.savefig(f'{script_directory}/l2_vs_k_Y.png')
     plt.show()
     plt.close()

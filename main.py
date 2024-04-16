@@ -3,16 +3,18 @@ import utils
 
 gains =  [1, 4, 20, 100, 500, 10000]
 U = 369
+errs = {}
 
 for ii in gains:
     utils.set_K(ii)
-    errs = {}
+    
     modelu = utils.create_observer(U)
     modelu = utils.restore_model(modelu, f"obs_{U}")
     # utils.test_observer(modelu, f"obs_{U}")
-    errs[(ii)] = utils.compute_l2(modelu)
+    # errs[(ii)] = utils.compute_l2(modelu)
 
-utils.plot_l2_vs_k(errs)
+# utils.plot_l2_vs_k(errs)
+utils.plot_continuous(100, 369)
 
 # h_unk = np.linspace(8, 160, num=10).round(1)
 # gains =  [1, 4, 20, 100, 500, 10000]
