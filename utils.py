@@ -390,11 +390,11 @@ def plot_continuous(gain, U):
             else:
                 tt0[j] = tm
         XOt = np.vstack((np.ravel(X), f1(tt0), f2(tt0), f3(tt0), np.ravel(T))).T
-        ttheta_pred = modelu.predict(XOt)
-        la = len(x)
-        le = len(t)
+        theta_pred = modelu.predict(XOt)
+        # la = len(x)
+        # le = len(t)
 
-        theta_pred = ttheta_pred.reshape((le, la))
+        theta_pred.reshape(-1, 1)
         print(theta_pred.shape)
 
         # Plot theta vs x and t using imshow
