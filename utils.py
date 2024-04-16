@@ -762,7 +762,7 @@ def create_mm_observer(h_unk, gain):
     for hh in h_unk:
         modelu = create_observer(hh)
         modelu = restore_model(modelu, f"obs_{hh}")
-        test_observer(modelu, f"obs_{hh}")
+        # test_observer(modelu, f"obs_{hh}")
         multi_obs[hh] = modelu
         errs[(hh)] = compute_l2(modelu)
 
@@ -804,7 +804,7 @@ def plot_mm_observer(hh_unk, gg, lll):
 
             # Create figure 1
             fig1, axs1 = plt.subplots(2, 2, figsize=(13, 7))
-            m_obs = create_mm_observer(hh_unk, K)
+            m_obs, _ = create_mm_observer(hh_unk, K)
 
             # Load and plot data for figure 1
             for j, label in enumerate(labels[0]):
