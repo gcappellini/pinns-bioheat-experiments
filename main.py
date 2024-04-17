@@ -17,7 +17,7 @@ utils.set_K(gain)
 multi_obs, errs = utils.create_mm_observer(U_unk, gain)
 
     # utils.plot_l2_vs_k(errs)
-# utils.plot_l2_vs_u(errs)
+utils.plot_l2_vs_u(errs)
 
 utils.mm_ode(multi_obs, lambdas)
 utils.plot_weights(lambdas)
