@@ -133,7 +133,7 @@ def create_observer(h):
         y2 = x[:, 2:3]
         y3 = x[:, 3:4]
         beta = h * (y3 - y2) + K * (y2 -y1)
-        a2 = 1.0
+        a2 = 5.0
 
         e = y1 + ((beta - ((2/L_0)+K)*a2)/((1/L_0)+K))*z + a2*z**2
         return e
