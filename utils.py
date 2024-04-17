@@ -173,7 +173,9 @@ def create_observer(h):
 
 
 def train_model(model, name):
-    losshistory, train_state = model.train(iterations=epochs, model_save_path=f"{model_dir}/model_{name}")
+    # model.train(iterations=epochs)
+    # model.compile("L-BFGS")
+    losshistory, train_state = model.train(iterations = epochs, model_save_path=f"{model_dir}/model_{name}")
     dde.saveplot(losshistory, train_state, issave=True, isplot=True, loss_fname=f"loss_{name}.dat", train_fname=f"train_{name}.dat", test_fname=f"test_{name}.dat", output_dir=f"{model_dir}")
 
     # Convert the list of arrays to a 2D NumPy array
