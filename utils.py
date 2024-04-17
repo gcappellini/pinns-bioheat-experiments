@@ -159,7 +159,7 @@ def create_observer(h):
         num_test=10000,
     )
 
-    layer_size = [5] + [150] * 3 + [1]
+    layer_size = [5] + [50] * 3 + [1]
     activation = "tanh"
     initializer = "Glorot uniform"
     net = dde.nn.FNN(layer_size, activation, initializer)
@@ -764,7 +764,7 @@ def create_mm_observer(h_unk, gain):
     for hh in h_unk:
         modelu = create_observer(hh)
         modelu = restore_model(modelu, f"obs_{hh}")
-        # test_observer(modelu, f"obs_{hh}")
+        test_observer(modelu, f"obs_{hh}")
         multi_obs[hh] = modelu
         errs[(hh)] = compute_l2(modelu)
 
