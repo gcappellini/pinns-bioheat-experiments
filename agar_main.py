@@ -1,5 +1,5 @@
 import numpy as np
-import utils
+import agar_utils as utils
 
 U = 369.0
 
