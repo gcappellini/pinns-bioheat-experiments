@@ -202,9 +202,5 @@ measurements/
 identification/
 multiple_observer/
 multiple_observer_*/
-l2_*
-prova.png
-prova_*
-50neurons*
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,python
