@@ -47,7 +47,7 @@ def Q_sq(a):
 
 # integrale di eq.9 mi da heat flow through the tissue over the same length
 
-# eating of the blood at a point x is given by
+# heating of the blood at a point x is given by
 
 # queste tre equazioni devono essere uguali allo steady state. Devo aggiungere anche heat removal del water bolus
 
