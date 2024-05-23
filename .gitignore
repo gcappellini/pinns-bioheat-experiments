@@ -193,12 +193,8 @@ pyrightconfig.json
 .ionide
 
 measurements/
-!measurements/240124.xlsx
-!measurements/240125.xlsx
-!measurements/240125b.xlsx
-!measurements/240130.xlsx
-!measurements/240202.xlsx
-!measurements/20240403.txt
+!measurements/original_files/*
+
 identification/
 multiple_observer/
 multiple_observer_*/
