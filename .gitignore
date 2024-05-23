@@ -192,8 +192,7 @@ pyrightconfig.json
 .history
 .ionide
 
-measurements/
-!measurements/original_files/*
+
 
 identification/
 multiple_observer/

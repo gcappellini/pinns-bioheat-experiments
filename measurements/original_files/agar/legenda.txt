@@ -1,0 +1,12 @@
+0 - 6: phantom1 (bottom to top)
+70 - 76: bottom bolus 2
+14 - 20: phantom2 (bottom to top)
+28 - 34: top bolus 1
+42 - 48: bottom bolus 1 (47 not working)
+56 - 62: top bolus 2
+
+240124: has the first phantom at 32 C, with the second phantom having a gradient from 38 to ambient
+240125:
+240125b:
+240130: What changes in this file is the bottom bolus 1 which is changed from 32 to 38 Cc: upper bolus was removed
+240202:
