@@ -16,7 +16,7 @@ alpha = k/(rho*cp)
 labels = [["AX1", "AX2", "BX1", "BX2"], ["AY1", "AY2", "BY1", "BY2"]]
 
 K = None
-output_dir = None
+output_dir = None 
 model_dir = None
 figures_dir = None
 weights_dir = None
