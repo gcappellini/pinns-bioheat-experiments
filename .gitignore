@@ -194,13 +194,6 @@ pyrightconfig.json
 
 
 
-identification/
-multiple_observer/
-multiple_observer_*/
-mathematica/
-vessel/
-Dockerfiles/
-50*
-l2*
+old/
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,python
