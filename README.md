@@ -1,6 +1,8 @@
 # PINNs BIOHEAT EXPERIMENTS
 In this project we are analyzing the experiments conducted at the AMC Radiotherapy Department for Hyperthermia Treatment Planning (HTP). 
 
+0. **Preliminary tests**: (integrating dolphinx?) test and refine nbho
+
 The experiments can be subdivided in three categories:
 
 1. **Agar**: Experiments conducted in the framework of another project of a thesist. The data can be used as a preliminary test of our NBHO. 
@@ -15,3 +17,7 @@ The experiments can be subdivided in three categories:
     Implementation:
     Theory: verify the power, compute the velocity, MEASURE THE HEIGHT of the bucket
 
+
+
+
+The NBHO is the same for every experiment, provided that Q and W (resp., power and perfusion) can be set =0 or >0 when creating the observer
