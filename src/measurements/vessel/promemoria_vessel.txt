@@ -1,0 +1,2 @@
+20240522_1.txt è il file
+di ogni set di misurazioni, prendi l'ultima (termocoppie si devono riportare a temperatura ambiente)
