@@ -17,8 +17,6 @@ a = utils.create_nbho(config)
 
 
 
-
-
 # Plots and metrics
 
 
