@@ -26,7 +26,10 @@ project_dir = os.path.dirname(src_dir)
 tests_dir = os.path.join(project_dir, "tests")
 os.makedirs(tests_dir, exist_ok=True)
 
-L_0 = 0.15
+L_0, tauf = 0.15, 3600
+T_max, T_min = 35, 22
+dT = T_max - T_min
+cb = 3825
 
 
 def set_name(prj, run):
@@ -64,6 +67,7 @@ def create_default_config():
     default_config = {
         "activation": "tanh",
         "convection_coefficient": 350,
+        "d": 0.03,
         "initial_weights_regularizer": True,
         "initialization": "Glorot normal",
         "iterations": 30000,
@@ -76,7 +80,8 @@ def create_default_config():
         "perfusion": False,
         "resampling": True,
         "resampler_period": 100,
-        "thermal_conductivity": 0.563
+        "rhoc": 4181000,
+        "thermal_cond": 0.563
     }
     return default_config
 
@@ -192,7 +197,7 @@ def bc0_obs(x, theta, X):
 
 
 def create_nbho(config):
-    alpha, h, K = config["thermal_conductivity"], config["convection_coefficient"], config["output_injection_gain"] 
+    k_th, rhoc, d, h, K = config["thermal_cond"], config["rhoc"],config["d"], config["convection_coefficient"], config["output_injection_gain"] 
     s, w = config["power"], config["perfusion"]
     activation = config["activation"]
     initial_weights_regularizer = config["initial_weights_regularizer"]
@@ -201,6 +206,12 @@ def create_nbho(config):
     num_dense_layers = config["num_dense_layers"]
     num_dense_nodes = config["num_dense_nodes"]
 
+    D = d/L_0
+    alpha = k_th/rhoc
+
+    C1, C2 = tauf/L_0**2, dT*tauf/rhoc
+    C3 = C2*dT*cb
+
     if w:
         def pde(x, y):
             dy_t = dde.grad.jacobian(y, x, i=0, j=4)
@@ -208,7 +219,7 @@ def create_nbho(config):
             # Backend tensorflow.compat.v1 or tensorflow
             return (
                 dy_t
-                - alpha * dy_xx - s*torch.exp(-x[:, 0:1]) + w*y
+                - alpha * C1 * dy_xx - C2 * s*torch.exp(-x[:, 0:1]/D) + C3 * w*y
             )
     
     else:
@@ -218,7 +229,7 @@ def create_nbho(config):
             # Backend tensorflow.compat.v1 or tensorflow
             return (
                 dy_t
-                - alpha * dy_xx - s*torch.exp(-x[:, 0:1]) + w*y
+                - alpha * C1 * dy_xx - C2 * s*torch.exp(-x[:, 0:1]/D)
             )
 
     def bc1_obs(x, theta, X):
@@ -273,4 +284,74 @@ def create_nbho(config):
     return model
 
 
+def train_model(name):
+    conf = read_config(name)
+    mm = create_nbho(name)
 
+    LBFGS = conf["LBFGS"]
+    epochs = conf["iterations"]
+    ini_w = conf["initial_weights_regularizer"]
+    resampler = conf["resampling"]
+    resampler_period = conf["resampler_period"]
+
+    if LBFGS:
+        optim, iters = "lbfgs", "*"
+        # mm.compile("L-BFGS")
+    else:
+        optim, iters = "adam", epochs
+
+    # If it already exists a model with the exact config, restore it
+    trained_models = glob.glob(f"{model_dir}/{optim}-{iters}.pt")
+    if trained_models:
+        trained_models.sort()
+        trained_model = trained_models[0]
+        if LBFGS:
+            mm.compile("L-BFGS")
+        mm.restore(trained_model, verbose=0)
+    else:
+        if resampler:
+            pde_residual_resampler = dde.callbacks.PDEPointResampler(period=resampler_period)
+            callbacks = [pde_residual_resampler]
+        else:
+            callbacks = []
+
+
+        if LBFGS:
+            matching_files = glob.glob(f"{model_dir}/adam-{epochs}.pt")
+            if matching_files:
+                matching_files.sort()
+                selected_file = matching_files[0]
+                mm.restore(selected_file, verbose=0)
+            else:
+                mm.train(
+                callbacks=callbacks, 
+                iterations = epochs,
+                model_save_path=f"{model_dir}/adam", 
+                display_every=conf.get("display_every", 1000)
+                )
+            if ini_w:
+                initial_losses = get_initial_loss(mm)
+                loss_weights = 5 / initial_losses
+                mm.compile("L-BFGS", loss_weights=loss_weights)
+            else:
+                mm.compile("L-BFGS")
+
+            losshistory, train_state = mm.train(
+                callbacks=callbacks, 
+                model_save_path=f"{model_dir}/lbfgs", 
+                display_every=conf.get("display_every", 1000)
+            )
+            plot_loss_components(losshistory)
+        else:
+            losshistory, train_state = mm.train(
+                iterations=epochs, 
+                callbacks=callbacks, 
+                model_save_path=f"{model_dir}/adam", 
+                display_every=conf.get("display_every", 1000)
+            )
+            plot_loss_components(losshistory)
+
+    # Compute metrics
+    # metrics = plot_1d(mm, name)
+
+    return mm#, metrics
