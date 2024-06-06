@@ -26,11 +26,6 @@ project_dir = os.path.dirname(src_dir)
 tests_dir = os.path.join(project_dir, "tests")
 os.makedirs(tests_dir, exist_ok=True)
 
-L_0, tauf = 0.15, 3600
-T_max, T_min = 35, 22
-dT = T_max - T_min
-cb = 3825
-
 
 def set_name(prj, run):
     global name, run_dir, model_dir, figures_dir
@@ -198,7 +193,7 @@ def bc0_obs(x, theta, X):
 
 def create_nbho(config):
     k_th, rhoc, d, h, K = config["thermal_cond"], config["rhoc"],config["d"], config["convection_coefficient"], config["output_injection_gain"] 
-    s, w = config["power"], config["perfusion"]
+    s, W = config["power"], config["perfusion"]
     activation = config["activation"]
     initial_weights_regularizer = config["initial_weights_regularizer"]
     initialization = config["initialization"]
@@ -206,20 +201,25 @@ def create_nbho(config):
     num_dense_layers = config["num_dense_layers"]
     num_dense_nodes = config["num_dense_nodes"]
 
+    L_0, tauf = 0.15, 3600
+    T_max, T_min = 35, 22
+    dT = T_max - T_min
+    cb = 3825
+
     D = d/L_0
     alpha = k_th/rhoc
 
     C1, C2 = tauf/L_0**2, dT*tauf/rhoc
     C3 = C2*dT*cb
 
-    if w:
+    if W:
         def pde(x, y):
             dy_t = dde.grad.jacobian(y, x, i=0, j=4)
             dy_xx = dde.grad.hessian(y, x, i=0, j=0)
             # Backend tensorflow.compat.v1 or tensorflow
             return (
                 dy_t
-                - alpha * C1 * dy_xx - C2 * s*torch.exp(-x[:, 0:1]/D) + C3 * w*y
+                - alpha * C1 * dy_xx - C2 * s*torch.exp(-x[:, 0:1]/D) + C3 * W *y
             )
     
     else:
