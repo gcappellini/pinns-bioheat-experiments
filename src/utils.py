@@ -355,3 +355,16 @@ def train_model(name):
     # metrics = plot_1d(mm, name)
 
     return mm#, metrics
+
+
+def gen_testdata(n):
+    data = np.loadtxt(f"{src_dir}/simulations/file{n}.txt")
+    x, t, exact = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:].T
+    X = np.vstack((x, t)).T
+    y = exact.flatten()[:, None]
+    return X, y
+
+def gen_obsdata(n):
+    g = np.hstack((gen_testdata(n)))
+    obs_data = g[(g[:, 0]== 0.0) | (g[:, 0]== 1.0)]
+    return obs_data
