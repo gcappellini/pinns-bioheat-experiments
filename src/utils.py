@@ -12,6 +12,8 @@ from tqdm import tqdm
 from torch import autograd
 from torch.utils.tensorboard import SummaryWriter
 from kan import KAN, LBFGS
+from scipy.interpolate import interp1d
+from mpl_toolkits.mplot3d import Axes3D
 
 # device = torch.device("cpu")
 device = torch.device("cuda")
@@ -85,6 +87,8 @@ def write_config(config, run):
     filename = f"{model_dir}/config_{run}.json"
     with open(filename, 'w') as file:
         json.dump(config, file, indent=4)
+
+    return config
 
 
 def get_initial_loss(model):
@@ -192,14 +196,33 @@ def bc0_obs(x, theta, X):
 
 
 def create_nbho(config):
-    k_th, rhoc, d, h, K = config["thermal_cond"], config["rhoc"],config["d"], config["convection_coefficient"], config["output_injection_gain"] 
-    s, W = config["power"], config["perfusion"]
-    activation = config["activation"]
-    initial_weights_regularizer = config["initial_weights_regularizer"]
-    initialization = config["initialization"]
-    learning_rate = config["learning_rate"]
-    num_dense_layers = config["num_dense_layers"]
-    num_dense_nodes = config["num_dense_nodes"]
+    # k_th = config["thermal_cond"]
+    # rhoc = config["rhoc"]
+    # d = config["d"] 
+    # h = config["convection_coefficient"]
+    # K = config["output_injection_gain"] 
+    # s = config["power"]
+    # W = config["perfusion"]
+    # activation = config["activation"]
+    # initial_weights_regularizer = config["initial_weights_regularizer"]
+    # initialization = config["initialization"]
+    # learning_rate = config["learning_rate"]
+    # num_dense_layers = config["num_dense_layers"]
+    # num_dense_nodes = config["num_dense_nodes"]
+
+    k_th = 0.563
+    rhoc = 4181000
+    d = 0.03
+    h = 350
+    K = 5
+    s = 0
+    W = False
+    activation = "tanh"
+    initial_weights_regularizer = True
+    initialization = "Glorot normal"
+    learning_rate = 0.001
+    num_dense_layers = 2
+    num_dense_nodes = 50
 
     L_0, tauf = 0.15, 3600
     T_max, T_min = 35, 22
@@ -351,10 +374,7 @@ def train_model(name):
             )
             plot_loss_components(losshistory)
 
-    # Compute metrics
-    # metrics = plot_1d(mm, name)
-
-    return mm#, metrics
+    return mm
 
 
 def gen_testdata(n):
@@ -366,5 +386,77 @@ def gen_testdata(n):
 
 def gen_obsdata(n):
     g = np.hstack((gen_testdata(n)))
-    obs_data = g[(g[:, 0]== 0.0) | (g[:, 0]== 1.0)]
-    return obs_data
+    instants = np.unique(g[:, 1])
+
+    rows_0 = g[g[:, 0] == 0.0]
+    rows_1 = g[g[:, 0] == 1.0]
+
+    y1 = rows_0[:, -1].reshape(len(instants),)
+    f1 = interp1d(instants, y1, kind='previous')
+
+    y2 = rows_1[:, -1].reshape(len(instants),)
+    f2 = interp1d(instants, y2, kind='previous')
+
+    def f3(ii):
+        return ii + (1 - ii)/(1 + np.exp(-20*(ii - 0.25)))
+    
+    # tm = 0.9957446808510638
+    # if tau > tm:
+    #     tau = tm
+
+    Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
+    return Xobs
+
+
+def plot(model, n_test):
+    e, theta_true = gen_testdata(n_test)
+    g = gen_obsdata(n_test)
+
+    theta_pred = model.predict(g)
+
+    la = len(np.unique(e[:, 0]))
+    le = len(np.unique(e[:, 1]))
+
+    # Predictions
+    fig = plt.figure(3, figsize=(9, 4))
+
+    col_titles = ['Measured', 'Observed', 'Error']
+    surfaces = [
+        [theta_true.reshape(le, la), theta_pred.reshape(le, la),
+            np.abs(theta_true - theta_pred).reshape(le, la)]
+    ]
+
+    # Create a grid of subplots
+    grid = plt.GridSpec(1, 3)
+
+    # Iterate over columns to add subplots
+    for col in range(3):
+        ax = fig.add_subplot(grid[0, col], projection='3d')
+        configure_subplot(ax, e, surfaces[0][col])
+
+        # Set column titles
+        ax.set_title(col_titles[col], fontsize=8, y=.96, weight='semibold')
+
+    # Adjust spacing between subplots
+    plt.subplots_adjust(wspace=0.15)
+
+    plt.tight_layout()
+    plt.savefig(f"{figures_dir}/comparison.png")
+    plt.show()
+
+
+def configure_subplot(ax, XS, surface):
+    la = len(np.unique(XS[:, 0:1]))
+    le = len(np.unique(XS[:, 1:]))
+    X = XS[:, 0].reshape(le, la)
+    T = XS[:, 1].reshape(le, la)
+
+    ax.plot_surface(X, T, surface, cmap='inferno', alpha=.8)
+    ax.tick_params(axis='both', labelsize=7, pad=2)
+    ax.dist = 10
+    ax.view_init(20, -120)
+
+    # Set axis labels
+    ax.set_xlabel('Depth', fontsize=7, labelpad=-1)
+    ax.set_ylabel('Time', fontsize=7, labelpad=-1)
+    ax.set_zlabel('Theta', fontsize=7, labelpad=-4)
