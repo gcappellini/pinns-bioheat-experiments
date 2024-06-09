@@ -1,14 +1,14 @@
 import utils
 
 prj = "simulations"
-run = "first_try"
+run = "single_observer"
 _, output_dir, model_dir, figures_dir = utils.set_name(prj, run)
 
 
 
 # Create NBHO with some config.json
 config = utils.read_config(run)
-config["iterations"] = 2
+config["iterations"] = 30000
 utils.write_config(config, run)
 
 
