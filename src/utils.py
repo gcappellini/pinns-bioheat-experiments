@@ -401,6 +401,12 @@ def plot(model, n_test):
     g = gen_obsdata(n_test)
 
     theta_pred = model.predict(g)
+    plot_comparison(e, theta_true, theta_pred)
+    plot_l2(e, theta_true, theta_pred)
+    # plot_tf(e, theta_true, theta_pred)
+
+
+def plot_comparison(e, theta_true, theta_pred):
 
     la = len(np.unique(e[:, 0]))
     le = len(np.unique(e[:, 1]))
@@ -431,7 +437,40 @@ def plot(model, n_test):
     plt.tight_layout()
     plt.savefig(f"{figures_dir}/comparison.png")
     plt.show()
+    plt.clf()
 
+def plot_l2(e, theta_true, theta_pred):
+    t = np.unique(e[:, 1])
+    l2 = []
+    tot = np.hstack(e, theta_true, theta_pred)
+
+    for el in t:
+        df = tot[tot[:, 1]==el]
+        l2.append(dde.metrics.l2_relative_error(df[:, 2], df[:, 3]))
+
+    fig = plt.figure()
+    ax1 = fig.add_subplot(121)
+    ax1.plot(t, l2, alpha=1.0, linewidth=1.8, color='C0')
+
+    ax1.set_xlabel(xlabel=r"Time t", fontsize=7)  # xlabel
+    ax1.set_ylabel(ylabel=r"$L^2$ norm", fontsize=7)  # ylabel
+    ax1.set_title(r"Prediction error norm", fontsize=7, weight='semibold')
+    ax1.set_ylim(bottom=0.0)
+    ax1.set_xlim(0, 1.01)
+    plt.yticks(fontsize=7)
+
+    plt.grid()
+    ax1.set_box_aspect(1)
+    plt.savefig(f"{figures_dir}/l2.png")
+    plt.show()
+    plt.clf()
+
+# def plot_tf(e, theta_true, theta_pred):
+
+#     plt.tight_layout()
+#     plt.savefig(f"{figures_dir}/tf.png")
+#     plt.show()
+#     plt.clf()
 
 def configure_subplot(ax, XS, surface):
     la = len(np.unique(XS[:, 0:1]))
