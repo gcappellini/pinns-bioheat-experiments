@@ -35,6 +35,7 @@ properties = {
     "W": None, "steep": None, "tchange": None
 }
 
+f1, f2, f3 = [None]*3
 
 
 def set_name(prj, run):
@@ -305,6 +306,61 @@ def train_model(name):
     resampler = conf["resampling"]
     resampler_period = conf["resampler_period"]
 
+    optim = "lbfgs" if LBFGS else "adam"
+    iters = "*" if LBFGS else epochs
+
+    # Check if a trained model with the exact configuration already exists
+    trained_models = sorted(glob.glob(f"{model_dir}/{optim}-{iters}.pt"))
+    if trained_models:
+        mm.compile("L-BFGS") if LBFGS else None
+        mm.restore(trained_models[0], verbose=0)
+        return mm
+
+    callbacks = [dde.callbacks.PDEPointResampler(period=resampler_period)] if resampler else []
+
+    if LBFGS:
+        # Attempt to restore from a previously trained Adam model if exists
+        adam_models = sorted(glob.glob(f"{model_dir}/adam-{epochs}.pt"))
+        if adam_models:
+            mm.restore(adam_models[0], verbose=0)
+        else:
+            losshistory, train_state = train_and_save_model(mm, epochs, callbacks, "adam")
+        
+        if ini_w:
+            initial_losses = get_initial_loss(mm)
+            loss_weights = 5 / initial_losses
+            mm.compile("L-BFGS", loss_weights=loss_weights)
+        else:
+            mm.compile("L-BFGS")
+        
+        losshistory, train_state = train_and_save_model(mm, epochs, callbacks, "lbfgs")
+    else:
+        losshistory, train_state = train_and_save_model(mm, epochs, callbacks, "adam")
+
+    plot_loss_components(losshistory)
+    return mm
+
+def train_and_save_model(model, iterations, callbacks, optimizer_name):
+    display_every = 1000
+    losshistory, train_state = model.train(
+        iterations=iterations,
+        callbacks=callbacks,
+        model_save_path=f"{model_dir}/{optimizer_name}",
+        display_every=display_every
+    )
+    return losshistory, train_state
+
+
+def _train_model(name):
+    conf = read_config(name)
+    mm = create_nbho(name)
+
+    LBFGS = conf["LBFGS"]
+    epochs = conf["iterations"]
+    ini_w = conf["initial_weights_regularizer"]
+    resampler = conf["resampling"]
+    resampler_period = conf["resampler_period"]
+
     if LBFGS:
         optim, iters = "lbfgs", "*"
         # mm.compile("L-BFGS")
@@ -373,6 +429,7 @@ def gen_testdata(n):
     return X, y
 
 def gen_obsdata(n):
+    global f1, f2, f3
     g = np.hstack((gen_testdata(n)))
     instants = np.unique(g[:, 1])
 
@@ -396,14 +453,16 @@ def gen_obsdata(n):
     return Xobs
 
 
-def plot(model, n_test):
+def plot_and_metrics(model, n_test):
     e, theta_true = gen_testdata(n_test)
     g = gen_obsdata(n_test)
 
     theta_pred = model.predict(g)
     plot_comparison(e, theta_true, theta_pred)
-    plot_l2(e, theta_true, theta_pred)
-    # plot_tf(e, theta_true, theta_pred)
+    plot_l2_tf(e, theta_true, theta_pred, model)
+    # plot_tf(e, theta_true, model)
+    metrics = compute_metrics(theta_true, theta_pred)
+    return metrics
 
 
 def plot_comparison(e, theta_true, theta_pred):
@@ -437,12 +496,13 @@ def plot_comparison(e, theta_true, theta_pred):
     plt.tight_layout()
     plt.savefig(f"{figures_dir}/comparison.png")
     plt.show()
+    plt.close()
     plt.clf()
 
-def plot_l2(e, theta_true, theta_pred):
+def plot_l2_tf(e, theta_true, theta_pred, model):
     t = np.unique(e[:, 1])
     l2 = []
-    tot = np.hstack(e, theta_true, theta_pred)
+    tot = np.hstack((e, theta_true, theta_pred))
 
     for el in t:
         df = tot[tot[:, 1]==el]
@@ -451,26 +511,40 @@ def plot_l2(e, theta_true, theta_pred):
     fig = plt.figure()
     ax1 = fig.add_subplot(121)
     ax1.plot(t, l2, alpha=1.0, linewidth=1.8, color='C0')
+    plt.grid()
 
     ax1.set_xlabel(xlabel=r"Time t", fontsize=7)  # xlabel
     ax1.set_ylabel(ylabel=r"$L^2$ norm", fontsize=7)  # ylabel
     ax1.set_title(r"Prediction error norm", fontsize=7, weight='semibold')
     ax1.set_ylim(bottom=0.0)
     ax1.set_xlim(0, 1.01)
+    ax1.set_box_aspect(1)
+
+    tot = np.hstack((e, theta_true))
+    final = tot[tot[:, 1]==1.0]
+    xtr = np.unique(tot[:, 0])
+    x = np.linspace(0, 1, 100)
+    true = final[:, -1]
+    Xobs = np.vstack((x, f1(np.ones_like(x)), f2(np.ones_like(x)), f3(np.ones_like(x)), np.ones_like(x))).T
+    pred = model.predict(Xobs)
+
+    ax2 = fig.add_subplot(122)
+    ax2.plot(xtr, true, marker="x", linestyle="None", alpha=1.0, color='C0', label="true")
+    ax2.plot(x, pred, alpha=1.0, linewidth=1.8, color='C2', label="pred")
+
+    ax2.set_xlabel(xlabel=r"Space x", fontsize=7)  # xlabel
+    ax2.set_ylabel(ylabel=r"$\Theta$", fontsize=7)  # ylabel
+    ax2.set_title(r"Prediction at tf", fontsize=7, weight='semibold')
+    ax2.set_ylim(bottom=0.0)
+    ax2.set_xlim(0, 1.01)
+    ax2.legend()
     plt.yticks(fontsize=7)
 
     plt.grid()
-    ax1.set_box_aspect(1)
-    plt.savefig(f"{figures_dir}/l2.png")
+    ax2.set_box_aspect(1)
+    plt.savefig(f"{figures_dir}/l2_tf.png")
     plt.show()
     plt.clf()
-
-# def plot_tf(e, theta_true, theta_pred):
-
-#     plt.tight_layout()
-#     plt.savefig(f"{figures_dir}/tf.png")
-#     plt.show()
-#     plt.clf()
 
 def configure_subplot(ax, XS, surface):
     la = len(np.unique(XS[:, 0:1]))
@@ -487,3 +561,18 @@ def configure_subplot(ax, XS, surface):
     ax.set_xlabel('Depth', fontsize=7, labelpad=-1)
     ax.set_ylabel('Time', fontsize=7, labelpad=-1)
     ax.set_zlabel('Theta', fontsize=7, labelpad=-4)
+
+
+def single_observer(name_prj, name_run, n_test):
+    get_properties(n_test)
+    wandb.init(
+        project=name_prj, name=name_run, entity="guglielmo-cappellini", 
+        group="simulations", job_type="single_observer",
+        config=read_config(name_run)
+    )
+    mo = train_model(name_run)
+    mo, metrics = plot_and_metrics(mo, n_test)
+
+    wandb.log(metrics)
+    wandb.finish()
+    return mo, metrics

@@ -28,7 +28,6 @@ wandb \
 deepxde
 
 ENV DDE_BACKEND="pytorch" 
-ENV WANDB_API_KEY="3db214c321f91415ac495fd2ac05d678866fb48c"
 
 RUN mkdir -p /working_dir
 
