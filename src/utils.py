@@ -29,6 +29,14 @@ tests_dir = os.path.join(project_dir, "tests")
 os.makedirs(tests_dir, exist_ok=True)
 
 
+properties = {
+    "L0": None, "tauf": None, "k": None, "p0": None, "d": None,
+    "rhoc": None, "cb": None, "h": None, "Tmin": None, "Tmax": None, "alpha": None,
+    "W": None, "steep": None, "tchange": None
+}
+
+
+
 def set_name(prj, run):
     global name, run_dir, model_dir, figures_dir
     name = prj
@@ -47,6 +55,27 @@ def set_name(prj, run):
     return name, run_dir, model_dir, figures_dir
 
 
+def get_properties(n):
+    global L0, tauf, k, p0, d, rhoc, cb, h, Tmin, Tmax, alpha, W, steep, tchange
+    file_path = os.path.join(src_dir, 'simulations', f'data{n}.json')
+
+    # Open the file and load the JSON data
+    with open(file_path, 'r') as f:
+        data = json.load(f)
+
+    properties.update(data['Parameters'])
+    par = data['Parameters']
+    local_vars = locals()
+    for key in par:
+        if key in local_vars:
+            local_vars[key] = par[key]
+
+    L0, tauf, k, p0, d, rhoc, cb, h, Tmin, Tmax, alpha, W, steep, tchange = (
+        par["L0"], par["tauf"], par["k"], par["p0"], par["d"], par["rhoc"],
+        par["cb"], par["h"], par["Tmin"], par["Tmax"], par["alpha"], par["W"], par["steep"], par["tchange"]
+    )
+
+
 def read_config(run):
     filename = f"{model_dir}/config_{run}.json"
     if os.path.exists(filename):
@@ -61,34 +90,25 @@ def read_config(run):
 
 def create_default_config():
     # Define default configuration parameters
-    default_config = {
-        "activation": "tanh",
-        "convection_coefficient": 350,
-        "d": 0.03,
-        "initial_weights_regularizer": True,
+    network = {
+        "activation": "tanh", 
+        "initial_weights_regularizer": True, 
         "initialization": "Glorot normal",
         "iterations": 30000,
         "LBFGS": False,
         "learning_rate": 0.001,
         "num_dense_layers": 2,
         "num_dense_nodes": 50,
-        "output_injection_gain": 5,
-        "power": 0,
-        "perfusion": False,
+        "output_injection_gain": 50,
         "resampling": True,
-        "resampler_period": 100,
-        "rhoc": 4181000,
-        "thermal_cond": 0.563
+        "resampler_period": 100
     }
-    return default_config
-
+    return network
 
 def write_config(config, run):
     filename = f"{model_dir}/config_{run}.json"
     with open(filename, 'w') as file:
         json.dump(config, file, indent=4)
-
-    return config
 
 
 def get_initial_loss(model):
@@ -97,27 +117,27 @@ def get_initial_loss(model):
     return losshistory.loss_train[0]
 
 
-def restore_model(name):
-    conf=read_config(name)
-    model = create_default_config(name)
-    LBFGS = conf["LBFGS"]
+# def restore_model(name):
+#     conf=read_config(name)
+#     model = create_default_config(name)
+#     LBFGS = conf["LBFGS"]
 
-    matching_files = glob.glob(f"{model_dir}/{name}-*.pt")
-    if matching_files:
-        # If there are multiple matching files, sort them to ensure consistency
-        matching_files.sort()
-        # Select the first matching file
-        selected_file = matching_files[0]
-    else:
-        print("No matching files found.")   
+#     matching_files = glob.glob(f"{model_dir}/{name}-*.pt")
+#     if matching_files:
+#         # If there are multiple matching files, sort them to ensure consistency
+#         matching_files.sort()
+#         # Select the first matching file
+#         selected_file = matching_files[0]
+#     else:
+#         print("No matching files found.")   
 
-    if LBFGS:
-        model.compile("L-BFGS")
-        model.restore(selected_file, verbose=0)
-    else:
-        model.restore(selected_file, verbose=0)
+#     if LBFGS:
+#         model.compile("L-BFGS")
+#         model.restore(selected_file, verbose=0)
+#     else:
+#         model.restore(selected_file, verbose=0)
 
-    return model
+#     return model
 
 
 def plot_loss_components(losshistory):
@@ -195,66 +215,34 @@ def bc0_obs(x, theta, X):
     return x[:, 1:2] - theta
 
 
-def create_nbho(config):
-    # k_th = config["thermal_cond"]
-    # rhoc = config["rhoc"]
-    # d = config["d"] 
-    # h = config["convection_coefficient"]
-    # K = config["output_injection_gain"] 
-    # s = config["power"]
-    # W = config["perfusion"]
-    # activation = config["activation"]
-    # initial_weights_regularizer = config["initial_weights_regularizer"]
-    # initialization = config["initialization"]
-    # learning_rate = config["learning_rate"]
-    # num_dense_layers = config["num_dense_layers"]
-    # num_dense_nodes = config["num_dense_nodes"]
+def create_nbho(name):
+    net = read_config(name)
 
-    k_th = 0.563
-    rhoc = 4181000
-    d = 0.03
-    h = 350
-    K = 5
-    s = 0
-    W = False
-    activation = "tanh"
-    initial_weights_regularizer = True
-    initialization = "Glorot normal"
-    learning_rate = 0.001
-    num_dense_layers = 2
-    num_dense_nodes = 50
+    activation = net["activation"]
+    initial_weights_regularizer = net["initial_weights_regularizer"]
+    initialization = net["initialization"]
+    learning_rate = net["learning_rate"]
+    num_dense_layers = net["num_dense_layers"]
+    num_dense_nodes = net["num_dense_nodes"]
+    K = net["output_injection_gain"]
 
-    L_0, tauf = 0.15, 3600
-    T_max, T_min = 35, 22
-    dT = T_max - T_min
-    cb = 3825
+    dT = Tmax - Tmin
 
-    D = d/L_0
-    alpha = k_th/rhoc
+    D = d/L0
+    alpha = k/rhoc
 
-    C1, C2 = tauf/L_0**2, dT*tauf/rhoc
+    C1, C2 = tauf/L0**2, dT*tauf/rhoc
     C3 = C2*dT*cb
 
-    if W:
-        def pde(x, y):
-            dy_t = dde.grad.jacobian(y, x, i=0, j=4)
-            dy_xx = dde.grad.hessian(y, x, i=0, j=0)
-            # Backend tensorflow.compat.v1 or tensorflow
-            return (
-                dy_t
-                - alpha * C1 * dy_xx - C2 * s*torch.exp(-x[:, 0:1]/D) + C3 * W *y
-            )
+    def pde(x, y):
+        dy_t = dde.grad.jacobian(y, x, i=0, j=4)
+        dy_xx = dde.grad.hessian(y, x, i=0, j=0)
+        # Backend tensorflow.compat.v1 or tensorflow
+        return (
+            dy_t
+            - alpha * C1 * dy_xx - C2 * p0*torch.exp(-x[:, 0:1]/D) + C3 * W *y
+        )
     
-    else:
-        def pde(x, y):
-            dy_t = dde.grad.jacobian(y, x, i=0, j=4)
-            dy_xx = dde.grad.hessian(y, x, i=0, j=0)
-            # Backend tensorflow.compat.v1 or tensorflow
-            return (
-                dy_t
-                - alpha * C1 * dy_xx - C2 * s*torch.exp(-x[:, 0:1]/D)
-            )
-
     def bc1_obs(x, theta, X):
         dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0)
         return dtheta_x - h*(x[:, 3:4]-x[:, 2:3]) - K * (x[:, 2:3] - theta)
@@ -267,9 +255,9 @@ def create_nbho(config):
         y2 = x[:, 2:3]
         y3 = x[:, 3:4]
         beta = h * (y3 - y2) + K * (y2 -y1)
-        a2 = 5.0
+        a2 = -0.7
 
-        e = y1 + ((beta - ((2/L_0)+K)*a2)/((1/L_0)+K))*z + a2*z**2
+        e = y1 + ((beta - ((2/L0)+K)*a2)/((1/L0)+K))*z + a2*z**2
         return e
 
     xmin = [0, 0, 0, 0]
