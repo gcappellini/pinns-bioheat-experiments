@@ -172,35 +172,36 @@ def plot_loss_components(losshistory):
     
 
 def compute_metrics(true, pred):
+    # if np.any(np.isnan(pred)):
+    #     error_value = "ErrorNan"
+    # elif not np.all(np.isfinite(pred)):
+    #     error_value = "ErrorInf"
+    # else:
+        # try:
+    small_number = 1e-40
+    true_nonzero = np.where(true != 0, true, small_number)
+    
+    MSE = dde.metrics.mean_squared_error(true, pred)
+    MAE = np.mean(np.abs((true - pred) / true_nonzero)) 
+    L2RE = dde.metrics.l2_relative_error(true, pred)
+    max_APE = np.max(np.abs((true - pred) / true_nonzero)) 
+    
+    metrics = {
+        "MSE": MSE,
+        "MAE": MAE,
+        "L2RE": L2RE,
+        "max_APE": max_APE,
+    }
+        # return metrics
+        # except Exception as e:
+        #     error_value = f"Error: {e}"
 
-    if np.isnan(pred.any()):
-        metrics = {
-            "MSE": "ErrorNan",
-            "MAPE": "ErrorNan",
-            "L2RE": "ErrorNan",
-            "max_APE": "ErrorNan"}
-        
-    elif not np.isfinite(pred.all()):
-        metrics = {
-            "MSE": "ErrorInf",
-            "MAPE": "ErrorInf",
-            "L2RE": "ErrorInf",
-            "max_APE": "ErrorInf"}
-        
-    else:
-
-        MSE = dde.metrics.mean_squared_error(true, pred)
-        MAPE = np.mean(np.abs((true - pred)/true))*100
-        L2RE = dde.metrics.l2_relative_error(true, pred)        # For relative accuracy
-        max_APE = np.max(np.abs((true - pred)/true))*100        # For the worst case scenario
-
-        metrics = {
-            "MSE": MSE,
-            "MAPE": MAPE,
-            "L2RE": L2RE,
-            "max_APE": max_APE,
-        }
-
+    # metrics = {
+    #     "MSE": error_value,
+    #     "MAE": error_value,
+    #     "L2RE": error_value,
+    #     "max_APE": error_value,
+    # }
     return metrics
 
 
@@ -246,7 +247,7 @@ def create_nbho(name):
     
     def bc1_obs(x, theta, X):
         dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0)
-        return dtheta_x - h*(x[:, 3:4]-x[:, 2:3]) - K * (x[:, 2:3] - theta)
+        return dtheta_x - (h/k)*(x[:, 3:4]-x[:, 2:3]) - K * (x[:, 2:3] - theta)
 
 
     def ic_obs(x):
@@ -566,12 +567,11 @@ def configure_subplot(ax, XS, surface):
 def single_observer(name_prj, name_run, n_test):
     get_properties(n_test)
     wandb.init(
-        project=name_prj, name=name_run, entity="guglielmo-cappellini", 
-        group="simulations", job_type="single_observer",
+        project=name_prj, name=name_run,
         config=read_config(name_run)
     )
     mo = train_model(name_run)
-    mo, metrics = plot_and_metrics(mo, n_test)
+    metrics = plot_and_metrics(mo, n_test)
 
     wandb.log(metrics)
     wandb.finish()
