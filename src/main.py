@@ -1,10 +1,11 @@
 import utils
 
 prj = "simulations"
-n = [1, 2, 3, 4]
+# n = [1, 2, 3, 4]
+n = 1
 
 for n_test in n:
-    run = f"single_obs_default_{n_test}"
+    run = f"new_bc_{n_test}"
     _, output_dir, model_dir, figures_dir = utils.set_name(prj, run)
 
     # Create NBHO with some config.json

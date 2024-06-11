@@ -118,28 +118,6 @@ def get_initial_loss(model):
     return losshistory.loss_train[0]
 
 
-# def restore_model(name):
-#     conf=read_config(name)
-#     model = create_default_config(name)
-#     LBFGS = conf["LBFGS"]
-
-#     matching_files = glob.glob(f"{model_dir}/{name}-*.pt")
-#     if matching_files:
-#         # If there are multiple matching files, sort them to ensure consistency
-#         matching_files.sort()
-#         # Select the first matching file
-#         selected_file = matching_files[0]
-#     else:
-#         print("No matching files found.")   
-
-#     if LBFGS:
-#         model.compile("L-BFGS")
-#         model.restore(selected_file, verbose=0)
-#     else:
-#         model.restore(selected_file, verbose=0)
-
-#     return model
-
 
 def plot_loss_components(losshistory):
     loss_train = losshistory.loss_train
@@ -172,12 +150,6 @@ def plot_loss_components(losshistory):
     
 
 def compute_metrics(true, pred):
-    # if np.any(np.isnan(pred)):
-    #     error_value = "ErrorNan"
-    # elif not np.all(np.isfinite(pred)):
-    #     error_value = "ErrorInf"
-    # else:
-        # try:
     small_number = 1e-40
     true_nonzero = np.where(true != 0, true, small_number)
     
@@ -192,16 +164,6 @@ def compute_metrics(true, pred):
         "L2RE": L2RE,
         "max_APE": max_APE,
     }
-        # return metrics
-        # except Exception as e:
-        #     error_value = f"Error: {e}"
-
-    # metrics = {
-    #     "MSE": error_value,
-    #     "MAE": error_value,
-    #     "L2RE": error_value,
-    #     "max_APE": error_value,
-    # }
     return metrics
 
 
@@ -247,7 +209,7 @@ def create_nbho(name):
     
     def bc1_obs(x, theta, X):
         dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0)
-        return dtheta_x - (h/k)*(x[:, 3:4]-x[:, 2:3]) - K * (x[:, 2:3] - theta)
+        return (1/L0)*dtheta_x - (h/k)*(x[:, 3:4]-x[:, 2:3]) - K * (x[:, 2:3] - theta)
 
 
     def ic_obs(x):
