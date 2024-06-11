@@ -209,7 +209,7 @@ def create_nbho(name):
     
     def bc1_obs(x, theta, X):
         dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0)
-        return (1/L0)*dtheta_x - (h/k)*(x[:, 3:4]-x[:, 2:3]) - K * (x[:, 2:3] - theta)
+        return dtheta_x - (h/k)*(x[:, 3:4]-x[:, 2:3]) - K * (x[:, 2:3] - theta)
 
 
     def ic_obs(x):
@@ -480,6 +480,7 @@ def plot_l2_tf(e, theta_true, theta_pred, model):
     ax1.set_ylabel(ylabel=r"$L^2$ norm", fontsize=7)  # ylabel
     ax1.set_title(r"Prediction error norm", fontsize=7, weight='semibold')
     ax1.set_ylim(bottom=0.0)
+    ax1.set_yscale('log')
     ax1.set_xlim(0, 1.01)
     ax1.set_box_aspect(1)
 
