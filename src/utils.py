@@ -99,14 +99,14 @@ def read_config(run):
 def create_default_config():
     # Define default configuration parameters
     network = {
-        "activation": "tanh", 
+        "activation": "sigmoid", 
         "initial_weights_regularizer": True, 
         "initialization": "Glorot normal",
-        "iterations": 3,
+        "iterations": 30000,
         "LBFGS": False,
-        "learning_rate": 0.001,
-        "num_dense_layers": 2,
-        "num_dense_nodes": 50,
+        "learning_rate": 0.0001,
+        "num_dense_layers": 1,
+        "num_dense_nodes": 500,
         "output_injection_gain": 50,
         "resampling": True,
         "resampler_period": 100
@@ -399,7 +399,8 @@ def plot_and_metrics(model, n_test):
     return metrics
 
 
-def plot_comparison(e, theta_true, theta_pred):
+def plot_comparison(e, theta_true, theta_pred, MObs=False):
+    global output_dir_fig
 
     la = len(np.unique(e[:, 0]))
     le = len(np.unique(e[:, 1]))
@@ -428,10 +429,18 @@ def plot_comparison(e, theta_true, theta_pred):
     plt.subplots_adjust(wspace=0.15)
 
     plt.tight_layout()
-    plt.savefig(f"{figures_dir}/comparison.png")
-    plt.show()
-    plt.close()
-    plt.clf()
+
+    if MObs:
+        plt.savefig(f"{output_dir_fig}/comparison.png")
+        plt.show()
+        plt.close()
+        plt.clf()
+
+    else:
+        plt.savefig(f"{figures_dir}/comparison.png")
+        plt.show()
+        plt.close()
+        plt.clf()
 
 
 def plot_l2_norm(e, theta_true, theta_pred):
@@ -445,7 +454,8 @@ def plot_l2_norm(e, theta_true, theta_pred):
         df = tot[tot[:, 1] == el]
         l2.append(dde.metrics.l2_relative_error(df[:, 2], df[:, 3]))
 
-    fig, ax1 = plt.subplots()
+    fig = plt.figure(figsize=(10, 5))  # Adjust the size as needed
+    ax1 = fig.add_subplot(121)
     ax1.plot(t, l2, alpha=1.0, linewidth=1.8, color='C0')
     ax1.grid()
 
@@ -527,7 +537,7 @@ def mm_observer_k(n_test, n_obs, var):
     get_properties(n_test)
     gen_obsdata(n_test)
     k_obs = np.linspace(k*(1-var), k*(1+var), n_obs).round(3)
-    prj = f"mm{n_obs}obs_test{n_test}"
+    prj = f"mm{n_obs}obs_test{n_test}_var{var}"
     output_dir_fig = os.path.join(general_figures, prj)
     os.makedirs(output_dir_fig, exist_ok=True)
     output_dir_log = os.path.join(general_logs, prj)
@@ -572,11 +582,6 @@ def mm_observer_k(n_test, n_obs, var):
         plot_weights(x, t, lam, output_dir_fig)
         metrics = mm_plot_and_metrics(multi_obs, n_test, lam)
 
-    # utils.plot_8obs_tf(ss, multi_obs)
-    # utils.plot_8obs_l2(ss, multi_obs)
-
-    
-
     # wandb.log(metrics)
     # wandb.finish()
     # return mo, metrics
@@ -614,15 +619,16 @@ def plot_weights(x, t, lam, output_dir):
     plt.savefig(f"{output_dir}/weights_lam_{lam}.png", dpi=150, bbox_inches='tight')
 
     plt.show()
+    plt.clf()
 
 
 def mm_plot_and_metrics(multi_obs, n_test, lam):
     e, theta_true = gen_testdata(n_test)
     g = gen_obsdata(n_test)
 
-    theta_pred = mm_predict(multi_obs, lam, g)
+    theta_pred = mm_predict(multi_obs, lam, g).reshape(theta_true.shape)
 
-    plot_comparison(e, theta_true, theta_pred)
+    plot_comparison(e, theta_true, theta_pred, MObs=True)
     mm_plot_l2_tf(e, theta_true, theta_pred, multi_obs, lam)
 
     metrics = compute_metrics(theta_true, theta_pred)
@@ -644,7 +650,7 @@ def mm_predict(multi_obs, lam, g):
         w = weights[:, closest_idx]
 
         # Predict using the multi_obs predictors for the current row
-        o_preds = np.array([multi_obs[i].predict(row.reshape(1, -1)) for i in range(len(multi_obs))])
+        o_preds = np.array([multi_obs[i].predict(row.reshape(1, -1)) for i in range(len(multi_obs))]).flatten()
 
         # Combine the predictions using the weights for the current row
         prediction = np.dot(w, o_preds)
@@ -654,6 +660,7 @@ def mm_predict(multi_obs, lam, g):
 
 
 def mm_plot_l2_tf(e, theta_true, theta_pred, multi_obs, lam):
+    global output_dir_fig
     # Plot the L2 norm
     fig, ax1 = plot_l2_norm(e, theta_true, theta_pred)
 
@@ -680,6 +687,6 @@ def mm_plot_l2_tf(e, theta_true, theta_pred, multi_obs, lam):
 
     plt.grid()
     ax2.set_box_aspect(1)
-    plt.savefig(f"{figures_dir}/l2_tf.png")
+    plt.savefig(f"{output_dir_fig}/l2_tf.png")
     plt.show()
     plt.clf()
