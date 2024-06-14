@@ -509,6 +509,7 @@ def single_observer(name_prj, name_run, n_test):
 
 def mm_observer_k(name_prj, name_run, n_test, n_obs):
     get_properties(n_test)
+    k_obs = np.linspace()
     wandb.init(
         project=name_prj, name=name_run,
         config=read_config(name_run)
