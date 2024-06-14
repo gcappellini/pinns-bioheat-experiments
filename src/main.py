@@ -3,10 +3,11 @@ import utils
 prj = "simulations"
 # n = [1, 2, 3, 4]
 n_test = 0
+n_obs = 8
 
 # for n_test in n:
-run = f"default_{n_test}"
-_, output_dir, model_dir, figures_dir = utils.set_name(prj, run)
+run = f"change_ic_test{n_test}"
+_, run_dir, model_dir, figures_dir = utils.set_name(prj, run)
 
 # Create NBHO with some config.json
 config = utils.read_config(run)
@@ -14,6 +15,7 @@ config = utils.read_config(run)
 utils.write_config(config, run)
 
 utils.single_observer(prj, run, n_test)
+utils.mm_observer_k(prj, run, n_test, n_obs)
 
 
 

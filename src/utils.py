@@ -18,8 +18,6 @@ from mpl_toolkits.mplot3d import Axes3D
 # device = torch.device("cpu")
 device = torch.device("cuda")
 
-name = None
-run_dir = None
 model_dir = None
 figures_dir = None
 current_file = os.path.abspath(__file__)
@@ -39,21 +37,22 @@ f1, f2, f3 = [None]*3
 
 
 def set_name(prj, run):
-    global name, run_dir, model_dir, figures_dir
-    name = prj
-    name_dir = os.path.join(tests_dir, name)
-    os.makedirs(name_dir, exist_ok=True)
+    global model_dir, figures_dir
+    name = f"{prj}_{run}"
 
-    run_dir = os.path.join(name_dir, run)
-    os.makedirs(run_dir, exist_ok=True)
+    general_model = os.path.join(tests_dir, "models")
+    os.makedirs(general_model, exist_ok=True)
 
-    model_dir = os.path.join(run_dir, "models")
+    general_figures = os.path.join(tests_dir, "figures")
+    os.makedirs(general_figures, exist_ok=True)
+
+    model_dir = os.path.join(general_model, name)
     os.makedirs(model_dir, exist_ok=True)
 
-    figures_dir = os.path.join(run_dir, "figures")
+    figures_dir = os.path.join(general_figures, name)
     os.makedirs(figures_dir, exist_ok=True)
 
-    return name, run_dir, model_dir, figures_dir
+    return model_dir, figures_dir
 
 
 def get_properties(n):
@@ -78,14 +77,14 @@ def get_properties(n):
 
 
 def read_config(run):
-    filename = f"{model_dir}/config_{run}.json"
+    filename = f"{model_dir}/config.json"
     if os.path.exists(filename):
         with open(filename, 'r') as file:
             config = json.load(file)
     else:
         # Create default config if file doesn't exist
         config = create_default_config()
-        write_config(config, run)
+        write_config(config)
     return config
 
 
@@ -106,10 +105,21 @@ def create_default_config():
     }
     return network
 
-def write_config(config, run):
-    filename = f"{model_dir}/config_{run}.json"
+def write_config(config):
+    def convert_to_serializable(obj):
+        if isinstance(obj, (np.int32, np.int64)):
+            return int(obj)
+        elif isinstance(obj, (np.float32, np.float64)):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return obj
+
+    serializable_config = {k: convert_to_serializable(v) for k, v in config.items()}
+
+    filename = f"{model_dir}/config.json"
     with open(filename, 'w') as file:
-        json.dump(config, file, indent=4)
+        json.dump(serializable_config, file, indent=4)
 
 
 def get_initial_loss(model):
@@ -126,9 +136,12 @@ def plot_loss_components(losshistory):
     test = np.array(loss_test).sum(axis=1).ravel()
     train = np.array(loss_train).sum(axis=1).ravel()
     loss_res = matrix[:, 0]
-    loss_bc0 = matrix[:, 1]
-    loss_bc1 = matrix[:, 2]    
-    loss_ic = matrix[:, 3]
+    # loss_bc0 = matrix[:, 1]
+    # loss_bc1 = matrix[:, 2]    
+    # loss_ic = matrix[:, 3]
+
+    loss_bc1 = matrix[:, 1]    
+    loss_ic = matrix[:, 2]
 
     fig = plt.figure(figsize=(6, 5))
     # iters = np.arange(len(loss_ic))
@@ -136,7 +149,7 @@ def plot_loss_components(losshistory):
     with sns.axes_style("darkgrid"):
         plt.clf()
         plt.plot(iters, loss_res, label=r'$\mathcal{L}_{res}$')
-        plt.plot(iters, loss_bc0, label=r'$\mathcal{L}_{bc0}$')
+        # plt.plot(iters, loss_bc0, label=r'$\mathcal{L}_{bc0}$')
         plt.plot(iters, loss_bc1, label=r'$\mathcal{L}_{bc1}$')
         plt.plot(iters, loss_ic, label=r'$\mathcal{L}_{ic}$')
         plt.plot(iters, test, label='test loss')
@@ -179,6 +192,9 @@ def bc0_obs(x, theta, X):
     return x[:, 1:2] - theta
 
 
+def output_transform(x, y):
+    return x[:, 0:1] * y
+
 def create_nbho(name):
     net = read_config(name)
 
@@ -199,9 +215,10 @@ def create_nbho(name):
     C3 = C2*dT*cb
 
     def pde(x, y):
-        dy_t = dde.grad.jacobian(y, x, i=0, j=4)
+        # dy_t = dde.grad.jacobian(y, x, i=0, j=4)
+        dy_t = dde.grad.jacobian(y, x, i=0, j=3)
         dy_xx = dde.grad.hessian(y, x, i=0, j=0)
-        # Backend tensorflow.compat.v1 or tensorflow
+
         return (
             dy_t
             - alpha * C1 * dy_xx - C2 * p0*torch.exp(-x[:, 0:1]/D) + C3 * W *y
@@ -209,28 +226,35 @@ def create_nbho(name):
     
     def bc1_obs(x, theta, X):
         dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0)
-        return dtheta_x - (h/k)*(x[:, 3:4]-x[:, 2:3]) - K * (x[:, 2:3] - theta)
+        # return dtheta_x - (h/k)*(x[:, 3:4]-x[:, 2:3]) - K * (x[:, 2:3] - theta)
+        return dtheta_x - (h/k)*(x[:, 2:3]-x[:, 1:2]) - K * (x[:, 1:2] - theta)
 
 
     def ic_obs(x):
 
         z = x[:, 0:1]
-        y1 = x[:, 1:2]
-        y2 = x[:, 2:3]
-        y3 = x[:, 3:4]
+        # y1 = x[:, 1:2]
+        # y2 = x[:, 2:3]
+        # y3 = x[:, 3:4]
+        y2 = x[:, 1:2]
+        y3 = x[:, 2:3]
+        y1 = 0
         beta = h * (y3 - y2) + K * (y2 -y1)
-        a2 = -0.7
+        a2 = 0.7
 
         e = y1 + ((beta - ((2/L0)+K)*a2)/((1/L0)+K))*z + a2*z**2
         return e
 
-    xmin = [0, 0, 0, 0]
-    xmax = [1, 1, 1, 1]
-    geom = dde.geometry.Hypercube(xmin, xmax)
+    # xmin = [0, 0, 0, 0]
+    # xmax = [1, 1, 1, 1]
+    # geom = dde.geometry.Hypercube(xmin, xmax)
+    xmin = [0, 0, 0]
+    xmax = [1, 1, 1]
+    geom = dde.geometry.Cuboid(xmin, xmax)
     timedomain = dde.geometry.TimeDomain(0, 1)
     geomtime = dde.geometry.GeometryXTime(geom, timedomain)
 
-    bc_0 = dde.icbc.OperatorBC(geomtime, bc0_obs, boundary_0)
+    # bc_0 = dde.icbc.OperatorBC(geomtime, bc0_obs, boundary_0)
     bc_1 = dde.icbc.OperatorBC(geomtime, bc1_obs, boundary_1)
 
     ic = dde.icbc.IC(geomtime, ic_obs, lambda _, on_initial: on_initial)
@@ -238,15 +262,19 @@ def create_nbho(name):
     data = dde.data.TimePDE(
         geomtime,
         pde,
-        [bc_0, bc_1, ic],
+        # [bc_0, bc_1, ic],
+        [bc_1, ic],
         num_domain=2560,
         num_boundary=200,
         num_initial=100,
         num_test=10000,
     )
 
-    layer_size = [5] + [num_dense_nodes] * num_dense_layers + [1]
+    # layer_size = [5] + [num_dense_nodes] * num_dense_layers + [1]
+    layer_size = [4] + [num_dense_nodes] * num_dense_layers + [1]
     net = dde.nn.FNN(layer_size, activation, initialization)
+
+    net.apply_output_transform(output_transform)
 
     model = dde.Model(data, net)
 
@@ -291,7 +319,7 @@ def train_model(name):
         
         if ini_w:
             initial_losses = get_initial_loss(mm)
-            loss_weights = 5 / initial_losses
+            loss_weights = len(initial_losses) / initial_losses
             mm.compile("L-BFGS", loss_weights=loss_weights)
         else:
             mm.compile("L-BFGS")
@@ -314,75 +342,6 @@ def train_and_save_model(model, iterations, callbacks, optimizer_name):
     return losshistory, train_state
 
 
-def _train_model(name):
-    conf = read_config(name)
-    mm = create_nbho(name)
-
-    LBFGS = conf["LBFGS"]
-    epochs = conf["iterations"]
-    ini_w = conf["initial_weights_regularizer"]
-    resampler = conf["resampling"]
-    resampler_period = conf["resampler_period"]
-
-    if LBFGS:
-        optim, iters = "lbfgs", "*"
-        # mm.compile("L-BFGS")
-    else:
-        optim, iters = "adam", epochs
-
-    # If it already exists a model with the exact config, restore it
-    trained_models = glob.glob(f"{model_dir}/{optim}-{iters}.pt")
-    if trained_models:
-        trained_models.sort()
-        trained_model = trained_models[0]
-        if LBFGS:
-            mm.compile("L-BFGS")
-        mm.restore(trained_model, verbose=0)
-    else:
-        if resampler:
-            pde_residual_resampler = dde.callbacks.PDEPointResampler(period=resampler_period)
-            callbacks = [pde_residual_resampler]
-        else:
-            callbacks = []
-
-
-        if LBFGS:
-            matching_files = glob.glob(f"{model_dir}/adam-{epochs}.pt")
-            if matching_files:
-                matching_files.sort()
-                selected_file = matching_files[0]
-                mm.restore(selected_file, verbose=0)
-            else:
-                mm.train(
-                callbacks=callbacks, 
-                iterations = epochs,
-                model_save_path=f"{model_dir}/adam", 
-                display_every=conf.get("display_every", 1000)
-                )
-            if ini_w:
-                initial_losses = get_initial_loss(mm)
-                loss_weights = 5 / initial_losses
-                mm.compile("L-BFGS", loss_weights=loss_weights)
-            else:
-                mm.compile("L-BFGS")
-
-            losshistory, train_state = mm.train(
-                callbacks=callbacks, 
-                model_save_path=f"{model_dir}/lbfgs", 
-                display_every=conf.get("display_every", 1000)
-            )
-            plot_loss_components(losshistory)
-        else:
-            losshistory, train_state = mm.train(
-                iterations=epochs, 
-                callbacks=callbacks, 
-                model_save_path=f"{model_dir}/adam", 
-                display_every=conf.get("display_every", 1000)
-            )
-            plot_loss_components(losshistory)
-
-    return mm
-
 
 def gen_testdata(n):
     data = np.loadtxt(f"{src_dir}/simulations/file{n}.txt")
@@ -392,15 +351,16 @@ def gen_testdata(n):
     return X, y
 
 def gen_obsdata(n):
-    global f1, f2, f3
+    # global f1, f2, f3
+    global f2, f3
     g = np.hstack((gen_testdata(n)))
     instants = np.unique(g[:, 1])
 
-    rows_0 = g[g[:, 0] == 0.0]
+    # rows_0 = g[g[:, 0] == 0.0]
     rows_1 = g[g[:, 0] == 1.0]
 
-    y1 = rows_0[:, -1].reshape(len(instants),)
-    f1 = interp1d(instants, y1, kind='previous')
+    # y1 = rows_0[:, -1].reshape(len(instants),)
+    # f1 = interp1d(instants, y1, kind='previous')
 
     y2 = rows_1[:, -1].reshape(len(instants),)
     f2 = interp1d(instants, y2, kind='previous')
@@ -412,7 +372,8 @@ def gen_obsdata(n):
     # if tau > tm:
     #     tau = tm
 
-    Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
+    # Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
+    Xobs = np.vstack((g[:, 0], f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
     return Xobs
 
 
@@ -421,6 +382,7 @@ def plot_and_metrics(model, n_test):
     g = gen_obsdata(n_test)
 
     theta_pred = model.predict(g)
+
     plot_comparison(e, theta_true, theta_pred)
     plot_l2_tf(e, theta_true, theta_pred, model)
     # plot_tf(e, theta_true, model)
@@ -465,9 +427,12 @@ def plot_comparison(e, theta_true, theta_pred):
 def plot_l2_tf(e, theta_true, theta_pred, model):
     t = np.unique(e[:, 1])
     l2 = []
+    t_filtered = t[t > 0.02]
     tot = np.hstack((e, theta_true, theta_pred))
+    t = t_filtered
 
     for el in t:
+    # for el in t_filtered:
         df = tot[tot[:, 1]==el]
         l2.append(dde.metrics.l2_relative_error(df[:, 2], df[:, 3]))
 
@@ -480,7 +445,7 @@ def plot_l2_tf(e, theta_true, theta_pred, model):
     ax1.set_ylabel(ylabel=r"$L^2$ norm", fontsize=7)  # ylabel
     ax1.set_title(r"Prediction error norm", fontsize=7, weight='semibold')
     ax1.set_ylim(bottom=0.0)
-    ax1.set_yscale('log')
+    # ax1.set_yscale('log')
     ax1.set_xlim(0, 1.01)
     ax1.set_box_aspect(1)
 
@@ -489,7 +454,8 @@ def plot_l2_tf(e, theta_true, theta_pred, model):
     xtr = np.unique(tot[:, 0])
     x = np.linspace(0, 1, 100)
     true = final[:, -1]
-    Xobs = np.vstack((x, f1(np.ones_like(x)), f2(np.ones_like(x)), f3(np.ones_like(x)), np.ones_like(x))).T
+    # Xobs = np.vstack((x, f1(np.ones_like(x)), f2(np.ones_like(x)), f3(np.ones_like(x)), np.ones_like(x))).T
+    Xobs = np.vstack((x, f2(np.ones_like(x)), f3(np.ones_like(x)), np.ones_like(x))).T
     pred = model.predict(Xobs)
 
     ax2 = fig.add_subplot(122)
@@ -528,6 +494,20 @@ def configure_subplot(ax, XS, surface):
 
 
 def single_observer(name_prj, name_run, n_test):
+    get_properties(n_test)
+    wandb.init(
+        project=name_prj, name=name_run,
+        config=read_config(name_run)
+    )
+    mo = train_model(name_run)
+    metrics = plot_and_metrics(mo, n_test)
+
+    wandb.log(metrics)
+    wandb.finish()
+    return mo, metrics
+
+
+def mm_observer_k(name_prj, name_run, n_test, n_obs):
     get_properties(n_test)
     wandb.init(
         project=name_prj, name=name_run,
