@@ -14,18 +14,29 @@ from torch.utils.tensorboard import SummaryWriter
 from kan import KAN, LBFGS
 from scipy.interpolate import interp1d
 from mpl_toolkits.mplot3d import Axes3D
+from scipy import integrate
 
 # device = torch.device("cpu")
 device = torch.device("cuda")
 
 model_dir = None
 figures_dir = None
+log_dir = None
+output_dir_fig = None
+output_dir_log = None
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
 project_dir = os.path.dirname(src_dir)
 tests_dir = os.path.join(project_dir, "tests")
 os.makedirs(tests_dir, exist_ok=True)
+general_model = os.path.join(tests_dir, "models")
+os.makedirs(general_model, exist_ok=True)
 
+general_figures = os.path.join(tests_dir, "figures")
+os.makedirs(general_figures, exist_ok=True)
+
+general_logs = os.path.join(tests_dir, "logs")
+os.makedirs(general_logs, exist_ok=True)
 
 properties = {
     "L0": None, "tauf": None, "k": None, "p0": None, "d": None,
@@ -37,14 +48,11 @@ f1, f2, f3 = [None]*3
 
 
 def set_name(prj, run):
-    global model_dir, figures_dir
+    global log_dir, model_dir, figures_dir
     name = f"{prj}_{run}"
 
-    general_model = os.path.join(tests_dir, "models")
-    os.makedirs(general_model, exist_ok=True)
-
-    general_figures = os.path.join(tests_dir, "figures")
-    os.makedirs(general_figures, exist_ok=True)
+    log_dir = os.path.join(general_logs, prj)
+    os.makedirs(log_dir, exist_ok=True)
 
     model_dir = os.path.join(general_model, name)
     os.makedirs(model_dir, exist_ok=True)
@@ -52,7 +60,7 @@ def set_name(prj, run):
     figures_dir = os.path.join(general_figures, name)
     os.makedirs(figures_dir, exist_ok=True)
 
-    return model_dir, figures_dir
+    return log_dir, model_dir, figures_dir
 
 
 def get_properties(n):
@@ -94,7 +102,7 @@ def create_default_config():
         "activation": "tanh", 
         "initial_weights_regularizer": True, 
         "initialization": "Glorot normal",
-        "iterations": 30000,
+        "iterations": 3,
         "LBFGS": False,
         "learning_rate": 0.001,
         "num_dense_layers": 2,
@@ -331,6 +339,7 @@ def train_model(name):
     plot_loss_components(losshistory)
     return mm
 
+
 def train_and_save_model(model, iterations, callbacks, optimizer_name):
     display_every = 1000
     losshistory, train_state = model.train(
@@ -342,13 +351,13 @@ def train_and_save_model(model, iterations, callbacks, optimizer_name):
     return losshistory, train_state
 
 
-
 def gen_testdata(n):
     data = np.loadtxt(f"{src_dir}/simulations/file{n}.txt")
     x, t, exact = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:].T
     X = np.vstack((x, t)).T
     y = exact.flatten()[:, None]
     return X, y
+
 
 def gen_obsdata(n):
     # global f1, f2, f3
@@ -424,7 +433,8 @@ def plot_comparison(e, theta_true, theta_pred):
     plt.close()
     plt.clf()
 
-def plot_l2_tf(e, theta_true, theta_pred, model):
+
+def plot_l2_norm(e, theta_true, theta_pred):
     t = np.unique(e[:, 1])
     l2 = []
     t_filtered = t[t > 0.02]
@@ -432,29 +442,33 @@ def plot_l2_tf(e, theta_true, theta_pred, model):
     t = t_filtered
 
     for el in t:
-    # for el in t_filtered:
-        df = tot[tot[:, 1]==el]
+        df = tot[tot[:, 1] == el]
         l2.append(dde.metrics.l2_relative_error(df[:, 2], df[:, 3]))
 
-    fig = plt.figure()
-    ax1 = fig.add_subplot(121)
+    fig, ax1 = plt.subplots()
     ax1.plot(t, l2, alpha=1.0, linewidth=1.8, color='C0')
-    plt.grid()
+    ax1.grid()
 
     ax1.set_xlabel(xlabel=r"Time t", fontsize=7)  # xlabel
     ax1.set_ylabel(ylabel=r"$L^2$ norm", fontsize=7)  # ylabel
     ax1.set_title(r"Prediction error norm", fontsize=7, weight='semibold')
     ax1.set_ylim(bottom=0.0)
-    # ax1.set_yscale('log')
     ax1.set_xlim(0, 1.01)
     ax1.set_box_aspect(1)
+
+    return fig, ax1
+
+
+def plot_l2_tf(e, theta_true, theta_pred, model):
+    # Plot the L2 norm
+    fig, ax1 = plot_l2_norm(e, theta_true, theta_pred)
 
     tot = np.hstack((e, theta_true))
     final = tot[tot[:, 1]==1.0]
     xtr = np.unique(tot[:, 0])
     x = np.linspace(0, 1, 100)
     true = final[:, -1]
-    # Xobs = np.vstack((x, f1(np.ones_like(x)), f2(np.ones_like(x)), f3(np.ones_like(x)), np.ones_like(x))).T
+
     Xobs = np.vstack((x, f2(np.ones_like(x)), f3(np.ones_like(x)), np.ones_like(x))).T
     pred = model.predict(Xobs)
 
@@ -475,6 +489,7 @@ def plot_l2_tf(e, theta_true, theta_pred, model):
     plt.savefig(f"{figures_dir}/l2_tf.png")
     plt.show()
     plt.clf()
+
 
 def configure_subplot(ax, XS, surface):
     la = len(np.unique(XS[:, 0:1]))
@@ -507,16 +522,164 @@ def single_observer(name_prj, name_run, n_test):
     return mo, metrics
 
 
-def mm_observer_k(name_prj, name_run, n_test, n_obs):
+def mm_observer_k(n_test, n_obs, var):
+    global k, output_dir_fig, output_dir_log
     get_properties(n_test)
-    k_obs = np.linspace()
-    wandb.init(
-        project=name_prj, name=name_run,
-        config=read_config(name_run)
-    )
-    mo = train_model(name_run)
-    metrics = plot_and_metrics(mo, n_test)
+    gen_obsdata(n_test)
+    k_obs = np.linspace(k*(1-var), k*(1+var), n_obs).round(3)
+    prj = f"mm{n_obs}obs_test{n_test}"
+    output_dir_fig = os.path.join(general_figures, prj)
+    os.makedirs(output_dir_fig, exist_ok=True)
+    output_dir_log = os.path.join(general_logs, prj)
+    os.makedirs(output_dir_log, exist_ok=True)
+    # wandb.init(
+    #     project=name_prj, name=name_run,
+    #     config=read_config(name_run)
+    # )
+    multi_obs = []
+    
+    for j in range(n_obs):
+        run = f"n_{n_obs}"
+        set_name(prj, run)
+        config = read_config(run)
+        config["k"] = k_obs[j]
+        write_config(config)
+        model = train_model(run)
+        multi_obs.append(model)
 
-    wandb.log(metrics)
-    wandb.finish()
-    return mo, metrics
+    p0 = np.full((n_obs,), 1/n_obs)
+    lem = [20, 200]
+
+    for lam in lem:
+        def f(t, p):
+            a = mu(multi_obs, t)
+            e = np.exp(-1*a)
+            d = np.inner(p, e)
+            f = []
+            for el in range(len(p)):
+                ccc = - lam * (1-(e[el]/d))*p[el]
+                f.append(ccc)
+            return np.array(f)
+
+
+        sol = integrate.solve_ivp(f, (0, 1), p0, t_eval=np.linspace(0, 1, 100))
+        x = sol.y
+        t = sol.t
+        weights = np.zeros((sol.y.shape[0]+1, sol.y.shape[1]))
+        weights[0] = sol.t
+        weights[1:] = sol.y
+        np.save(f'{output_dir_log}/weights_lambda_{lam}.npy', weights)
+        plot_weights(x, t, lam, output_dir_fig)
+        metrics = mm_plot_and_metrics(multi_obs, n_test, lam)
+
+    # utils.plot_8obs_tf(ss, multi_obs)
+    # utils.plot_8obs_l2(ss, multi_obs)
+
+    
+
+    # wandb.log(metrics)
+    # wandb.finish()
+    # return mo, metrics
+
+
+def mu(o, tau):
+    global f2, f3
+    xo = np.vstack((np.ones_like(tau), f2(tau), f3(tau), tau)).T
+    muu = []
+    for el in o:
+        oss = el.predict(xo)
+        scrt = np.abs(oss-f2(tau))
+        muu.append(scrt)
+    muu = np.array(muu).reshape(len(muu),)
+    return muu
+
+
+def plot_weights(x, t, lam, output_dir):
+    fig = plt.figure()
+    ax1 = fig.add_subplot(111)
+    # colors = ['C3', 'lime', 'blue', 'purple', 'aqua', 'lightskyblue', 'darkred', 'k']
+
+    for i in range(x.shape[0]):
+        # plt.plot(tauf * t, x[i], alpha=1.0, linewidth=1.8, color=colors[i], label=f"Weight $p_{i+1}$")
+        plt.plot(tauf * t, x[i], alpha=1.0, linewidth=1.8, label=f"Weight $p_{i+1}$")
+
+    ax1.set_xlim(0, tauf)
+    ax1.set_ylim(bottom=0.0)
+
+    ax1.set_xlabel(xlabel=r"Time t")  # xlabel
+    ax1.set_ylabel(ylabel=r"Weights $p_j$")  # ylabel
+    ax1.legend()
+    ax1.set_title(f"Dynamic weights, $\lambda={lam}$", weight='semibold')
+    plt.grid()
+    plt.savefig(f"{output_dir}/weights_lam_{lam}.png", dpi=150, bbox_inches='tight')
+
+    plt.show()
+
+
+def mm_plot_and_metrics(multi_obs, n_test, lam):
+    e, theta_true = gen_testdata(n_test)
+    g = gen_obsdata(n_test)
+
+    theta_pred = mm_predict(multi_obs, lam, g)
+
+    plot_comparison(e, theta_true, theta_pred)
+    mm_plot_l2_tf(e, theta_true, theta_pred, multi_obs, lam)
+
+    metrics = compute_metrics(theta_true, theta_pred)
+    return metrics
+
+
+def mm_predict(multi_obs, lam, g):
+    global output_dir_log
+    a = np.load(f'{output_dir_log}/weights_lambda_{lam}.npy', allow_pickle=True)
+    weights = a[1:]
+
+    num_time_steps = weights.shape[1]
+
+    predictions = []
+
+    for row in g:
+        t = row[-1]
+        closest_idx = int(np.round(t * (num_time_steps - 1)))
+        w = weights[:, closest_idx]
+
+        # Predict using the multi_obs predictors for the current row
+        o_preds = np.array([multi_obs[i].predict(row.reshape(1, -1)) for i in range(len(multi_obs))])
+
+        # Combine the predictions using the weights for the current row
+        prediction = np.dot(w, o_preds)
+        predictions.append(prediction)
+
+    return np.array(predictions)
+
+
+def mm_plot_l2_tf(e, theta_true, theta_pred, multi_obs, lam):
+    # Plot the L2 norm
+    fig, ax1 = plot_l2_norm(e, theta_true, theta_pred)
+
+    tot = np.hstack((e, theta_true))
+    final = tot[tot[:, 1]==1.0]
+    xtr = np.unique(tot[:, 0])
+    x = np.linspace(0, 1, 100)
+    true = final[:, -1]
+
+    Xobs = np.vstack((x, f2(np.ones_like(x)), f3(np.ones_like(x)), np.ones_like(x))).T
+    pred = mm_predict(multi_obs, lam, Xobs)
+
+    ax2 = fig.add_subplot(122)
+    ax2.plot(xtr, true, marker="x", linestyle="None", alpha=1.0, color='C0', label="true")
+    ax2.plot(x, pred, alpha=1.0, linewidth=1.8, color='C2', label="pred")
+
+    ax2.set_xlabel(xlabel=r"Space x", fontsize=7)  # xlabel
+    ax2.set_ylabel(ylabel=r"$\Theta$", fontsize=7)  # ylabel
+    ax2.set_title(r"Prediction at tf", fontsize=7, weight='semibold')
+    ax2.set_ylim(bottom=0.0)
+    ax2.set_xlim(0, 1.01)
+    ax2.legend()
+    plt.yticks(fontsize=7)
+
+    plt.grid()
+    ax2.set_box_aspect(1)
+    plt.savefig(f"{figures_dir}/l2_tf.png")
+    plt.show()
+    plt.clf()
