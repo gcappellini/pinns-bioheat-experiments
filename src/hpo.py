@@ -97,5 +97,7 @@ print(search_result.x)
 convergence_fig = plot_convergence(search_result)
 convergence_fig.figure.savefig(f"{figures}/convergence_plot_{prj}.png")
 
+
+# ATTENZIONE QUI ERRORE, PLOT OBJECTIVE DOVREBBE AVERE OPZIONE X SAVE
 objective_fig = plot_objective(search_result, show_points=True, size=3.8)
 objective_fig.figure.savefig(f"{figures}/objective_plot_{prj}.png")

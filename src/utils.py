@@ -19,24 +19,23 @@ from scipy import integrate
 # device = torch.device("cpu")
 device = torch.device("cuda")
 
-model_dir = None
-figures_dir = None
-log_dir = None
-output_dir_fig = None
-output_dir_log = None
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
-project_dir = os.path.dirname(src_dir)
-tests_dir = os.path.join(project_dir, "tests")
+git_dir = os.path.dirname(src_dir)
+tests_dir = os.path.join(git_dir, "tests")
 os.makedirs(tests_dir, exist_ok=True)
-general_model = os.path.join(tests_dir, "models")
-os.makedirs(general_model, exist_ok=True)
 
-general_figures = os.path.join(tests_dir, "figures")
-os.makedirs(general_figures, exist_ok=True)
 
-general_logs = os.path.join(tests_dir, "logs")
-os.makedirs(general_logs, exist_ok=True)
+models = os.path.join(tests_dir, "models")
+os.makedirs(models, exist_ok=True)
+
+figures = os.path.join(tests_dir, "figures")
+os.makedirs(figures, exist_ok=True)
+
+logs = os.path.join(tests_dir, "logs")
+os.makedirs(logs, exist_ok=True)
+
+prj_figs, prj_models, prj_logs, run_figs, run_models, run_logs = [None]*6
 
 properties = {
     "L0": None, "tauf": None, "k": None, "p0": None, "d": None,
@@ -45,22 +44,37 @@ properties = {
 }
 
 f1, f2, f3 = [None]*3
+upsilon = 0.5
 
 
-def set_name(prj, run):
-    global log_dir, model_dir, figures_dir
-    name = f"{prj}_{run}"
+def set_prj(prj):
+    global prj_figs, prj_models, prj_logs
 
-    log_dir = os.path.join(general_logs, prj)
-    os.makedirs(log_dir, exist_ok=True)
+    prj_logs = os.path.join(logs, prj)
+    os.makedirs(prj_logs, exist_ok=True)
 
-    model_dir = os.path.join(general_model, name)
-    os.makedirs(model_dir, exist_ok=True)
+    prj_models = os.path.join(models, prj)
+    os.makedirs(prj_models, exist_ok=True)
 
-    figures_dir = os.path.join(general_figures, name)
-    os.makedirs(figures_dir, exist_ok=True)
+    prj_figs = os.path.join(figures, prj)
+    os.makedirs(prj_figs, exist_ok=True)
 
-    return log_dir, model_dir, figures_dir
+    return prj_figs, prj_models, prj_logs
+
+
+def set_run(run):
+    global prj_figs, prj_models, prj_logs, run_figs, run_models, run_logs
+
+    run_logs = os.path.join(prj_logs, run)
+    os.makedirs(run_logs, exist_ok=True)
+
+    run_models = os.path.join(prj_models, run)
+    os.makedirs(run_models, exist_ok=True)
+
+    run_figs = os.path.join(prj_figs, run)
+    os.makedirs(run_figs, exist_ok=True)
+
+    return run_figs, run_models, run_logs
 
 
 def get_properties(n):
@@ -78,14 +92,15 @@ def get_properties(n):
         if key in local_vars:
             local_vars[key] = par[key]
 
-    L0, tauf, k, p0, d, rhoc, cb, h, Tmin, Tmax, alpha, W, steep, tchange = (
+    L0, tauf, k, p0, d, rhoc, cb, h, Tmin, Tmax, alpha, W = (
         par["L0"], par["tauf"], par["k"], par["p0"], par["d"], par["rhoc"],
-        par["cb"], par["h"], par["Tmin"], par["Tmax"], par["alpha"], par["W"], par["steep"], par["tchange"]
+        par["cb"], par["h"], par["Tmin"], par["Tmax"], par["alpha"], par["W"]
     )
 
 
-def read_config(run):
-    filename = f"{model_dir}/config.json"
+def read_config():
+    global run_logs
+    filename = f"{run_logs}/config.json"
     if os.path.exists(filename):
         with open(filename, 'r') as file:
             config = json.load(file)
@@ -100,9 +115,9 @@ def create_default_config():
     # Define default configuration parameters
     network = {
         "activation": "sigmoid", 
-        "initial_weights_regularizer": True, 
+        "initial_weights_regularizer": False, 
         "initialization": "Glorot normal",
-        "iterations": 30000,
+        "iterations": 20000,
         "LBFGS": False,
         "learning_rate": 0.0001,
         "num_dense_layers": 1,
@@ -114,6 +129,7 @@ def create_default_config():
     return network
 
 def write_config(config):
+    global run_logs
     def convert_to_serializable(obj):
         if isinstance(obj, (np.int32, np.int64)):
             return int(obj)
@@ -125,7 +141,7 @@ def write_config(config):
 
     serializable_config = {k: convert_to_serializable(v) for k, v in config.items()}
 
-    filename = f"{model_dir}/config.json"
+    filename = f"{run_logs}/config.json"
     with open(filename, 'w') as file:
         json.dump(serializable_config, file, indent=4)
 
@@ -138,6 +154,7 @@ def get_initial_loss(model):
 
 
 def plot_loss_components(losshistory):
+    global run_figs
     loss_train = losshistory.loss_train
     loss_test = losshistory.loss_test
     matrix = np.array(loss_train)
@@ -166,18 +183,21 @@ def plot_loss_components(losshistory):
         plt.xlabel('iterations')
         plt.legend(ncol=2)
         plt.tight_layout()
-        plt.savefig(f"{figures_dir}/losses.png")
+        plt.savefig(f"{run_figs}/losses.png")
         plt.close()
     
 
 def compute_metrics(true, pred):
-    small_number = 1e-40
+    small_number = 1e-3
+    
+    true = np.ravel(true)
+    pred = np.ravel(pred)
     true_nonzero = np.where(true != 0, true, small_number)
     
     MSE = dde.metrics.mean_squared_error(true, pred)
-    MAE = np.mean(np.abs((true - pred) / true_nonzero)) 
+    MAE = np.mean(np.abs((true_nonzero - pred) / true_nonzero))*100
     L2RE = dde.metrics.l2_relative_error(true, pred)
-    max_APE = np.max(np.abs((true - pred) / true_nonzero)) 
+    max_APE = np.max(np.abs((true_nonzero - pred) / true_nonzero))*100
     
     metrics = {
         "MSE": MSE,
@@ -203,8 +223,8 @@ def bc0_obs(x, theta, X):
 def output_transform(x, y):
     return x[:, 0:1] * y
 
-def create_nbho(name):
-    net = read_config(name)
+def create_nbho():
+    net = read_config()
 
     activation = net["activation"]
     initial_weights_regularizer = net["initial_weights_regularizer"]
@@ -295,9 +315,10 @@ def create_nbho(name):
     return model
 
 
-def train_model(name):
-    conf = read_config(name)
-    mm = create_nbho(name)
+def train_model():
+    global run_models
+    conf = read_config()
+    mm = create_nbho()
 
     LBFGS = conf["LBFGS"]
     epochs = conf["iterations"]
@@ -308,18 +329,18 @@ def train_model(name):
     optim = "lbfgs" if LBFGS else "adam"
     iters = "*" if LBFGS else epochs
 
-    # Check if a trained model with the exact configuration already exists
-    trained_models = sorted(glob.glob(f"{model_dir}/{optim}-{iters}.pt"))
-    if trained_models:
-        mm.compile("L-BFGS") if LBFGS else None
-        mm.restore(trained_models[0], verbose=0)
-        return mm
+    # # Check if a trained model with the exact configuration already exists
+    # trained_models = sorted(glob.glob(f"{run_models}/{optim}-{iters}.pt"))
+    # if trained_models:
+    #     mm.compile("L-BFGS") if LBFGS else None
+    #     mm.restore(trained_models[0], verbose=0)
+    #     return mm
 
     callbacks = [dde.callbacks.PDEPointResampler(period=resampler_period)] if resampler else []
 
     if LBFGS:
         # Attempt to restore from a previously trained Adam model if exists
-        adam_models = sorted(glob.glob(f"{model_dir}/adam-{epochs}.pt"))
+        adam_models = sorted(glob.glob(f"{run_models}/adam-{epochs}.pt"))
         if adam_models:
             mm.restore(adam_models[0], verbose=0)
         else:
@@ -341,11 +362,12 @@ def train_model(name):
 
 
 def train_and_save_model(model, iterations, callbacks, optimizer_name):
+    global run_models
     display_every = 1000
     losshistory, train_state = model.train(
         iterations=iterations,
         callbacks=callbacks,
-        model_save_path=f"{model_dir}/{optimizer_name}",
+        model_save_path=f"{run_models}/{optimizer_name}",
         display_every=display_every
     )
     return losshistory, train_state
@@ -360,7 +382,6 @@ def gen_testdata(n):
 
 
 def gen_obsdata(n):
-    # global f1, f2, f3
     global f2, f3
     g = np.hstack((gen_testdata(n)))
     instants = np.unique(g[:, 1])
@@ -400,7 +421,7 @@ def plot_and_metrics(model, n_test):
 
 
 def plot_comparison(e, theta_true, theta_pred, MObs=False):
-    global output_dir_fig
+    global run_figs, prj_figs
 
     la = len(np.unique(e[:, 0]))
     le = len(np.unique(e[:, 1]))
@@ -431,16 +452,14 @@ def plot_comparison(e, theta_true, theta_pred, MObs=False):
     plt.tight_layout()
 
     if MObs:
-        plt.savefig(f"{output_dir_fig}/comparison.png")
-        plt.show()
-        plt.close()
-        plt.clf()
+        plt.savefig(f"{prj_figs}/comparison.png")
 
     else:
-        plt.savefig(f"{figures_dir}/comparison.png")
-        plt.show()
-        plt.close()
-        plt.clf()
+        plt.savefig(f"{run_figs}/comparison.png")
+
+    plt.show()
+    plt.close()
+    plt.clf()
 
 
 def plot_l2_norm(e, theta_true, theta_pred):
@@ -470,7 +489,7 @@ def plot_l2_norm(e, theta_true, theta_pred):
 
 
 def plot_l2_tf(e, theta_true, theta_pred, model):
-    # Plot the L2 norm
+    global run_figs
     fig, ax1 = plot_l2_norm(e, theta_true, theta_pred)
 
     tot = np.hstack((e, theta_true))
@@ -496,7 +515,7 @@ def plot_l2_tf(e, theta_true, theta_pred, model):
 
     plt.grid()
     ax2.set_box_aspect(1)
-    plt.savefig(f"{figures_dir}/l2_tf.png")
+    plt.savefig(f"{run_figs}/l2_tf.png")
     plt.show()
     plt.clf()
 
@@ -520,11 +539,13 @@ def configure_subplot(ax, XS, surface):
 
 def single_observer(name_prj, name_run, n_test):
     get_properties(n_test)
+    set_prj(name_prj)
+    set_run(name_run)
     wandb.init(
         project=name_prj, name=name_run,
-        config=read_config(name_run)
+        config=read_config()
     )
-    mo = train_model(name_run)
+    mo = train_model()
     metrics = plot_and_metrics(mo, n_test)
 
     wandb.log(metrics)
@@ -532,33 +553,33 @@ def single_observer(name_prj, name_run, n_test):
     return mo, metrics
 
 
-def mm_observer_k(n_test, n_obs, var):
-    global k, output_dir_fig, output_dir_log
+def mm_observer(n_test, n_obs, var):
+    global W, prj_logs
+    name_prj=f"mm_{n_obs}obs_var{var}_test{n_test}"
     get_properties(n_test)
     gen_obsdata(n_test)
-    k_obs = np.linspace(k*(1-var), k*(1+var), n_obs).round(3)
-    prj = f"mm{n_obs}obs_test{n_test}_var{var}"
-    output_dir_fig = os.path.join(general_figures, prj)
-    os.makedirs(output_dir_fig, exist_ok=True)
-    output_dir_log = os.path.join(general_logs, prj)
-    os.makedirs(output_dir_log, exist_ok=True)
+    set_prj(name_prj)
+
+    W_obs = np.linspace(W*(1-var), W*(1+var), n_obs).round(3)
+
     # wandb.init(
     #     project=name_prj, name=name_run,
     #     config=read_config(name_run)
     # )
+
     multi_obs = []
     
     for j in range(n_obs):
-        run = f"n_{n_obs}"
-        set_name(prj, run)
-        config = read_config(run)
-        config["k"] = k_obs[j]
-        write_config(config)
-        model = train_model(run)
+        run = f"n{j}_W{W_obs[j]}"
+        set_run(run)
+        # config = read_config()
+        W = W_obs[j]
+        # write_config(config)
+        model, _ = single_observer(name_prj, run, n_test)
         multi_obs.append(model)
 
     p0 = np.full((n_obs,), 1/n_obs)
-    lem = [20, 200]
+    lem = [100, 500, 1000]
 
     for lam in lem:
         def f(t, p):
@@ -578,8 +599,8 @@ def mm_observer_k(n_test, n_obs, var):
         weights = np.zeros((sol.y.shape[0]+1, sol.y.shape[1]))
         weights[0] = sol.t
         weights[1:] = sol.y
-        np.save(f'{output_dir_log}/weights_lambda_{lam}.npy', weights)
-        plot_weights(x, t, lam, output_dir_fig)
+        np.save(f'{prj_logs}/weights_lambda_{lam}.npy', weights)
+        plot_weights(x, t, lam)
         metrics = mm_plot_and_metrics(multi_obs, n_test, lam)
 
     # wandb.log(metrics)
@@ -593,20 +614,21 @@ def mu(o, tau):
     muu = []
     for el in o:
         oss = el.predict(xo)
-        scrt = np.abs(oss-f2(tau))
+        scrt = upsilon*np.abs(oss-f2(tau))**2
         muu.append(scrt)
     muu = np.array(muu).reshape(len(muu),)
     return muu
 
 
-def plot_weights(x, t, lam, output_dir):
+def plot_weights(x, t, lam):
+    global prj_figs
     fig = plt.figure()
     ax1 = fig.add_subplot(111)
     # colors = ['C3', 'lime', 'blue', 'purple', 'aqua', 'lightskyblue', 'darkred', 'k']
 
     for i in range(x.shape[0]):
         # plt.plot(tauf * t, x[i], alpha=1.0, linewidth=1.8, color=colors[i], label=f"Weight $p_{i+1}$")
-        plt.plot(tauf * t, x[i], alpha=1.0, linewidth=1.8, label=f"Weight $p_{i+1}$")
+        plt.plot(tauf * t, x[i], alpha=1.0, linewidth=1.2, label=f"Weight $p_{i+1}$")
 
     ax1.set_xlim(0, tauf)
     ax1.set_ylim(bottom=0.0)
@@ -616,7 +638,7 @@ def plot_weights(x, t, lam, output_dir):
     ax1.legend()
     ax1.set_title(f"Dynamic weights, $\lambda={lam}$", weight='semibold')
     plt.grid()
-    plt.savefig(f"{output_dir}/weights_lam_{lam}.png", dpi=150, bbox_inches='tight')
+    plt.savefig(f"{prj_figs}/weights_lam_{lam}.png", dpi=150, bbox_inches='tight')
 
     plt.show()
     plt.clf()
@@ -636,8 +658,8 @@ def mm_plot_and_metrics(multi_obs, n_test, lam):
 
 
 def mm_predict(multi_obs, lam, g):
-    global output_dir_log
-    a = np.load(f'{output_dir_log}/weights_lambda_{lam}.npy', allow_pickle=True)
+    global prj_logs
+    a = np.load(f'{prj_logs}/weights_lambda_{lam}.npy', allow_pickle=True)
     weights = a[1:]
 
     num_time_steps = weights.shape[1]
@@ -660,7 +682,7 @@ def mm_predict(multi_obs, lam, g):
 
 
 def mm_plot_l2_tf(e, theta_true, theta_pred, multi_obs, lam):
-    global output_dir_fig
+    global prj_figs
     # Plot the L2 norm
     fig, ax1 = plot_l2_norm(e, theta_true, theta_pred)
 
@@ -687,6 +709,6 @@ def mm_plot_l2_tf(e, theta_true, theta_pred, multi_obs, lam):
 
     plt.grid()
     ax2.set_box_aspect(1)
-    plt.savefig(f"{output_dir_fig}/l2_tf.png")
+    plt.savefig(f"{prj_figs}/l2_tf.png")
     plt.show()
     plt.clf()
