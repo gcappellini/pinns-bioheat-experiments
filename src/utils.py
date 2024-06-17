@@ -114,16 +114,15 @@ def read_config():
 def create_default_config():
     # Define default configuration parameters
     network = {
-        # "activation": "sigmoid", 
         "activation": "tanh", 
         "initial_weights_regularizer": True, 
         "initialization": "Glorot normal",
-        "iterations": 30000,
+        "iterations": 50000,
         "LBFGS": False,
         "learning_rate": 0.0001,
-        "num_dense_layers": 1,
-        "num_dense_nodes": 500,
-        "output_injection_gain": 5,
+        "num_dense_layers": 4,
+        "num_dense_nodes": 50,
+        "output_injection_gain": 50,
         "resampling": True,
         "resampler_period": 100
     }
@@ -377,10 +376,10 @@ def train_and_save_model(model, iterations, callbacks, optimizer_name):
 
 def gen_testdata(n):
     data = np.loadtxt(f"{src_dir}/simulations/file{n}.txt")
-    x, t, _, exact = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:].T
+    x, t, bol, exact = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3], data[:, 3:].T
     X = np.vstack((x, t)).T
     y = exact.flatten()[:, None]
-    return X, y
+    return X, bol, y
 
 
 def gen_obsdata(n):
@@ -411,7 +410,7 @@ def gen_obsdata(n):
 
 
 def plot_and_metrics(model, n_test):
-    e, theta_true = gen_testdata(n_test)
+    e, _, theta_true = gen_testdata(n_test)
     g = gen_obsdata(n_test)
 
     theta_pred = model.predict(g)
@@ -542,8 +541,6 @@ def configure_subplot(ax, XS, surface):
 
 def single_observer(name_prj, name_run, n_test):
     get_properties(n_test)
-    set_prj(name_prj)
-    set_run(name_run)
     wandb.init(
         project=name_prj, name=name_run,
         config=read_config()
@@ -558,7 +555,7 @@ def single_observer(name_prj, name_run, n_test):
 
 def mm_observer(n_test, n_obs, var):
     global W, prj_logs
-    name_prj=f"new_pde_{n_obs}obs_var{var}_test{n_test}"
+    name_prj=f"mm{n_obs}obs_var{var}_test{n_test}"
     get_properties(n_test)
     gen_obsdata(n_test)
     set_prj(name_prj)
@@ -648,7 +645,7 @@ def plot_weights(x, t, lam):
 
 
 def mm_plot_and_metrics(multi_obs, n_test, lam):
-    e, theta_true = gen_testdata(n_test)
+    e, _, theta_true = gen_testdata(n_test)
     g = gen_obsdata(n_test)
 
     theta_pred = mm_predict(multi_obs, lam, g).reshape(theta_true.shape)

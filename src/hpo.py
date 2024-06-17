@@ -30,14 +30,15 @@ tests_dir = os.path.join(project_dir, "tests")
 figures = os.path.join(tests_dir, "figures")
 os.makedirs(figures, exist_ok=True)
 
-n=4
-prj = f"hpo_{n}"
+n=0
+prj = f"hpo_new_{n}"
+prj_figs,_,_ = utils.set_prj(prj)
 # HPO setting
 n_calls = 50
 dim_learning_rate = Real(low=1e-4, high=5e-2, name="learning_rate", prior="log-uniform")
-dim_num_dense_layers = Integer(low=1, high=10, name="num_dense_layers")
-dim_num_dense_nodes = Integer(low=5, high=500, name="num_dense_nodes")
-dim_activation = Categorical(categories=["sin", "sigmoid", "tanh"], name="activation")
+dim_num_dense_layers = Integer(low=1, high=6, name="num_dense_layers")
+dim_num_dense_nodes = Integer(low=5, high=100, name="num_dense_nodes")
+dim_activation = Categorical(categories=["elu", "relu", "selu", "silu", "sigmoid", "sin", "swish", "tanh"], name="activation")
 
 dimensions = [
     dim_learning_rate,
@@ -46,16 +47,16 @@ dimensions = [
     dim_activation,
 ]
 
-default_parameters = [1e-3, 4, 50, "sin"]
+default_parameters = [1e-3, 4, 50, "tanh"]
 
 
 @use_named_args(dimensions=dimensions)
 def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation):
     global ITERATION
-    run = f"{ITERATION}"
-    utils.set_name(prj, run)
+    # run = f"{ITERATION}"
+    utils.set_run(ITERATION)
 
-    config = utils.read_config(run)
+    config = utils.read_config()
     config["activation"] = activation
     config["learning_rate"] = learning_rate
     config["num_dense_layers"] = num_dense_layers
@@ -71,7 +72,7 @@ def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation):
     print()
 
     # Create the neural network with these hyper-parameters.
-    _, metrics = utils.single_observer(prj, run, n)
+    _, metrics = utils.single_observer(prj, ITERATION, n)
     error = metrics['L2RE']
 
     if np.isnan(error):
@@ -86,7 +87,7 @@ ITERATION = 0
 search_result = gp_minimize(
     func=fitness,
     dimensions=dimensions,
-    acq_func="EI",  # Expected Improvement.
+    # acq_func="EI",  # Expected Improvement.
     n_calls=n_calls,
     x0=default_parameters,
     random_state=1234,
@@ -97,7 +98,9 @@ print(search_result.x)
 convergence_fig = plot_convergence(search_result)
 convergence_fig.figure.savefig(f"{figures}/convergence_plot_{prj}.png")
 
-
-# ATTENZIONE QUI ERRORE, PLOT OBJECTIVE DOVREBBE AVERE OPZIONE X SAVE
-objective_fig = plot_objective(search_result, show_points=True, size=3.8)
-objective_fig.figure.savefig(f"{figures}/objective_plot_{prj}.png")
+# Plot objective and save the figure
+plt.figure()
+plot_objective(search_result, show_points=True, size=3.8)
+plt.savefig(f"{prj_figs}/plot_obj.png",
+            dpi=300, bbox_inches='tight')
+plt.show()
