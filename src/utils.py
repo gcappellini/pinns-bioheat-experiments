@@ -114,7 +114,8 @@ def read_config():
 def create_default_config():
     # Define default configuration parameters
     network = {
-        "activation": "sigmoid", 
+        # "activation": "sigmoid", 
+        "activation": "tanh", 
         "initial_weights_regularizer": True, 
         "initialization": "Glorot normal",
         "iterations": 30000,

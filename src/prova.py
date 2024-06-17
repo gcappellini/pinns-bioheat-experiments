@@ -1,6 +1,7 @@
 import utils
 import os
 import numpy as np
+from scipy.interpolate import interp1d
 
 
 current_file = os.path.abspath(__file__)
@@ -8,14 +9,20 @@ src_dir = os.path.dirname(current_file)
 project_dir = os.path.dirname(src_dir)
 tests_dir = os.path.join(project_dir, "tests")
 logs_dir = os.path.join(tests_dir, "logs")
-# name = "mm9obs_test0_var0.6"
-# a = np.load(f"{logs_dir}/{name}/weights_lambda_200.npy")
 
-# # print(a[1:].shape)
-# print(a[-3])
+n=0
+utils.get_properties(n)
+utils.gen_obsdata(n)
+x = np.linspace(0, 1, 100)
 
 
-n_obs=9
+g = np.hstack((utils.gen_testdata(n)))
+instants = np.unique(g[:, 1])
 
-for j in range(n_obs):
-    print(j)
+rows_1 = g[g[:, 0] == 1.0]
+
+y3 = rows_1[:, -2].reshape(len(instants),)
+f3 = interp1d(g[:, 1], g[:, -2], kind='previous')
+print(g[0])
+# print(f3(x))
+# print(instants)
