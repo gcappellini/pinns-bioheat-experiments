@@ -78,7 +78,7 @@ def set_run(run):
 
 
 def get_properties(n):
-    global L0, tauf, k, p0, d, rhoc, cb, h, Tmin, Tmax, alpha, W, steep, tchange
+    global L0, tauf, k, p0, d, rhoc, cb, h, Tmin, Tmax, alpha, W
     file_path = os.path.join(src_dir, 'simulations', f'data{n}.json')
 
     # Open the file and load the JSON data
@@ -115,14 +115,14 @@ def create_default_config():
     # Define default configuration parameters
     network = {
         "activation": "sigmoid", 
-        "initial_weights_regularizer": False, 
+        "initial_weights_regularizer": True, 
         "initialization": "Glorot normal",
-        "iterations": 20000,
+        "iterations": 30000,
         "LBFGS": False,
         "learning_rate": 0.0001,
         "num_dense_layers": 1,
         "num_dense_nodes": 500,
-        "output_injection_gain": 50,
+        "output_injection_gain": 5,
         "resampling": True,
         "resampler_period": 100
     }
@@ -224,6 +224,7 @@ def output_transform(x, y):
     return x[:, 0:1] * y
 
 def create_nbho():
+    global L0, tauf, k, p0, d, rhoc, cb, h, Tmin, Tmax, alpha, W
     net = read_config()
 
     activation = net["activation"]
@@ -249,7 +250,7 @@ def create_nbho():
 
         return (
             dy_t
-            - alpha * C1 * dy_xx - C2 * p0*torch.exp(-x[:, 0:1]/D) + C3 * W *y
+            - alpha * C1 * dy_xx - C2 * p0*torch.exp(-(1-x[:, 0:1])/D) + C3 * W *y
         )
     
     def bc1_obs(x, theta, X):
@@ -375,7 +376,7 @@ def train_and_save_model(model, iterations, callbacks, optimizer_name):
 
 def gen_testdata(n):
     data = np.loadtxt(f"{src_dir}/simulations/file{n}.txt")
-    x, t, exact = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:].T
+    x, t, _, exact = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:].T
     X = np.vstack((x, t)).T
     y = exact.flatten()[:, None]
     return X, y
@@ -395,8 +396,9 @@ def gen_obsdata(n):
     y2 = rows_1[:, -1].reshape(len(instants),)
     f2 = interp1d(instants, y2, kind='previous')
 
-    def f3(ii):
-        return ii + (1 - ii)/(1 + np.exp(-20*(ii - 0.25)))
+    y3 = rows_1[:, -2].reshape(len(instants),)
+    f3 = interp1d(instants, y3, kind='previous')
+
     
     # tm = 0.9957446808510638
     # if tau > tm:
@@ -555,7 +557,7 @@ def single_observer(name_prj, name_run, n_test):
 
 def mm_observer(n_test, n_obs, var):
     global W, prj_logs
-    name_prj=f"mm_{n_obs}obs_var{var}_test{n_test}"
+    name_prj=f"new_pde_{n_obs}obs_var{var}_test{n_test}"
     get_properties(n_test)
     gen_obsdata(n_test)
     set_prj(name_prj)
