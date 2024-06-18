@@ -117,7 +117,7 @@ def create_default_config():
         "activation": "tanh", 
         "initial_weights_regularizer": True, 
         "initialization": "Glorot normal",
-        "iterations": 50000,
+        "iterations": 30000,
         "LBFGS": False,
         "learning_rate": 0.0001,
         "num_dense_layers": 4,
