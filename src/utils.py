@@ -44,7 +44,7 @@ properties = {
 }
 
 f1, f2, f3 = [None]*3
-upsilon = 0.5
+upsilon = 500.0
 
 
 def set_prj(prj):
