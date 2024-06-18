@@ -1,17 +1,12 @@
 import utils
 
-n_test = 0
-n_obs = 3
-var = 0.6
+prj = "single_obs"
+utils.set_prj(prj)
 
-utils.mm_observer(n_test, n_obs, var)
-
-
-n_test = 0
-n_obs = 9
-var = 0.6
-
-utils.mm_observer(n_test, n_obs, var)
+for n_test in range(1):
+    run = f"default_{n_test}"
+    utils.set_run(run)
+    utils.single_observer(prj, run, n_test)
 
 
 
