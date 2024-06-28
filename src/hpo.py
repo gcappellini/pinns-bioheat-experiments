@@ -53,7 +53,7 @@ default_parameters = [1e-3, 4, 50, "tanh"]
 @use_named_args(dimensions=dimensions)
 def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation):
     global ITERATION
-    run = f"{ITERATION}"
+    run = f"run_{ITERATION}"
     utils.set_run(run)
 
     config = utils.read_config()
@@ -72,7 +72,7 @@ def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation):
     print()
 
     # Create the neural network with these hyper-parameters.
-    mo, _ = utils.single_observer(prj, ITERATION, n)
+    mo, _ = utils.single_observer(prj, run, n)
     error = utils.metrics_observer(mo)
 
     if np.isnan(error):
