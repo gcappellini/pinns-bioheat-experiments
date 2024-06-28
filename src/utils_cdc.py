@@ -8,13 +8,9 @@ import wandb
 import glob
 # import rff
 import json
-from tqdm import tqdm
-from torch import autograd
-from torch.utils.tensorboard import SummaryWriter
-from kan import KAN, LBFGS
 from scipy.interpolate import interp1d
-from mpl_toolkits.mplot3d import Axes3D
-from scipy import integrate
+from scipy import integrate 
+
 
 # device = torch.device("cpu")
 device = torch.device("cuda")
@@ -40,6 +36,8 @@ prj_figs, prj_models, prj_logs, run_figs, run_models, run_logs = [None]*6
 properties = {
     "a1": None, "a2": None, "a3": None, "a4": None, "W": None
 }
+
+a1, a2, a3, a4 = 0.942, 4.172, 5.889e-05, 0.5
 
 f1, f2, f3 = [None]*3
 upsilon = 500.0
@@ -75,24 +73,24 @@ def set_run(run):
     return run_figs, run_models, run_logs
 
 
-def get_properties(n):
-    global a1, a2, a3, a4, W
-    file_path = os.path.join(src_dir, 'simulations', f'data{n}.json')
+# def get_properties(n):
+#     global a1, a2, a3, a4, W
+#     file_path = os.path.join(src_dir, 'simulations', f'data{n}.json')
 
-    # Open the file and load the JSON data
-    with open(file_path, 'r') as f:
-        data = json.load(f)
+#     # Open the file and load the JSON data
+#     with open(file_path, 'r') as f:
+#         data = json.load(f)
 
-    properties.update(data['Parameters'])
-    par = data['Parameters']
-    local_vars = locals()
-    for key in par:
-        if key in local_vars:
-            local_vars[key] = par[key]
+#     properties.update(data['Parameters'])
+#     par = data['Parameters']
+#     local_vars = locals()
+#     for key in par:
+#         if key in local_vars:
+#             local_vars[key] = par[key]
 
-    a1, a2, a3, a4, W = (
-        par["a1"], par["a2"], par["a3"], par["a4"], par["W"]
-    )
+#     a1, a2, a3, a4, W = (
+#         par["a1"], par["a2"], par["a3"], par["a4"], par["W"]
+#     )
 
 
 def read_config():
@@ -119,7 +117,7 @@ def create_default_config():
         "learning_rate": 0.0001,
         "num_dense_layers": 4,
         "num_dense_nodes": 50,
-        "output_injection_gain": 50,
+        "output_injection_gain": 4,
         "resampling": True,
         "resampler_period": 100
     }
@@ -221,7 +219,7 @@ def output_transform(x, y):
     return x[:, 0:1] * y
 
 def create_nbho():
-    global a1, a2, a3, a4, W
+    global a1, a2, a3, a4
     net = read_config()
 
     activation = net["activation"]
@@ -239,8 +237,8 @@ def create_nbho():
         dy_xx = dde.grad.hessian(y, x, i=0, j=0)
 
         return (
-            a1 * dy_t
-            - dy_xx + a2 * W * y
+            dy_t
+            - a1 * dy_xx + a2 * y
         )
     
     def bc1_obs(x, theta, X):
@@ -253,7 +251,7 @@ def create_nbho():
 
         z = x[:, 0:1]
 
-        return a3*z**4
+        return a4*z**4
 
     # xmin = [0, 0, 0, 0]
     # xmax = [1, 1, 1, 1]
@@ -361,6 +359,14 @@ def gen_testdata(n):
     X = np.vstack((x, t)).T
     y = exact.flatten()[:, None]
     return X, bol, y
+
+
+def obs_groundtruth():
+    data = np.loadtxt(f"{src_dir}/simulations/output_matlab_observer.txt")
+    x, t, exact = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:].T
+    X = np.vstack((x, t)).T
+    y = exact.flatten()[:, None]
+    return X, y
 
 
 def gen_obsdata(n):
@@ -500,6 +506,7 @@ def plot_l2_tf(e, theta_true, theta_pred, model):
     ax2.set_box_aspect(1)
     plt.savefig(f"{run_figs}/l2_tf.png")
     plt.show()
+    plt.close()
     plt.clf()
 
 
@@ -521,7 +528,7 @@ def configure_subplot(ax, XS, surface):
 
 
 def single_observer(name_prj, name_run, n_test):
-    get_properties(n_test)
+    # get_properties(n_test)
     wandb.init(
         project=name_prj, name=name_run,
         config=read_config()
@@ -537,7 +544,7 @@ def single_observer(name_prj, name_run, n_test):
 def mm_observer(n_test, n_obs, var):
     global W, prj_logs
     name_prj=f"mm{n_obs}obs_var{var}_test{n_test}"
-    get_properties(n_test)
+    # get_properties(n_test)
     gen_obsdata(n_test)
     set_prj(name_prj)
 
@@ -694,3 +701,11 @@ def mm_plot_l2_tf(e, theta_true, theta_pred, multi_obs, lam):
     plt.savefig(f"{prj_figs}/l2_tf.png")
     plt.show()
     plt.clf()
+
+def metrics_observer(mo, n):
+    _, true = obs_groundtruth()
+    x = gen_obsdata(n)
+
+    pred = mo.predict(x)
+
+    return dde.metrics.l2_relative_error(true, pred)

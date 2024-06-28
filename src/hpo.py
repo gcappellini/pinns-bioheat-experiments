@@ -1,4 +1,4 @@
-import utils
+import utils_cdc as utils
 from matplotlib import pyplot as plt
 import numpy as np
 import skopt
@@ -30,9 +30,9 @@ tests_dir = os.path.join(project_dir, "tests")
 figures = os.path.join(tests_dir, "figures")
 os.makedirs(figures, exist_ok=True)
 
-n=0
-prj = f"hpo_new_{n}"
-prj_figs,_,_ = utils.set_prj(prj)
+n="0-cdc"
+prj = "single_obs_hpo"
+prj_figs, _, _ = utils.set_prj(prj)
 # HPO setting
 n_calls = 50
 dim_learning_rate = Real(low=1e-4, high=5e-2, name="learning_rate", prior="log-uniform")
@@ -72,8 +72,8 @@ def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation):
     print()
 
     # Create the neural network with these hyper-parameters.
-    _, metrics = utils.single_observer(prj, ITERATION, n)
-    error = metrics['L2RE']
+    mo, _ = utils.single_observer(prj, ITERATION, n)
+    error = utils.metrics_observer(mo)
 
     if np.isnan(error):
         error = 10**5

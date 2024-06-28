@@ -1,20 +1,20 @@
 %From https://es.mathworks.com/help/matlab/math/solve-single-pde.html
 
 function [sol] = OneDimBHSingleObs
-global k normerr a1 a2 a3 a4 W_avg v
+global k normerr a1 a2 a3 a4 a5 v
 
 
 k = 4;
 
 m = 0;
-a1 = 1.061375;
-a2 = 1.9125;
-a3= 0.5;
-a4= 15/8;
-a5= 2.0;
-W_avg = 2.48;
+a1 = 0.942174066658815;
+a2 = 4.1722456718878815;
+a3 = 0;
+a4= 0.5;
+a5= 1.875;
+a6 = 2.0;
 
-v = @(t) a5;
+v = @(t) a6;
 x = 0:0.01:1; % 100 valori tra 0 e 1
 t = 0:0.01:1; % 100 valori tra 0 e 1
 
@@ -95,13 +95,13 @@ end
 % Code equation
 
 function [c,f,s] = OneDimBHpde(x,t,u,dudx)
-global a1 a2 W_avg
+global a1 a2
 %La prima equazione è quella del sistema, a seguire gli osservatori
 
-c = [a1; a1];
-f = [1; 1].* dudx;
-s = [-u(1)*a2*W_avg; 
-     -u(2)*a2*W_avg; 
+c = [1; 1];
+f = [a1; a1].* dudx;
+s = [-u(1)*a2; 
+     -u(2)*a2; 
     ];
 
 % --------------------------------------------------------------------------
@@ -109,9 +109,9 @@ s = [-u(1)*a2*W_avg;
 % Code initial conditions
 
 function u0 = OneDimBHic(x)
-global a3 a4
+global a4 a5
 
-u0 = [a3*x^4+a4*((x-1)^2)*x; a3*x^4];
+u0 = [a4*x^4+a5*((x-1)^2)*x; a4*x^4];
 
 
 % --------------------------------------------------------------------------
