@@ -53,8 +53,8 @@ default_parameters = [1e-3, 4, 50, "tanh"]
 @use_named_args(dimensions=dimensions)
 def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation):
     global ITERATION
-    # run = f"{ITERATION}"
-    utils.set_run(ITERATION)
+    run = f"{ITERATION}"
+    utils.set_run(run)
 
     config = utils.read_config()
     config["activation"] = activation
