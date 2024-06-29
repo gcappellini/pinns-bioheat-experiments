@@ -11,7 +11,7 @@ import json
 from scipy.interpolate import interp1d
 from scipy import integrate 
 
-
+dde.config.set_random_seed(100)
 # device = torch.device("cpu")
 device = torch.device("cuda")
 
@@ -109,14 +109,14 @@ def read_config():
 def create_default_config():
     # Define default configuration parameters
     network = {
-        "activation": "tanh", 
+        "activation": "elu", 
         "initial_weights_regularizer": True, 
         "initialization": "Glorot normal",
-        "iterations": 30000,
+        "iterations": 50000,
         "LBFGS": False,
-        "learning_rate": 0.0001,
-        "num_dense_layers": 4,
-        "num_dense_nodes": 50,
+        "learning_rate": 0.0007607,
+        "num_dense_layers": 5,
+        "num_dense_nodes": 63,
         "output_injection_gain": 4,
         "resampling": True,
         "resampler_period": 100
@@ -446,7 +446,7 @@ def plot_comparison(e, theta_true, theta_pred, MObs=False):
     else:
         plt.savefig(f"{run_figs}/comparison.png")
 
-    plt.show()
+    # plt.show()
     plt.close()
     plt.clf()
 
@@ -505,7 +505,7 @@ def plot_l2_tf(e, theta_true, theta_pred, model):
     plt.grid()
     ax2.set_box_aspect(1)
     plt.savefig(f"{run_figs}/l2_tf.png")
-    plt.show()
+    # plt.show()
     plt.close()
     plt.clf()
 

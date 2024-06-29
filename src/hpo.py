@@ -9,6 +9,8 @@ from skopt.utils import use_named_args
 import os
 import deepxde as dde
 
+dde.config.set_random_seed(100)
+
 # Function 'gp_minimize' of package 'skopt(scikit-optimize)' is used in this example.
 # However 'np.int' used in skopt 0.9.0(the latest version) was deprecated since NumPy 1.20.
 # Monkey patch here to fix the error.
@@ -73,7 +75,7 @@ def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation):
 
     # Create the neural network with these hyper-parameters.
     mo, _ = utils.single_observer(prj, run, n)
-    error = utils.metrics_observer(mo)
+    error = utils.metrics_observer(mo, n)
 
     if np.isnan(error):
         error = 10**5

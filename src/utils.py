@@ -16,6 +16,8 @@ from scipy.interpolate import interp1d
 from mpl_toolkits.mplot3d import Axes3D
 from scipy import integrate
 
+dde.config.set_random_seed(100)
+
 # device = torch.device("cpu")
 device = torch.device("cuda")
 
