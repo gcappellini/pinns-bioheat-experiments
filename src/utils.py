@@ -6,14 +6,8 @@ import torch
 import seaborn as sns
 import wandb
 import glob
-# import rff
 import json
-from tqdm import tqdm
-from torch import autograd
-from torch.utils.tensorboard import SummaryWriter
-from kan import KAN, LBFGS
 from scipy.interpolate import interp1d
-from mpl_toolkits.mplot3d import Axes3D
 from scipy import integrate
 
 dde.config.set_random_seed(100)
@@ -40,10 +34,12 @@ os.makedirs(logs, exist_ok=True)
 prj_figs, prj_models, prj_logs, run_figs, run_models, run_logs = [None]*6
 
 properties = {
-    "L0": None, "tauf": None, "k": None, "p0": None, "d": None,
-    "rhoc": None, "cb": None, "h": None, "Tmin": None, "Tmax": None, "alpha": None,
-    "W": None, "steep": None, "tchange": None
+    "a1": None, "a2": None, "a3": None, "a4": None, "a5": None, "W": None
 }
+
+a1, a2, a3, a4, a5 = 0.942, 4.172, 0, 0.7, 5000
+
+P = 0
 
 f1, f2, f3 = [None]*3
 upsilon = 500.0
@@ -79,25 +75,24 @@ def set_run(run):
     return run_figs, run_models, run_logs
 
 
-def get_properties(n):
-    global L0, tauf, k, p0, d, rhoc, cb, h, Tmin, Tmax, alpha, W
-    file_path = os.path.join(src_dir, 'simulations', f'data{n}.json')
+# def get_properties(n):
+#     global a1, a2, a3, a4, W
+#     file_path = os.path.join(src_dir, 'simulations', f'data{n}.json')
 
-    # Open the file and load the JSON data
-    with open(file_path, 'r') as f:
-        data = json.load(f)
+#     # Open the file and load the JSON data
+#     with open(file_path, 'r') as f:
+#         data = json.load(f)
 
-    properties.update(data['Parameters'])
-    par = data['Parameters']
-    local_vars = locals()
-    for key in par:
-        if key in local_vars:
-            local_vars[key] = par[key]
+#     properties.update(data['Parameters'])
+#     par = data['Parameters']
+#     local_vars = locals()
+#     for key in par:
+#         if key in local_vars:
+#             local_vars[key] = par[key]
 
-    L0, tauf, k, p0, d, rhoc, cb, h, Tmin, Tmax, alpha, W = (
-        par["L0"], par["tauf"], par["k"], par["p0"], par["d"], par["rhoc"],
-        par["cb"], par["h"], par["Tmin"], par["Tmax"], par["alpha"], par["W"]
-    )
+#     a1, a2, a3, a4, W = (
+#         par["a1"], par["a2"], par["a3"], par["a4"], par["W"]
+#     )
 
 
 def read_config():
@@ -116,15 +111,15 @@ def read_config():
 def create_default_config():
     # Define default configuration parameters
     network = {
-        "activation": "tanh", 
+        "activation": "elu", 
         "initial_weights_regularizer": True, 
         "initialization": "Glorot normal",
         "iterations": 30000,
         "LBFGS": False,
-        "learning_rate": 0.0001,
-        "num_dense_layers": 4,
-        "num_dense_nodes": 50,
-        "output_injection_gain": 50,
+        "learning_rate": 0.0007607,
+        "num_dense_layers": 5,
+        "num_dense_nodes": 63,
+        "output_injection_gain": 4,
         "resampling": True,
         "resampler_period": 100
     }
@@ -163,20 +158,14 @@ def plot_loss_components(losshistory):
     test = np.array(loss_test).sum(axis=1).ravel()
     train = np.array(loss_train).sum(axis=1).ravel()
     loss_res = matrix[:, 0]
-    # loss_bc0 = matrix[:, 1]
-    # loss_bc1 = matrix[:, 2]    
-    # loss_ic = matrix[:, 3]
-
     loss_bc1 = matrix[:, 1]    
     loss_ic = matrix[:, 2]
 
     fig = plt.figure(figsize=(6, 5))
-    # iters = np.arange(len(loss_ic))
     iters = losshistory.steps
     with sns.axes_style("darkgrid"):
         plt.clf()
         plt.plot(iters, loss_res, label=r'$\mathcal{L}_{res}$')
-        # plt.plot(iters, loss_bc0, label=r'$\mathcal{L}_{bc0}$')
         plt.plot(iters, loss_bc1, label=r'$\mathcal{L}_{bc1}$')
         plt.plot(iters, loss_ic, label=r'$\mathcal{L}_{ic}$')
         plt.plot(iters, test, label='test loss')
@@ -196,16 +185,16 @@ def compute_metrics(true, pred):
     pred = np.ravel(pred)
     true_nonzero = np.where(true != 0, true, small_number)
     
-    MSE = dde.metrics.mean_squared_error(true, pred)
-    MAE = np.mean(np.abs((true_nonzero - pred) / true_nonzero))*100
     L2RE = dde.metrics.l2_relative_error(true, pred)
-    max_APE = np.max(np.abs((true_nonzero - pred) / true_nonzero))*100
+    MSE = dde.metrics.mean_squared_error(true, pred)
+    max_err = np.max(np.abs((true_nonzero - pred)))
+    mean_err = np.mean(np.abs((true_nonzero - pred)))
     
     metrics = {
-        "MSE": MSE,
-        "MAE": MAE,
         "L2RE": L2RE,
-        "max_APE": max_APE,
+        "MSE": MSE,
+        "max": max_err,
+        "mean": mean_err,
     }
     return metrics
 
@@ -218,15 +207,11 @@ def boundary_1(x, on_boundary):
     return on_boundary and np.isclose(x[0], 1)
 
 
-def bc0_obs(x, theta, X):
-    return x[:, 1:2] - theta
-
-
 def output_transform(x, y):
     return x[:, 0:1] * y
 
 def create_nbho():
-    global L0, tauf, k, p0, d, rhoc, cb, h, Tmin, Tmax, alpha, W
+    global  a1, a2, a3, a4, a5
     net = read_config()
 
     activation = net["activation"]
@@ -237,55 +222,40 @@ def create_nbho():
     num_dense_nodes = net["num_dense_nodes"]
     K = net["output_injection_gain"]
 
-    dT = Tmax - Tmin
 
-    D = d/L0
-    alpha = k/rhoc
-
-    C1, C2 = tauf/L0**2, dT*tauf/rhoc
-    C3 = C2*dT*cb
-
-    def pde(x, y):
-        # dy_t = dde.grad.jacobian(y, x, i=0, j=4)
-        dy_t = dde.grad.jacobian(y, x, i=0, j=3)
-        dy_xx = dde.grad.hessian(y, x, i=0, j=0)
+    def pde(x, theta, W):
+        dtheta_tau = dde.grad.jacobian(theta, x, i=0, j=3)
+        dtheta_xx = dde.grad.hessian(theta, x, i=0, j=0)
 
         return (
-            dy_t
-            - alpha * C1 * dy_xx - C2 * p0*torch.exp(-(1-x[:, 0:1])/D) + C3 * W *y
+            a1 * dtheta_tau
+            - dtheta_xx + a2 * W * theta + a3 * P
         )
     
-    def bc1_obs(x, theta, X):
-        dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0)
-        # return dtheta_x - (h/k)*(x[:, 3:4]-x[:, 2:3]) - K * (x[:, 2:3] - theta)
-        return dtheta_x - (h/k)*(x[:, 2:3]-x[:, 1:2]) - K * (x[:, 1:2] - theta)
-
-
     def ic_obs(x):
-
         z = x[:, 0:1]
-        # y1 = x[:, 1:2]
-        # y2 = x[:, 2:3]
-        # y3 = x[:, 3:4]
+        y1 = 0
         y2 = x[:, 1:2]
         y3 = x[:, 2:3]
-        y1 = 0
-        beta = h * (y3 - y2) + K * (y2 -y1)
-        a2 = 0.7
 
-        e = y1 + ((beta - ((2/L0)+K)*a2)/((1/L0)+K))*z + a2*z**2
-        return e
+        b1 = a5 * y3 + (K - a5) * y2 - (2 + K) * a4
 
-    # xmin = [0, 0, 0, 0]
-    # xmax = [1, 1, 1, 1]
-    # geom = dde.geometry.Hypercube(xmin, xmax)
+        return y1 + b1*z + a4*z**2
+
+
+    def bc1_obs(x, theta, X):
+        y2 = x[:, 1:2]
+        y3 = x[:, 2:3]
+        dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0)
+
+        return dtheta_x - a5 * (y3 - y2) - K * (y2 - theta)
+
     xmin = [0, 0, 0]
     xmax = [1, 1, 1]
     geom = dde.geometry.Cuboid(xmin, xmax)
     timedomain = dde.geometry.TimeDomain(0, 1)
     geomtime = dde.geometry.GeometryXTime(geom, timedomain)
 
-    # bc_0 = dde.icbc.OperatorBC(geomtime, bc0_obs, boundary_0)
     bc_1 = dde.icbc.OperatorBC(geomtime, bc1_obs, boundary_1)
 
     ic = dde.icbc.IC(geomtime, ic_obs, lambda _, on_initial: on_initial)
@@ -293,7 +263,6 @@ def create_nbho():
     data = dde.data.TimePDE(
         geomtime,
         pde,
-        # [bc_0, bc_1, ic],
         [bc_1, ic],
         num_domain=2560,
         num_boundary=200,
@@ -301,7 +270,6 @@ def create_nbho():
         num_test=10000,
     )
 
-    # layer_size = [5] + [num_dense_nodes] * num_dense_layers + [1]
     layer_size = [4] + [num_dense_nodes] * num_dense_layers + [1]
     net = dde.nn.FNN(layer_size, activation, initialization)
 
@@ -406,7 +374,6 @@ def gen_obsdata(n):
     # if tau > tm:
     #     tau = tm
 
-    # Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
     Xobs = np.vstack((g[:, 0], f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
     return Xobs
 
@@ -630,9 +597,9 @@ def plot_weights(x, t, lam):
 
     for i in range(x.shape[0]):
         # plt.plot(tauf * t, x[i], alpha=1.0, linewidth=1.8, color=colors[i], label=f"Weight $p_{i+1}$")
-        plt.plot(tauf * t, x[i], alpha=1.0, linewidth=1.2, label=f"Weight $p_{i+1}$")
+        plt.plot(t, x[i], alpha=1.0, linewidth=1.2, label=f"Weight $p_{i+1}$")
 
-    ax1.set_xlim(0, tauf)
+    ax1.set_xlim(0, 1)
     ax1.set_ylim(bottom=0.0)
 
     ax1.set_xlabel(xlabel=r"Time t")  # xlabel
