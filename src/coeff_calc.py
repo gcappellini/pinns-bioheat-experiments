@@ -7,9 +7,9 @@ src_dir = os.path.dirname(current_file)
 
 "coefficients a1, a2, a3, a4"
 
-L0 = 5/100
+L0 = 5/100          # 5 cm
 
-keff = 5.0
+k = 5.0
 rhob = 1043
 rho = 1050
 c = 3639
@@ -21,15 +21,18 @@ Ta = 37
 Tmax = 45
 dT = Tmax - Ta
 
-a1 = (tauf/(L0**2))*(keff/(rho*c))
-a2 = tauf*rhob*omegab*cb/(rho*c)
-a3 = tauf/(dT*rho*c)
-print(a1, a2, a3)
-q0 = 16
-beta = 15
-a4 = q0/(4*dT)
-a5 = beta/dT
-print(a4, a5)
+h = 300
 
+# a1 = (tauf/(L0**2))*(keff/(rho*c))
+# a2 = tauf*rhob*omegab*cb/(rho*c)
+# a3 = tauf/(dT*rho*c)
+
+a1 = (L0**2/tauf)*((rho*c)/k)
+a2 = (cb * L0**2)/k
+a3 = L0**2/(k*dT)
+a5 = L0*h
+
+
+print(f"a1:{a1}, a2:{a2}, a3:{a3}, a5:{a5}" )
 
 

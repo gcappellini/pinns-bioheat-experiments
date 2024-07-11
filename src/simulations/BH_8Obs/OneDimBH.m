@@ -1,13 +1,9 @@
 
 function [sol] = OneDimBH
-global k lambda flusso om1 om2  om3 om4   om5 om6 om7 om8 
 
-
-err1=0
-rms1=[0]
 m = 0;
 x = linspace(0,1,100);
-t = linspace(0,1,100);
+t = linspace(0,10,100);
 
 sol = pdepe(m,@OneDimBHpde,@OneDimBHic,@OneDimBHbc,x,t);
 % % Extract the first solution component as u.  This is not necessary
@@ -35,21 +31,24 @@ figure
 plot(t,u10,'r',t,u11,'g',t,u12,'b',t,u13,'yellow',t,u14,'cyan',t,u15,'-.',t,u16,'--',t,u17,'black') %plot the dynamic wheights
 title('dynamic weights');
 
+
 %multiple-model temperature estimation
 uav=u2.*u10+u3.*u11+u4.*u12+u5.*u13+u6.*u14+u7.*u15+u8.*u16+u9.*u17;
 
-% % surface plot of the system solution
-% figure;
-% surf(x,t,u1);
-% title('Numerical solution of the system computed with 20 mesh points.');
-% xlabel('Distance x');
-% ylabel('Time t');
-% % surface plot of the observer solution 
-% figure;
-% surf(x,t,uav);
-% title('Numerical solution of the observer computed with 20 mesh points.');
-% xlabel('Distance x');
-% ylabel('Time t');
+% surface plot of the system solution
+figure;
+surf(x,t,u1);
+title('Numerical solution of the system.');
+xlabel('Distance x');
+ylabel('Time t');
+
+% surface plot of the observer solution 
+figure;
+surf(x,t,uav);
+title('Numerical solution of the observer.');
+xlabel('Distance x');
+ylabel('Time t');
+
 % % surface plot of the observer solution 2
 % figure;
 % surf(x,t,u3);
@@ -58,15 +57,13 @@ uav=u2.*u10+u3.*u11+u4.*u12+u5.*u13+u6.*u14+u7.*u15+u8.*u16+u9.*u17;
 % ylabel('Time t');
 
 
-% figure
-% plot(t,err1,'r',t,err2,'g',t,err3,'b',t,err4,'cyan')
+% surface plot of the observer solution 
+figure;
+surf(x,t,u1-uav);
+title('Observation error with 100 mesh points.');
+xlabel('Distance x');
+ylabel('Time t');
 
-% % surface plot of the system solution
-% figure;
-% surf(x,t,uav);
-% title('Numerical solution of the system computed with 20 mesh points.');
-% xlabel('Distance x');
-% ylabel('Time t');
 
 %solution profile at t_final
 figure;
@@ -82,25 +79,25 @@ ylabel('temperature at t_{final}');
 
 %-----------------
 function [c,f,s] = OneDimBHpde(x,t,u,dudx)
-global lambda om1 om2 om3 om4 om5 om6 om7 om8 
+global lambda om1 om2 om3 om4 om5 om6 om7 om8 W W1 W2 W3 W4 W5 W6 W7 W8 a1 a2 a3 P
 %la prima equazione è quella del sistema, a seguire gli osservatori
 t
 
-c = [1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1];
+c = [a1; a1; a1; a1; a1; a1; a1; a1; a1; 1; 1; 1; 1; 1; 1; 1; 1];
 f = [1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1].* dudx;
 
 den=u(10)*exp(-om1)+u(11)*exp(-om2)+u(12)*exp(-om3)+u(13)*exp(-om4)+...
     u(14)*exp(-om5)+u(15)*exp(-om6)+u(16)*exp(-om7)+u(17)*exp(-om8);
 
-s = [-0.67*u(1); 
-    -0.67*u(2); 
-    -20*u(3); 
-    -1*u(4); 
-    -14*u(5); 
-    -9*u(6); 
-    -8*u(7); 
-    -7*u(8); 
-    -6*u(9); 
+s = [-W*a2*u(1)+a3*P; 
+    -W1*a2*u(2)+a3*P; 
+    -W2*a2*u(3)+a3*P; 
+    -W3*a2*u(4)+a3*P; 
+    -W4*a2*u(5)+a3*P; 
+    -W5*a2*u(6)+a3*P; 
+    -W6*a2*u(7)+a3*P; 
+    -W7*a2*u(8)+a3*P; 
+    -W8*a2*u(9)+a3*P; 
     -lambda*u(10)*(1-(exp(-om1)/den));
     -lambda*u(11)*(1-(exp(-om2)/den)); 
     -lambda*u(12)*(1-(exp(-om3)/den)); 
@@ -119,33 +116,39 @@ s = [-0.67*u(1);
 % --------------------------------------------------------------------------
 
 function u0 = OneDimBHic(x)
-global k flusso 
-u0 = [flusso*x; flusso*x;  flusso*x; flusso*x; flusso*x; flusso*x; flusso*x; flusso*x; flusso*x; 0.2; 0.1; 0.1; 0.1; 0.1; 0.2; 0.1; 0.1];
+global K a4 a5
+y1_0 = 0;
+y2_0 = 0;
+y3_0 = 0;
+b1 = (a5*y3_0+(K-a5)*y2_0-(2+K)*a4)/(1+K);
+ic_obs = y1_0 + b1*x + a4*x^2;
+u0 = [0; ic_obs;  ic_obs; ic_obs; ic_obs; ic_obs; ic_obs; ic_obs; ic_obs; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8];
 
 % --------------------------------------------------------------------------
 
 function [pl,ql,pr,qr] = OneDimBHbc(xl,ul,xr,ur,t)
-global k flusso om1 om2 om3 om4 om5 om6 om7 om8 
+global K om1 om2 om3 om4 om5 om6 om7 om8 a5 
+flusso = a5*(t-ur(1));
 pl = [ul(1);ul(2);ul(3);ul(4);ul(5);ul(6);ul(7);ul(8);ul(9);0;0;0;0;0;0;0;0];
 ql = [0;0;0;0;0;0;0;0;0;1;1;1;1;1;1;1;1];
-pr = [flusso;
-    flusso-k*(ur(1)-ur(2));
-    flusso-k*(ur(1)-ur(3));
-    flusso-k*(ur(1)-ur(4));
-    flusso-k*(ur(1)-ur(5));
-    flusso-k*(ur(1)-ur(6));
-    flusso-k*(ur(1)-ur(7));
-    flusso-k*(ur(1)-ur(8));
-    flusso-k*(ur(1)-ur(9));
+pr = [-flusso;
+    -flusso-K*(ur(1)-ur(2));
+    -flusso-K*(ur(1)-ur(3));
+    -flusso-K*(ur(1)-ur(4));
+    -flusso-K*(ur(1)-ur(5));
+    -flusso-K*(ur(1)-ur(6));
+    -flusso-K*(ur(1)-ur(7));
+    -flusso-K*(ur(1)-ur(8));
+    -flusso-K*(ur(1)-ur(9));
     0;0;0;0;0;0;0;0]; %flusso negativo, con osservatore
 qr = [1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1];
-om1=0.5*((pr(2)-pr(1))/k)^2;
-om2=0.5*((pr(3)-pr(1))/k)^2;
-om3=0.5*((pr(4)-pr(1))/k)^2;
-om4=0.5*((pr(5)-pr(1))/k)^2;
-om5=0.5*((pr(6)-pr(1))/k)^2;
-om6=0.5*((pr(7)-pr(1))/k)^2;
-om7=0.5*((pr(8)-pr(1))/k)^2;
-om8=0.5*((pr(9)-pr(1))/k)^2;
+om1=0.5*((pr(2)-pr(1))/K)^2;
+om2=0.5*((pr(3)-pr(1))/K)^2;
+om3=0.5*((pr(4)-pr(1))/K)^2;
+om4=0.5*((pr(5)-pr(1))/K)^2;
+om5=0.5*((pr(6)-pr(1))/K)^2;
+om6=0.5*((pr(7)-pr(1))/K)^2;
+om7=0.5*((pr(8)-pr(1))/K)^2;
+om8=0.5*((pr(9)-pr(1))/K)^2;
 
 

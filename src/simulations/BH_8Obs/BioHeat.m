@@ -1,24 +1,21 @@
 clear all
 close all
 
-global k lambda flusso om1 om2  om3 om4  om5 om6 om7 om8 omega c1 c2 c3 c4 A1 A2 A3 A4 normerr
+global K lambda W W1 W2 W3 W4 W5 W6 W7 W8 om1 om2  om3 om4  om5 om6 om7 om8 omega normerr a1 a2 a3 a4 a5 P
 
-c1=0.5;
-c2=0.1;
-c3=0.6;
-c4=0.6;
+a1 = 1.061375;
+a2 = 1.9125;
+a3 = 6.25e-05;
+a4 = 0.7;
+a5 = 15.0;
+P = 0;
 
 omega=30;
-A1=1;
-A2=10;
-A3=1;
-A4=4;
 
 normerr=[]
 
-k=100;
-lambda=1;
-flusso=10;
+K=50;
+lambda=100;
 om1=0;
 om2=0;
 om3=0;
@@ -27,5 +24,15 @@ om5=0;
 om6=0;
 om7=0;
 om8=0;
+
+W=0.67;
+W1=0.67;
+W2=2;
+W3=4;
+W4=6;
+W5=8;
+W6=10;
+W7=13;
+W8=15;
 
 sol= OneDimBH;
