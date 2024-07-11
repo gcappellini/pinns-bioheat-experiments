@@ -1,2 +1,10 @@
 20240522_1.txt è il file
 di ogni set di misurazioni, prendi l'ultima (termocoppie si devono riportare a temperatura ambiente)
+
+Floor - bottom bucket (Max pos): 174 cm
+
+Floor - bottom bucket (Min pos): 89 cm
+
+Height bucket: 21 cm
+
+Floor - platform cart: 65,5 cm
