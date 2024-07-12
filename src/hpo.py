@@ -9,7 +9,6 @@ from skopt.utils import use_named_args
 import os
 import deepxde as dde
 
-dde.config.set_random_seed(100)
 
 # Function 'gp_minimize' of package 'skopt(scikit-optimize)' is used in this example.
 # However 'np.int' used in skopt 0.9.0(the latest version) was deprecated since NumPy 1.20.
@@ -25,6 +24,9 @@ else:
 
     sin = tf.sin
 
+
+
+dde.config.set_random_seed(300)
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
 project_dir = os.path.dirname(src_dir)
@@ -79,7 +81,8 @@ def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation, initia
 
     # Create the neural network with these hyper-parameters.
     mo, _ = utils.single_observer(prj, run, n)
-    error = utils.plot_and_metrics(mo, n)
+    errors = utils.plot_and_metrics(mo, n)
+    error = errors["L2RE"]
 
     if np.isnan(error):
         error = 10**5
@@ -93,7 +96,7 @@ ITERATION = 0
 search_result = gp_minimize(
     func=fitness,
     dimensions=dimensions,
-    # acq_func="EI",  # Expected Improvement.
+    acq_func="EI",  # Expected Improvement.
     n_calls=n_calls,
     x0=default_parameters,
     random_state=1234,

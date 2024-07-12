@@ -115,7 +115,7 @@ def create_default_config():
         "activation": "elu", 
         "initial_weights_regularizer": True, 
         "initialization": "Glorot normal",
-        "iterations": 20000,
+        "iterations": 30000,
         "LBFGS": False,
         "learning_rate": 0.0007607,
         "num_dense_layers": 5,
