@@ -3,7 +3,7 @@ import utils
 
 prj = "debug_obs"
 n_test="BH_8Obs"
-utils.single_observer(prj, "change_seed", n_test)
+utils.single_observer(prj, "try_lbfgs", n_test)
 
 
 # prj = "simulation"
