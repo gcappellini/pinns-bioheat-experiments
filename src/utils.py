@@ -10,7 +10,7 @@ import json
 from scipy.interpolate import interp1d
 from scipy import integrate
 
-dde.config.set_random_seed(100)
+dde.config.set_random_seed(200)
 
 # device = torch.device("cpu")
 device = torch.device("cuda")
@@ -33,9 +33,9 @@ os.makedirs(logs, exist_ok=True)
 
 prj_figs, prj_models, prj_logs, run_figs, run_models, run_logs = [None]*6
 
-properties = {
-    "a1": None, "a2": None, "a3": None, "a4": None, "a5": None, "W": None
-}
+# properties = {
+#     "a1": None, "a2": None, "a3": None, "a4": None, "a5": None, "W": None
+# }
 
 a1, a2, a3, a4, a5, a6 = 1.061375, 1.9125, 6.25e-05, 0.7, 15.0, 0.1666667
 
@@ -43,7 +43,7 @@ P0 = 1e+05
 W = 0.45
 
 f1, f2, f3 = [None]*3
-upsilon = 500.0
+upsilon = 0.5
 
 
 def set_prj(prj):
@@ -115,7 +115,7 @@ def create_default_config():
         "activation": "elu", 
         "initial_weights_regularizer": True, 
         "initialization": "Glorot normal",
-        "iterations": 30000,
+        "iterations": 20000,
         "LBFGS": False,
         "learning_rate": 0.0007607,
         "num_dense_layers": 5,
@@ -212,7 +212,7 @@ def output_transform(x, y):
     return x[:, 0:1] * y
 
 def create_nbho():
-    global  a1, a2, a3, a4, a5, a6
+    global  a1, a2, a3, a4, a5, a6, W
     net = read_config()
 
     activation = net["activation"]
@@ -230,26 +230,27 @@ def create_nbho():
 
         return (
             a1 * dtheta_tau
-            - dtheta_xx + a2 * W * theta + a3 * P0 * torch.exp(-(1-x[:, 0:1])*a6)
+            - dtheta_xx + a2 * W * theta - a3 * P0 * torch.exp(-(1-x[:, 0:1])*a6)
         )
     
     def ic_obs(x):
         z = x[:, 0:1]
-        y1 = 0
-        y2 = x[:, 1:2]
-        y3 = x[:, 2:3]
+        y1_0 = 0
+        y2_0 = x[:, 1:2]
+        y3_0 = x[:, 2:3]
 
-        b1 = a5 * y3 + (K - a5) * y2 - (2 + K) * a4
+        # y1_0 = 0
+        # y2_0 = 0
+        # y3_0 = 0
+        b1 = (a5*y3_0+(K-a5)*y2_0-(2+K)*a4)/(1+K)
 
-        return y1 + b1*z + a4*z**2
+        return y1_0 + b1*z + a4*z**2
 
 
     def bc1_obs(x, theta, X):
-        y2 = x[:, 1:2]
-        y3 = x[:, 2:3]
         dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0)
 
-        return dtheta_x - a5 * (y3 - y2) - K * (y2 - theta)
+        return dtheta_x - a5 * (x[:, 2:3] - x[:, 1:2]) - K * (x[:, 1:2] - theta)
 
     xmin = [0, 0, 0]
     xmax = [1, 1, 1]
@@ -263,7 +264,7 @@ def create_nbho():
 
     data = dde.data.TimePDE(
         geomtime,
-        pde,
+        lambda x, theta: pde(x, theta, W),
         [bc_1, ic],
         num_domain=2560,
         num_boundary=200,
@@ -380,16 +381,56 @@ def gen_obsdata(n):
 
 
 def plot_and_metrics(model, n_test):
-    e, _, theta_true, _, _ = gen_testdata(n_test)
+    e, theta_true, theta_obs, _, _ = gen_testdata(n_test)
     g = gen_obsdata(n_test)
 
     theta_pred = model.predict(g)
 
     plot_comparison(e, theta_true, theta_pred)
+    check_obs(e, theta_obs, theta_pred)
     plot_l2_tf(e, theta_true, theta_pred, model)
     # plot_tf(e, theta_true, model)
     metrics = compute_metrics(theta_true, theta_pred)
-    return metrics
+    metrics_obs = compute_metrics(theta_obs, theta_pred)
+    return metrics_obs
+
+
+def check_obs(e, theta_true, theta_pred):
+    global run_figs, prj_figs
+
+    la = len(np.unique(e[:, 0]))
+    le = len(np.unique(e[:, 1]))
+
+    # Predictions
+    fig = plt.figure(3, figsize=(9, 4))
+
+    col_titles = ['MATLAB', 'PINNs', 'Error']
+    surfaces = [
+        [theta_true.reshape(le, la), theta_pred.reshape(le, la),
+            np.abs(theta_true - theta_pred).reshape(le, la)]
+    ]
+
+    # Create a grid of subplots
+    grid = plt.GridSpec(1, 3)
+
+    # Iterate over columns to add subplots
+    for col in range(3):
+        ax = fig.add_subplot(grid[0, col], projection='3d')
+        configure_subplot(ax, e, surfaces[0][col])
+
+        # Set column titles
+        ax.set_title(col_titles[col], fontsize=8, y=.96, weight='semibold')
+
+    # Adjust spacing between subplots
+    plt.subplots_adjust(wspace=0.15)
+
+    plt.tight_layout()
+
+    plt.savefig(f"{run_figs}/check_obs.png")
+
+    # plt.show()
+    plt.close()
+    # plt.clf()
 
 
 def plot_comparison(e, theta_true, theta_pred, MObs=False):
@@ -429,9 +470,9 @@ def plot_comparison(e, theta_true, theta_pred, MObs=False):
     else:
         plt.savefig(f"{run_figs}/comparison.png")
 
-    plt.show()
+    # plt.show()
     plt.close()
-    plt.clf()
+    # plt.clf()
 
 
 def plot_l2_norm(e, theta_true, theta_pred):
@@ -488,8 +529,8 @@ def plot_l2_tf(e, theta_true, theta_pred, model):
     plt.grid()
     ax2.set_box_aspect(1)
     plt.savefig(f"{run_figs}/l2_tf.png")
-    plt.show()
-    plt.clf()
+    # plt.show()
+    # plt.clf()
 
 
 def configure_subplot(ax, XS, surface):
@@ -511,6 +552,8 @@ def configure_subplot(ax, XS, surface):
 
 def single_observer(name_prj, name_run, n_test):
     # get_properties(n_test)
+    set_prj(name_prj)
+    set_run(name_run)
     wandb.init(
         project=name_prj, name=name_run,
         config=read_config()
@@ -526,8 +569,8 @@ def single_observer(name_prj, name_run, n_test):
 def mm_observer(name_prj, n_test):
     global W, prj_logs
     # get_properties(n_test)
-    # gen_obsdata(n_test)
-    set_prj(name_prj)
+
+    set_prj(f"{name_prj}_{n_test}")
 
     obs = np.array([1, 2, 3, 5, 6, 8, 9, 10])
     W_obs = np.dot(W, obs)
@@ -582,11 +625,14 @@ def mm_observer(name_prj, n_test):
 
 def mu(o, tau):
     global f2, f3
+    net = read_config()
+    K = net["output_injection_gain"]
+
     xo = np.vstack((np.ones_like(tau), f2(tau), f3(tau), tau)).T
     muu = []
     for el in o:
         oss = el.predict(xo)
-        scrt = upsilon*np.abs(oss-f2(tau))**2
+        scrt = upsilon*np.abs((oss-f2(tau))/K)**2
         muu.append(scrt)
     muu = np.array(muu).reshape(len(muu),)
     return muu
@@ -600,7 +646,7 @@ def plot_weights(x, t, lam):
 
     for i in range(x.shape[0]):
         # plt.plot(tauf * t, x[i], alpha=1.0, linewidth=1.8, color=colors[i], label=f"Weight $p_{i+1}$")
-        plt.plot(t, x[i], alpha=1.0, linewidth=1.2, label=f"Weight $p_{i+1}$")
+        plt.plot(t, x[i], alpha=1.0, linewidth=1.2, label=f"Weight $p_{i}$")
 
     ax1.set_xlim(0, 1)
     ax1.set_ylim(bottom=0.0)
@@ -612,12 +658,12 @@ def plot_weights(x, t, lam):
     plt.grid()
     plt.savefig(f"{prj_figs}/weights_lam_{lam}.png", dpi=150, bbox_inches='tight')
 
-    plt.show()
-    plt.clf()
+    # plt.show()
+    # plt.clf()
 
 
 def mm_plot_and_metrics(multi_obs, n_test, lam):
-    e, _, theta_true = gen_testdata(n_test)
+    e, theta_true, _, _, _ = gen_testdata(n_test)
     g = gen_obsdata(n_test)
 
     theta_pred = mm_predict(multi_obs, lam, g).reshape(theta_true.shape)
@@ -668,8 +714,11 @@ def mm_plot_l2_tf(e, theta_true, theta_pred, multi_obs, lam):
     pred = mm_predict(multi_obs, lam, Xobs)
 
     ax2 = fig.add_subplot(122)
-    ax2.plot(xtr, true, marker="x", linestyle="None", alpha=1.0, color='C0', label="true")
-    ax2.plot(x, pred, alpha=1.0, linewidth=1.8, color='C2', label="pred")
+    ax2.plot(xtr, true, marker="o", linestyle="None", alpha=1.0, color='purple', label="true")
+    ax2.plot(x, pred, linestyle='None', marker="X", color='gold', label="mm_obs")
+
+    for el in range(len(multi_obs)):
+        ax2.plot(x, multi_obs[el].predict(Xobs), alpha=1.0, linewidth=1.2, label=f"$obs_{el}$")
 
     ax2.set_xlabel(xlabel=r"Space x", fontsize=7)  # xlabel
     ax2.set_ylabel(ylabel=r"$\Theta$", fontsize=7)  # ylabel
@@ -681,6 +730,6 @@ def mm_plot_l2_tf(e, theta_true, theta_pred, multi_obs, lam):
 
     plt.grid()
     ax2.set_box_aspect(1)
-    plt.savefig(f"{prj_figs}/l2_tf.png")
-    plt.show()
-    plt.clf()
+    plt.savefig(f"{prj_figs}/l2_tf_lam{lam}.png")
+    # plt.show()
+    # plt.clf()

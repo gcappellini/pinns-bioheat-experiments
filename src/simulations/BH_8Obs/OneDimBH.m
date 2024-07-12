@@ -9,23 +9,23 @@ sol = pdepe(m,@OneDimBHpde,@OneDimBHic,@OneDimBHbc,x,t);
 % % Extract the first solution component as u.  This is not necessary
 % % for a single equation, but makes a point about the form of the output.
 u1 = sol(:,:,1); %soluzione del sistema
-u2 = sol(:,:,2); %soluzione dell'osservatore 1
-u3 = sol(:,:,3); %soluzione dell'osservatore 2
-u4 = sol(:,:,4); %soluzione dell'osservatore 3
-u5 = sol(:,:,5); %soluzione dell'osservatore 4
-u6 = sol(:,:,6); %soluzione dell'osservatore 5
-u7 = sol(:,:,7); %soluzione dell'osservatore 6
-u8 = sol(:,:,8); %soluzione dell'osservatore 7
-u9 = sol(:,:,9); %soluzione dell'osservatore 8
+u2 = sol(:,:,2); %soluzione dell'osservatore 0
+u3 = sol(:,:,3); %soluzione dell'osservatore 1
+u4 = sol(:,:,4); %soluzione dell'osservatore 2
+u5 = sol(:,:,5); %soluzione dell'osservatore 3
+u6 = sol(:,:,6); %soluzione dell'osservatore 4
+u7 = sol(:,:,7); %soluzione dell'osservatore 5
+u8 = sol(:,:,8); %soluzione dell'osservatore 6
+u9 = sol(:,:,9); %soluzione dell'osservatore 7
 
-u10 = sol(:,:,10); %soluzione del peso 1
-u11 = sol(:,:,11); %soluzione del peso 2
-u12 = sol(:,:,12); %soluzione del peso 3
-u13 = sol(:,:,13); %soluzione del peso 4
-u14 = sol(:,:,14); %soluzione del peso 5
-u15 = sol(:,:,15); %soluzione del peso 6
-u16 = sol(:,:,16); %soluzione del peso 7
-u17 = sol(:,:,17); %soluzione del peso 8
+u10 = sol(:,:,10); %soluzione del peso 0
+u11 = sol(:,:,11); %soluzione del peso 1
+u12 = sol(:,:,12); %soluzione del peso 2
+u13 = sol(:,:,13); %soluzione del peso 3
+u14 = sol(:,:,14); %soluzione del peso 4
+u15 = sol(:,:,15); %soluzione del peso 5
+u16 = sol(:,:,16); %soluzione del peso 6
+u17 = sol(:,:,17); %soluzione del peso 7
 
 
 %multiple-model temperature estimation
@@ -78,8 +78,8 @@ plot(x,u1(end,:),'o',x,u2(end,:),'r',x,u3(end,:),'g',x,u4(end,:),'b',x,u5(end,:)
     x,u6(end,:),'.',x,u7(end,:),'-.',x,u8(end,:),'black',x,u9(end,:),'yellow',x,uav(end,:),'x');
 
 title('Solutions at t = t_{final}');
-legend('System','Observer1','Observer2','Observer3','Observer4','Observer5',...
-    'Observer6','Observer7','Observer8','ObserverMultiModel','Location', 'SouthWest');
+legend('System','Observer0','Observer1','Observer2','Observer3','Observer4','Observer5',...
+    'Observer6','Observer7','ObserverMultiModel','Location', 'SouthWest');
 xlabel('Distance x');
 ylabel('temperature at t_{final}');
 

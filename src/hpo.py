@@ -1,4 +1,4 @@
-import utils_cdc as utils
+import utils
 from matplotlib import pyplot as plt
 import numpy as np
 import skopt
@@ -32,8 +32,8 @@ tests_dir = os.path.join(project_dir, "tests")
 figures = os.path.join(tests_dir, "figures")
 os.makedirs(figures, exist_ok=True)
 
-n="0-cdc"
-prj = "single_obs_hpo"
+n="BH_8Obs"
+prj = "hpo_BH_8Obs"
 prj_figs, _, _ = utils.set_prj(prj)
 # HPO setting
 n_calls = 50
@@ -41,19 +41,21 @@ dim_learning_rate = Real(low=1e-4, high=5e-2, name="learning_rate", prior="log-u
 dim_num_dense_layers = Integer(low=1, high=6, name="num_dense_layers")
 dim_num_dense_nodes = Integer(low=5, high=100, name="num_dense_nodes")
 dim_activation = Categorical(categories=["elu", "relu", "selu", "silu", "sigmoid", "sin", "swish", "tanh"], name="activation")
+dim_initialization = Categorical(categories=["Glorot normal", "Glorot uniform", "He normal", "He uniform"], name="initialization")
 
 dimensions = [
     dim_learning_rate,
     dim_num_dense_layers,
     dim_num_dense_nodes,
     dim_activation,
+    dim_initialization
 ]
 
-default_parameters = [1e-3, 4, 50, "tanh"]
+default_parameters = [1e-3, 4, 50, "tanh", "Glorot uniform"]
 
 
 @use_named_args(dimensions=dimensions)
-def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation):
+def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation, initialization):
     global ITERATION
     run = f"run_{ITERATION}"
     utils.set_run(run)
@@ -63,11 +65,13 @@ def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation):
     config["learning_rate"] = learning_rate
     config["num_dense_layers"] = num_dense_layers
     config["num_dense_nodes"] = num_dense_nodes
+    config["initalization"] = initialization
     utils.write_config(config)
 
     print(ITERATION, "it number")
     # Print the hyper-parameters.
     print("activation:", activation)
+    print("initialization:", initialization)
     print("learning rate: {0:.1e}".format(learning_rate))
     print("num_dense_layers:", num_dense_layers)
     print("num_dense_nodes:", num_dense_nodes)
@@ -75,7 +79,7 @@ def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation):
 
     # Create the neural network with these hyper-parameters.
     mo, _ = utils.single_observer(prj, run, n)
-    error = utils.metrics_observer(mo, n)
+    error = utils.plot_and_metrics(mo, n)
 
     if np.isnan(error):
         error = 10**5
