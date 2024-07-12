@@ -15,13 +15,20 @@ rho = 1050
 c = 3639
 cb = 3825
 
-omegab = 2.22e-03
 tauf = 1800
 Ta = 37
 Tmax = 45
 dT = Tmax - Ta
 
 h = 300
+
+d = 0.3
+
+W = 0.45
+obs = np.array([1, 2, 3, 5, 6, 8, 9, 10])
+
+# W_obs = np.array(W*[1, 2, 3, 5, 6, 8, 9, 10]).round(3)
+W_obs = np.dot(W, obs)
 
 # a1 = (tauf/(L0**2))*(keff/(rho*c))
 # a2 = tauf*rhob*omegab*cb/(rho*c)
@@ -30,9 +37,11 @@ h = 300
 a1 = (L0**2/tauf)*((rho*c)/k)
 a2 = (cb * L0**2)/k
 a3 = L0**2/(k*dT)
+a4 = 0.7
 a5 = L0*h
+a6 = L0/d
 
-
-print(f"a1:{a1}, a2:{a2}, a3:{a3}, a5:{a5}" )
+print(len(obs))
+print(f"a1:{round(a1, 7)}, a2:{round(a2, 7)}, a3:{round(a3, 7)}, a4:{round(a4, 7)}, a5:{round(a5, 7)} , a6:{round(a6, 7)}" )
 
 

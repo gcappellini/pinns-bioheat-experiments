@@ -39,7 +39,32 @@ fileID = fopen('output_matlab.txt','w');
 for i = 1:101
    for j = 1:101
         
-     fprintf(fileID,'%6.2f %6.2f %12.8f %12.8f %12.8f %12.8f\n', x(j), t(i), u1(i,j), uav(i,j), u1(i,101), Bolus(t(i)));
+     fprintf(fileID,'%6.2f %6.2f %12.8f %12.8f %12.8f %12.8f\n', x(j), t(i), u1(i,j), uav(i,j));
+        
+   end
+end
+
+% Print solution observer
+
+fileID = fopen('output_matlab_mm_observer.txt','w');
+
+for i = 1:101
+   for j = 1:101
+        
+     fprintf(fileID,'%6.2f %6.2f %12.8f\n', x(j), t(i), uav(i,j));
+        
+   end
+end
+
+
+% Print solution supT
+
+fileID = fopen('output_matlab_sup_bol.txt','w');
+
+for i = 1:101
+   for j = 1:101
+        
+     fprintf(fileID,'%6.2f %6.2f %12.8f %12.8f\n', x(j), t(i), u1(i,101), Bolus(t(i)));
         
    end
 end

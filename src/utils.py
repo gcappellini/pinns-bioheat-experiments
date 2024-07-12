@@ -37,9 +37,10 @@ properties = {
     "a1": None, "a2": None, "a3": None, "a4": None, "a5": None, "W": None
 }
 
-a1, a2, a3, a4, a5 = 0.942, 4.172, 0, 0.7, 5000
+a1, a2, a3, a4, a5, a6 = 1.061375, 1.9125, 6.25e-05, 0.7, 15.0, 0.1666667
 
-P = 0
+P0 = 1e+05
+W = 0.45
 
 f1, f2, f3 = [None]*3
 upsilon = 500.0
@@ -76,7 +77,7 @@ def set_run(run):
 
 
 # def get_properties(n):
-#     global a1, a2, a3, a4, W
+#     global a1, a2, a3, a4, a5, a6
 #     file_path = os.path.join(src_dir, 'simulations', f'data{n}.json')
 
 #     # Open the file and load the JSON data
@@ -90,8 +91,8 @@ def set_run(run):
 #         if key in local_vars:
 #             local_vars[key] = par[key]
 
-#     a1, a2, a3, a4, W = (
-#         par["a1"], par["a2"], par["a3"], par["a4"], par["W"]
+#     a1, a2, a3, a4, a5, a6 = (
+#         par["a1"], par["a2"], par["a3"], par["a4"], par["a5"], par["a6"]
 #     )
 
 
@@ -211,7 +212,7 @@ def output_transform(x, y):
     return x[:, 0:1] * y
 
 def create_nbho():
-    global  a1, a2, a3, a4, a5
+    global  a1, a2, a3, a4, a5, a6
     net = read_config()
 
     activation = net["activation"]
@@ -229,7 +230,7 @@ def create_nbho():
 
         return (
             a1 * dtheta_tau
-            - dtheta_xx + a2 * W * theta + a3 * P
+            - dtheta_xx + a2 * W * theta + a3 * P0 * torch.exp(-(1-x[:, 0:1])*a6)
         )
     
     def ic_obs(x):
@@ -345,11 +346,14 @@ def train_and_save_model(model, iterations, callbacks, optimizer_name):
 
 
 def gen_testdata(n):
-    data = np.loadtxt(f"{src_dir}/simulations/file{n}.txt")
-    x, t, bol, exact = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3], data[:, 3:].T
+    data = np.loadtxt(f"{src_dir}/simulations/{n}/output_matlab.txt")
+    x, t, exact, mm, sup, bol = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:4].T, data[:, 4:5].T, data[:, 5:6].T
     X = np.vstack((x, t)).T
     y = exact.flatten()[:, None]
-    return X, bol, y
+    y_mm = mm.flatten()[:, None]
+    y_sup = sup.flatten()[:, None]
+    y_bol = bol.flatten()[:, None]
+    return X, y, y_mm, y_sup, y_bol
 
 
 def gen_obsdata(n):
@@ -357,16 +361,13 @@ def gen_obsdata(n):
     g = np.hstack((gen_testdata(n)))
     instants = np.unique(g[:, 1])
 
-    # rows_0 = g[g[:, 0] == 0.0]
     rows_1 = g[g[:, 0] == 1.0]
 
-    # y1 = rows_0[:, -1].reshape(len(instants),)
-    # f1 = interp1d(instants, y1, kind='previous')
 
-    y2 = rows_1[:, -1].reshape(len(instants),)
+    y2 = rows_1[:, -2].reshape(len(instants),)
     f2 = interp1d(instants, y2, kind='previous')
 
-    y3 = rows_1[:, -2].reshape(len(instants),)
+    y3 = rows_1[:, -1].reshape(len(instants),)
     f3 = interp1d(instants, y3, kind='previous')
 
     
@@ -379,7 +380,7 @@ def gen_obsdata(n):
 
 
 def plot_and_metrics(model, n_test):
-    e, _, theta_true = gen_testdata(n_test)
+    e, _, theta_true, _, _ = gen_testdata(n_test)
     g = gen_obsdata(n_test)
 
     theta_pred = model.predict(g)
@@ -509,7 +510,7 @@ def configure_subplot(ax, XS, surface):
 
 
 def single_observer(name_prj, name_run, n_test):
-    get_properties(n_test)
+    # get_properties(n_test)
     wandb.init(
         project=name_prj, name=name_run,
         config=read_config()
@@ -522,14 +523,16 @@ def single_observer(name_prj, name_run, n_test):
     return mo, metrics
 
 
-def mm_observer(n_test, n_obs, var):
+def mm_observer(name_prj, n_test):
     global W, prj_logs
-    name_prj=f"mm{n_obs}obs_var{var}_test{n_test}"
-    get_properties(n_test)
-    gen_obsdata(n_test)
+    # get_properties(n_test)
+    # gen_obsdata(n_test)
     set_prj(name_prj)
 
-    W_obs = np.linspace(W*(1-var), W*(1+var), n_obs).round(3)
+    obs = np.array([1, 2, 3, 5, 6, 8, 9, 10])
+    W_obs = np.dot(W, obs)
+
+    n_obs = len(obs)
 
     # wandb.init(
     #     project=name_prj, name=name_run,
