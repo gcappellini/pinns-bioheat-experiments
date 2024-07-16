@@ -43,7 +43,7 @@ P0 = 1e+05
 W = 0.45
 
 f1, f2, f3 = [None]*3
-upsilon = 0.5
+upsilon = 250.0
 
 
 def set_prj(prj):
@@ -175,7 +175,7 @@ def plot_loss_components(losshistory):
         plt.xlabel('iterations')
         plt.legend(ncol=2)
         plt.tight_layout()
-        plt.savefig(f"{run_figs}/losses.png")
+        plt.savefig(f"{run_figs}/losses.png", dpi=1200)
         plt.close()
     
 
@@ -348,13 +348,14 @@ def train_and_save_model(model, iterations, callbacks, optimizer_name):
 
 def gen_testdata(n):
     data = np.loadtxt(f"{src_dir}/simulations/{n}/output_matlab.txt")
-    x, t, exact, mm, sup, bol = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:4].T, data[:, 4:5].T, data[:, 5:6].T
+    x, t, exact, obs1, mm, sup, bol = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:4].T, data[:, 4:5].T, data[:, 5:6].T, data[:, 6:7].T
     X = np.vstack((x, t)).T
     y = exact.flatten()[:, None]
+    y_obs1 = obs1.flatten()[:, None]
     y_mm = mm.flatten()[:, None]
     y_sup = sup.flatten()[:, None]
     y_bol = bol.flatten()[:, None]
-    return X, y, y_mm, y_sup, y_bol
+    return X, y, y_obs1, y_mm, y_sup, y_bol
 
 
 def gen_obsdata(n):
@@ -381,7 +382,7 @@ def gen_obsdata(n):
 
 
 def plot_and_metrics(model, n_test):
-    e, theta_true, theta_obs, _, _ = gen_testdata(n_test)
+    e, theta_true, theta_obs, _, _, _ = gen_testdata(n_test)
     g = gen_obsdata(n_test)
 
     theta_pred = model.predict(g)
@@ -425,7 +426,7 @@ def check_obs(e, theta_true, theta_pred):
 
     plt.tight_layout()
 
-    plt.savefig(f"{run_figs}/check_obs.png")
+    plt.savefig(f"{run_figs}/check_obs.png", dpi=1200)
 
     # plt.show()
     plt.close()
@@ -461,13 +462,13 @@ def plot_comparison(e, theta_true, theta_pred, MObs=False):
     # Adjust spacing between subplots
     plt.subplots_adjust(wspace=0.15)
 
-    plt.tight_layout()
+    # plt.tight_layout()
 
     if MObs:
-        plt.savefig(f"{prj_figs}/comparison.png")
+        plt.savefig(f"{prj_figs}/comparison.png", dpi=1200)
 
     else:
-        plt.savefig(f"{run_figs}/comparison.png")
+        plt.savefig(f"{run_figs}/comparison.png", dpi=1200)
 
     # plt.show()
     plt.close()
@@ -527,7 +528,7 @@ def plot_l2_tf(e, theta_true, theta_pred, model):
 
     plt.grid()
     ax2.set_box_aspect(1)
-    plt.savefig(f"{run_figs}/l2_tf.png")
+    plt.savefig(f"{run_figs}/l2_tf.png", dpi=1200)
     # plt.show()
     # plt.clf()
 
@@ -553,15 +554,15 @@ def single_observer(name_prj, name_run, n_test):
     # get_properties(n_test)
     # set_prj(name_prj)
     # set_run(name_run)
-    wandb.init(
-        project=name_prj, name=name_run,
-        config=read_config()
-    )
+    # wandb.init(
+    #     project=name_prj, name=name_run,
+    #     config=read_config()
+    # )
     mo = train_model()
     metrics = plot_and_metrics(mo, n_test)
 
-    wandb.log(metrics)
-    wandb.finish()
+    # wandb.log(metrics)
+    # wandb.finish()
     return mo, metrics
 
 
@@ -569,7 +570,7 @@ def mm_observer(name_prj, n_test):
     global W, prj_logs
     # get_properties(n_test)
 
-    set_prj(f"{name_prj}_{n_test}")
+    set_prj(name_prj)
 
     obs = np.array([1, 2, 3, 5, 6, 8, 9, 10])
     W_obs = np.dot(W, obs)
@@ -653,16 +654,16 @@ def plot_weights(x, t, lam):
     ax1.set_xlabel(xlabel=r"Time t")  # xlabel
     ax1.set_ylabel(ylabel=r"Weights $p_j$")  # ylabel
     ax1.legend()
-    ax1.set_title(f"Dynamic weights, $\lambda={lam}$", weight='semibold')
+    ax1.set_title(r"Dynamic weights, $\lambda=$"f"{lam}", weight='semibold')
     plt.grid()
-    plt.savefig(f"{prj_figs}/weights_lam_{lam}.png", dpi=150, bbox_inches='tight')
+    plt.savefig(f"{prj_figs}/weights_lam_{lam}.png", dpi=1200, bbox_inches='tight')
 
     # plt.show()
     # plt.clf()
 
 
 def mm_plot_and_metrics(multi_obs, n_test, lam):
-    e, theta_true, _, _, _ = gen_testdata(n_test)
+    e, theta_true, _, _, _, _ = gen_testdata(n_test)
     g = gen_obsdata(n_test)
 
     theta_pred = mm_predict(multi_obs, lam, g).reshape(theta_true.shape)
@@ -713,8 +714,8 @@ def mm_plot_l2_tf(e, theta_true, theta_pred, multi_obs, lam):
     pred = mm_predict(multi_obs, lam, Xobs)
 
     ax2 = fig.add_subplot(122)
-    ax2.plot(xtr, true, marker="o", linestyle="None", alpha=1.0, linewidth=0.75, color='purple', label="true")#, markevery=4)
-    ax2.plot(x, pred, linestyle='None', marker="X", linewidth=0.75, color='gold', label="mm_obs")#, markevery=4)
+    ax2.plot(xtr, true, marker="o", linestyle="None", alpha=1.0, linewidth=0.75, color='purple', label="true", markevery=6)
+    ax2.plot(x, pred, linestyle='None', marker="X", linewidth=0.75, color='gold', label="mm_obs", markevery=6)
 
     for el in range(len(multi_obs)):
         ax2.plot(x, multi_obs[el].predict(Xobs), alpha=1.0, linewidth=0.75, label=f"$obs_{el}$")
@@ -729,6 +730,6 @@ def mm_plot_l2_tf(e, theta_true, theta_pred, multi_obs, lam):
 
     plt.grid()
     ax2.set_box_aspect(1)
-    plt.savefig(f"{prj_figs}/l2_tf_lam{lam}.png")
+    plt.savefig(f"{prj_figs}/l2_tf_lam{lam}.png", dpi=1200)
     # plt.show()
     # plt.clf()

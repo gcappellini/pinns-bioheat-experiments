@@ -39,7 +39,7 @@ fileID = fopen('output_matlab.txt','w');
 for i = 1:101
    for j = 1:101
         
-     fprintf(fileID,'%6.2f %6.2f %12.8f %12.8f %12.8f %12.8f\n', x(j), t(i), u1(i,j), uav(i,j), u1(i,101), Bolus(t(i)));
+     fprintf(fileID,'%6.2f %6.2f %12.8f %12.8f %12.8f %12.8f %12.8f\n', x(j), t(i), u1(i,j), u2(i,j), uav(i,j), u1(i,101), Bolus(t(i)));
         
    end
 end
