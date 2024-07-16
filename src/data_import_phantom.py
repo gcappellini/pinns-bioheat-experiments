@@ -36,8 +36,11 @@ def parse_temperature_file(file_path):
 # Example usage
 file_path = f"{measurements_dir}/phantom/20240403.txt"
 df = parse_temperature_file(file_path)
-print(df)
+df.to_pickle(f"{measurements_dir}/phantom/phantom_meas.pkl")
+
+# next: map the phantom - a dictionary (catheter, point) = time series measurements:
+# 1) 
 
 
-# next: map the phantom - a dictionary (catheter, point) = time series measurements
-# next: transformation (catheter, point) -> (x, y, z)
+
+# next (for 3D): transformation (catheter, point) -> (x, y, z)

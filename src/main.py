@@ -1,11 +1,7 @@
-import utils
+import utils_5ins as utils
 
 
-# prj = "debug_obs"
-n_test="BH_8Obs"
-# utils.single_observer(prj, "after_hpo", n_test)
+prj = "new_debug_obs"
+run = "5_ins_hpo"
 
-
-prj = "BH_8Obs_correct"
-utils.mm_observer(prj, n_test)
-
+utils.single_observer(prj, run, "BH_8Obs")

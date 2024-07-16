@@ -1,4 +1,4 @@
-import utils
+import utils_5ins as utils
 from matplotlib import pyplot as plt
 import numpy as np
 import skopt
@@ -35,7 +35,7 @@ figures = os.path.join(tests_dir, "figures")
 os.makedirs(figures, exist_ok=True)
 
 n="BH_8Obs"
-prj = "hpo_BH_8Obs"
+prj = "new_debug_obs"
 prj_figs, _, _ = utils.set_prj(prj)
 # HPO setting
 n_calls = 50
