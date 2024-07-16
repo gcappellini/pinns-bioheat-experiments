@@ -141,7 +141,7 @@ ubol = (c3/(1+c1*exp(-c2*t)))-c4;
 % --------------------------------------------------------------------------
 
 function [pl,ql,pr,qr] = OneDimBHbc(xl,ul,xr,ur,t)
-global K om1 om2 om3 om4 om5 om6 om7 om8 a5 
+global K om1 om2 om3 om4 om5 om6 om7 om8 a5 upsilon
 flusso = a5*(Bolus(t)-ur(1));
 pl = [ul(1);ul(2);ul(3);ul(4);ul(5);ul(6);ul(7);ul(8);ul(9);0;0;0;0;0;0;0;0];
 ql = [0;0;0;0;0;0;0;0;0;1;1;1;1;1;1;1;1];
@@ -156,13 +156,13 @@ pr = [-flusso;
     -flusso-K*(ur(1)-ur(9));
     0;0;0;0;0;0;0;0]; %flusso negativo, con osservatore
 qr = [1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1];
-om1=0.5*((pr(2)-pr(1))/K)^2;
-om2=0.5*((pr(3)-pr(1))/K)^2;
-om3=0.5*((pr(4)-pr(1))/K)^2;
-om4=0.5*((pr(5)-pr(1))/K)^2;
-om5=0.5*((pr(6)-pr(1))/K)^2;
-om6=0.5*((pr(7)-pr(1))/K)^2;
-om7=0.5*((pr(8)-pr(1))/K)^2;
-om8=0.5*((pr(9)-pr(1))/K)^2;
+om1=upsilon*((pr(2)-pr(1))/K)^2;
+om2=upsilon*((pr(3)-pr(1))/K)^2;
+om3=upsilon*((pr(4)-pr(1))/K)^2;
+om4=upsilon*((pr(5)-pr(1))/K)^2;
+om5=upsilon*((pr(6)-pr(1))/K)^2;
+om6=upsilon*((pr(7)-pr(1))/K)^2;
+om7=upsilon*((pr(8)-pr(1))/K)^2;
+om8=upsilon*((pr(9)-pr(1))/K)^2;
 
 

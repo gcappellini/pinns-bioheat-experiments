@@ -112,14 +112,14 @@ def read_config():
 def create_default_config():
     # Define default configuration parameters
     network = {
-        "activation": "elu", 
+        "activation": "sigmoid", 
         "initial_weights_regularizer": True, 
         "initialization": "Glorot normal",
-        "iterations": 20000,
-        "LBFGS": True,
-        "learning_rate": 0.0007607,
-        "num_dense_layers": 5,
-        "num_dense_nodes": 63,
+        "iterations": 30000,
+        "LBFGS": False,
+        "learning_rate": 0.05,
+        "num_dense_layers": 1,
+        "num_dense_nodes": 60,
         "output_injection_gain": 4,
         "resampling": True,
         "resampler_period": 100
@@ -302,12 +302,12 @@ def train_model():
     optim = "lbfgs" if LBFGS else "adam"
     iters = "*" if LBFGS else epochs
 
-    # # Check if a trained model with the exact configuration already exists
-    # trained_models = sorted(glob.glob(f"{run_models}/{optim}-{iters}.pt"))
-    # if trained_models:
-    #     mm.compile("L-BFGS") if LBFGS else None
-    #     mm.restore(trained_models[0], verbose=0)
-    #     return mm
+    # Check if a trained model with the exact configuration already exists
+    trained_models = sorted(glob.glob(f"{run_models}/{optim}-{iters}.pt"))
+    if trained_models:
+        mm.compile("L-BFGS") if LBFGS else None
+        mm.restore(trained_models[0], verbose=0)
+        return mm
 
     callbacks = [dde.callbacks.PDEPointResampler(period=resampler_period)] if resampler else []
 
@@ -391,8 +391,7 @@ def plot_and_metrics(model, n_test):
     plot_l2_tf(e, theta_true, theta_pred, model)
     # plot_tf(e, theta_true, model)
     metrics = compute_metrics(theta_true, theta_pred)
-    metrics_obs = compute_metrics(theta_obs, theta_pred)
-    return metrics_obs
+    return metrics
 
 
 def check_obs(e, theta_true, theta_pred):
@@ -552,8 +551,8 @@ def configure_subplot(ax, XS, surface):
 
 def single_observer(name_prj, name_run, n_test):
     # get_properties(n_test)
-    set_prj(name_prj)
-    set_run(name_run)
+    # set_prj(name_prj)
+    # set_run(name_run)
     wandb.init(
         project=name_prj, name=name_run,
         config=read_config()
@@ -714,11 +713,11 @@ def mm_plot_l2_tf(e, theta_true, theta_pred, multi_obs, lam):
     pred = mm_predict(multi_obs, lam, Xobs)
 
     ax2 = fig.add_subplot(122)
-    ax2.plot(xtr, true, marker="o", linestyle="None", alpha=1.0, color='purple', label="true")
-    ax2.plot(x, pred, linestyle='None', marker="X", color='gold', label="mm_obs")
+    ax2.plot(xtr, true, marker="o", linestyle="None", alpha=1.0, linewidth=0.75, color='purple', label="true")#, markevery=4)
+    ax2.plot(x, pred, linestyle='None', marker="X", linewidth=0.75, color='gold', label="mm_obs")#, markevery=4)
 
     for el in range(len(multi_obs)):
-        ax2.plot(x, multi_obs[el].predict(Xobs), alpha=1.0, linewidth=1.2, label=f"$obs_{el}$")
+        ax2.plot(x, multi_obs[el].predict(Xobs), alpha=1.0, linewidth=0.75, label=f"$obs_{el}$")
 
     ax2.set_xlabel(xlabel=r"Space x", fontsize=7)  # xlabel
     ax2.set_ylabel(ylabel=r"$\Theta$", fontsize=7)  # ylabel
