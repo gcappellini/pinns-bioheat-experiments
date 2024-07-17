@@ -396,7 +396,7 @@ def import_testdata(n):
     positions = [x_y1, x_gt1, x_gt2, x_y2]
 
     dfs = []
-    bolus = []
+    boluses = []
     for time_value in df['tau']:
 
         # Extract 'theta' values for the current 'time' from df_result
@@ -404,25 +404,29 @@ def import_testdata(n):
             ['y1', 'gt1', 'gt2', 'y2']].values.flatten()
 
         time_array = np.array([positions, [time_value] * 4, theta_values]).T
-        bol_value = df[df['tau'] == time_value][
-            ['y3']].values.flatten()
-        
+        bol_value = df[df['tau'] == time_value][['y3']].values.flatten()
 
-        # Append the current 'time' DataFrame to the list
+        bolus_array = np.array([bol_value]*4)
+        
+        boluses.append(bolus_array)
         dfs.append(time_array)
 
     vstack_array = np.vstack(dfs)
-    bolus_array = np.vstack(boluses)
-    return vstack_array[:, 0:2], vstack_array[:, 2], bolus_array 
+    boluses_arr = np.vstack(boluses)
+
+    return np.hstack((vstack_array,boluses_arr))
 
 
 def import_obsdata(n):
     global f1, f2, f3
-    g = np.hstack((gen_testdata(n)))
+    g = import_testdata(n)
     instants = np.unique(g[:, 1])
 
     rows_1 = g[g[:, 0] == 1.0]
+    rows_0 = g[g[:, 0] == 0.0]
 
+    y1 = rows_0[:, -2].reshape(len(instants),)
+    f1 = interp1d(instants, y1, kind='previous')
 
     y2 = rows_1[:, -2].reshape(len(instants),)
     f2 = interp1d(instants, y2, kind='previous')
@@ -431,21 +435,25 @@ def import_obsdata(n):
     f3 = interp1d(instants, y3, kind='previous')
 
 
-    Xobs = np.vstack((g[:, 0], np.zeros_like(f2(g[:, 1])), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
+    Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
     return Xobs
 
 
 def plot_and_metrics(model, n_test):
-    e, theta_true, theta_obs, _, _, _ = gen_testdata(n_test)
-    g = gen_obsdata(n_test)
+    # e, theta_true, theta_obs, _, _, _ = gen_testdata(n_test)
+    # g = gen_obsdata(n_test)
+
+    o = import_testdata(n_test)
+    e, theta_true = o[:, 0], o[:, 2]
+    g = import_obsdata(n_test)
 
     theta_pred = model.predict(g)
 
     plot_comparison(e, theta_true, theta_pred)
-    check_obs(e, theta_obs, theta_pred)
+    # check_obs(e, theta_obs, theta_pred)
     plot_l2_tf(e, theta_true, theta_pred, model)
     # plot_tf(e, theta_true, model)
-    metrics = compute_metrics(theta_obs, theta_pred)
+    metrics = compute_metrics(theta_true, theta_pred)
     return metrics
 
 
