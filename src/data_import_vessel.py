@@ -3,6 +3,7 @@ import datetime
 import pickle
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot
 
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
@@ -106,4 +107,5 @@ save_to_pickle(timeseries_data, pickle_file_path)
 #     print(f"Measuring Point {point}: Min Temp = {min_max['min']}, Max Temp = {min_max['max']}")
 
 extracted_data = extract_entries(timeseries_data)
+scaled_data = scale_df(extracted_data)
 

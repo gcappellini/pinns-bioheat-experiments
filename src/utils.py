@@ -112,14 +112,14 @@ def read_config():
 def create_default_config():
     # Define default configuration parameters
     network = {
-        "activation": "sigmoid", 
+        "activation": "silu", 
         "initial_weights_regularizer": True, 
-        "initialization": "Glorot normal",
+        "initialization": "He uniform",
         "iterations": 30000,
         "LBFGS": False,
-        "learning_rate": 0.05,
-        "num_dense_layers": 1,
-        "num_dense_nodes": 60,
+        "learning_rate": 0.0013913487374830062,
+        "num_dense_layers": 4,
+        "num_dense_nodes": 100,
         "output_injection_gain": 4,
         "resampling": True,
         "resampler_period": 100
@@ -159,14 +159,16 @@ def plot_loss_components(losshistory):
     test = np.array(loss_test).sum(axis=1).ravel()
     train = np.array(loss_train).sum(axis=1).ravel()
     loss_res = matrix[:, 0]
-    loss_bc1 = matrix[:, 1]    
-    loss_ic = matrix[:, 2]
+    loss_bc0 = matrix[:, 1]   
+    loss_bc1 = matrix[:, 2]  
+    loss_ic = matrix[:, 3]
 
     fig = plt.figure(figsize=(6, 5))
     iters = losshistory.steps
     with sns.axes_style("darkgrid"):
         plt.clf()
         plt.plot(iters, loss_res, label=r'$\mathcal{L}_{res}$')
+        plt.plot(iters, loss_bc0, label=r'$\mathcal{L}_{bc0}$')
         plt.plot(iters, loss_bc1, label=r'$\mathcal{L}_{bc1}$')
         plt.plot(iters, loss_ic, label=r'$\mathcal{L}_{ic}$')
         plt.plot(iters, test, label='test loss')
@@ -225,7 +227,7 @@ def create_nbho():
 
 
     def pde(x, theta, W):
-        dtheta_tau = dde.grad.jacobian(theta, x, i=0, j=3)
+        dtheta_tau = dde.grad.jacobian(theta, x, i=0, j=4)
         dtheta_xx = dde.grad.hessian(theta, x, i=0, j=0)
 
         return (
@@ -235,9 +237,9 @@ def create_nbho():
     
     def ic_obs(x):
         z = x[:, 0:1]
-        y1_0 = 0
-        y2_0 = x[:, 1:2]
-        y3_0 = x[:, 2:3]
+        y1_0 = x[:, 1:2]
+        y2_0 = x[:, 2:3]
+        y3_0 = x[:, 3:4]
 
         # y1_0 = 0
         # y2_0 = 0
@@ -246,18 +248,22 @@ def create_nbho():
 
         return y1_0 + b1*z + a4*z**2
 
+    def bc0_obs(x, theta, X):
+
+        return theta - x[:, 1:2]
 
     def bc1_obs(x, theta, X):
         dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0)
 
-        return dtheta_x - a5 * (x[:, 2:3] - x[:, 1:2]) - K * (x[:, 1:2] - theta)
+        return dtheta_x - a5 * (x[:, 3:4] - x[:, 2:3]) - K * (x[:, 2:3] - theta)
 
-    xmin = [0, 0, 0]
-    xmax = [1, 1, 1]
-    geom = dde.geometry.Cuboid(xmin, xmax)
+    xmin = [0, 0, 0, 0]
+    xmax = [1, 1, 1, 1]
+    geom = dde.geometry.Hypercube(xmin, xmax)
     timedomain = dde.geometry.TimeDomain(0, 1)
     geomtime = dde.geometry.GeometryXTime(geom, timedomain)
 
+    bc_0 = dde.icbc.OperatorBC(geomtime, bc0_obs, boundary_0)
     bc_1 = dde.icbc.OperatorBC(geomtime, bc1_obs, boundary_1)
 
     ic = dde.icbc.IC(geomtime, ic_obs, lambda _, on_initial: on_initial)
@@ -265,17 +271,17 @@ def create_nbho():
     data = dde.data.TimePDE(
         geomtime,
         lambda x, theta: pde(x, theta, W),
-        [bc_1, ic],
+        [bc_0, bc_1, ic],
         num_domain=2560,
         num_boundary=200,
         num_initial=100,
         num_test=10000,
     )
 
-    layer_size = [4] + [num_dense_nodes] * num_dense_layers + [1]
+    layer_size = [5] + [num_dense_nodes] * num_dense_layers + [1]
     net = dde.nn.FNN(layer_size, activation, initialization)
 
-    net.apply_output_transform(output_transform)
+    # net.apply_output_transform(output_transform)
 
     model = dde.Model(data, net)
 
@@ -285,6 +291,7 @@ def create_nbho():
         model.compile("adam", lr=learning_rate, loss_weights=loss_weights)
     else:
         model.compile("adam", lr=learning_rate)
+
     return model
 
 
@@ -377,7 +384,7 @@ def gen_obsdata(n):
     # if tau > tm:
     #     tau = tm
 
-    Xobs = np.vstack((g[:, 0], f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
+    Xobs = np.vstack((g[:, 0], np.zeros_like(f2(g[:, 1])), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
     return Xobs
 
 
@@ -391,7 +398,7 @@ def plot_and_metrics(model, n_test):
     check_obs(e, theta_obs, theta_pred)
     plot_l2_tf(e, theta_true, theta_pred, model)
     # plot_tf(e, theta_true, model)
-    metrics = compute_metrics(theta_true, theta_pred)
+    metrics = compute_metrics(theta_obs, theta_pred)
     return metrics
 
 
@@ -511,7 +518,7 @@ def plot_l2_tf(e, theta_true, theta_pred, model):
     x = np.linspace(0, 1, 100)
     true = final[:, -1]
 
-    Xobs = np.vstack((x, f2(np.ones_like(x)), f3(np.ones_like(x)), np.ones_like(x))).T
+    Xobs = np.vstack((x, np.zeros_like(x), f2(np.ones_like(x)), f3(np.ones_like(x)), np.ones_like(x))).T
     pred = model.predict(Xobs)
 
     ax2 = fig.add_subplot(122)
@@ -552,17 +559,17 @@ def configure_subplot(ax, XS, surface):
 
 def single_observer(name_prj, name_run, n_test):
     # get_properties(n_test)
-    # set_prj(name_prj)
-    # set_run(name_run)
-    # wandb.init(
-    #     project=name_prj, name=name_run,
-    #     config=read_config()
-    # )
+    set_prj(name_prj)
+    set_run(name_run)
+    wandb.init(
+        project=name_prj, name=name_run,
+        config=read_config()
+    )
     mo = train_model()
     metrics = plot_and_metrics(mo, n_test)
 
-    # wandb.log(metrics)
-    # wandb.finish()
+    wandb.log(metrics)
+    wandb.finish()
     return mo, metrics
 
 
@@ -628,7 +635,7 @@ def mu(o, tau):
     net = read_config()
     K = net["output_injection_gain"]
 
-    xo = np.vstack((np.ones_like(tau), f2(tau), f3(tau), tau)).T
+    xo = np.vstack((np.ones_like(tau), np.zeros_like(tau), f2(tau), f3(tau), tau)).T
     muu = []
     for el in o:
         oss = el.predict(xo)
@@ -710,7 +717,7 @@ def mm_plot_l2_tf(e, theta_true, theta_pred, multi_obs, lam):
     x = np.linspace(0, 1, 100)
     true = final[:, -1]
 
-    Xobs = np.vstack((x, f2(np.ones_like(x)), f3(np.ones_like(x)), np.ones_like(x))).T
+    Xobs = np.vstack((x, np.zeros_like(x), f2(np.ones_like(x)), f3(np.ones_like(x)), np.ones_like(x))).T
     pred = mm_predict(multi_obs, lam, Xobs)
 
     ax2 = fig.add_subplot(122)
