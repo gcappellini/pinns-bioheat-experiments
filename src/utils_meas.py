@@ -444,7 +444,7 @@ def plot_and_metrics(model, n_test):
     # g = gen_obsdata(n_test)
 
     o = import_testdata(n_test)
-    e, theta_true = o[:, 0], o[:, 2]
+    e, theta_true = o[:, 0:2], o[:, 2]
     g = import_obsdata(n_test)
 
     theta_pred = model.predict(g)
@@ -495,19 +495,22 @@ def check_obs(e, theta_true, theta_pred):
     # plt.clf()
 
 
-def plot_comparison(e, theta_true, theta_pred, MObs=False):
+def plot_comparison(e, t_true, t_pred, MObs=False):
     global run_figs, prj_figs
 
     la = len(np.unique(e[:, 0]))
     le = len(np.unique(e[:, 1]))
+
+    theta_true = t_true.reshape(le, la)
+    theta_pred = t_pred.reshape(le, la)
 
     # Predictions
     fig = plt.figure(3, figsize=(9, 4))
 
     col_titles = ['Measured', 'Observed', 'Error']
     surfaces = [
-        [theta_true.reshape(le, la), theta_pred.reshape(le, la),
-            np.abs(theta_true - theta_pred).reshape(le, la)]
+        [theta_true, theta_pred,
+            np.abs(theta_true - theta_pred)]
     ]
 
     # Create a grid of subplots
