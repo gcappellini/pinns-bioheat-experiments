@@ -112,18 +112,14 @@ def read_config():
 def create_default_config():
     # Define default configuration parameters
     network = {
-        "activation": "sigmoid", 
-        # "activation": "tanh",
+        "activation": "silu", 
         "initial_weights_regularizer": True, 
-        "initialization": "Glorot normal",
+        "initialization": "He uniform",
         "iterations": 30000,
         "LBFGS": False,
-        "learning_rate": 0.05,
-        "num_dense_layers": 1,
-        "num_dense_nodes": 60,
-        # "learning_rate": 0.001,
-        # "num_dense_layers": 4,
-        # "num_dense_nodes": 50,
+        "learning_rate": 0.0013913487374830062,
+        "num_dense_layers": 4,
+        "num_dense_nodes": 100,
         "output_injection_gain": 4,
         "resampling": True,
         "resampler_period": 100
