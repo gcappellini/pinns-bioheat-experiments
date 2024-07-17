@@ -8,3 +8,19 @@ Floor - bottom bucket (Min pos): 89 cm
 Height bucket: 21 cm
 
 Floor - platform cart: 65,5 cm
+
+
+
+
+
+p0 50 W
+
+1st vessel: 0.5L in 7' 50"
+
+12.43: war level 1.7 L; lower perfusion; 0.3L in 8'38"
+
+13.10: water level 0.82 L; zero perfusion
+
+13.39: RF off, max perfusion
+
+14.27: water level 2.6 L
