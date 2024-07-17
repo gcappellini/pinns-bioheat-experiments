@@ -3,11 +3,10 @@ import datetime
 import pickle
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot
+import matplotlib.pyplot as plt
 
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
-measurements_dir = os.path.join(src_dir, "measurements")
 
 def parse_line(line):
     parts = line.strip().split(', ')
@@ -43,23 +42,11 @@ def load_from_pickle(file_path):
     with open(file_path, 'rb') as pkl_file:
         return pickle.load(pkl_file)
     
-def find_min_max(timeseries_data):
-    min_max_data = {}
-    for point, measurements in timeseries_data.items():
-        temperatures = [temp for time, temp in measurements]
-        min_temp = min(temperatures)
-        max_temp = max(temperatures)
-        min_max_data[point] = {'min': min_temp, 'max': max_temp}
-    return min_max_data
 
-
-def extract_entries(timeseries_data):
+def extract_entries(timeseries_data, tmin, tmax):
     keys_to_extract = {10: 'y1', 45: 'gt1', 66: 'gt2', 24: 'y2', 31: 'y3'}
     extracted_data = {new_key: timeseries_data.get(old_key, []) for old_key, new_key in keys_to_extract.items()}
-    return extracted_data
 
-
-def create_dataframe(extracted_data):
     # Create a list of all unique times
     all_times = sorted(set(time for times in extracted_data.values() for time, temp in times))
 
@@ -79,10 +66,37 @@ def create_dataframe(extracted_data):
         temp_dict = {time: temp for time, temp in timeseries}
         df[key] = [temp_dict.get(time, float('nan')) for time in all_times]
     
-    return df
+    df = df[(df['t']>tmin) & (df['t']<tmax)].reset_index(drop=True)
+
+    # return df
+    df['time_diff'] = df['t'].diff()#.dt.total_seconds()
+
+    threshold = 100
+
+    # Identify the indices where a new interval starts
+    new_intervals = df[df['time_diff'] > threshold].index
+
+    # Include the first index as the start of the first interval
+    new_intervals = [0] + list(new_intervals)
+
+    # Create an empty list to store the last measurements of each interval
+    last_measurements = []
+
+    # Extract the last measurement from each interval
+    for i in range(len(new_intervals)):
+        start_idx = new_intervals[i]
+        end_idx = new_intervals[i + 1] - 1 if i + 1 < len(new_intervals) else len(df) - 1
+        last_measurements.append(df.iloc[end_idx])
+
+    # Create the df_short DataFrame from the list of last measurements
+    df_short = pd.DataFrame(last_measurements).drop(columns=['time_diff']).reset_index(drop=True)
+
+    return df_short
+
+
 
 def scale_df(df):
-    new_df = pd.DataFrame({'tau': (df["t"]/np.max(df["t"])).round(5)})
+    new_df = pd.DataFrame({'tau': (df['t']/np.max(df['t'])).round(5)})
 
     min_temp = np.min(df[['y1', 'gt1', 'gt2', 'y2', 'y3']].min())
     max_temp = np.max(df[['y1', 'gt1', 'gt2', 'y2', 'y3']].max())
@@ -92,20 +106,26 @@ def scale_df(df):
     return new_df
 
 
-file_path = f"{measurements_dir}/vessel/20240522_1.txt"  # Replace with your file path
+file_path = f"{src_dir}/data/measurements/vessel/20240522_1.txt"  # Replace with your file path
 timeseries_data = load_measurements(file_path)
 
-pickle_file_path = f"{measurements_dir}/vessel/vessel_meas.pkl"
-save_to_pickle(timeseries_data, pickle_file_path)
+df = extract_entries(timeseries_data, 200, 3500)
+
+scaled_data = scale_df(df)
+
+pickle_file_path = f"{src_dir}/data/measurements/vessel/1.pkl"
+save_to_pickle(scaled_data, pickle_file_path)
 
 
-# # Find the minimum and maximum temperatures for each measuring point
-# min_max_data = find_min_max(timeseries_data)
+fig, ax = plt.subplots()
 
-# Print the minimum and maximum temperatures for each measuring point
-# for point, min_max in min_max_data.items():
-#     print(f"Measuring Point {point}: Min Temp = {min_max['min']}, Max Temp = {min_max['max']}")
+ax.plot(scaled_data['tau'], scaled_data['y1'], label=f'y1', marker='x')# alpha=1.0, linewidth=.7)
+ax.plot(scaled_data['tau'], scaled_data['gt1'], label=f'gt1', alpha=1.0, linewidth=.7)
+ax.plot(scaled_data['tau'], scaled_data['gt2'], label=f'gt2', alpha=1.0, linewidth=.7)
+ax.plot(scaled_data['tau'], scaled_data['y2'], label=f'y2', alpha=1.0, linewidth=.7)
+ax.plot(scaled_data['tau'], scaled_data['y3'], label=f'y3', alpha=1.0, linewidth=.7)
+ax.legend()
 
-extracted_data = extract_entries(timeseries_data)
-scaled_data = scale_df(extracted_data)
+# ax.plot(range(len(df['t'])), df['t'], alpha=1.0, linewidth=.7)
+plt.show()
 

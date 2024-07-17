@@ -10,6 +10,7 @@ import json
 from scipy.interpolate import interp1d
 from scipy import integrate
 import pickle
+import pandas as pd
 
 dde.config.set_random_seed(200)
 
@@ -380,10 +381,55 @@ def gen_obsdata(n):
     y3 = rows_1[:, -1].reshape(len(instants),)
     f3 = interp1d(instants, y3, kind='previous')
 
-    
-    # tm = 0.9957446808510638
-    # if tau > tm:
-    #     tau = tm
+    Xobs = np.vstack((g[:, 0], np.zeros_like(f2(g[:, 1])), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
+    return Xobs
+
+def import_testdata(n):
+    path = f"{src_dir}/data/{n}.pkl"
+    df = load_from_pickle(path)
+    x_tcs = np.linspace(0, 1, num=8).round(4)
+    x_y1 = x_tcs[0]
+    x_gt1 = x_tcs[3]
+    x_gt2 = x_tcs[6]
+    x_y2 = x_tcs[7]
+
+    positions = [x_y1, x_gt1, x_gt2, x_y2]
+
+    dfs = []
+    bolus = []
+    for time_value in df['tau']:
+
+        # Extract 'theta' values for the current 'time' from df_result
+        theta_values = df[df['tau'] == time_value][
+            ['y1', 'gt1', 'gt2', 'y2']].values.flatten()
+
+        time_array = np.array([positions, [time_value] * 4, theta_values]).T
+        bol_value = df[df['tau'] == time_value][
+            ['y3']].values.flatten()
+        
+
+        # Append the current 'time' DataFrame to the list
+        dfs.append(time_array)
+
+    vstack_array = np.vstack(dfs)
+    bolus_array = np.vstack(boluses)
+    return vstack_array[:, 0:2], vstack_array[:, 2], bolus_array 
+
+
+def import_obsdata(n):
+    global f1, f2, f3
+    g = np.hstack((gen_testdata(n)))
+    instants = np.unique(g[:, 1])
+
+    rows_1 = g[g[:, 0] == 1.0]
+
+
+    y2 = rows_1[:, -2].reshape(len(instants),)
+    f2 = interp1d(instants, y2, kind='previous')
+
+    y3 = rows_1[:, -1].reshape(len(instants),)
+    f3 = interp1d(instants, y3, kind='previous')
+
 
     Xobs = np.vstack((g[:, 0], np.zeros_like(f2(g[:, 1])), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
     return Xobs

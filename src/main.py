@@ -1,7 +1,16 @@
-import utils
+import utils_meas as utils
 
 
-prj = "new_debug_obs"
-run = "5_ins_hpo"
+prj = "obs_amc"
+run = "try_vessel"
 
-utils.single_observer(prj, run, "BH_8Obs")
+n_test = "measurements/vessel/1"
+
+utils.single_observer(prj, run, n_test)
+
+
+
+# Per test su simulazioni:
+# n_sim = "simulations/BH_8Obs"
+
+# utils.single_observer(prj, run, n_sim)
