@@ -544,7 +544,8 @@ def plot_l2_norm(e, theta_true, theta_pred):
     t = np.unique(e[:, 1])
     l2 = []
     t_filtered = t[t > 0.02]
-    tot = np.hstack((e, theta_true, theta_pred))
+
+    tot = np.hstack((e, theta_true.reshape((len(e), 1)), theta_pred.reshape((len(e), 1))))
     t = t_filtered
 
     for el in t:
@@ -621,15 +622,15 @@ def single_observer(name_prj, name_run, n_test):
     # get_properties(n_test)
     set_prj(name_prj)
     set_run(name_run)
-    wandb.init(
-        project=name_prj, name=name_run,
-        config=read_config()
-    )
+    # wandb.init(
+    #     project=name_prj, name=name_run,
+    #     config=read_config()
+    # )
     mo = train_model()
     metrics = plot_and_metrics(mo, n_test)
 
-    wandb.log(metrics)
-    wandb.finish()
+    # wandb.log(metrics)
+    # wandb.finish()
     return mo, metrics
 
 
