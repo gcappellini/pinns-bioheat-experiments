@@ -1,4 +1,4 @@
-import utils
+import utils_meas as utils
 from matplotlib import pyplot as plt
 import numpy as np
 import skopt
@@ -8,6 +8,7 @@ from skopt.space import Real, Categorical, Integer
 from skopt.utils import use_named_args
 import os
 import deepxde as dde
+import coeff_calc as cc
 
 
 # Function 'gp_minimize' of package 'skopt(scikit-optimize)' is used in this example.
@@ -34,54 +35,58 @@ tests_dir = os.path.join(project_dir, "tests")
 figures = os.path.join(tests_dir, "figures")
 os.makedirs(figures, exist_ok=True)
 
-n="BH_8Obs"
-prj = "new_debug_obs"
+n="measurements/vessel/0"
+prj = "optim_properties_obs"
 prj_figs, _, _ = utils.set_prj(prj)
 # HPO setting
 n_calls = 50
-dim_learning_rate = Real(low=1e-4, high=5e-2, name="learning_rate", prior="log-uniform")
-dim_num_dense_layers = Integer(low=1, high=6, name="num_dense_layers")
-dim_num_dense_nodes = Integer(low=5, high=100, name="num_dense_nodes")
-dim_activation = Categorical(categories=["elu", "relu", "selu", "silu", "sigmoid", "sin", "swish", "tanh"], name="activation")
-dim_initialization = Categorical(categories=["Glorot normal", "Glorot uniform", "He normal", "He uniform"], name="initialization")
+dim_a1 = Real(low=1e-2, high=5e+2, name="a1", prior="log-uniform")
+dim_a2 = Real(low=1e-2, high=5e+2, name="a2", prior="log-uniform")
+dim_a3 = Real(low=1e-2, high=5e+2, name="a3", prior="log-uniform")
+dim_a4 = Real(low=1e-2, high=5e+2, name="a4", prior="log-uniform")
+dim_a5 = Real(low=1e-2, high=5e+2, name="a5", prior="log-uniform")
+dim_a6 = Real(low=1e-2, high=5e+2, name="a6", prior="log-uniform")
 
 dimensions = [
-    dim_learning_rate,
-    dim_num_dense_layers,
-    dim_num_dense_nodes,
-    dim_activation,
-    dim_initialization
+    dim_a1,
+    dim_a2,
+    dim_a3,
+    dim_a4,
+    dim_a5,
+    dim_a6
 ]
 
-default_parameters = [1e-3, 4, 50, "tanh", "Glorot uniform"]
+default_parameters = [cc.a1, cc.a2, cc.a3, cc.a4, cc.a5, cc.a6]
 
 
 @use_named_args(dimensions=dimensions)
-def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation, initialization):
+def fitness(a1, a2, a3, a4, a5, a6):
     global ITERATION
     run = f"run_{ITERATION}"
     utils.set_run(run)
 
-    config = utils.read_config()
-    config["activation"] = activation
-    config["learning_rate"] = learning_rate
-    config["num_dense_layers"] = num_dense_layers
-    config["num_dense_nodes"] = num_dense_nodes
-    config["initalization"] = initialization
-    utils.write_config(config)
+    config = utils.read_json("properties.json")
+    config["a1"] = a1
+    config["a2"] = a2
+    config["a3"] = a3
+    config["a4"] = a4
+    config["a5"] = a5
+    config["a6"] = a6
+    utils.write_json(config)
 
     print(ITERATION, "it number")
     # Print the hyper-parameters.
-    print("activation:", activation)
-    print("initialization:", initialization)
-    print("learning rate: {0:.1e}".format(learning_rate))
-    print("num_dense_layers:", num_dense_layers)
-    print("num_dense_nodes:", num_dense_nodes)
+    print("a1:", a1)
+    print("a2:", a2)
+    print("a3:", a3)
+    print("a4:", a4)
+    print("a5:", a5)
+    print("a6:", a6)
     print()
 
     # Create the neural network with these hyper-parameters.
-    mo, _ = utils.single_observer(prj, run, n)
-    errors = utils.plot_and_metrics(mo, n)
+    mo, errors = utils.single_observer(prj, run, n)
+
     error = errors["L2RE"]
 
     if np.isnan(error):
