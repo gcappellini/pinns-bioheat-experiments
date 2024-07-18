@@ -36,12 +36,6 @@ os.makedirs(logs, exist_ok=True)
 prj_figs, prj_models, prj_logs, run_figs, run_models, run_logs = [None]*6
 
 
-a1, a2, a3, a4, a5, a6 = 1.061375, 1.9125, 6.25e-05, 0.7, 15.0, 0.1666667
-
-P0 = 1e+05
-W = 0.45
-upsilon = 250.0
-
 f1, f2, f3 = [None]*3
 
 
@@ -106,9 +100,18 @@ def create_default_config():
     }
     return network
 
+
 def create_default_properties():
     properties = {
+        "a1": 1.061375,
+        "a2": 1.9125,
+        "a3": 6.25,
+        "a4": 0.7,
+        "a5": 15.0,
+        "a6": 0.1666667,
+        "lam": 200,
         "output_injection_gain": 4,
+        "upsilon": 250.0,
     }
     return properties
 
@@ -200,8 +203,8 @@ def output_transform(x, y):
     return x[:, 0:1] * y
 
 def create_nbho():
-    global  a1, a2, a3, a4, a5, a6, W
-    net = read_config()
+    net = read_json("config.json")
+    properties = read_json("properties.json")
 
     activation = net["activation"]
     initial_weights_regularizer = net["initial_weights_regularizer"]
@@ -209,7 +212,14 @@ def create_nbho():
     learning_rate = net["learning_rate"]
     num_dense_layers = net["num_dense_layers"]
     num_dense_nodes = net["num_dense_nodes"]
-    K = net["output_injection_gain"]
+
+    K = properties["output_injection_gain"]
+    a1 = properties["a1"]
+    a2 = properties["a2"]
+    a3 = properties["a3"]
+    a4 = properties["a4"]
+    a5 = properties["a5"]
+    a6 = properties["a6"]
 
 
     def pde(x, theta, W):
@@ -218,7 +228,7 @@ def create_nbho():
 
         return (
             a1 * dtheta_tau
-            - dtheta_xx + a2 * W * theta - a3 * P0 * torch.exp(-(1-x[:, 0:1])*a6)
+            - dtheta_xx + a2 * theta - a3 * torch.exp(-(1-x[:, 0:1])*a6)
         )
     
     def ic_obs(x):
@@ -227,9 +237,6 @@ def create_nbho():
         y2_0 = x[:, 2:3]
         y3_0 = x[:, 3:4]
 
-        # y1_0 = 0
-        # y2_0 = 0
-        # y3_0 = 0
         b1 = (a5*y3_0+(K-a5)*y2_0-(2+K)*a4)/(1+K)
 
         return y1_0 + b1*z + a4*z**2
@@ -283,7 +290,7 @@ def create_nbho():
 
 def train_model():
     global run_models
-    conf = read_config()
+    conf = read_json("config.json")
     mm = create_nbho()
 
     LBFGS = conf["LBFGS"]
@@ -621,13 +628,16 @@ def single_observer(name_prj, name_run, n_test):
 
 
 def mm_observer(name_prj, n_test):
-    global W, prj_logs
+    global prj_logs
     # get_properties(n_test)
 
     set_prj(name_prj)
 
+    properties = read_json("properties.json")
+    lam = properties["lam"]
+
     obs = np.array([1, 2, 3, 5, 6, 8, 9, 10])
-    W_obs = np.dot(W, obs)
+    a3_obs = np.dot(a3, obs)
 
     n_obs = len(obs)
 
@@ -639,38 +649,36 @@ def mm_observer(name_prj, n_test):
     multi_obs = []
     
     for j in range(n_obs):
-        run = f"n{j}_W{W_obs[j]}"
+        run = f"n{j}_W{a3_obs[j]}"
         set_run(run)
         # config = read_config()
-        W = W_obs[j]
+        a3 = a3_obs[j]
         # write_config(config)
         model, _ = single_observer(name_prj, run, n_test)
         multi_obs.append(model)
 
     p0 = np.full((n_obs,), 1/n_obs)
-    lem = [100, 500, 1000]
 
-    for lam in lem:
-        def f(t, p):
-            a = mu(multi_obs, t)
-            e = np.exp(-1*a)
-            d = np.inner(p, e)
-            f = []
-            for el in range(len(p)):
-                ccc = - lam * (1-(e[el]/d))*p[el]
-                f.append(ccc)
-            return np.array(f)
+    def f(t, p):
+        a = mu(multi_obs, t)
+        e = np.exp(-1*a)
+        d = np.inner(p, e)
+        f = []
+        for el in range(len(p)):
+            ccc = - lam * (1-(e[el]/d))*p[el]
+            f.append(ccc)
+        return np.array(f)
 
 
-        sol = integrate.solve_ivp(f, (0, 1), p0, t_eval=np.linspace(0, 1, 100))
-        x = sol.y
-        t = sol.t
-        weights = np.zeros((sol.y.shape[0]+1, sol.y.shape[1]))
-        weights[0] = sol.t
-        weights[1:] = sol.y
-        np.save(f'{prj_logs}/weights_lambda_{lam}.npy', weights)
-        plot_weights(x, t, lam)
-        metrics = mm_plot_and_metrics(multi_obs, n_test, lam)
+    sol = integrate.solve_ivp(f, (0, 1), p0, t_eval=np.linspace(0, 1, 100))
+    x = sol.y
+    t = sol.t
+    weights = np.zeros((sol.y.shape[0]+1, sol.y.shape[1]))
+    weights[0] = sol.t
+    weights[1:] = sol.y
+    np.save(f'{prj_logs}/weights.npy', weights)
+    plot_weights(x, t, lam)
+    metrics = mm_plot_and_metrics(multi_obs, n_test, lam)
 
     # wandb.log(metrics)
     # wandb.finish()
@@ -679,8 +687,9 @@ def mm_observer(name_prj, n_test):
 
 def mu(o, tau):
     global f2, f3
-    net = read_config()
+    net = read_json("properties.json")
     K = net["output_injection_gain"]
+    upsilon = net["upsilon"]
 
     xo = np.vstack((np.ones_like(tau), np.zeros_like(tau), f2(tau), f3(tau), tau)).T
     muu = []
