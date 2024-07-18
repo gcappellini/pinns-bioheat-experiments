@@ -625,6 +625,8 @@ def single_observer(name_prj, name_run, n_test):
     )
     mo = train_model()
     metrics = plot_and_metrics(mo, n_test)
+    wandb.log(metrics)
+    wandb.finish()
 
     return mo, metrics
 
