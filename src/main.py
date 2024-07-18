@@ -2,9 +2,9 @@ import utils_meas as utils
 
 
 prj = "obs_amc"
-run = "try_vessel"
+run = "try_vessel_0"
 
-n_test = "measurements/vessel/1"
+n_test = "measurements/vessel/0"
 
 utils.single_observer(prj, run, n_test)
 

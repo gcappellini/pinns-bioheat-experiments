@@ -11,6 +11,7 @@ from scipy.interpolate import interp1d
 from scipy import integrate
 import pickle
 import pandas as pd
+import coeff_calc as cc
 
 dde.config.set_random_seed(200)
 
@@ -103,12 +104,12 @@ def create_default_config():
 
 def create_default_properties():
     properties = {
-        "a1": 1.061375,
-        "a2": 1.9125,
-        "a3": 6.25,
-        "a4": 0.7,
-        "a5": 15.0,
-        "a6": 0.1666667,
+        "a1": cc.a1,
+        "a2": cc.a2,
+        "a3": cc.a3,
+        "a4": cc.a4,
+        "a5": cc.a5,
+        "a6": cc.a6,
         "lam": 200,
         "output_injection_gain": 4,
         "upsilon": 250.0,
@@ -222,7 +223,7 @@ def create_nbho():
     a6 = properties["a6"]
 
 
-    def pde(x, theta, W):
+    def pde(x, theta, a2):
         dtheta_tau = dde.grad.jacobian(theta, x, i=0, j=4)
         dtheta_xx = dde.grad.hessian(theta, x, i=0, j=0)
 
@@ -263,7 +264,7 @@ def create_nbho():
 
     data = dde.data.TimePDE(
         geomtime,
-        lambda x, theta: pde(x, theta, W),
+        lambda x, theta: pde(x, theta, a2),
         [bc_0, bc_1, ic],
         num_domain=2560,
         num_boundary=200,
@@ -565,12 +566,12 @@ def plot_l2_tf(e, theta_true, theta_pred, model):
     fig, ax1 = plot_l2_norm(e, theta_true, theta_pred)
 
     tot = np.hstack((e, theta_true))
-    final = tot[tot[:, 1]==1.0]
+    final = tot[tot[:, 1]==1]
     xtr = np.unique(tot[:, 0])
     x = np.linspace(0, 1, 100)
     true = final[:, -1]
 
-    Xobs = np.vstack((x, np.zeros_like(x), f2(np.ones_like(x)), f3(np.ones_like(x)), np.ones_like(x))).T
+    Xobs = np.vstack((x, f1(np.ones_like(x)), f2(np.ones_like(x)), f3(np.ones_like(x)), np.ones_like(x))).T
     pred = model.predict(Xobs)
 
     ax2 = fig.add_subplot(122)
@@ -612,18 +613,19 @@ def configure_subplot(ax, XS, surface):
 
 
 def single_observer(name_prj, name_run, n_test):
-    # get_properties(n_test)
     set_prj(name_prj)
     set_run(name_run)
-    # wandb.init(
-    #     project=name_prj, name=name_run,
-    #     config=read_config()
-    # )
+    config = read_json("config.json")
+    properties = read_json("properties.json")
+    combined_config = {**config, **properties}
+
+    wandb.init(
+        project=name_prj, name=name_run,
+        config=combined_config
+    )
     mo = train_model()
     metrics = plot_and_metrics(mo, n_test)
 
-    # wandb.log(metrics)
-    # wandb.finish()
     return mo, metrics
 
 

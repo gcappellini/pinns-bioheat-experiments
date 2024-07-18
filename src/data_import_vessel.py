@@ -71,7 +71,7 @@ def extract_entries(timeseries_data, tmin, tmax):
     # return df
     df['time_diff'] = df['t'].diff()#.dt.total_seconds()
 
-    threshold = 100
+    threshold = 1 if el==3 else 100
 
     # Identify the indices where a new interval starts
     new_intervals = df[df['time_diff'] > threshold].index
@@ -96,7 +96,8 @@ def extract_entries(timeseries_data, tmin, tmax):
 
 
 def scale_df(df):
-    new_df = pd.DataFrame({'tau': ((df['t']-df['t'][0])/np.max(df['t'])).round(5)})
+    time = df['t']-df['t'][0]
+    new_df = pd.DataFrame({'tau': (time/np.max(time)).round(5)})
 
     min_temp = np.min(df[['y1', 'gt1', 'gt2', 'y2', 'y3']].min())
     max_temp = np.max(df[['y1', 'gt1', 'gt2', 'y2', 'y3']].max())
@@ -134,6 +135,7 @@ for el in range(len(times)):
     ax.plot(scaled_data['tau'], scaled_data['y2'], label=f'y2', alpha=1.0, linewidth=.7)
     ax.plot(scaled_data['tau'], scaled_data['y3'], label=f'y3', alpha=1.0, linewidth=.7)
     ax.legend()
+    ax.set_title(f"Test {el}")
 
     # ax.plot(range(len(df['t'])), df['t'], alpha=1.0, linewidth=.7)
     # plt.show()

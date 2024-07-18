@@ -22,26 +22,22 @@ dT = Tmax - Ta
 
 h = 300
 
-d = 0.3
+d = 0.03
 
 W = 0.45
-obs = np.array([1, 2, 3, 5, 6, 8, 9, 10])
-
-# W_obs = np.array(W*[1, 2, 3, 5, 6, 8, 9, 10]).round(3)
-W_obs = np.dot(W, obs)
+P0 = 1e+05
 
 # a1 = (tauf/(L0**2))*(keff/(rho*c))
 # a2 = tauf*rhob*omegab*cb/(rho*c)
 # a3 = tauf/(dT*rho*c)
 
-a1 = (L0**2/tauf)*((rho*c)/k)
-a2 = (cb * L0**2)/k
-a3 = L0**2/(k*dT)
-a4 = 0.7
-a5 = L0*h
-a6 = L0/d
+a1 = round((L0**2/tauf)*((rho*c)/k), 7)
+a2 = round(W*(cb * L0**2)/k, 7)
+a3 = round(P0 * L0**2/(k*dT), 7)
+a4 = round(0.7, 7)
+a5 = round(L0*h, 7)
+a6 = round(L0/d, 7)
 
-print(len(obs))
-print(f"a1:{round(a1, 7)}, a2:{round(a2, 7)}, a3:{round(a3, 7)}, a4:{round(a4, 7)}, a5:{round(a5, 7)} , a6:{round(a6, 7)}" )
+# print(f"a1:{a1}, a2:{a2}, a3:{a3}, a4:{a4}, a5:{a5} , a6:{a6}" )
 
 
