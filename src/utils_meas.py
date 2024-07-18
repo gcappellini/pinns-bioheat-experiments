@@ -35,17 +35,15 @@ os.makedirs(logs, exist_ok=True)
 
 prj_figs, prj_models, prj_logs, run_figs, run_models, run_logs = [None]*6
 
-# properties = {
-#     "a1": None, "a2": None, "a3": None, "a4": None, "a5": None, "W": None
-# }
 
 a1, a2, a3, a4, a5, a6 = 1.061375, 1.9125, 6.25e-05, 0.7, 15.0, 0.1666667
 
 P0 = 1e+05
 W = 0.45
+upsilon = 250.0
 
 f1, f2, f3 = [None]*3
-upsilon = 250.0
+
 
 
 def set_prj(prj):
@@ -78,41 +76,22 @@ def set_run(run):
     return run_figs, run_models, run_logs
 
 
-# def get_properties(n):
-#     global a1, a2, a3, a4, a5, a6
-#     file_path = os.path.join(src_dir, 'simulations', f'data{n}.json')
 
-#     # Open the file and load the JSON data
-#     with open(file_path, 'r') as f:
-#         data = json.load(f)
-
-#     properties.update(data['Parameters'])
-#     par = data['Parameters']
-#     local_vars = locals()
-#     for key in par:
-#         if key in local_vars:
-#             local_vars[key] = par[key]
-
-#     a1, a2, a3, a4, a5, a6 = (
-#         par["a1"], par["a2"], par["a3"], par["a4"], par["a5"], par["a6"]
-#     )
-
-
-def read_config():
-    global run_logs
-    filename = f"{run_logs}/config.json"
-    if os.path.exists(filename):
-        with open(filename, 'r') as file:
-            config = json.load(file)
+def read_json(filename):
+    filepath = f"{run_logs}/{filename}"
+    if os.path.exists(filepath):
+        with open(filepath, 'r') as file:
+            data = json.load(file)
     else:
-        # Create default config if file doesn't exist
-        config = create_default_config()
-        write_config(config)
-    return config
+        if filename == "config.json":
+            data = create_default_config()
+        elif filename == "properties.json":
+            data = create_default_properties()
+        write_json(data, filename)
+    return data
 
 
 def create_default_config():
-    # Define default configuration parameters
     network = {
         "activation": "silu", 
         "initial_weights_regularizer": True, 
@@ -122,13 +101,18 @@ def create_default_config():
         "learning_rate": 0.0013913487374830062,
         "num_dense_layers": 4,
         "num_dense_nodes": 100,
-        "output_injection_gain": 4,
         "resampling": True,
         "resampler_period": 100
     }
     return network
 
-def write_config(config):
+def create_default_properties():
+    properties = {
+        "output_injection_gain": 4,
+    }
+    return properties
+
+def write_json(data, filename):
     global run_logs
     def convert_to_serializable(obj):
         if isinstance(obj, (np.int32, np.int64)):
@@ -139,11 +123,11 @@ def write_config(config):
             return obj.tolist()
         return obj
 
-    serializable_config = {k: convert_to_serializable(v) for k, v in config.items()}
+    serializable_data = {k: convert_to_serializable(v) for k, v in data.items()}
 
-    filename = f"{run_logs}/config.json"
-    with open(filename, 'w') as file:
-        json.dump(serializable_config, file, indent=4)
+    filepath = f"{run_logs}/{filename}"
+    with open(filepath, 'w') as file:
+        json.dump(serializable_data, file, indent=4)
 
 
 def get_initial_loss(model):
@@ -545,7 +529,7 @@ def plot_l2_norm(e, theta_true, theta_pred):
     l2 = []
     t_filtered = t[t > 0.02]
 
-    tot = np.hstack((e, theta_true.reshape((len(e), 1)), theta_pred.reshape((len(e), 1))))
+    tot = np.hstack((e, theta_true, theta_pred))
     t = t_filtered
 
     for el in t:
@@ -569,6 +553,8 @@ def plot_l2_norm(e, theta_true, theta_pred):
 
 def plot_l2_tf(e, theta_true, theta_pred, model):
     global run_figs
+    e, theta_true, theta_pred = e.reshape((len(e), 2)), theta_true.reshape((len(e), 1)), theta_pred.reshape((len(e), 1))
+
     fig, ax1 = plot_l2_norm(e, theta_true, theta_pred)
 
     tot = np.hstack((e, theta_true))

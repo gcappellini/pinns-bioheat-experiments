@@ -24,3 +24,6 @@ print(e.shape, theta_true.shape, theta_pred.shape)
 tot = np.hstack((e, theta_true, theta_pred))
 
 print(tot.shape)  # Should print (48, 4)
+
+a, b = utils.plot_l2_norm(e, theta_true, theta_pred)
+print(a, b)

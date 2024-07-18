@@ -96,7 +96,7 @@ def extract_entries(timeseries_data, tmin, tmax):
 
 
 def scale_df(df):
-    new_df = pd.DataFrame({'tau': (df['t']/np.max(df['t'])).round(5)})
+    new_df = pd.DataFrame({'tau': ((df['t']-df['t'][0])/np.max(df['t'])).round(5)})
 
     min_temp = np.min(df[['y1', 'gt1', 'gt2', 'y2', 'y3']].min())
     max_temp = np.max(df[['y1', 'gt1', 'gt2', 'y2', 'y3']].max())
@@ -109,23 +109,34 @@ def scale_df(df):
 file_path = f"{src_dir}/data/measurements/vessel/20240522_1.txt"  # Replace with your file path
 timeseries_data = load_measurements(file_path)
 
-df = extract_entries(timeseries_data, 200, 3500)
+times = [
+    (0, 30 * 60),
+    (30 * 60, (30+27) * 60),
+    ((30+27) * 60, (30+27+29) * 60),
+    ((30+27+29) * 60, (30+27+29+47) * 60)
+]
 
-scaled_data = scale_df(df)
+for el in range(len(times)):
+    tmin, tmax = times[el]
+    df = extract_entries(timeseries_data, tmin, tmax)
 
-pickle_file_path = f"{src_dir}/data/measurements/vessel/1.pkl"
-save_to_pickle(scaled_data, pickle_file_path)
+    scaled_data = scale_df(df)
+
+    pickle_file_path = f"{src_dir}/data/measurements/vessel/{el}.pkl"
+    save_to_pickle(scaled_data, pickle_file_path)
 
 
-fig, ax = plt.subplots()
+    fig, ax = plt.subplots()
 
-ax.plot(scaled_data['tau'], scaled_data['y1'], label=f'y1', marker='x')# alpha=1.0, linewidth=.7)
-ax.plot(scaled_data['tau'], scaled_data['gt1'], label=f'gt1', alpha=1.0, linewidth=.7)
-ax.plot(scaled_data['tau'], scaled_data['gt2'], label=f'gt2', alpha=1.0, linewidth=.7)
-ax.plot(scaled_data['tau'], scaled_data['y2'], label=f'y2', alpha=1.0, linewidth=.7)
-ax.plot(scaled_data['tau'], scaled_data['y3'], label=f'y3', alpha=1.0, linewidth=.7)
-ax.legend()
+    ax.plot(scaled_data['tau'], scaled_data['y1'], label=f'y1', marker='x')# alpha=1.0, linewidth=.7)
+    ax.plot(scaled_data['tau'], scaled_data['gt1'], label=f'gt1', alpha=1.0, linewidth=.7)
+    ax.plot(scaled_data['tau'], scaled_data['gt2'], label=f'gt2', alpha=1.0, linewidth=.7)
+    ax.plot(scaled_data['tau'], scaled_data['y2'], label=f'y2', alpha=1.0, linewidth=.7)
+    ax.plot(scaled_data['tau'], scaled_data['y3'], label=f'y3', alpha=1.0, linewidth=.7)
+    ax.legend()
 
-# ax.plot(range(len(df['t'])), df['t'], alpha=1.0, linewidth=.7)
-plt.show()
+    # ax.plot(range(len(df['t'])), df['t'], alpha=1.0, linewidth=.7)
+    # plt.show()
+    plt.savefig(f"{src_dir}/data/measurements/vessel/test_{el}.png", dpi=1200)
+    plt.close()
 
