@@ -36,14 +36,13 @@ figures = os.path.join(tests_dir, "figures")
 os.makedirs(figures, exist_ok=True)
 
 n="measurements/vessel/0"
-prj = "optim_properties_obs"
+prj = "try_po_obs"
 prj_figs, _, _ = utils.set_prj(prj)
 # HPO setting
-n_calls = 50
-dim_a1 = Real(low=1e-1, high=1e+2, name="a1", prior="log-uniform")
-dim_a2 = Real(low=1e-1, high=1e+2, name="a2", prior="log-uniform")
-dim_a3 = Real(low=1e-1, high=1e+2, name="a3", prior="log-uniform")
-dim_a4 = Real(low=1e-1, high=1e+2, name="a4", prior="log-uniform")
+n_calls = 250
+dim_a1 = Real(low=5e-1, high=1e+1, name="a1", prior="log-uniform")
+dim_a2 = Real(low=5e-1, high=1e+1, name="a2", prior="log-uniform")
+dim_a3 = Real(low=5e-1, high=1e+1, name="a3", prior="log-uniform")
 dim_a5 = Real(low=1e+1, high=5e+2, name="a5", prior="log-uniform")
 dim_a6 = Real(low=1e-1, high=1e+2, name="a6", prior="log-uniform")
 
@@ -51,37 +50,34 @@ dimensions = [
     dim_a1,
     dim_a2,
     dim_a3,
-    dim_a4,
     dim_a5,
     dim_a6
 ]
 
-default_parameters = [cc.a1, cc.a2, cc.a3, cc.a4, cc.a5, cc.a6]
+default_parameters = [cc.a1, cc.a2, cc.a3, cc.a5, cc.a6]
 
 
 @use_named_args(dimensions=dimensions)
-def fitness(a1, a2, a3, a4, a5, a6):
+def fitness(a1, a2, a3, a5, a6):
     global ITERATION
     run = f"run_{ITERATION}"
     utils.set_run(run)
 
     config = utils.read_json("properties.json")
-    config["a1"] = a1
-    config["a2"] = a2
-    config["a3"] = a3
-    config["a4"] = a4
-    config["a5"] = a5
-    config["a6"] = a6
-    utils.write_json(config)
+    config["a1"] = round(a1, 7)
+    config["a2"] = round(a2, 7)
+    config["a3"] = round(a3, 7)
+    config["a5"] = round(a5, 7)
+    config["a6"] = round(a6, 7)
+    utils.write_json(config, "properties.json")
 
     print(ITERATION, "it number")
     # Print the hyper-parameters.
-    print("a1:", a1)
-    print("a2:", a2)
-    print("a3:", a3)
-    print("a4:", a4)
-    print("a5:", a5)
-    print("a6:", a6)
+    print("a1:", round(a1, 7))
+    print("a2:", round(a2, 7))
+    print("a3:", round(a3, 7))
+    print("a5:", round(a5, 7))
+    print("a6:", round(a6, 7))
     print()
 
     # Create the neural network with these hyper-parameters.

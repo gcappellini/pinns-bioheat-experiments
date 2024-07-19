@@ -2,7 +2,7 @@ import utils_meas as utils
 
 
 prj = "obs_amc"
-run = "try_vessel_0"
+run = "rmte_vessel_0"
 
 n_test = "measurements/vessel/0"
 

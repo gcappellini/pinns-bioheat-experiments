@@ -223,7 +223,7 @@ def create_nbho():
     a6 = properties["a6"]
 
 
-    def pde(x, theta, a2):
+    def pde(x, theta):
         dtheta_tau = dde.grad.jacobian(theta, x, i=0, j=4)
         dtheta_xx = dde.grad.hessian(theta, x, i=0, j=0)
 
@@ -264,7 +264,7 @@ def create_nbho():
 
     data = dde.data.TimePDE(
         geomtime,
-        lambda x, theta: pde(x, theta, a2),
+        lambda x, theta: pde(x, theta),
         [bc_0, bc_1, ic],
         num_domain=2560,
         num_boundary=200,
