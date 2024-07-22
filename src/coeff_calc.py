@@ -27,9 +27,6 @@ d = 0.03
 W = 0.45
 P0 = 1e+05
 
-# a1 = (tauf/(L0**2))*(keff/(rho*c))
-# a2 = tauf*rhob*omegab*cb/(rho*c)
-# a3 = tauf/(dT*rho*c)
 
 a1 = round((L0**2/tauf)*((rho*c)/k), 7)
 a2 = round(W*(cb * L0**2)/k, 7)
