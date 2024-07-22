@@ -377,7 +377,7 @@ def gen_obsdata(n):
     return Xobs
 
 def import_testdata(n):
-    path = f"{src_dir}/data/{n}.pkl"
+    path = f"{src_dir}/data/measurements/vessel/{n}.pkl"
     df = load_from_pickle(path)
     x_tcs = np.linspace(0, 1, num=8).round(4)
     x_y1 = x_tcs[0]
@@ -425,7 +425,6 @@ def import_obsdata(n):
 
     y3 = rows_1[:, -1].reshape(len(instants),)
     f3 = interp1d(instants, y3, kind='previous')
-
 
     Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
     return Xobs
