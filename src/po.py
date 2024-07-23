@@ -41,7 +41,7 @@ prj_figs, _, _ = utils.set_prj(prj)
 # HPO setting
 n_calls = 50
 # dim_a1 = Real(low=5e-1, high=1e+1, name="a1", prior="log-uniform")
-dim_a2 = Real(low=5e+1, high=2e+1, name="a2", prior="log-uniform")
+dim_a2 = Real(low=5e+1, high=2e+2, name="a2", prior="log-uniform")
 # dim_a3 = Real(low=5e-1, high=1e+1, name="a3", prior="log-uniform")
 # dim_a5 = Real(low=1e+1, high=5e+2, name="a5", prior="log-uniform")
 # dim_a6 = Real(low=1e-1, high=1e+2, name="a6", prior="log-uniform")
