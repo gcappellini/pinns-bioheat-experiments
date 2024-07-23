@@ -27,7 +27,7 @@ h = 1000
 
 d = 0.03
 
-W = 0.45
+W = 1.2
 P0 = 0
 
 rho_wp = ufloat(1100.0, 100)
@@ -37,7 +37,7 @@ C1 = (L0**2/(47*60))*(rho_wp * c_wp)/k_wp
 C2 = (L0**2)*cw/k_wp
 
 a1 = round((L0**2/tauf)*((rho*c)/k), 7)
-a2 = round((cw * L0**2)/k, 7)
+a2 = round(W*(cw * L0**2)/k, 7)
 a3 = round(P0 * L0**2/(k*dT), 7)
 a4 = round(0.7, 7)
 a5 = round(L0*h, 7)

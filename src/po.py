@@ -41,7 +41,7 @@ prj_figs, _, _ = utils.set_prj(prj)
 # HPO setting
 n_calls = 50
 # dim_a1 = Real(low=5e-1, high=1e+1, name="a1", prior="log-uniform")
-dim_a2 = Real(low=1e+2, high=5+2, name="a2", prior="log-uniform")
+dim_a2 = Real(low=1e+2, high=5e+2, name="a2", prior="log-uniform")
 # dim_a3 = Real(low=5e-1, high=1e+1, name="a3", prior="log-uniform")
 dim_a5 = Real(low=3e+1, high=2.25e+2, name="a5", prior="log-uniform")
 # dim_a6 = Real(low=1e-1, high=1e+2, name="a6", prior="log-uniform")
@@ -108,7 +108,7 @@ search_result = gp_minimize(
 print(search_result.x)
 
 convergence_fig = plot_convergence(search_result)
-convergence_fig.figure.savefig(f"{figures}/convergence_plot_{prj}.png")
+convergence_fig.figure.savefig(f"{prj_figs}/convergence_plot_{prj}.png")
 
 # Plot objective and save the figure
 plt.figure()
