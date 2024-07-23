@@ -36,31 +36,31 @@ figures = os.path.join(tests_dir, "figures")
 os.makedirs(figures, exist_ok=True)
 
 n="3"
-prj = "2nd_try_po_obs"
+prj = "3rd_try_po_obs"
 prj_figs, _, _ = utils.set_prj(prj)
 # HPO setting
 n_calls = 50
 # dim_a1 = Real(low=5e-1, high=1e+1, name="a1", prior="log-uniform")
-dim_a2 = Real(low=5e+1, high=2e+2, name="a2", prior="log-uniform")
+dim_a2 = Real(low=1e+2, high=5+2, name="a2", prior="log-uniform")
 # dim_a3 = Real(low=5e-1, high=1e+1, name="a3", prior="log-uniform")
-# dim_a5 = Real(low=1e+1, high=5e+2, name="a5", prior="log-uniform")
+dim_a5 = Real(low=3e+1, high=2.25e+2, name="a5", prior="log-uniform")
 # dim_a6 = Real(low=1e-1, high=1e+2, name="a6", prior="log-uniform")
 
 dimensions = [
     # dim_a1,
     dim_a2,
     # dim_a3,
-    # dim_a5,
+    dim_a5,
     # dim_a6
 ]
 
 # default_parameters = [cc.a1, cc.a2, cc.a3, cc.a5, cc.a6]
-default_parameters = [cc.a2]
+default_parameters = [cc.a2, cc.a5]
 
 
 @use_named_args(dimensions=dimensions)
 # def fitness(a1, a2, a3, a5, a6):
-def fitness(a2):
+def fitness(a2, a5):
     global ITERATION
     run = f"run_{ITERATION}"
     utils.set_run(run)
@@ -69,7 +69,7 @@ def fitness(a2):
     # config["a1"] = round(a1, 7)
     config["a2"] = round(a2, 7)
     # config["a3"] = round(a3, 7)
-    # config["a5"] = round(a5, 7)
+    config["a5"] = round(a5, 7)
     # config["a6"] = round(a6, 7)
     utils.write_json(config, "properties.json")
 
@@ -78,7 +78,7 @@ def fitness(a2):
     # print("a1:", round(a1, 7))
     print("a2:", round(a2, 7))
     # print("a3:", round(a3, 7))
-    # print("a5:", round(a5, 7))
+    print("a5:", round(a5, 7))
     # print("a6:", round(a6, 7))
     print()
 

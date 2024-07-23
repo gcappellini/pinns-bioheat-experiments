@@ -23,7 +23,7 @@ Ta = 37
 Tmax = 45
 dT = Tmax - Ta
 
-h = 300
+h = 1000
 
 d = 0.03
 
