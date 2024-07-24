@@ -10,8 +10,14 @@ from scipy.interpolate import interp1d
 
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
-a = utils.import_testdata(3)
 
-print(a[:, 0:3])
-np.savetxt(f"{src_dir}/data/measurements/vessel/3.csv", a[:, 0:3])
+L0 = 15/100 
+d = 0.03
+a6 = round(L0/d, 7)
 
+z0 = 0.004
+PD = 2*d
+
+
+c = np.log(2)/(PD - z0*1e-2)
+print(a6, c)
