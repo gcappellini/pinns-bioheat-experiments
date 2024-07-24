@@ -107,11 +107,11 @@ def create_default_properties():
         "a1": cc.a1,
         "a2": cc.a2,
         "a3": cc.a3,
-        "a4": cc.a4,
+        "a4": 1.0,
         "a5": cc.a5,
         "a6": cc.a6,
         "lam": 200,
-        "output_injection_gain": 4,
+        "output_injection_gain": 15,
         "upsilon": 250.0,
     }
     return properties

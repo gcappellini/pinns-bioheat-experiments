@@ -23,7 +23,7 @@ Ta = 37
 Tmax = 45
 dT = Tmax - Ta
 
-h = 1000
+h = 300
 
 d = 0.03
 
@@ -39,13 +39,10 @@ C2 = (L0**2)*cw/k_wp
 a1 = round((L0**2/tauf)*((rho*c)/k), 7)
 a2 = round(W*(cw * L0**2)/k, 7)
 a3 = round(P0 * L0**2/(k*dT), 7)
-a4 = round(0.7, 7)
 a5 = round(L0*h, 7)
 a6 = round(L0/d, 7)
 
 print(f"a1:{a1}, a2:{a2}, a3:{a3}, a4:{a4}, a5:{a5} , a6:{a6}" )
 
-
-
-print(C1, C2)
+# print(C1, C2)
 

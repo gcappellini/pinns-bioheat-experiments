@@ -11,9 +11,6 @@ from scipy.interpolate import interp1d
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
 
-import numpy as np
-import matplotlib.pyplot as plt
-
 # Constants
 y10 = 0.2
 y20 = 0.4
