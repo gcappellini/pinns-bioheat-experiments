@@ -13,7 +13,7 @@ src_dir = os.path.dirname(current_file)
 
 # Constants
 K = 15
-a4 = 1
+a4 = -2
 b2 = 1
 
 # List of test indices
@@ -32,7 +32,6 @@ for idx, n in enumerate(nn):
     y30 = a[0][-1]
     a5 = cc.a5
 
-    print(f"y10:{y10}, y20:{y20}, y30:{y30}")
 
     # Define the sinusoidal interpolation function
     def sin_interpol(x, a5, y10, y20, y30, K, b2):
@@ -70,9 +69,10 @@ for idx, n in enumerate(nn):
 # Adjust layout for better spacing between subplots
 plt.tight_layout()
 
-# Display the complete figure with all subplots
-plt.show()
+
 
 # Save the complete figure
 plt.savefig(f"{src_dir}/data/measurements/vessel/ic_tests_combined.png", dpi=120)
+# Display the complete figure with all subplots
+plt.show()
 plt.clf()  # Clear the figure after saving

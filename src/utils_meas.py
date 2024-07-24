@@ -107,7 +107,7 @@ def create_default_properties():
         "a1": cc.a1,
         "a2": cc.a2,
         "a3": cc.a3,
-        "a4": 1.0,
+        "a4": cc.a4,
         "a5": cc.a5,
         "a6": cc.a6,
         "lam": 200,
@@ -167,7 +167,7 @@ def plot_loss_components(losshistory):
         plt.xlabel('iterations')
         plt.legend(ncol=2)
         plt.tight_layout()
-        plt.savefig(f"{run_figs}/losses.png", dpi=1200)
+        plt.savefig(f"{run_figs}/losses.png", dpi=120)
         plt.close()
     
 
@@ -479,7 +479,7 @@ def check_obs(e, theta_true, theta_pred):
 
     plt.tight_layout()
 
-    plt.savefig(f"{run_figs}/check_obs.png", dpi=1200)
+    plt.savefig(f"{run_figs}/check_obs.png", dpi=120)
 
     # plt.show()
     plt.close()
@@ -521,10 +521,10 @@ def plot_comparison(e, t_true, t_pred, MObs=False):
     # plt.tight_layout()
 
     if MObs:
-        plt.savefig(f"{prj_figs}/comparison.png", dpi=1200)
+        plt.savefig(f"{prj_figs}/comparison.png", dpi=120)
 
     else:
-        plt.savefig(f"{run_figs}/comparison.png", dpi=1200)
+        plt.savefig(f"{run_figs}/comparison.png", dpi=120)
 
     # plt.show()
     plt.close()
@@ -587,7 +587,7 @@ def plot_l2_tf(e, theta_true, theta_pred, model):
 
     plt.grid()
     ax2.set_box_aspect(1)
-    plt.savefig(f"{run_figs}/l2_tf.png", dpi=1200)
+    plt.savefig(f"{run_figs}/l2_tf.png", dpi=120)
     
     # plt.show()
     plt.close()
@@ -722,7 +722,7 @@ def plot_weights(x, t, lam):
     ax1.legend()
     ax1.set_title(r"Dynamic weights, $\lambda=$"f"{lam}", weight='semibold')
     plt.grid()
-    plt.savefig(f"{prj_figs}/weights_lam_{lam}.png", dpi=1200, bbox_inches='tight')
+    plt.savefig(f"{prj_figs}/weights_lam_{lam}.png", dpi=120, bbox_inches='tight')
 
     # plt.show()
     plt.close()
@@ -797,7 +797,7 @@ def mm_plot_l2_tf(e, theta_true, theta_pred, multi_obs, lam):
 
     plt.grid()
     ax2.set_box_aspect(1)
-    plt.savefig(f"{prj_figs}/l2_tf_lam{lam}.png", dpi=1200)
+    plt.savefig(f"{prj_figs}/l2_tf_lam{lam}.png", dpi=120)
     # plt.show()
     # plt.clf()
     plt.close()
