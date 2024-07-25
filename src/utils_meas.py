@@ -113,7 +113,7 @@ def create_default_properties():
         "a4": cc.a4,
         "a5": cc.a5,
         "a6": cc.a6,
-        "lam": 100.0,
+        "lam": 10.0,
         "output_injection_gain": 15.0,
         "upsilon": 5.0,
     }
@@ -609,7 +609,7 @@ def configure_subplot(ax, XS, surface):
     ax.plot_surface(X, T, surface, cmap='inferno', alpha=.8)
     ax.tick_params(axis='both', labelsize=7, pad=2)
     ax.dist = 10
-    ax.view_init(20, -120)
+    ax.view_init(20, -210)
 
     # Set axis labels
     ax.set_xlabel('Depth', fontsize=7, labelpad=-1)
@@ -624,14 +624,14 @@ def single_observer(name_prj, name_run, n_test):
     properties = read_json("properties.json")
     combined_config = {**config, **properties}
 
-    wandb.init(
-        project=name_prj, name=name_run,
-        config=combined_config
-    )
+    # wandb.init(
+    #     project=name_prj, name=name_run,
+    #     config=combined_config
+    # )
     mo = train_model()
     metrics = plot_and_metrics(mo, n_test)
-    wandb.log(metrics)
-    wandb.finish()
+    # wandb.log(metrics)
+    # wandb.finish()
 
     return mo, metrics
 
@@ -641,7 +641,6 @@ def mm_observer(name_prj, n_test):
     # get_properties(n_test)
 
     set_prj(name_prj)
-
 
     obs = np.array([1, 2, 3, 5, 6, 8, 9, 10])
     a2_obs = np.dot(cc.a2, obs).round(4)
@@ -686,7 +685,7 @@ def mm_observer(name_prj, n_test):
     weights = np.zeros((sol.y.shape[0]+1, sol.y.shape[1]))
     weights[0] = sol.t
     weights[1:] = sol.y
-    np.save(f'{prj_logs}/weights.npy', weights)
+    np.save(f'{prj_logs}/weights_lam_{lam}.npy', weights)
     plot_weights(x, t, lam)
     plot_mu(multi_obs, t)
     metrics = mm_plot_and_metrics(multi_obs, n_test, lam)
@@ -706,7 +705,7 @@ def mu(o, tau):
     muu = []
     for el in o:
         oss = el.predict(xo)
-        scrt = upsilon*np.abs((oss-f2(tau))/K)**2
+        scrt = upsilon*np.abs(oss-f2(tau))**2
         muu.append(scrt)
     muu = np.array(muu).reshape(len(muu),)
     return muu
@@ -740,12 +739,15 @@ def plot_mu(multi_obs, t):
     global prj_figs
     fig = plt.figure()
     ax1 = fig.add_subplot(111)
-    mus = mu(multi_obs, t)
-    colors = ['C3', 'lime', 'blue', 'aqua', 'purple', 'darkred', 'k', 'yellow']
+    muy = []
+    for el in t:
+        muy.append(mu(multi_obs, el))
 
-    for i in len(mus):
+    mus = np.array(muy)
+    colors = ['C3', 'lime', 'blue', 'aqua', 'purple', 'darkred', 'k', 'yellow']
+    for i in range(mus.shape[1]):
         # plt.plot(tauf * t, x[i], alpha=1.0, linewidth=1.8, color=colors[i], label=f"Weight $p_{i+1}$")
-        plt.plot(t, mus[i], alpha=1.0, linewidth=1.0, color=colors[i], label=f"Error ${i}$")
+        plt.plot(t, mus[:, i], alpha=1.0, linewidth=1.0, color=colors[i], label=f"$e_{i}$")
 
     ax1.set_xlim(0, 1)
     ax1.set_ylim(bottom=0.0)
@@ -777,7 +779,7 @@ def mm_plot_and_metrics(multi_obs, n_test, lam):
 
 def mm_predict(multi_obs, lam, g):
     global prj_logs
-    a = np.load(f'{prj_logs}/weights_lambda_{lam}.npy', allow_pickle=True)
+    a = np.load(f'{prj_logs}/weights_lam_{lam}.npy', allow_pickle=True)
     weights = a[1:]
 
     num_time_steps = weights.shape[1]
