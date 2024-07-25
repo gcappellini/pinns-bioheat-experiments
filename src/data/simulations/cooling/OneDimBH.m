@@ -1,9 +1,10 @@
 
 function [sol] = OneDimBH
+global tf
 
 m = 0;
 x = linspace(0,1,101);
-t = linspace(0,1,101);
+t = linspace(0,tf,101);
 
 sol = pdepe(m,@OneDimBHpde,@OneDimBHic,@OneDimBHbc,x,t);
 % % Extract the first solution component as u.  This is not necessary
@@ -64,7 +65,7 @@ plot(t,u10,'r',t,u11,'g',t,u12,'b',t,u13,'cyan',t,u14,'.',t,u15,'-.',t,u16,'blac
 title('dynamic weights');
 
 
-% surface plot of the observer solution 
+% surface plot of the observation error 
 figure;
 surf(x,t,u1-uav);
 title('Observation error with 100 mesh points.');
@@ -83,15 +84,47 @@ legend('System','Observer0','Observer1','Observer2','Observer3','Observer4','Obs
 xlabel('Distance x');
 ylabel('temperature at t_{final}');
 
-% --------------------------------------------------------------------------
+omegas = calculateOmegas(sol, x, t);
 
-function source = P(x)
-global a6
-source = exp(-(1-x)*a6);
+% Plot omega evolution
+figure;
+plot(t, omegas(:, 1), 'r-', 'LineWidth', 1.5, 'DisplayName', 'e_1'); hold on;
+plot(t, omegas(:, 2), 'g-', 'LineWidth', 1.5, 'DisplayName', 'e_2');
+plot(t, omegas(:, 3), 'b-', 'LineWidth', 1.5, 'DisplayName', 'e_3');
+plot(t, omegas(:, 4), 'c-', 'LineWidth', 1.5, 'DisplayName', 'e_4');
+plot(t, omegas(:, 5), 'm-', 'LineWidth', 1.5, 'DisplayName', 'e_5');
+plot(t, omegas(:, 6), '-.', 'LineWidth', 1.5, 'DisplayName', 'e_6');
+plot(t, omegas(:, 7), 'k-', 'LineWidth', 1.5, 'DisplayName', 'e_7');
+plot(t, omegas(:, 8), 'y-', 'LineWidth', 1.5, 'DisplayName', 'e_8');
+hold off;
+title('Evolution of Observation errors');
+xlabel('Time t');
+ylabel('\omega Values');
+legend('show', 'Location', 'best');
+grid on;
+
+% Helper function to calculate omegas
+function omegas = calculateOmegas(sol, x, t)
+global upsilon
+    numSteps = length(t);
+    omegas = zeros(numSteps, 8); % Preallocate matrix for omega values
+
+    for i = 1:numSteps
+        ur = sol(i, end, :); % Right boundary values at each time step
+        omegas(i, 1) = upsilon * (ur(2) - ur(1))^2;
+        omegas(i, 2) = upsilon * (ur(3) - ur(1))^2;
+        omegas(i, 3) = upsilon * (ur(4) - ur(1))^2;
+        omegas(i, 4) = upsilon * (ur(5) - ur(1))^2;
+        omegas(i, 5) = upsilon * (ur(6) - ur(1))^2;
+        omegas(i, 6) = upsilon * (ur(7) - ur(1))^2;
+        omegas(i, 7) = upsilon * (ur(8) - ur(1))^2;
+        omegas(i, 8) = upsilon * (ur(9) - ur(1))^2;
+    end
+
 
 %-----------------
 function [c,f,s] = OneDimBHpde(x,t,u,dudx)
-global lambda om1 om2 om3 om4 om5 om6 om7 om8 W W1 W2 W3 W4 W5 W6 W7 W8 a1 a2 a3
+global lambda om1 om2 om3 om4 om5 om6 om7 om8 W W1 W2 W3 W4 W5 W6 W7 W8 a1 a2 a3 a6
 %la prima equazione è quella del sistema, a seguire gli osservatori
 t
 
@@ -101,15 +134,15 @@ f = [1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1].* dudx;
 den=u(10)*exp(-om1)+u(11)*exp(-om2)+u(12)*exp(-om3)+u(13)*exp(-om4)+...
     u(14)*exp(-om5)+u(15)*exp(-om6)+u(16)*exp(-om7)+u(17)*exp(-om8);
 
-s = [-W*a2*u(1)+a3*P(x); 
-    -W1*a2*u(2)+a3*P(x); 
-    -W2*a2*u(3)+a3*P(x); 
-    -W3*a2*u(4)+a3*P(x); 
-    -W4*a2*u(5)+a3*P(x); 
-    -W5*a2*u(6)+a3*P(x); 
-    -W6*a2*u(7)+a3*P(x); 
-    -W7*a2*u(8)+a3*P(x); 
-    -W8*a2*u(9)+a3*P(x); 
+s = [-W*a2*u(1)+a3*exp(-a6*(1-x)); 
+    -W1*a2*u(2)+a3*exp(-a6*(1-x)); 
+    -W2*a2*u(3)+a3*exp(-a6*(1-x)); 
+    -W3*a2*u(4)+a3*exp(-a6*(1-x)); 
+    -W4*a2*u(5)+a3*exp(-a6*(1-x)); 
+    -W5*a2*u(6)+a3*exp(-a6*(1-x)); 
+    -W6*a2*u(7)+a3*exp(-a6*(1-x)); 
+    -W7*a2*u(8)+a3*exp(-a6*(1-x)); 
+    -W8*a2*u(9)+a3*exp(-a6*(1-x)); 
     -lambda*u(10)*(1-(exp(-om1)/den));
     -lambda*u(11)*(1-(exp(-om2)/den)); 
     -lambda*u(12)*(1-(exp(-om3)/den)); 
@@ -120,15 +153,21 @@ s = [-W*a2*u(1)+a3*P(x);
     -lambda*u(17)*(1-(exp(-om8)/den));
     ];
 % --------------------------------------------------------------------------
+function icsys = Initial(x)
+e1 = -2.6;
+e2 = 0.9;
+e3 = 0.6;
+icsys = e1*(x-e3)^2+e2;
 
 function u0 = OneDimBHic(x)
 global K a4 a5
-y1_0 = 0;
-y2_0 = 0;
-y3_0 = 0;
+
+y1_0 = Initial(0);
+y2_0 = Initial(1);
+y3_0 = 0.438;
 b1 = (a5*y3_0+(K-a5)*y2_0-(2+K)*a4)/(1+K);
 ic_obs = y1_0 + b1*x + a4*x^2;
-u0 = [0; ic_obs;  ic_obs; ic_obs; ic_obs; ic_obs; ic_obs; ic_obs; ic_obs; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8];
+u0 = [Initial(x); ic_obs;  ic_obs; ic_obs; ic_obs; ic_obs; ic_obs; ic_obs; ic_obs; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8];
 % --------------------------------------------------------------------------
 
 function ubol = Bolus(t)
@@ -136,7 +175,8 @@ c1 = 0.9;
 c2 = 10.2;
 c3 = 0.5;
 c4 = 0.26;
-ubol = (c3/(1+c1*exp(-c2*t)))-c4;
+%ubol = (c3/(1+c1*exp(-c2*t)))-c4;
+ubol=0.438;
 
 % --------------------------------------------------------------------------
 
@@ -156,13 +196,13 @@ pr = [-flusso;
     -flusso-K*(ur(1)-ur(9));
     0;0;0;0;0;0;0;0]; %flusso negativo, con osservatore
 qr = [1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1];
-om1=upsilon*((pr(2)-pr(1))/K)^2;
-om2=upsilon*((pr(3)-pr(1))/K)^2;
-om3=upsilon*((pr(4)-pr(1))/K)^2;
-om4=upsilon*((pr(5)-pr(1))/K)^2;
-om5=upsilon*((pr(6)-pr(1))/K)^2;
-om6=upsilon*((pr(7)-pr(1))/K)^2;
-om7=upsilon*((pr(8)-pr(1))/K)^2;
-om8=upsilon*((pr(9)-pr(1))/K)^2;
+om1=upsilon*((ur(2)-ur(1)))^2;
+om2=upsilon*((ur(3)-ur(1)))^2;
+om3=upsilon*((ur(4)-ur(1)))^2;
+om4=upsilon*((ur(5)-ur(1)))^2;
+om5=upsilon*((ur(6)-ur(1)))^2;
+om6=upsilon*((ur(7)-ur(1)))^2;
+om7=upsilon*((ur(8)-ur(1)))^2;
+om8=upsilon*((ur(9)-ur(1)))^2;
 
 

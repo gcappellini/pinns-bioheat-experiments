@@ -1,16 +1,10 @@
 import utils_meas as utils
 
 
-prj = "obs_amc"
-run = "try_test3"
+prj = "simulations_amc"
+run = "test3_default_config"
 
-n_test = "3"
-
-utils.single_observer(prj, run, n_test)
+n_test = "cooling"
 
 
-
-# Per test su simulazioni:
-# n_sim = "simulations/BH_8Obs"
-
-# utils.single_observer(prj, run, n_sim)
+utils.mm_observer(prj,n_test)

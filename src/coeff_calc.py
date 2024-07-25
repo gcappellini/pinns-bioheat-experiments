@@ -43,7 +43,7 @@ a4 = -2.0
 a5 = round(L0*h, 7)
 a6 = round(L0/d, 7)
 
-print(a2)
+print(a1, a2, a3, a4, a5, a6)
 
 # print(C1, C2)
 

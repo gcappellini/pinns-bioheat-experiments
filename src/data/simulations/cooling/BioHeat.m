@@ -3,15 +3,14 @@ close all
 
 global K lambda upsilon W W1 W2 W3 W4 W5 W6 W7 W8 om1 om2  om3 om4  om5 om6 om7 om8 a1 a2 a3 a4 a5 a6 tf
 
-a1 = 1.061375;
-a2 = 1.9125;
-a3 = 10.0;
-a4 = 0.7;
-a5 = 15.0;
+a1 = 67.3;
+a2 = 205.2;
+a3 = 0.0;
+a4 = -2.0;
+a5 = 45.0;
 a6 = 5.0;
 
-tf = 10;
-
+tf = 1;
 
 K=15;
 lambda=100;
@@ -34,6 +33,7 @@ W5=6*W1;
 W6=8*W1;
 W7=9*W1;
 W8=10*W1;
+
 W=(W3+W4)/2;
 
 sol= OneDimBH;

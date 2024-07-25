@@ -88,12 +88,15 @@ def read_json(filename):
 
 def create_default_config():
     network = {
-        "activation": "silu", 
+        # "activation": "silu",
+        "activation": "tanh", 
         "initial_weights_regularizer": True, 
-        "initialization": "He uniform",
+        # "initialization": "He uniform",
+        "initialization": "Glorot normal",
         "iterations": 30000,
         "LBFGS": False,
-        "learning_rate": 0.0013913487374830062,
+        # "learning_rate": 0.0013913487374830062,
+        "learning_rate": 0.001,
         "num_dense_layers": 4,
         "num_dense_nodes": 100,
         "resampling": True,
@@ -110,9 +113,9 @@ def create_default_properties():
         "a4": cc.a4,
         "a5": cc.a5,
         "a6": cc.a6,
-        "lam": 200,
-        "output_injection_gain": 15,
-        "upsilon": 250.0,
+        "lam": 100.0,
+        "output_injection_gain": 15.0,
+        "upsilon": 5.0,
     }
     return properties
 
@@ -348,7 +351,7 @@ def train_and_save_model(model, iterations, callbacks, optimizer_name):
 
 
 def gen_testdata(n):
-    data = np.loadtxt(f"{src_dir}/data/{n}/output_matlab.txt")
+    data = np.loadtxt(f"{src_dir}/data/simulations/{n}/output_matlab.txt")
     x, t, exact, obs1, mm, sup, bol = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:4].T, data[:, 4:5].T, data[:, 5:6].T, data[:, 6:7].T
     X = np.vstack((x, t)).T
     y = exact.flatten()[:, None]
@@ -360,11 +363,14 @@ def gen_testdata(n):
 
 
 def gen_obsdata(n):
-    global f2, f3
+    global f1, f2, f3
     g = np.hstack((gen_testdata(n)))
     instants = np.unique(g[:, 1])
 
     rows_1 = g[g[:, 0] == 1.0]
+
+    def f1(j):
+        return np.zeros_like(j)
 
 
     y2 = rows_1[:, -2].reshape(len(instants),)
@@ -373,7 +379,7 @@ def gen_obsdata(n):
     y3 = rows_1[:, -1].reshape(len(instants),)
     f3 = interp1d(instants, y3, kind='previous')
 
-    Xobs = np.vstack((g[:, 0], np.zeros_like(f2(g[:, 1])), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
+    Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
     return Xobs
 
 def import_testdata(n):
@@ -431,17 +437,17 @@ def import_obsdata(n):
 
 
 def plot_and_metrics(model, n_test):
-    # e, theta_true, theta_obs, _, _, _ = gen_testdata(n_test)
-    # g = gen_obsdata(n_test)
+    e, theta_true, theta_obs, _, _, _ = gen_testdata(n_test)
+    g = gen_obsdata(n_test)
 
-    o = import_testdata(n_test)
-    e, theta_true = o[:, 0:2], o[:, 2]
-    g = import_obsdata(n_test)
+    # o = import_testdata(n_test)
+    # e, theta_true = o[:, 0:2], o[:, 2]
+    # g = import_obsdata(n_test)
 
     theta_pred = model.predict(g)
 
     plot_comparison(e, theta_true, theta_pred)
-    # check_obs(e, theta_obs, theta_pred)
+    check_obs(e, theta_obs, theta_pred)
     plot_l2_tf(e, theta_true, theta_pred, model)
     # plot_tf(e, theta_true, model)
     metrics = compute_metrics(theta_true, theta_pred)
@@ -545,7 +551,7 @@ def plot_l2_norm(e, theta_true, theta_pred):
 
     fig = plt.figure(figsize=(10, 5))  # Adjust the size as needed
     ax1 = fig.add_subplot(121)
-    ax1.plot(t, l2, alpha=1.0, linewidth=1.8, color='C0')
+    ax1.plot(t, l2, alpha=1.0, linewidth=1.2, color='C0')
     ax1.grid()
 
     ax1.set_xlabel(xlabel=r"Time t", fontsize=7)  # xlabel
@@ -575,7 +581,7 @@ def plot_l2_tf(e, theta_true, theta_pred, model):
 
     ax2 = fig.add_subplot(122)
     ax2.plot(xtr, true, marker="x", linestyle="None", alpha=1.0, color='C0', label="true")
-    ax2.plot(x, pred, alpha=1.0, linewidth=1.8, color='C2', label="pred")
+    ax2.plot(x, pred, alpha=1.0, linewidth=1.0, color='C2', label="pred")
 
     ax2.set_xlabel(xlabel=r"Space x", fontsize=7)  # xlabel
     ax2.set_ylabel(ylabel=r"$\Theta$", fontsize=7)  # ylabel
@@ -636,11 +642,9 @@ def mm_observer(name_prj, n_test):
 
     set_prj(name_prj)
 
-    properties = read_json("properties.json")
-    lam = properties["lam"]
 
     obs = np.array([1, 2, 3, 5, 6, 8, 9, 10])
-    a3_obs = np.dot(a3, obs)
+    a2_obs = np.dot(cc.a2, obs)
 
     n_obs = len(obs)
 
@@ -652,11 +656,14 @@ def mm_observer(name_prj, n_test):
     multi_obs = []
     
     for j in range(n_obs):
-        run = f"n{j}_W{a3_obs[j]}"
+        run = f"n{j}_W{a2_obs[j]}"
         set_run(run)
         # config = read_config()
-        a3 = a3_obs[j]
-        # write_config(config)
+        a2_new = a2_obs[j]
+        properties = read_json("properties.json")
+        lam = properties["lam"]
+        properties["a2"] = a2_new
+        write_json(properties, "properties.json")
         model, _ = single_observer(name_prj, run, n_test)
         multi_obs.append(model)
 
@@ -681,6 +688,7 @@ def mm_observer(name_prj, n_test):
     weights[1:] = sol.y
     np.save(f'{prj_logs}/weights.npy', weights)
     plot_weights(x, t, lam)
+    plot_mu(multi_obs, t)
     metrics = mm_plot_and_metrics(multi_obs, n_test, lam)
 
     # wandb.log(metrics)
@@ -689,12 +697,12 @@ def mm_observer(name_prj, n_test):
 
 
 def mu(o, tau):
-    global f2, f3
+    global f1, f2, f3
     net = read_json("properties.json")
     K = net["output_injection_gain"]
     upsilon = net["upsilon"]
 
-    xo = np.vstack((np.ones_like(tau), np.zeros_like(tau), f2(tau), f3(tau), tau)).T
+    xo = np.vstack((np.ones_like(tau), f1(tau), f2(tau), f3(tau), tau)).T
     muu = []
     for el in o:
         oss = el.predict(xo)
@@ -708,11 +716,11 @@ def plot_weights(x, t, lam):
     global prj_figs
     fig = plt.figure()
     ax1 = fig.add_subplot(111)
-    # colors = ['C3', 'lime', 'blue', 'purple', 'aqua', 'lightskyblue', 'darkred', 'k']
+    colors = ['C3', 'lime', 'blue', 'aqua', 'purple', 'darkred', 'k', 'yellow']
 
     for i in range(x.shape[0]):
         # plt.plot(tauf * t, x[i], alpha=1.0, linewidth=1.8, color=colors[i], label=f"Weight $p_{i+1}$")
-        plt.plot(t, x[i], alpha=1.0, linewidth=1.2, label=f"Weight $p_{i}$")
+        plt.plot(t, x[i], alpha=1.0, linewidth=1.0, color=colors[i], label=f"Weight $p_{i}$")
 
     ax1.set_xlim(0, 1)
     ax1.set_ylim(bottom=0.0)
@@ -723,6 +731,31 @@ def plot_weights(x, t, lam):
     ax1.set_title(r"Dynamic weights, $\lambda=$"f"{lam}", weight='semibold')
     plt.grid()
     plt.savefig(f"{prj_figs}/weights_lam_{lam}.png", dpi=120, bbox_inches='tight')
+
+    # plt.show()
+    plt.close()
+    # plt.clf()
+
+def plot_mu(multi_obs, t):
+    global prj_figs
+    fig = plt.figure()
+    ax1 = fig.add_subplot(111)
+    mus = mu(multi_obs, t)
+    colors = ['C3', 'lime', 'blue', 'aqua', 'purple', 'darkred', 'k', 'yellow']
+
+    for i in len(mus):
+        # plt.plot(tauf * t, x[i], alpha=1.0, linewidth=1.8, color=colors[i], label=f"Weight $p_{i+1}$")
+        plt.plot(t, mus[i], alpha=1.0, linewidth=1.0, color=colors[i], label=f"Error ${i}$")
+
+    ax1.set_xlim(0, 1)
+    ax1.set_ylim(bottom=0.0)
+
+    ax1.set_xlabel(xlabel=r"Time t")  # xlabel
+    ax1.set_ylabel(ylabel=r"Error")  # ylabel
+    ax1.legend()
+    ax1.set_title(r"Observation errors", weight='semibold')
+    plt.grid()
+    plt.savefig(f"{prj_figs}/obs_error.png", dpi=120, bbox_inches='tight')
 
     # plt.show()
     plt.close()
@@ -781,11 +814,13 @@ def mm_plot_l2_tf(e, theta_true, theta_pred, multi_obs, lam):
     pred = mm_predict(multi_obs, lam, Xobs)
 
     ax2 = fig.add_subplot(122)
-    ax2.plot(xtr, true, marker="o", linestyle="None", alpha=1.0, linewidth=0.75, color='purple', label="true", markevery=6)
+    ax2.plot(xtr, true, marker="o", linestyle="None", alpha=1.0, linewidth=0.75, color='blue', label="true", markevery=6)
     ax2.plot(x, pred, linestyle='None', marker="X", linewidth=0.75, color='gold', label="mm_obs", markevery=6)
 
+    colors = ['C3', 'lime', 'blue', 'aqua', 'purple', 'darkred', 'k', 'yellow']
+
     for el in range(len(multi_obs)):
-        ax2.plot(x, multi_obs[el].predict(Xobs), alpha=1.0, linewidth=0.75, label=f"$obs_{el}$")
+        ax2.plot(x, multi_obs[el].predict(Xobs), alpha=1.0, color=colors[el], linewidth=0.75, label=f"$obs_{el}$")
 
     ax2.set_xlabel(xlabel=r"Space x", fontsize=7)  # xlabel
     ax2.set_ylabel(ylabel=r"$\Theta$", fontsize=7)  # ylabel
