@@ -72,22 +72,20 @@ title('Observation error with 100 mesh points.');
 xlabel('Distance x');
 ylabel('Time t');
 
-% Calculate the observation error
-error = abs(u1 - uav);
 
-% Sum the errors over the spatial dimension (x-axis) for each time step
-sum_error_vs_time = sum(error, 2);
+% Calculate the observation L2 error for each time step
+l2_error_vs_time = sqrt(sum((u1 - uav).^2, 2));
 
-% Plotting the 2D plot of summed error vs. time
+% Plotting the 2D plot of L2 error vs. time
 figure;
-plot(t, sum_error_vs_time, 'LineWidth', 2);
-title('Summed Observation Error vs. Time');
+plot(t, l2_error_vs_time, 'LineWidth', 2);
+title('L2 Observation Error vs. Time');
 xlabel('Time t');
-ylabel('Summed Error');
+ylabel('L2 Error');
 grid on;
 
 % Optionally, add more plot settings
-legend('Summed Error', 'Location', 'best');
+legend('L2 Error', 'Location', 'best');
 
 
 %solution profile at t_final
