@@ -644,7 +644,7 @@ def mm_observer(name_prj, n_test):
 
 
     obs = np.array([1, 2, 3, 5, 6, 8, 9, 10])
-    a2_obs = np.dot(cc.a2, obs)
+    a2_obs = np.dot(cc.a2, obs).round(4)
 
     n_obs = len(obs)
 
