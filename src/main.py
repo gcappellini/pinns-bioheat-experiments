@@ -1,10 +1,8 @@
 import utils_meas as utils
 
 
-prj = "simulations_amc"
-run = "test3_default_config"
-
-n_test = "cooling"
+prj = "cooling_amc"
+run = "default_config"
 
 
-utils.mm_observer(prj,n_test)
+utils.mm_observer(prj)

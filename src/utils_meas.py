@@ -88,14 +88,11 @@ def read_json(filename):
 
 def create_default_config():
     network = {
-        # "activation": "silu",
         "activation": "tanh", 
         "initial_weights_regularizer": True, 
-        # "initialization": "He uniform",
         "initialization": "Glorot normal",
         "iterations": 30000,
         "LBFGS": False,
-        # "learning_rate": 0.0013913487374830062,
         "learning_rate": 0.001,
         "num_dense_layers": 4,
         "num_dense_nodes": 100,
@@ -350,8 +347,8 @@ def train_and_save_model(model, iterations, callbacks, optimizer_name):
     return losshistory, train_state
 
 
-def gen_testdata(n):
-    data = np.loadtxt(f"{src_dir}/data/simulations/{n}/output_matlab.txt")
+def gen_testdata():
+    data = np.loadtxt(f"{src_dir}/data/simulations/output_matlab.txt")
     x, t, exact, obs1, mm, sup, bol = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:4].T, data[:, 4:5].T, data[:, 5:6].T, data[:, 6:7].T
     X = np.vstack((x, t)).T
     y = exact.flatten()[:, None]
@@ -362,9 +359,9 @@ def gen_testdata(n):
     return X, y, y_obs1, y_mm, y_sup, y_bol
 
 
-def gen_obsdata(n):
+def gen_obsdata():
     global f1, f2, f3
-    g = np.hstack((gen_testdata(n)))
+    g = np.hstack((gen_testdata()))
     instants = np.unique(g[:, 1])
 
     rows_1 = g[g[:, 0] == 1.0]
@@ -436,9 +433,9 @@ def import_obsdata(n):
     return Xobs
 
 
-def plot_and_metrics(model, n_test):
-    e, theta_true, theta_obs, _, _, _ = gen_testdata(n_test)
-    g = gen_obsdata(n_test)
+def plot_and_metrics(model):
+    e, theta_true, theta_obs, _, _, _ = gen_testdata()
+    g = gen_obsdata()
 
     # o = import_testdata(n_test)
     # e, theta_true = o[:, 0:2], o[:, 2]
@@ -617,7 +614,7 @@ def configure_subplot(ax, XS, surface):
     ax.set_zlabel('Theta', fontsize=7, labelpad=-4)
 
 
-def single_observer(name_prj, name_run, n_test):
+def single_observer(name_prj, name_run):
     set_prj(name_prj)
     set_run(name_run)
     config = read_json("config.json")
@@ -629,14 +626,14 @@ def single_observer(name_prj, name_run, n_test):
     #     config=combined_config
     # )
     mo = train_model()
-    metrics = plot_and_metrics(mo, n_test)
+    metrics = plot_and_metrics(mo)
     # wandb.log(metrics)
     # wandb.finish()
 
     return mo, metrics
 
 
-def mm_observer(name_prj, n_test):
+def mm_observer(name_prj):
     global prj_logs
     # get_properties(n_test)
 
@@ -663,7 +660,7 @@ def mm_observer(name_prj, n_test):
         lam = properties["lam"]
         properties["a2"] = a2_new
         write_json(properties, "properties.json")
-        model, _ = single_observer(name_prj, run, n_test)
+        model, _ = single_observer(name_prj, run)
         multi_obs.append(model)
 
     p0 = np.full((n_obs,), 1/n_obs)
@@ -688,7 +685,7 @@ def mm_observer(name_prj, n_test):
     np.save(f'{prj_logs}/weights_lam_{lam}.npy', weights)
     plot_weights(x, t, lam)
     plot_mu(multi_obs, t)
-    metrics = mm_plot_and_metrics(multi_obs, n_test, lam)
+    metrics = mm_plot_and_metrics(multi_obs, lam)
 
     # wandb.log(metrics)
     # wandb.finish()
@@ -764,9 +761,9 @@ def plot_mu(multi_obs, t):
     # plt.clf()
 
 
-def mm_plot_and_metrics(multi_obs, n_test, lam):
-    e, theta_true, _, _, _, _ = gen_testdata(n_test)
-    g = gen_obsdata(n_test)
+def mm_plot_and_metrics(multi_obs, lam):
+    e, theta_true, _, _, _, _ = gen_testdata()
+    g = gen_obsdata()
 
     theta_pred = mm_predict(multi_obs, lam, g).reshape(theta_true.shape)
 
