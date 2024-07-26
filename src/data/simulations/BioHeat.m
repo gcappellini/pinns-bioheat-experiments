@@ -5,7 +5,7 @@ global K lambda upsilon W W0 W1 W2 W3 W4 W5 W6 W7  om0 om1 om2  om3 om4  om5 om6
 
 a1 = 87.083;
 a2 = 156.75;
-a3 = 0.0847466;
+a3 = 0.0;
 a4 = -2.0;
 a5 = 30.0;
 a6 = 3.4703631;
