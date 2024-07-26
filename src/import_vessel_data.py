@@ -49,8 +49,6 @@ def extract_entries(timeseries_data, tmin, tmax):
 
     # Create a list of all unique times
     all_times = sorted(set(time for times in extracted_data.values() for time, temp in times))
-
-    # return all_times
     
     # # Normalize times to seconds, starting from zero
     start_time = all_times[0]
@@ -71,7 +69,7 @@ def extract_entries(timeseries_data, tmin, tmax):
     # return df
     df['time_diff'] = df['t'].diff()#.dt.total_seconds()
 
-    threshold = 1
+    threshold = np.where((df['t'] > 2 * 60) & (df['t'] < 83 * 60), 50, 1)
 
     # Identify the indices where a new interval starts
     new_intervals = df[df['time_diff'] > threshold].index
@@ -122,10 +120,10 @@ ax.plot(df['t']/60, df['y3'], label='y3', alpha=1.0, linewidth=0.7)
 
 # Add vertical dashed red lines with labels on the plot
 ax.axvline(x=2, color='red', linestyle='--', linewidth=1.1)
-ax.text(2.5, 35.8, 'RF on', color='red', fontsize=10, verticalalignment='top')
+ax.text(2.5, 35.8, 'RF on,\nmax perfusion', color='red', fontsize=10, verticalalignment='top')
 
 ax.axvline(x=29, color='red', linestyle='--', linewidth=1.1)
-ax.text(29.5, 35.8, 'Lower perfusion', color='red', fontsize=10, verticalalignment='top')
+ax.text(29.5, 35.8, 'Min perfusion', color='red', fontsize=10, verticalalignment='top')
 
 ax.axvline(x=56, color='red', linestyle='--', linewidth=1.1)
 ax.text(56.5, 35.8, 'Zero perfusion', color='red', fontsize=10, verticalalignment='top')
@@ -146,8 +144,9 @@ ax.set_xlim(0, 234)
 plt.tight_layout()
 
 # Display and save plot
-plt.show()
+
 plt.savefig(f"{src_dir}/data/measurements/vessel/vessel_experiment.png", dpi=120)
+plt.show()
 plt.close()
 
     
