@@ -3,12 +3,12 @@ close all
 
 global K lambda upsilon W W0 W1 W2 W3 W4 W5 W6 W7  om0 om1 om2  om3 om4  om5 om6 om7 a1 a2 a3 a4 a5 a6 tf
 
-a1 = 67.3;
-a2 = 205.2;
-a3 = 0.0;
+a1 = 87.083;
+a2 = 156.75;
+a3 = 0.0847466;
 a4 = -2.0;
-a5 = 45.0;
-a6 = 5.0;
+a5 = 30.0;
+a6 = 3.4703631;
 
 tf = 1;
 
