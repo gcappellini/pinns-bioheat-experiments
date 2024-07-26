@@ -71,7 +71,7 @@ def extract_entries(timeseries_data, tmin, tmax):
     # return df
     df['time_diff'] = df['t'].diff()#.dt.total_seconds()
 
-    threshold = 1 if el==3 else 100
+    threshold = 1
 
     # Identify the indices where a new interval starts
     new_intervals = df[df['time_diff'] > threshold].index
@@ -109,38 +109,46 @@ def scale_df(df):
 
 file_path = f"{src_dir}/data/measurements/vessel/20240522_1.txt"  # Replace with your file path
 timeseries_data = load_measurements(file_path)
+df = extract_entries(timeseries_data, 0, 4*60*60)
 
-times = [
-    (0, 30 * 60),
-    (30 * 60, (30+27) * 60),
-    ((30+27) * 60, (30+27+29) * 60),
-    ((30+27+29) * 60, (30+27+29+47) * 60)
-]
+fig, ax = plt.subplots(figsize=(12, 6))  # Stretching layout horizontally
 
-for el in range(len(times)):
-    tmin, tmax = times[el]
-    df = extract_entries(timeseries_data, tmin, tmax)
+# Plotting data with specified attributes
+ax.plot(df['t']/60, df['y1'], label='y1', marker='x')
+ax.plot(df['t']/60, df['gt1'], label='gt1', alpha=1.0, linewidth=0.7)
+ax.plot(df['t']/60, df['gt2'], label='gt2', alpha=1.0, linewidth=0.7)
+ax.plot(df['t']/60, df['y2'], label='y2', alpha=1.0, linewidth=0.7)
+ax.plot(df['t']/60, df['y3'], label='y3', alpha=1.0, linewidth=0.7)
 
-    scaled_data = scale_df(df)
+# Add vertical dashed red lines with labels on the plot
+ax.axvline(x=2, color='red', linestyle='--', linewidth=1.1)
+ax.text(2.5, 35.8, 'RF on', color='red', fontsize=10, verticalalignment='top')
 
-    pickle_file_path = f"{src_dir}/data/measurements/vessel/{el}.pkl"
-    save_to_pickle(scaled_data, pickle_file_path)
+ax.axvline(x=29, color='red', linestyle='--', linewidth=1.1)
+ax.text(29.5, 35.8, 'Lower perfusion', color='red', fontsize=10, verticalalignment='top')
 
+ax.axvline(x=56, color='red', linestyle='--', linewidth=1.1)
+ax.text(56.5, 35.8, 'Zero perfusion', color='red', fontsize=10, verticalalignment='top')
 
-    fig, ax = plt.subplots()
+ax.axvline(x=83, color='red', linestyle='--', linewidth=1.1)
+ax.text(83.5, 35.8, 'RF off, max perfusion', color='red', fontsize=10, verticalalignment='top')
 
-    ax.plot(scaled_data['tau'], scaled_data['y1'], label=f'y1', marker='x')# alpha=1.0, linewidth=.7)
-    ax.plot(scaled_data['tau'], scaled_data['gt1'], label=f'gt1', alpha=1.0, linewidth=.7)
-    ax.plot(scaled_data['tau'], scaled_data['gt2'], label=f'gt2', alpha=1.0, linewidth=.7)
-    ax.plot(scaled_data['tau'], scaled_data['y2'], label=f'y2', alpha=1.0, linewidth=.7)
-    ax.plot(scaled_data['tau'], scaled_data['y3'], label=f'y3', alpha=1.0, linewidth=.7)
-    ax.legend()
-    ax.set_title(f"Test {el}")
+# Adding legend for the plotted data (excluding the vertical lines)
+ax.legend()
 
-    # ax.plot(range(len(df['t'])), df['t'], alpha=1.0, linewidth=.7)
-    # plt.show()
-    plt.savefig(f"{src_dir}/data/measurements/vessel/test_{el}.png", dpi=1200)
-    plt.close()
+# Setting title and labels with modifications
+ax.set_title("Vessel Experiment", fontweight='bold')
+ax.set_xlabel("Time (min)", fontsize=12)
+ax.set_ylabel("Temperature (°C)", fontsize=12)
+ax.set_xlim(0, 234)
+
+# Adjust layout for better horizontal stretching
+plt.tight_layout()
+
+# Display and save plot
+plt.show()
+plt.savefig(f"{src_dir}/data/measurements/vessel/vessel_experiment.png", dpi=120)
+plt.close()
 
     
 

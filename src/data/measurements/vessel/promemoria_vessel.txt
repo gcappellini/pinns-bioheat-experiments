@@ -17,7 +17,7 @@ p0 50 W
 
 1st vessel: 0.5L in 7' 50"
 
-12.43: war level 1.7 L; lower perfusion; 0.3L in 8'38"
+12.43: water level 1.7 L; lower perfusion; 0.3L in 8'38"
 
 13.10: water level 0.82 L; zero perfusion
 
