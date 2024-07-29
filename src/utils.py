@@ -10,6 +10,8 @@ import json
 from scipy.interpolate import interp1d
 from scipy import integrate
 import pickle
+import pandas as pd
+import coeff_calc as cc
 
 dde.config.set_random_seed(200)
 
@@ -34,17 +36,9 @@ os.makedirs(logs, exist_ok=True)
 
 prj_figs, prj_models, prj_logs, run_figs, run_models, run_logs = [None]*6
 
-# properties = {
-#     "a1": None, "a2": None, "a3": None, "a4": None, "a5": None, "W": None
-# }
-
-a1, a2, a3, a4, a5, a6 = 1.061375, 1.9125, 6.25e-05, 0.7, 15.0, 0.1666667
-
-P0 = 1e+05
-W = 0.45
 
 f1, f2, f3 = [None]*3
-upsilon = 250.0
+
 
 
 def set_prj(prj):
@@ -77,57 +71,52 @@ def set_run(run):
     return run_figs, run_models, run_logs
 
 
-# def get_properties(n):
-#     global a1, a2, a3, a4, a5, a6
-#     file_path = os.path.join(src_dir, 'simulations', f'data{n}.json')
 
-#     # Open the file and load the JSON data
-#     with open(file_path, 'r') as f:
-#         data = json.load(f)
-
-#     properties.update(data['Parameters'])
-#     par = data['Parameters']
-#     local_vars = locals()
-#     for key in par:
-#         if key in local_vars:
-#             local_vars[key] = par[key]
-
-#     a1, a2, a3, a4, a5, a6 = (
-#         par["a1"], par["a2"], par["a3"], par["a4"], par["a5"], par["a6"]
-#     )
-
-
-def read_config():
-    global run_logs
-    filename = f"{run_logs}/config.json"
-    if os.path.exists(filename):
-        with open(filename, 'r') as file:
-            config = json.load(file)
+def read_json(filename):
+    filepath = f"{run_logs}/{filename}"
+    if os.path.exists(filepath):
+        with open(filepath, 'r') as file:
+            data = json.load(file)
     else:
-        # Create default config if file doesn't exist
-        config = create_default_config()
-        write_config(config)
-    return config
+        if filename == "config.json":
+            data = create_default_config()
+        elif filename == "properties.json":
+            data = create_default_properties()
+        write_json(data, filename)
+    return data
 
 
 def create_default_config():
-    # Define default configuration parameters
     network = {
-        "activation": "silu", 
+        "activation": "tanh", 
         "initial_weights_regularizer": True, 
-        "initialization": "He uniform",
+        "initialization": "Glorot normal",
         "iterations": 30000,
         "LBFGS": False,
-        "learning_rate": 0.0013913487374830062,
+        "learning_rate": 0.001,
         "num_dense_layers": 4,
         "num_dense_nodes": 100,
-        "output_injection_gain": 4,
         "resampling": True,
         "resampler_period": 100
     }
     return network
 
-def write_config(config):
+
+def create_default_properties():
+    properties = {
+        "a1": cc.a1,
+        "a2": cc.a2,
+        "a3": cc.a3,
+        "a4": cc.a4,
+        "a5": cc.a5,
+        "a6": cc.a6,
+        "lam": 10.0,
+        "output_injection_gain": 15.0,
+        "upsilon": 5.0,
+    }
+    return properties
+
+def write_json(data, filename):
     global run_logs
     def convert_to_serializable(obj):
         if isinstance(obj, (np.int32, np.int64)):
@@ -138,11 +127,11 @@ def write_config(config):
             return obj.tolist()
         return obj
 
-    serializable_config = {k: convert_to_serializable(v) for k, v in config.items()}
+    serializable_data = {k: convert_to_serializable(v) for k, v in data.items()}
 
-    filename = f"{run_logs}/config.json"
-    with open(filename, 'w') as file:
-        json.dump(serializable_config, file, indent=4)
+    filepath = f"{run_logs}/{filename}"
+    with open(filepath, 'w') as file:
+        json.dump(serializable_data, file, indent=4)
 
 
 def get_initial_loss(model):
@@ -178,7 +167,7 @@ def plot_loss_components(losshistory):
         plt.xlabel('iterations')
         plt.legend(ncol=2)
         plt.tight_layout()
-        plt.savefig(f"{run_figs}/losses.png", dpi=1200)
+        plt.savefig(f"{run_figs}/losses.png", dpi=120)
         plt.close()
     
 
@@ -215,8 +204,8 @@ def output_transform(x, y):
     return x[:, 0:1] * y
 
 def create_nbho():
-    global  a1, a2, a3, a4, a5, a6, W
-    net = read_config()
+    net = read_json("config.json")
+    properties = read_json("properties.json")
 
     activation = net["activation"]
     initial_weights_regularizer = net["initial_weights_regularizer"]
@@ -224,16 +213,23 @@ def create_nbho():
     learning_rate = net["learning_rate"]
     num_dense_layers = net["num_dense_layers"]
     num_dense_nodes = net["num_dense_nodes"]
-    K = net["output_injection_gain"]
+
+    K = properties["output_injection_gain"]
+    a1 = properties["a1"]
+    a2 = properties["a2"]
+    a3 = properties["a3"]
+    a4 = properties["a4"]
+    a5 = properties["a5"]
+    a6 = properties["a6"]
 
 
-    def pde(x, theta, W):
+    def pde(x, theta):
         dtheta_tau = dde.grad.jacobian(theta, x, i=0, j=4)
         dtheta_xx = dde.grad.hessian(theta, x, i=0, j=0)
 
         return (
             a1 * dtheta_tau
-            - dtheta_xx + a2 * W * theta - a3 * P0 * torch.exp(-(1-x[:, 0:1])*a6)
+            - dtheta_xx + a2 * theta - a3 * torch.exp(-(1-x[:, 0:1])*a6)
         )
     
     def ic_obs(x):
@@ -242,9 +238,6 @@ def create_nbho():
         y2_0 = x[:, 2:3]
         y3_0 = x[:, 3:4]
 
-        # y1_0 = 0
-        # y2_0 = 0
-        # y3_0 = 0
         b1 = (a5*y3_0+(K-a5)*y2_0-(2+K)*a4)/(1+K)
 
         return y1_0 + b1*z + a4*z**2
@@ -271,7 +264,7 @@ def create_nbho():
 
     data = dde.data.TimePDE(
         geomtime,
-        lambda x, theta: pde(x, theta, W),
+        lambda x, theta: pde(x, theta),
         [bc_0, bc_1, ic],
         num_domain=2560,
         num_boundary=200,
@@ -298,7 +291,7 @@ def create_nbho():
 
 def train_model():
     global run_models
-    conf = read_config()
+    conf = read_json("config.json")
     mm = create_nbho()
 
     LBFGS = conf["LBFGS"]
@@ -354,8 +347,8 @@ def train_and_save_model(model, iterations, callbacks, optimizer_name):
     return losshistory, train_state
 
 
-def gen_testdata(n):
-    data = np.loadtxt(f"{src_dir}/data/{n}/output_matlab.txt")
+def gen_testdata():
+    data = np.loadtxt(f"{src_dir}/data/simulations/output_matlab.txt")
     x, t, exact, obs1, mm, sup, bol = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:4].T, data[:, 4:5].T, data[:, 5:6].T, data[:, 6:7].T
     X = np.vstack((x, t)).T
     y = exact.flatten()[:, None]
@@ -366,12 +359,15 @@ def gen_testdata(n):
     return X, y, y_obs1, y_mm, y_sup, y_bol
 
 
-def gen_obsdata(n):
-    global f2, f3
-    g = np.hstack((gen_testdata(n)))
+def gen_obsdata():
+    global f1, f2, f3
+    g = np.hstack((gen_testdata()))
     instants = np.unique(g[:, 1])
 
     rows_1 = g[g[:, 0] == 1.0]
+
+    def f1(j):
+        return np.zeros_like(j)
 
 
     y2 = rows_1[:, -2].reshape(len(instants),)
@@ -380,18 +376,70 @@ def gen_obsdata(n):
     y3 = rows_1[:, -1].reshape(len(instants),)
     f3 = interp1d(instants, y3, kind='previous')
 
-    
-    # tm = 0.9957446808510638
-    # if tau > tm:
-    #     tau = tm
+    Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
+    return Xobs
 
-    Xobs = np.vstack((g[:, 0], np.zeros_like(f2(g[:, 1])), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
+def import_testdata(n):
+    path = f"{src_dir}/data/measurements/vessel/{n}.pkl"
+    df = load_from_pickle(path)
+    x_tcs = np.linspace(0, 1, num=8).round(4)
+    x_y1 = x_tcs[0]
+    x_gt1 = x_tcs[3]
+    x_gt2 = x_tcs[6]
+    x_y2 = x_tcs[7]
+
+    positions = [x_y1, x_gt1, x_gt2, x_y2]
+
+    dfs = []
+    boluses = []
+    for time_value in df['tau']:
+
+        # Extract 'theta' values for the current 'time' from df_result
+        theta_values = df[df['tau'] == time_value][
+            ['y1', 'gt1', 'gt2', 'y2']].values.flatten()
+
+        time_array = np.array([positions, [time_value] * 4, theta_values]).T
+        bol_value = df[df['tau'] == time_value][['y3']].values.flatten()
+
+        bolus_array = np.array([bol_value]*4)
+        
+        boluses.append(bolus_array)
+        dfs.append(time_array)
+
+    vstack_array = np.vstack(dfs)
+    boluses_arr = np.vstack(boluses)
+
+    return np.hstack((vstack_array,boluses_arr))
+
+
+def import_obsdata(n):
+    global f1, f2, f3
+    g = import_testdata(n)
+    instants = np.unique(g[:, 1])
+
+    rows_1 = g[g[:, 0] == 1.0]
+    rows_0 = g[g[:, 0] == 0.0]
+
+    y1 = rows_0[:, -2].reshape(len(instants),)
+    f1 = interp1d(instants, y1, kind='previous')
+
+    y2 = rows_1[:, -2].reshape(len(instants),)
+    f2 = interp1d(instants, y2, kind='previous')
+
+    y3 = rows_1[:, -1].reshape(len(instants),)
+    f3 = interp1d(instants, y3, kind='previous')
+
+    Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
     return Xobs
 
 
-def plot_and_metrics(model, n_test):
-    e, theta_true, theta_obs, _, _, _ = gen_testdata(n_test)
-    g = gen_obsdata(n_test)
+def plot_and_metrics(model):
+    e, theta_true, theta_obs, _, _, _ = gen_testdata()
+    g = gen_obsdata()
+
+    # o = import_testdata(n_test)
+    # e, theta_true = o[:, 0:2], o[:, 2]
+    # g = import_obsdata(n_test)
 
     theta_pred = model.predict(g)
 
@@ -399,7 +447,7 @@ def plot_and_metrics(model, n_test):
     check_obs(e, theta_obs, theta_pred)
     plot_l2_tf(e, theta_true, theta_pred, model)
     # plot_tf(e, theta_true, model)
-    metrics = compute_metrics(theta_obs, theta_pred)
+    metrics = compute_metrics(theta_true, theta_pred)
     return metrics
 
 
@@ -434,26 +482,29 @@ def check_obs(e, theta_true, theta_pred):
 
     plt.tight_layout()
 
-    plt.savefig(f"{run_figs}/check_obs.png", dpi=1200)
+    plt.savefig(f"{run_figs}/check_obs.png", dpi=120)
 
     # plt.show()
     plt.close()
     # plt.clf()
 
 
-def plot_comparison(e, theta_true, theta_pred, MObs=False):
+def plot_comparison(e, t_true, t_pred, MObs=False):
     global run_figs, prj_figs
 
     la = len(np.unique(e[:, 0]))
     le = len(np.unique(e[:, 1]))
+
+    theta_true = t_true.reshape(le, la)
+    theta_pred = t_pred.reshape(le, la)
 
     # Predictions
     fig = plt.figure(3, figsize=(9, 4))
 
     col_titles = ['Measured', 'Observed', 'Error']
     surfaces = [
-        [theta_true.reshape(le, la), theta_pred.reshape(le, la),
-            np.abs(theta_true - theta_pred).reshape(le, la)]
+        [theta_true, theta_pred,
+            np.abs(theta_true - theta_pred)]
     ]
 
     # Create a grid of subplots
@@ -473,10 +524,10 @@ def plot_comparison(e, theta_true, theta_pred, MObs=False):
     # plt.tight_layout()
 
     if MObs:
-        plt.savefig(f"{prj_figs}/comparison.png", dpi=1200)
+        plt.savefig(f"{prj_figs}/comparison.png", dpi=120)
 
     else:
-        plt.savefig(f"{run_figs}/comparison.png", dpi=1200)
+        plt.savefig(f"{run_figs}/comparison.png", dpi=120)
 
     # plt.show()
     plt.close()
@@ -486,7 +537,8 @@ def plot_comparison(e, theta_true, theta_pred, MObs=False):
 def plot_l2_norm(e, theta_true, theta_pred):
     t = np.unique(e[:, 1])
     l2 = []
-    t_filtered = t[t > 0.02]
+    t_filtered = t[t > 0.0001]
+
     tot = np.hstack((e, theta_true, theta_pred))
     t = t_filtered
 
@@ -496,7 +548,7 @@ def plot_l2_norm(e, theta_true, theta_pred):
 
     fig = plt.figure(figsize=(10, 5))  # Adjust the size as needed
     ax1 = fig.add_subplot(121)
-    ax1.plot(t, l2, alpha=1.0, linewidth=1.8, color='C0')
+    ax1.plot(t, l2, alpha=1.0, linewidth=1.2, color='C0')
     ax1.grid()
 
     ax1.set_xlabel(xlabel=r"Time t", fontsize=7)  # xlabel
@@ -511,20 +563,22 @@ def plot_l2_norm(e, theta_true, theta_pred):
 
 def plot_l2_tf(e, theta_true, theta_pred, model):
     global run_figs
+    e, theta_true, theta_pred = e.reshape((len(e), 2)), theta_true.reshape((len(e), 1)), theta_pred.reshape((len(e), 1))
+
     fig, ax1 = plot_l2_norm(e, theta_true, theta_pred)
 
     tot = np.hstack((e, theta_true))
-    final = tot[tot[:, 1]==1.0]
+    final = tot[tot[:, 1]==1]
     xtr = np.unique(tot[:, 0])
     x = np.linspace(0, 1, 100)
     true = final[:, -1]
 
-    Xobs = np.vstack((x, np.zeros_like(x), f2(np.ones_like(x)), f3(np.ones_like(x)), np.ones_like(x))).T
+    Xobs = np.vstack((x, f1(np.ones_like(x)), f2(np.ones_like(x)), f3(np.ones_like(x)), np.ones_like(x))).T
     pred = model.predict(Xobs)
 
     ax2 = fig.add_subplot(122)
     ax2.plot(xtr, true, marker="x", linestyle="None", alpha=1.0, color='C0', label="true")
-    ax2.plot(x, pred, alpha=1.0, linewidth=1.8, color='C2', label="pred")
+    ax2.plot(x, pred, alpha=1.0, linewidth=1.0, color='C2', label="pred")
 
     ax2.set_xlabel(xlabel=r"Space x", fontsize=7)  # xlabel
     ax2.set_ylabel(ylabel=r"$\Theta$", fontsize=7)  # ylabel
@@ -536,7 +590,7 @@ def plot_l2_tf(e, theta_true, theta_pred, model):
 
     plt.grid()
     ax2.set_box_aspect(1)
-    plt.savefig(f"{run_figs}/l2_tf.png", dpi=1200)
+    plt.savefig(f"{run_figs}/l2_tf.png", dpi=120)
     
     # plt.show()
     plt.close()
@@ -560,30 +614,33 @@ def configure_subplot(ax, XS, surface):
     ax.set_zlabel('Theta', fontsize=7, labelpad=-4)
 
 
-def single_observer(name_prj, name_run, n_test):
-    # get_properties(n_test)
+def single_observer(name_prj, name_run):
     set_prj(name_prj)
     set_run(name_run)
-    wandb.init(
-        project=name_prj, name=name_run,
-        config=read_config()
-    )
-    mo = train_model()
-    metrics = plot_and_metrics(mo, n_test)
+    config = read_json("config.json")
+    properties = read_json("properties.json")
+    combined_config = {**config, **properties}
 
-    wandb.log(metrics)
-    wandb.finish()
+    # wandb.init(
+    #     project=name_prj, name=name_run,
+    #     config=combined_config
+    # )
+    mo = train_model()
+    metrics = plot_and_metrics(mo)
+    # wandb.log(metrics)
+    # wandb.finish()
+
     return mo, metrics
 
 
-def mm_observer(name_prj, n_test):
-    global W, prj_logs
+def mm_observer(name_prj):
+    global prj_logs
     # get_properties(n_test)
 
     set_prj(name_prj)
 
     obs = np.array([1, 2, 3, 5, 6, 8, 9, 10])
-    W_obs = np.dot(W, obs)
+    a2_obs = np.dot(cc.a2, obs).round(4)
 
     n_obs = len(obs)
 
@@ -595,38 +652,40 @@ def mm_observer(name_prj, n_test):
     multi_obs = []
     
     for j in range(n_obs):
-        run = f"n{j}_W{W_obs[j]}"
+        run = f"n{j}_W{a2_obs[j]}"
         set_run(run)
         # config = read_config()
-        W = W_obs[j]
-        # write_config(config)
-        model, _ = single_observer(name_prj, run, n_test)
+        a2_new = a2_obs[j]
+        properties = read_json("properties.json")
+        lam = properties["lam"]
+        properties["a2"] = a2_new
+        write_json(properties, "properties.json")
+        model, _ = single_observer(name_prj, run)
         multi_obs.append(model)
 
     p0 = np.full((n_obs,), 1/n_obs)
-    lem = [100, 500, 1000]
 
-    for lam in lem:
-        def f(t, p):
-            a = mu(multi_obs, t)
-            e = np.exp(-1*a)
-            d = np.inner(p, e)
-            f = []
-            for el in range(len(p)):
-                ccc = - lam * (1-(e[el]/d))*p[el]
-                f.append(ccc)
-            return np.array(f)
+    def f(t, p):
+        a = mu(multi_obs, t)
+        e = np.exp(-1*a)
+        d = np.inner(p, e)
+        f = []
+        for el in range(len(p)):
+            ccc = - lam * (1-(e[el]/d))*p[el]
+            f.append(ccc)
+        return np.array(f)
 
 
-        sol = integrate.solve_ivp(f, (0, 1), p0, t_eval=np.linspace(0, 1, 100))
-        x = sol.y
-        t = sol.t
-        weights = np.zeros((sol.y.shape[0]+1, sol.y.shape[1]))
-        weights[0] = sol.t
-        weights[1:] = sol.y
-        np.save(f'{prj_logs}/weights_lambda_{lam}.npy', weights)
-        plot_weights(x, t, lam)
-        metrics = mm_plot_and_metrics(multi_obs, n_test, lam)
+    sol = integrate.solve_ivp(f, (0, 1), p0, t_eval=np.linspace(0, 1, 100))
+    x = sol.y
+    t = sol.t
+    weights = np.zeros((sol.y.shape[0]+1, sol.y.shape[1]))
+    weights[0] = sol.t
+    weights[1:] = sol.y
+    np.save(f'{prj_logs}/weights_lam_{lam}.npy', weights)
+    plot_weights(x, t, lam)
+    plot_mu(multi_obs, t)
+    metrics = mm_plot_and_metrics(multi_obs, lam)
 
     # wandb.log(metrics)
     # wandb.finish()
@@ -634,15 +693,16 @@ def mm_observer(name_prj, n_test):
 
 
 def mu(o, tau):
-    global f2, f3
-    net = read_config()
+    global f1, f2, f3
+    net = read_json("properties.json")
     K = net["output_injection_gain"]
+    upsilon = net["upsilon"]
 
-    xo = np.vstack((np.ones_like(tau), np.zeros_like(tau), f2(tau), f3(tau), tau)).T
+    xo = np.vstack((np.ones_like(tau), f1(tau), f2(tau), f3(tau), tau)).T
     muu = []
     for el in o:
         oss = el.predict(xo)
-        scrt = upsilon*np.abs((oss-f2(tau))/K)**2
+        scrt = upsilon*np.abs(oss-f2(tau))**2
         muu.append(scrt)
     muu = np.array(muu).reshape(len(muu),)
     return muu
@@ -652,11 +712,11 @@ def plot_weights(x, t, lam):
     global prj_figs
     fig = plt.figure()
     ax1 = fig.add_subplot(111)
-    # colors = ['C3', 'lime', 'blue', 'purple', 'aqua', 'lightskyblue', 'darkred', 'k']
+    colors = ['C3', 'lime', 'blue', 'aqua', 'm', 'darkred', 'k', 'yellow']
 
     for i in range(x.shape[0]):
         # plt.plot(tauf * t, x[i], alpha=1.0, linewidth=1.8, color=colors[i], label=f"Weight $p_{i+1}$")
-        plt.plot(t, x[i], alpha=1.0, linewidth=1.2, label=f"Weight $p_{i}$")
+        plt.plot(t, x[i], alpha=1.0, linewidth=1.0, color=colors[i], label=f"Weight $p_{i}$")
 
     ax1.set_xlim(0, 1)
     ax1.set_ylim(bottom=0.0)
@@ -666,16 +726,44 @@ def plot_weights(x, t, lam):
     ax1.legend()
     ax1.set_title(r"Dynamic weights, $\lambda=$"f"{lam}", weight='semibold')
     plt.grid()
-    plt.savefig(f"{prj_figs}/weights_lam_{lam}.png", dpi=1200, bbox_inches='tight')
+    plt.savefig(f"{prj_figs}/weights_lam_{lam}.png", dpi=120, bbox_inches='tight')
+
+    # plt.show()
+    plt.close()
+    # plt.clf()
+
+def plot_mu(multi_obs, t):
+    global prj_figs
+    fig = plt.figure()
+    ax1 = fig.add_subplot(111)
+    muy = []
+    for el in t:
+        muy.append(mu(multi_obs, el))
+
+    mus = np.array(muy)
+    colors = ['C3', 'lime', 'blue', 'aqua', 'm', 'darkred', 'k', 'yellow']
+    for i in range(mus.shape[1]):
+        # plt.plot(tauf * t, x[i], alpha=1.0, linewidth=1.8, color=colors[i], label=f"Weight $p_{i+1}$")
+        plt.plot(t, mus[:, i], alpha=1.0, linewidth=1.0, color=colors[i], label=f"$e_{i}$")
+
+    ax1.set_xlim(0, 1)
+    ax1.set_ylim(bottom=0.0)
+
+    ax1.set_xlabel(xlabel=r"Time t")  # xlabel
+    ax1.set_ylabel(ylabel=r"Error")  # ylabel
+    ax1.legend()
+    ax1.set_title(r"Observation errors", weight='semibold')
+    plt.grid()
+    plt.savefig(f"{prj_figs}/obs_error.png", dpi=120, bbox_inches='tight')
 
     # plt.show()
     plt.close()
     # plt.clf()
 
 
-def mm_plot_and_metrics(multi_obs, n_test, lam):
-    e, theta_true, _, _, _, _ = gen_testdata(n_test)
-    g = gen_obsdata(n_test)
+def mm_plot_and_metrics(multi_obs, lam):
+    e, theta_true, _, _, _, _ = gen_testdata()
+    g = gen_obsdata()
 
     theta_pred = mm_predict(multi_obs, lam, g).reshape(theta_true.shape)
 
@@ -688,7 +776,7 @@ def mm_plot_and_metrics(multi_obs, n_test, lam):
 
 def mm_predict(multi_obs, lam, g):
     global prj_logs
-    a = np.load(f'{prj_logs}/weights_lambda_{lam}.npy', allow_pickle=True)
+    a = np.load(f'{prj_logs}/weights_lam_{lam}.npy', allow_pickle=True)
     weights = a[1:]
 
     num_time_steps = weights.shape[1]
@@ -725,11 +813,13 @@ def mm_plot_l2_tf(e, theta_true, theta_pred, multi_obs, lam):
     pred = mm_predict(multi_obs, lam, Xobs)
 
     ax2 = fig.add_subplot(122)
-    ax2.plot(xtr, true, marker="o", linestyle="None", alpha=1.0, linewidth=0.75, color='purple', label="true", markevery=6)
+    ax2.plot(xtr, true, marker="o", linestyle="None", alpha=1.0, linewidth=0.75, color='blue', label="true", markevery=6)
     ax2.plot(x, pred, linestyle='None', marker="X", linewidth=0.75, color='gold', label="mm_obs", markevery=6)
 
+    colors = ['C3', 'lime', 'blue', 'aqua', 'm', 'darkred', 'k', 'yellow']
+
     for el in range(len(multi_obs)):
-        ax2.plot(x, multi_obs[el].predict(Xobs), alpha=1.0, linewidth=0.75, label=f"$obs_{el}$")
+        ax2.plot(x, multi_obs[el].predict(Xobs), alpha=1.0, color=colors[el], linewidth=0.75, label=f"$obs_{el}$")
 
     ax2.set_xlabel(xlabel=r"Space x", fontsize=7)  # xlabel
     ax2.set_ylabel(ylabel=r"$\Theta$", fontsize=7)  # ylabel
@@ -741,7 +831,7 @@ def mm_plot_l2_tf(e, theta_true, theta_pred, multi_obs, lam):
 
     plt.grid()
     ax2.set_box_aspect(1)
-    plt.savefig(f"{prj_figs}/l2_tf_lam{lam}.png", dpi=1200)
+    plt.savefig(f"{prj_figs}/l2_tf_lam{lam}.png", dpi=120)
     # plt.show()
     # plt.clf()
     plt.close()
