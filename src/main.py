@@ -1,8 +1,9 @@
 import utils
 
 
-prj = "cooling_amc"
-run = "default_config"
+prj = "heating_amc"
+n = 1
+run = "increase_lambda"
 
 
-utils.mm_observer(prj)
+utils.mm_observer(prj, n)

@@ -34,7 +34,7 @@ uav=u2.*u10+u3.*u11+u4.*u12+u5.*u13+u6.*u14+u7.*u15+u8.*u16+u9.*u17;
 
 % Print Solution PDE
 
-fileID = fopen('output_matlab.txt','w');
+fileID = fopen('output_matlab_1.txt','w');
 
 for i = 1:101
    for j = 1:101
@@ -50,7 +50,7 @@ surf(x,t,u1);
 title('Numerical solution of the system.');
 xlabel('Distance x');
 ylabel('Time t');
-saveas(gcf, 'matlab_system.jpg');
+saveas(gcf, '1_matlab_system.jpg');
 
 
 % surface plot of the observer solution 
@@ -59,12 +59,12 @@ surf(x,t,uav);
 title('Numerical solution of the observer.');
 xlabel('Distance x');
 ylabel('Time t');
-saveas(gcf, 'matlab_mm_obs.jpg');
+saveas(gcf, '1_matlab_mm_obs.jpg');
 
 figure
 plot(t,u10,'r',t,u11,'g',t,u12,'b',t,u13,'cyan',t,u14,'.',t,u15,'-.',t,u16,'black',t,u17,'yellow') %plot the dynamic wheights
 title('dynamic weights');
-saveas(gcf, 'matlab_weights.jpg');
+saveas(gcf, '1_matlab_weights.jpg');
 
 
 % surface plot of the observation error 
@@ -73,7 +73,7 @@ surf(x,t,u1-uav);
 title('Observation error with 100 mesh points.');
 xlabel('Distance x');
 ylabel('Time t');
-saveas(gcf, 'matlab_err_3d.jpg');
+saveas(gcf, '1_matlab_err_3d.jpg');
 
 
 
@@ -87,7 +87,7 @@ title('L2 Observation Error vs. Time');
 xlabel('Time t');
 ylabel('L2 Error');
 grid on;
-saveas(gcf, 'matlab_l2.jpg');
+saveas(gcf, '1_matlab_l2.jpg');
 
 
 %solution profile at t_final
@@ -100,7 +100,7 @@ legend('System','Observer0','Observer1','Observer2','Observer3','Observer4','Obs
     'Observer6','Observer7','ObserverMultiModel','Location', 'SouthWest');
 xlabel('Distance x');
 ylabel('temperature at t_{final}');
-saveas(gcf, 'matlab_tf.jpg');
+saveas(gcf, '1_matlab_tf.jpg');
 
 omegas = calculateOmegas(sol, x, t);
 
@@ -120,7 +120,7 @@ xlabel('Time t');
 ylabel('\omega Values');
 legend('show', 'Location', 'best');
 grid on;
-saveas(gcf, 'matlab_obs_err.jpg');
+saveas(gcf, '1_matlab_obs_err.jpg');
 
 % Helper function to calculate omegas
 function omegas = calculateOmegas(sol, x, t)
@@ -172,21 +172,15 @@ s = [-W*a2*u(1)+a3*exp(-a6*(1-x));
     -lambda*u(17)*(1-(exp(-om7)/den));
     ];
 % --------------------------------------------------------------------------
-function icsys = Initial(x)
-e1 = -2.6;
-e2 = 0.9;
-e3 = 0.6;
-icsys = e1*(x-e3)^2+e2;
-
 function u0 = OneDimBHic(x)
 global K a4 a5
 
-y1_0 = Initial(0);
-y2_0 = Initial(1);
-y3_0 = 0.438;
+y1_0 = 0;
+y2_0 = 0;
+y3_0 = 0;
 b1 = (a5*y3_0+(K-a5)*y2_0-(2+K)*a4)/(1+K);
 ic_obs = y1_0 + b1*x + a4*x^2;
-u0 = [Initial(x); ic_obs;  ic_obs; ic_obs; ic_obs; ic_obs; ic_obs; ic_obs; ic_obs; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8];
+u0 = [0; ic_obs;  ic_obs; ic_obs; ic_obs; ic_obs; ic_obs; ic_obs; ic_obs; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8];
 % --------------------------------------------------------------------------
 
 function ubol = Bolus(t)
@@ -194,8 +188,7 @@ c1 = 0.9;
 c2 = 10.2;
 c3 = 0.5;
 c4 = 0.26;
-%ubol = (c3/(1+c1*exp(-c2*t)))-c4;
-ubol=0.438;
+ubol = (c3/(1+c1*exp(-c2*t)))-c4;
 
 % --------------------------------------------------------------------------
 

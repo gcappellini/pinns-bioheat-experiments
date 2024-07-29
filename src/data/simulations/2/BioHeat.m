@@ -34,6 +34,6 @@ W5=8;
 W6=9;
 W7=10;
 
-W=W0;
+W=(W3+W4)/2;
 
 sol= OneDimBH;

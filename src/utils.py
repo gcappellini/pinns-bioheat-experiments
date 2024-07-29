@@ -347,8 +347,8 @@ def train_and_save_model(model, iterations, callbacks, optimizer_name):
     return losshistory, train_state
 
 
-def gen_testdata():
-    data = np.loadtxt(f"{src_dir}/data/simulations/output_matlab.txt")
+def gen_testdata(n):
+    data = np.loadtxt(f"{src_dir}/data/simulations/{n}/output_matlab_{n}.txt")
     x, t, exact, obs1, mm, sup, bol = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:4].T, data[:, 4:5].T, data[:, 5:6].T, data[:, 6:7].T
     X = np.vstack((x, t)).T
     y = exact.flatten()[:, None]
@@ -359,9 +359,9 @@ def gen_testdata():
     return X, y, y_obs1, y_mm, y_sup, y_bol
 
 
-def gen_obsdata():
+def gen_obsdata(n):
     global f1, f2, f3
-    g = np.hstack((gen_testdata()))
+    g = np.hstack((gen_testdata(n)))
     instants = np.unique(g[:, 1])
 
     rows_1 = g[g[:, 0] == 1.0]
@@ -626,14 +626,15 @@ def single_observer(name_prj, name_run):
     #     config=combined_config
     # )
     mo = train_model()
-    metrics = plot_and_metrics(mo)
+    # metrics = plot_and_metrics(mo)
+    metrics=0
     # wandb.log(metrics)
     # wandb.finish()
 
     return mo, metrics
 
 
-def mm_observer(name_prj):
+def mm_observer(name_prj, n_test):
     global prj_logs
     # get_properties(n_test)
 
@@ -641,6 +642,7 @@ def mm_observer(name_prj):
 
     obs = np.array([1, 2, 3, 5, 6, 8, 9, 10])
     a2_obs = np.dot(cc.a2, obs).round(4)
+    lam = 100
 
     n_obs = len(obs)
 
@@ -657,14 +659,14 @@ def mm_observer(name_prj):
         # config = read_config()
         a2_new = a2_obs[j]
         properties = read_json("properties.json")
-        lam = properties["lam"]
+        properties["lam"] = lam
         properties["a2"] = a2_new
         write_json(properties, "properties.json")
         model, _ = single_observer(name_prj, run)
         multi_obs.append(model)
 
     p0 = np.full((n_obs,), 1/n_obs)
-
+    gen_obsdata(n_test)
     def f(t, p):
         a = mu(multi_obs, t)
         e = np.exp(-1*a)
@@ -685,7 +687,7 @@ def mm_observer(name_prj):
     np.save(f'{prj_logs}/weights_lam_{lam}.npy', weights)
     plot_weights(x, t, lam)
     plot_mu(multi_obs, t)
-    metrics = mm_plot_and_metrics(multi_obs, lam)
+    metrics = mm_plot_and_metrics(multi_obs, lam, n_test)
 
     # wandb.log(metrics)
     # wandb.finish()
@@ -761,9 +763,9 @@ def plot_mu(multi_obs, t):
     # plt.clf()
 
 
-def mm_plot_and_metrics(multi_obs, lam):
-    e, theta_true, _, _, _, _ = gen_testdata()
-    g = gen_obsdata()
+def mm_plot_and_metrics(multi_obs, lam, n):
+    e, theta_true, _, _, _, _ = gen_testdata(n)
+    g = gen_obsdata(n)
 
     theta_pred = mm_predict(multi_obs, lam, g).reshape(theta_true.shape)
 
