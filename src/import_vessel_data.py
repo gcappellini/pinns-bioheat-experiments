@@ -44,7 +44,7 @@ def load_from_pickle(file_path):
     
 
 def extract_entries(timeseries_data, tmin, tmax):
-    keys_to_extract = {10: 'y1', 45: 'gt1', 66: 'gt2', 24: 'y2', 31: 'y3'}
+    keys_to_extract = {10: 'y1', 45: 'gt1', 66: 'gt2', 24: 'y2', 31: 'y3', 39:'bol_out'}
     extracted_data = {new_key: timeseries_data.get(old_key, []) for old_key, new_key in keys_to_extract.items()}
 
     # Create a list of all unique times
@@ -105,49 +105,61 @@ def scale_df(df):
     return new_df
 
 
-file_path = f"{src_dir}/data/measurements/vessel/20240522_1.txt"  # Replace with your file path
+file_path = f"{src_dir}/data/vessel/20240522_1.txt"  # Replace with your file path
 timeseries_data = load_measurements(file_path)
 df = extract_entries(timeseries_data, 0, 4*60*60)
 
-fig, ax = plt.subplots(figsize=(12, 6))  # Stretching layout horizontally
+# fig, ax = plt.subplots(figsize=(12, 6))  # Stretching layout horizontally
 
-# Plotting data with specified attributes
-ax.plot(df['t']/60, df['y1'], label='y1', marker='x')
-ax.plot(df['t']/60, df['gt1'], label='gt1', alpha=1.0, linewidth=0.7)
-ax.plot(df['t']/60, df['gt2'], label='gt2', alpha=1.0, linewidth=0.7)
-ax.plot(df['t']/60, df['y2'], label='y2', alpha=1.0, linewidth=0.7)
-ax.plot(df['t']/60, df['y3'], label='y3', alpha=1.0, linewidth=0.7)
+# # Plotting data with specified attributes
+# ax.plot(df['t']/60, df['y1'], label='y1', marker='x')
+# ax.plot(df['t']/60, df['gt1'], label='gt1', alpha=1.0, linewidth=0.7)
+# ax.plot(df['t']/60, df['gt2'], label='gt2', alpha=1.0, linewidth=0.7)
+# ax.plot(df['t']/60, df['y2'], label='y2', alpha=1.0, linewidth=0.7)
+# ax.plot(df['t']/60, df['y3'], label='y3', alpha=1.0, linewidth=0.7)
+# # ax.plot(df['t']/60, df['bol_out'], label='bolus outlet', alpha=1.0, linewidth=0.7)
 
-# Add vertical dashed red lines with labels on the plot
-ax.axvline(x=2, color='red', linestyle='--', linewidth=1.1)
-ax.text(2.5, 35.8, 'RF on,\nmax perfusion', color='red', fontsize=10, verticalalignment='top')
+# # Add vertical dashed red lines with labels on the plot
+# ax.axvline(x=2, color='red', linestyle='--', linewidth=1.1)
+# ax.text(2.5, 35.8, 'RF on,\nmax perfusion', color='red', fontsize=10, verticalalignment='top')
 
-ax.axvline(x=29, color='red', linestyle='--', linewidth=1.1)
-ax.text(29.5, 35.8, 'Min perfusion', color='red', fontsize=10, verticalalignment='top')
+# ax.axvline(x=29, color='red', linestyle='--', linewidth=1.1)
+# ax.text(29.5, 35.8, 'Min perfusion', color='red', fontsize=10, verticalalignment='top')
 
-ax.axvline(x=56, color='red', linestyle='--', linewidth=1.1)
-ax.text(56.5, 35.8, 'Zero perfusion', color='red', fontsize=10, verticalalignment='top')
+# ax.axvline(x=56, color='red', linestyle='--', linewidth=1.1)
+# ax.text(56.5, 35.8, 'Zero perfusion', color='red', fontsize=10, verticalalignment='top')
 
-ax.axvline(x=83, color='red', linestyle='--', linewidth=1.1)
-ax.text(83.5, 35.8, 'RF off, max perfusion', color='red', fontsize=10, verticalalignment='top')
+# ax.axvline(x=83, color='red', linestyle='--', linewidth=1.1)
+# ax.text(83.5, 35.8, 'RF off, max perfusion', color='red', fontsize=10, verticalalignment='top')
 
-# Adding legend for the plotted data (excluding the vertical lines)
-ax.legend()
+# # Adding legend for the plotted data (excluding the vertical lines)
+# ax.legend()
 
-# Setting title and labels with modifications
-ax.set_title("Vessel Experiment", fontweight='bold')
-ax.set_xlabel("Time (min)", fontsize=12)
-ax.set_ylabel("Temperature (°C)", fontsize=12)
-ax.set_xlim(0, 234)
+# # Setting title and labels with modifications
+# ax.set_title("Vessel Experiment", fontweight='bold')
+# ax.set_xlabel("Time (min)", fontsize=12)
+# ax.set_ylabel("Temperature (°C)", fontsize=12)
+# ax.set_xlim(0, 234)
 
-# Adjust layout for better horizontal stretching
-plt.tight_layout()
+# # Adjust layout for better horizontal stretching
+# plt.tight_layout()
 
-# Display and save plot
+# # Display and save plot
 
-plt.savefig(f"{src_dir}/data/measurements/vessel/vessel_experiment.png", dpi=120)
-plt.show()
-plt.close()
+# plt.savefig(f"{src_dir}/data/vessel/vessel_experiment.png", dpi=120)
+# plt.show()
+# plt.close()
+# plt.clf()
+
+
+df2 = extract_entries(timeseries_data, 10299, 10301)
+h = 238
+k = 0.8
+sup_flux = h*(df2["y3"]-df2["y2"])
+in_depth_flux = (k/0.015)*(df2["gt1"]-df2["y1"])
+
+print(sup_flux, in_depth_flux)
+
 
     
 
