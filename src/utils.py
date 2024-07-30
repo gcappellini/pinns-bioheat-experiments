@@ -380,7 +380,7 @@ def gen_obsdata(n):
     return Xobs
 
 def import_testdata(n):
-    path = f"{src_dir}/data/measurements/vessel/{n}.pkl"
+    path = f"{src_dir}/data/vessel/{n}.pkl"
     df = load_from_pickle(path)
     x_tcs = np.linspace(0, 1, num=8).round(4)
     x_y1 = x_tcs[0]
@@ -539,6 +539,8 @@ def plot_l2_norm(e, theta_true, theta_pred):
     l2 = []
     t_filtered = t[t > 0.0001]
 
+    theta_true = theta_true.reshape(len(e), 1)
+    theta_pred = theta_pred.reshape(len(e), 1)
     tot = np.hstack((e, theta_true, theta_pred))
     t = t_filtered
 
@@ -642,7 +644,7 @@ def mm_observer(name_prj, n_test):
 
     obs = np.array([1, 2, 3, 5, 6, 8, 9, 10])
     a2_obs = np.dot(cc.a2, obs).round(4)
-    lam = 10000
+    lam = 100
 
     n_obs = len(obs)
 
@@ -667,7 +669,8 @@ def mm_observer(name_prj, n_test):
         multi_obs.append(model)
 
     p0 = np.full((n_obs,), 1/n_obs)
-    gen_obsdata(n_test)
+    # gen_obsdata(n_test)
+    import_obsdata(n_test)
     def f(t, p):
         a = mu(multi_obs, t)
         e = np.exp(-1*a)
@@ -765,8 +768,12 @@ def plot_mu(multi_obs, t):
 
 
 def mm_plot_and_metrics(multi_obs, lam, n):
-    e, theta_true, _, _, _, _ = gen_testdata(n)
-    g = gen_obsdata(n)
+    # e, theta_true, _, _, _, _ = gen_testdata(n)
+    # g = gen_obsdata(n)
+    a = import_testdata(n)
+    e = a[:, 0:2]
+    theta_true = a[:, 2]
+    g = import_obsdata(n)
 
     theta_pred = mm_predict(multi_obs, lam, g).reshape(theta_true.shape)
 
@@ -805,6 +812,8 @@ def mm_plot_l2_tf(e, theta_true, theta_pred, multi_obs, lam):
     global prj_figs
     # Plot the L2 norm
     fig, ax1 = plot_l2_norm(e, theta_true, theta_pred)
+
+    theta_true = theta_true.reshape(len(e), 1)
 
     tot = np.hstack((e, theta_true))
     final = tot[tot[:, 1]==1.0]

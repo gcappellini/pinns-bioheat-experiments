@@ -1,8 +1,8 @@
 import utils
 
 
-prj = "heating_amc_test0"
-n = 0
+prj = "heat_amc_meas0"
+n = 2
 run = "increase_lambda"
 
 

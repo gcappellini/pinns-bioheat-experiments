@@ -11,7 +11,5 @@ from scipy.interpolate import interp1d
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
 
-mu, sigma = 5, 2.5 # mean and standard deviation
-s = np.random.normal(mu, sigma, 8).round(2)
-
-print(s)
+a = utils.import_testdata(3)
+print(len(a))
