@@ -642,7 +642,7 @@ def mm_observer(name_prj, n_test):
 
     obs = np.array([1, 2, 3, 5, 6, 8, 9, 10])
     a2_obs = np.dot(cc.a2, obs).round(4)
-    lam = 100
+    lam = 10000
 
     n_obs = len(obs)
 
@@ -660,6 +660,7 @@ def mm_observer(name_prj, n_test):
         a2_new = a2_obs[j]
         properties = read_json("properties.json")
         properties["lam"] = lam
+        # lam = properties["lam"]
         properties["a2"] = a2_new
         write_json(properties, "properties.json")
         model, _ = single_observer(name_prj, run)
