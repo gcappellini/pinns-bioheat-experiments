@@ -1,4 +1,4 @@
-function [parameter1, parameter2, parameter3, arrayParameter, nestedParameter] = loadProperties(filename)
+function [parameter1, parameter2, parameter3, arrayParameter] = loadProperties(filename)
     % loadProperties - Loads parameters from a JSON file.
     %
     % Syntax: [parameter1, parameter2, parameter3, arrayParameter, nestedParameter] = loadProperties(filename)
