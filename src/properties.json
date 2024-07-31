@@ -1,0 +1,6 @@
+{
+    "parameter1": 42,
+    "parameter2": 3.14,
+    "parameter3": "example",
+    "arrayParameter": [1, 2, 3, 4, 5]
+  }

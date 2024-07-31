@@ -110,9 +110,9 @@ def create_default_properties():
         "a4": cc.a4,
         "a5": cc.a5,
         "a6": cc.a6,
-        "lam": 10.0,
-        "output_injection_gain": 15.0,
-        "upsilon": 5.0,
+        "lam": cc.lam,
+        "output_injection_gain": cc.K,
+        "upsilon": cc.upsilon,
     }
     return properties
 
@@ -290,7 +290,7 @@ def create_nbho():
 
 
 def train_model():
-    global run_models
+    global prj_logs, run_models
     conf = read_json("config.json")
     mm = create_nbho()
 

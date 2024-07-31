@@ -1,6 +1,5 @@
 import os
 import numpy as np
-import matplotlib.pyplot as plt
 from uncertainties import ufloat
 
 current_file = os.path.abspath(__file__)
@@ -44,7 +43,11 @@ a4 = -2.0
 a5 = round(L0*h, 7)
 a6 = round(L0*gamma, 7)
 
-print(a1, a2, a3, a4, a5, a6)
+lam = 10.0
+K = 15.0
+upsilon = 5.0
+
+print(a1, a2, a3, a4, a5, a6, lam, K, upsilon)
 
 # print(C1, C2)
 
