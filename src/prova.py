@@ -1,15 +1,11 @@
-import utils
+import matlab.engine
 import os
-import pandas as pd
-import datetime
-import numpy as np
-import matplotlib.pyplot as plt
-import coeff_calc as cc
-from uncertainties import ufloat
-from scipy.interpolate import interp1d
 
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
+git_dir = os.path.dirname(src_dir)
 
-a = utils.import_testdata(3)
-print(len(a))
+eng = matlab.engine.start_matlab()
+eng.cd(src_dir, nargout=0)
+eng.simple_script(nargout=0)
+eng.quit()
