@@ -1,6 +1,7 @@
 {
-    "parameter1": 42,
-    "parameter2": 3.14,
-    "parameter3": "example",
-    "arrayParameter": [1, 2, 3, 4, 5]
+    "R2": 0.04,
+    "k": 0.6,
+    "rho_fl": 1000.0,
+    "c_fl": 4186.0,
+    "omega_fl": 0.0005
   }
