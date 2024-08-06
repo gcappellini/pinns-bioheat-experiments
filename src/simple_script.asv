@@ -24,7 +24,7 @@ function main
 
     for i = 1:101
         fprintf(fileID, '%6.2f %12.8f %12.8f %12.8f\n', ...
-            x(i), u1(end, i), u2(end, i), u3(end, i));
+            x(i), u1(i, 101), u2(i, 101), u3(i, end));
     end
 
     fclose(fileID);

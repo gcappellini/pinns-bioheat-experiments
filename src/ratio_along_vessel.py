@@ -17,7 +17,7 @@ rho = 1000  # density of fluid in kg/m^3
 T_tumour = 42  # tumour temperature in °C
 
 # Initial conditions
-T_blood_initial = 37  # initial blood temperature in °C
+T_fluid_initial = 37  # initial fluid temperature in °C
 
 # Calculate step size
 dx = L / N
@@ -34,29 +34,26 @@ def vessel_temperature_distribution(v, R1):
     R_f = 1 / (np.pi * (R1 ** 2) * v * cfl * rho)
 
     # Arrays to store temperature values
-    T_blood = np.zeros(N)
-    T_wall = np.zeros(N)
+    T_fluid = np.zeros(N)
     Q = np.zeros(N)
 
     # Set initial values
-    T_blood[0] = T_blood_initial
-    Q[0] = (T_tumour-T_blood[0])/(R_f+R_w+R_t)
-    T_wall[0] = R_w*Q[0] + T_blood[0]
+    T_fluid[0] = T_fluid_initial
+    Q[0] = (T_tumour-T_fluid[0])/(R_f+R_w+R_t)
 
     # Iterative computation
     for i in range(N - 1):
         # Update fluid temperature
-        T_blood[i + 1] = T_blood[i] + Q[i]*R_f
-        Q[i+1] = (T_tumour-T_blood[i + 1])/(R_f+R_w+R_t)
-        T_wall[i + 1] = R_w*Q[i+1] + T_blood[i+1]
+        T_fluid[i + 1] = T_fluid[i] + Q[i]*R_f
+        Q[i+1] = (T_tumour-T_fluid[i + 1])/(R_f+R_w+R_t)
     
-    # df = pd.DataFrame({'x':x, 't_blood':T_blood, 't_wall':T_wall, 'Q': Q})
-    df = np.vstack((x, T_blood, T_wall, Q))
+    # df = pd.DataFrame({'x':x, 't_fluid':T_fluid, 't_wall':T_wall, 'Q': Q})
+    df = np.vstack((x, T_fluid, Q))
 
     return df
 
 def scale_t(t):
-    return (t - T_blood_initial) / (T_tumour - T_blood_initial)
+    return (t - T_fluid_initial) / (T_tumour - T_fluid_initial)
 
 
 # Define the temperature_distribution function
@@ -64,7 +61,7 @@ def temperature_distribution(v, R1, xcc):
     r = np.linspace(-R2/2, R2/2, 100) 
     # Calculate normalized temperature difference
     df1 = vessel_temperature_distribution(v, R1)
-    x_vals, t_wall_vals, q = df1[0], df1[2], df1[3]
+    x_vals, t_wall_vals, q = df1[0], df1[1], df1[2]
 
     x_index = np.argmin(np.abs(x_vals - xcc))
     T_tissue = t_wall_vals[x_index] + q[x_index] * ((np.log(np.abs(r) / R1) / (2 * np.pi * k * dx)))
@@ -76,7 +73,7 @@ def temperature_distribution(v, R1, xcc):
 # Vessel 1 Parameters
 R1_vessel1 = 0.5 / 1000  # radius in meters
 v_vessel1 = 1.0 / 100  # velocity in m/s
-R2 = 2.0 / 100  # radius of the tumour in meters
+R2 = 7.0 / 100  # radius of the tumour in meters
 
 # Vessel 2 Parameters
 R1_vessel2 = 1.0 / 1000  # radius in meters
@@ -103,8 +100,22 @@ xgr = 25/100  # x-axis (length along vessel in cm)
 r = np.linspace(-R2/2, R2/2, 100)  # radial axis (from -1 cm to 1 cm)
 
 # Calculate normalized temperature difference
-T_distribution = temperature_distribution(v_vessel2, R1_vessel2, xgr)
-T_normalized = scale_t(T_distribution)
+T_distribution_v1 = temperature_distribution(v_vessel1, R1_vessel1, xgr)
+T_normalized_v1 = scale_t(T_distribution_v1)
+
+T_distribution_v2 = temperature_distribution(v_vessel2, R1_vessel2, xgr)
+T_normalized_v2 = scale_t(T_distribution_v2)
+
+T_distribution_v3 = temperature_distribution(v_vessel3, R1_vessel3, xgr)
+T_normalized_v3 = scale_t(T_distribution_v3)
+
+a = np.loadtxt(f"{src_dir}/output_pbhe.txt")
+r_values_matlab = a[:, 0]
+vessel1_matlab = a[:, 1]
+vessel2_matlab = a[:, 2]
+vessel3_matlab = a[:, 3]
+
+# print(np.square(T_normalized_v2 - vessel2_matlab[:-1]).mean())
 
 # Plot results
 plt.figure(figsize=(10, 5))
@@ -130,12 +141,19 @@ plt.show()
 # Plot the temperature distribution
 fig = plt.figure(figsize=(12, 8))
 ax = fig.add_subplot(111)
-ax.plot(r*100, T_normalized, color='black', linewidth=1.5)
+ax.plot(r*100, T_normalized_v1, color='C0', label='Vessel 1', linewidth=1.5)
+ax.plot(r_values_matlab, vessel1_matlab, color='C0', label='Perfusion 1', linewidth=1.2, linestyle="--")
+ax.plot(r*100, T_normalized_v2, color='C1', label='Vessel 2', linewidth=1.5)
+ax.plot(r_values_matlab, vessel2_matlab, color='C1', label='Perfusion 2', linewidth=1.2, linestyle="--")
+ax.plot(r*100, T_normalized_v3, color='C2', label='Vessel 3', linewidth=1.5)
+ax.plot(r_values_matlab, vessel3_matlab, color='C2', label='Perfusion 3', linewidth=1.2, linestyle="--")
 
 # Customize the plot
 ax.set_xlabel('Radial Distance, $r$ (cm)', fontsize=12)
 ax.set_ylabel(r'$\frac{T_{\text{tissue}}(x, r) - T_{\text{fluid}}(0)}{T_{\text{tumour}} - T_{\text{fluid}}(0)}$', fontsize=12)
-ax.set_title(f'Temperature Distribution Along Radius, x={xgr}', fontsize=14)
+ax.set_title(f'Temperature Distribution Along Radius, x={xgr} m', fontsize=14)
 
+ax.legend()
+plt.grid(True)
 plt.savefig(f"{src_dir}/data/simulations/t_ratio_along_radius.png", dpi=120)
 plt.show()
