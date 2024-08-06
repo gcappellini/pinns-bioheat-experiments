@@ -55,17 +55,6 @@ def temperature_distribution(v, R1, xcc):
 def scale_t(t):
     return (t - T_min) / (T_tumour - T_min)
 
-def temperature_distribution(v, R1, xcc):
-    r = np.linspace(-R2/2, R2/2, 100) 
-    # Calculate normalized temperature difference
-    df1 = vessel_temperature_distribution(v, R1)
-    x_vals, t_wall_vals, q = df1[0], df1[1], df1[2]
-
-    x_index = np.argmin(np.abs(x_vals - xcc))
-    T_tissue = t_wall_vals[x_index] + q[x_index] * ((np.log(np.abs(r) / R1) / (2 * np.pi * k * dx)))
-    T = np.where(np.abs(r)<=R1, t_wall_vals[x_index], T_tissue)
-    return T
-
 # Vessel 1 Parameters
 R1_vessel1 = 0.5 / 1000  # radius in meters
 v_vessel1 = 1.0 / 100  # velocity in m/s
