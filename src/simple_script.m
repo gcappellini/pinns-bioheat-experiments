@@ -2,13 +2,13 @@ function main
     % Main function to solve PDE using pdepe
 
     % Define global variables for coefficients
-    global a1 a2 a3 W1 W2 W3;
+    global a1 a2 a3 a4 W1 W2 W3 R2;
 
     % Load properties from JSON file
-    [a1, a2, a3, W1, W2, W3] = loadProperties('properties.json');
+    [a1, a2, a3, a4, W1, W2, W3, R2] = loadProperties('properties.json');
 
     m = 0; % Symmetry for PDE (Cartesian coordinates)
-    x = linspace(-2, 2, 101); % Define spatial domain
+    x = linspace(-R2, R2, 101); % Define spatial domain
     t = linspace(0, 1, 101); % Define time domain
 
     % Solve PDE
@@ -23,7 +23,7 @@ function main
     fileID = fopen('output_pbhe.txt', 'w');
 
     for i = 1:101
-        fprintf(fileID, '%6.2f %12.8f %12.8f %12.8f\n', ...
+        fprintf(fileID, '%12.8f %12.8f %12.8f %12.8f\n', ...
             x(i), u1(end, i), u2(end, i), u3(end, i));
     end
 
@@ -39,7 +39,7 @@ function main
     grid on;
 end
 
-function [a1, a2, a3, W1, W2, W3] = loadProperties(filename)
+function [a1, a2, a3, a4, W1, W2, W3, R2] = loadProperties(filename)
     % Check if filename is provided
     if nargin < 1
         filename = 'properties.json'; % Default filename
@@ -69,6 +69,7 @@ function [a1, a2, a3, W1, W2, W3] = loadProperties(filename)
         W1 = data.W1;
         W2 = data.W2;
         W3 = data.W3;
+        a4 = data.a4;
     catch
         error('Error accessing JSON fields. Ensure JSON contains required fields.');
     end
@@ -82,22 +83,23 @@ function [a1, a2, a3, W1, W2, W3] = loadProperties(filename)
     fprintf('Loaded W1: %f\n', W1);
     fprintf('Loaded W2: %f\n', W2);
     fprintf('Loaded W3: %f\n', W3);
+    fprintf('Loaded a4: %f\n', a4);
 
     % Compute constants a1, a2, and a3
-    a1 = rho_fl * c_fl / 1800;
+    a1 = rho_fl * c_fl / 1e+50;
     a2 = k / (2 * R2);
     a3 = rho_fl * c_fl * omega_fl;
 end
 
 function [c, f, s] = OneDimBHpde(x, t, u, dudx)
     % Define the coefficients of the PDE
-    global a1 a2 a3 W1 W2 W3;
+    global a1 a2 a3 a4 W1 W2 W3;
     c = [a1; a1; a1]; % Coefficient c in PDE
     f = a2 * dudx; % Flux term with scaling
     % Source term with varying coefficients
-    s = [-W1 * a3 * u(1);
-         -W2 * a3 * u(2);
-         -W3 * a3 * u(3)];
+    s = [-W1 * a3 * u(1)+a4;
+         -W2 * a3 * u(2)+a4;
+         -W3 * a3 * u(3)+a4];
 end
 
 function u0 = OneDimBHic(x)
@@ -107,7 +109,7 @@ end
 
 function [pl, ql, pr, qr] = OneDimBHbc(xl, ul, xr, ur, t)
     % Left boundary conditions (Dirichlet: u = 1)
-    pl = ul - 1; % pl = ul - desired_value
+    pl = [ul(1) - 1; ul(2) - 1; ul(3) - 1]; % pl = ul - desired_value
     ql = zeros(3, 1); % ql = 0 for Dirichlet
 
     % Right boundary conditions (Dirichlet: u = 1)

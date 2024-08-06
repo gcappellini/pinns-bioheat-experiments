@@ -15,13 +15,13 @@ k = 0.6  # conductivity of tissue
 cfl = 4186  # specific heat capacity of fluid in J/kg°C
 rho = 1000  # density of fluid in kg/m^3
 T_tumour = 42  # tumour temperature in °C
-T_min = 37  # minimum temperature in °C
+T_fluid_initial = 37  # minimum temperature in °C
 
 # Calculate step size
 dx = L / N
 x = np.linspace(0, L, N)
 R2 = 7/100
-r = np.linspace(0, 2*R2, 100)
+r = np.linspace(0, R2, 100)
 
 # Function to calculate temperature distribution for a vessel
 def temperature_distribution(v, R1, xcc):
@@ -33,27 +33,37 @@ def temperature_distribution(v, R1, xcc):
     R_t = np.log(R2 / R1) / (2 * np.pi * k * dx)
     R_f = 1 / (np.pi * (R1 ** 2) * v * cfl * rho)
 
+    # Arrays to store temperature values
+    T_fluid = np.zeros(N)
+    Q = np.zeros(N)
+
     # Set initial values
-    df1 = ral.vessel_temperature_distribution(v, R1)
-    x_vals, t_fluid, q = df1[0], df1[1], df1[2]
+    T_fluid[0] = T_fluid_initial
+    Q[0] = (T_tumour-T_fluid[0])/(R_f+R_w+R_t)
 
-    x_index = np.argmin(np.abs(x_vals - xcc))
-    T_fluid = t_fluid[x_index]
-    Q = q[x_index]
+    # Iterative computation
+    for i in range(N - 1):
+        # Update fluid temperature
+        T_fluid[i + 1] = T_fluid[i] + Q[i]*R_f
+        Q[i+1] = (T_tumour-T_fluid[i + 1])/(R_f+R_w+R_t)
 
-    T_wall1 = T_fluid - Q*R_w
-    T_wall2 = T_fluid + Q*R_w
+    x_index = np.argmin(np.abs(x - xcc))
+    t_fluid = T_fluid[x_index]
+    q = Q[x_index]
 
-    T_tissue1 = T_wall1 - Q * ((np.log(np.abs(r) / R1) / (2 * np.pi * k * dx)))
-    T_tissue2 = T_wall2 + Q * ((np.log(np.abs(r) / R1) / (2 * np.pi * k * dx)))
+    T_wall1 = t_fluid - q*R_w
+    T_wall2 = t_fluid + q*R_w
 
-    T = np.where(x <= 0.5 - R1, T_wall2 - Q*(L/2-R1+x)/k,
-                 np.where((0.5 - R1 < x) & (x <= 0.5 + R1), T_fluid,
-                          T_wall1 + Q*(L/2-R1+x)/k))
+    T_tissue1 = T_wall1 - T_wall1 * ((np.log((0.00001/np.abs(r))) / (2 * np.pi * k * dx)))
+    T_tissue2 = T_wall2 + q * ((np.log(np.abs(r) / (R2/2 + R1)) / (2 * np.pi * k * dx)))
+
+    T = np.where(r <= R2/2 - R1, T_tissue1,
+                 np.where((R2/2 - R1 < r) & (r <= R2/2 + R1), T_fluid,
+                          T_tissue2))
     return T
 
 def scale_t(t):
-    return (t - T_min) / (T_tumour - T_min)
+    return (t - T_fluid_initial) / (T_tumour - T_fluid_initial)
 
 # Vessel 1 Parameters
 R1_vessel1 = 0.5 / 1000  # radius in meters
@@ -113,3 +123,4 @@ ax.legend()
 plt.grid(True)
 plt.savefig(f"{src_dir}/data/simulations/t_ratio_along_radius.png", dpi=120)
 plt.show()
+plt.clf()
