@@ -2,13 +2,13 @@ function main
     % Main function to solve PDE using pdepe
 
     % Define global variables for coefficients
-    global a1 a2 a3 a4 W1 W2 W3 R2;
+    global a1 a2 a3 a4 W1 W2 W3;
 
     % Load properties from JSON file
-    [a1, a2, a3, a4, W1, W2, W3, R2] = loadProperties('properties.json');
+    [a1, a2, a3, a4, W1, W2, W3] = loadProperties('properties.json');
 
     m = 0; % Symmetry for PDE (Cartesian coordinates)
-    x = linspace(-R2, R2, 101); % Define spatial domain
+    x = linspace(0, 1, 101); % Define spatial domain
     t = linspace(0, 1, 101); % Define time domain
 
     % Solve PDE
@@ -39,7 +39,7 @@ function main
     grid on;
 end
 
-function [a1, a2, a3, a4, W1, W2, W3, R2] = loadProperties(filename)
+function [a1, a2, a3, a4, W1, W2, W3] = loadProperties(filename)
     % Check if filename is provided
     if nargin < 1
         filename = 'properties.json'; % Default filename
@@ -61,45 +61,55 @@ function [a1, a2, a3, a4, W1, W2, W3, R2] = loadProperties(filename)
 
     % Extract parameters from the struct
     try
-        R2 = data.R2;
+        L0 = data.L0;
+        tauf = data.tauf;
         k = data.k;
-        rho_fl = data.rho_fl;
-        c_fl = data.c_fl;
-        omega_fl = data.omega_fl;
+        rho = data.rho;
+        c = data.c;
+        beta = data.beta;
+        P0 = data.P0;
+        d = data.d;
+        z0 = data.z0;
+        dT = data.dT;
         W1 = data.W1;
         W2 = data.W2;
         W3 = data.W3;
-        a4 = data.a4;
     catch
         error('Error accessing JSON fields. Ensure JSON contains required fields.');
     end
 
     % Displaying the loaded parameters for debugging
-    fprintf('Loaded R2: %f\n', R2);
+    fprintf('Loaded L0: %f\n', L0);
+    fprintf('Loaded tauf: %f\n', tauf);
     fprintf('Loaded k: %f\n', k);
-    fprintf('Loaded rho_fl: %f\n', rho_fl);
-    fprintf('Loaded c_fl: %f\n', c_fl);
-    fprintf('Loaded omega_fl: %f\n', omega_fl);
+    fprintf('Loaded rho: %f\n', rho);
+    fprintf('Loaded c: %f\n', c);
+    fprintf('Loaded beta: %f\n', beta);
+    fprintf('Loaded P0: %f\n', P0);
+    fprintf('Loaded d: %f\n', d);
+    fprintf('Loaded z0: %f\n', z0);
+    fprintf('Loaded dT: %f\n', dT);
     fprintf('Loaded W1: %f\n', W1);
     fprintf('Loaded W2: %f\n', W2);
     fprintf('Loaded W3: %f\n', W3);
-    fprintf('Loaded a4: %f\n', a4);
 
-    % Compute constants a1, a2, and a3
-    a1 = rho_fl * c_fl / 1e+50;
-    a2 = k / (2 * R2);
-    a3 = rho_fl * c_fl * omega_fl;
+    % Compute constants a1, a2, a3, and a4
+    gamma = log(2)/(d - z0*10^(-2));
+    a1 = (L0^2/tauf)*(rho*c/k);
+    a2 = L0^2* (c/k);
+    a3 = (L0^2/dT)*(beta*P0)/(k*P0^(gamma*z0));
+    a4 = gamma*L0;
 end
 
 function [c, f, s] = OneDimBHpde(x, t, u, dudx)
     % Define the coefficients of the PDE
     global a1 a2 a3 a4 W1 W2 W3;
     c = [a1; a1; a1]; % Coefficient c in PDE
-    f = a2 * dudx; % Flux term with scaling
+    f = 1 * dudx; % Flux term with scaling
     % Source term with varying coefficients
-    s = [-W1 * a3 * u(1)+a4;
-         -W2 * a3 * u(2)+a4;
-         -W3 * a3 * u(3)+a4];
+    s = [-W1 * a2 * u(1)+a3*exp(-a4*(1-x));
+         -W2 * a2 * u(2)+a3*exp(-a4*(1-x));
+         -W3 * a2 * u(3)+a3*exp(-a4*(1-x))];
 end
 
 function u0 = OneDimBHic(x)

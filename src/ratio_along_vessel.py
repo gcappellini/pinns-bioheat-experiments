@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import matlab.engine
-import json
 
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
