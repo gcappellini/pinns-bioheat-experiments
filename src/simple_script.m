@@ -118,11 +118,13 @@ function u0 = OneDimBHic(x)
 end
 
 function [pl, ql, pr, qr] = OneDimBHbc(xl, ul, xr, ur, t)
+    theta0 = 0;
+    theta1 = 0.75;
     % Left boundary conditions (Dirichlet: u = 1)
-    pl = [ul(1) - 1; ul(2) - 1; ul(3) - 1]; % pl = ul - desired_value
+    pl = [ul(1) - theta0; ul(2) - theta0; ul(3) - theta0]; % pl = ul - desired_value
     ql = zeros(3, 1); % ql = 0 for Dirichlet
 
     % Right boundary conditions (Dirichlet: u = 1)
-    pr = ur - 1; % pr = ur - desired_value
+    pr = ur - theta1; % pr = ur - desired_value
     qr = zeros(3, 1); % qr = 0 for Dirichlet
 end
