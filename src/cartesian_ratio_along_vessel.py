@@ -23,17 +23,18 @@ T_fluid_initial = 37  # initial fluid temperature in °C
 # Calculate step size
 dx = L / N
 x = np.linspace(0, L, N)
-R2 = 7.5/100
 
 # Function to calculate temperature distribution for a vessel
-def vessel_temperature_distribution(v, R1):
+def vessel_temperature_distribution(v, R1, yv):
     # Heat transfer coefficient (h)
     h = 3.66 * k / (2 * R1)
+    R2 = L0-yv
 
     # Resistances
     R_w = 1 / (2 * np.pi * R1 * h * dx)
     R_t = np.log(R2 / R1) / (2 * np.pi * k * dx)
     R_f = 1 / (np.pi * (R1 ** 2) * v * cfl * rho)
+
 
     # Arrays to store temperature values
     T_fluid = np.zeros(N)
@@ -52,7 +53,6 @@ def vessel_temperature_distribution(v, R1):
         Q[i+1] = (T_tumour-T_fluid[i + 1])/(R_f+R_w+R_t)
         T_wall[i + 1] = T_fluid[i+1] + Q[i+1]*R_f
     
-    # df = pd.DataFrame({'x':x, 't_fluid':T_fluid, 't_wall':T_wall, 'Q': Q})
     df = np.vstack((x, T_fluid, T_wall, Q))
 
     return df
@@ -61,21 +61,20 @@ def scale_t(t):
     return (t - T_fluid_initial) / (T_tumour - T_fluid_initial)
 
 
-# Define the temperature_distribution function
-def temperature_distribution(v, R1, xcc):
+def temperature_distribution(v, R1, xcc, yv):
     r = np.linspace(0, L0, 100) 
     # Calculate normalized temperature difference
-    df1 = vessel_temperature_distribution(v, R1)
+    df1 = vessel_temperature_distribution(v, R1, yv)
     x_vals, t_fluid, t_wall, q = df1[0], df1[1], df1[2], df1[3]
 
     x_index = np.argmin(np.abs(x_vals - xcc))
     T_fluid = t_fluid[x_index]
     T_wall = t_wall[x_index]
-    r_trnsl = r - L0/2
+    r_trnsl = r - yv
     T_tissue = T_wall + q[x_index] * ((np.log(np.abs(r_trnsl) / R1) / (2 * np.pi * k * dx)))
 
-    T = np.where(r <= L0/2 - R1, T_tissue,
-                np.where((L0/2 - R1 < x) & (x <= L0/2 + R1), T_fluid,
+    T = np.where(r <= yv - R1, T_fluid_initial +(r/yv)*(T_fluid - T_fluid_initial),
+                np.where((yv - R1 < r) & (r <= yv + R1), T_fluid,
                         T_tissue))
     return T
 
@@ -92,11 +91,13 @@ v_vessel2 = 1.5 / 100  # velocity in m/s
 # Vessel 3 Parameters
 R1_vessel3 = 1.5 / 1000  # radius in meters
 v_vessel3 = 2.0 / 100  # velocity in m/s
+y_tc = np.linspace(0, 1, 8).round(2)* L0
+yv = y_tc[5]
 
 # Calculate temperature distribution for each vessel
-dd1 = vessel_temperature_distribution(v_vessel1, R1_vessel1)
-dd2 = vessel_temperature_distribution(v_vessel2, R1_vessel2)
-dd3 = vessel_temperature_distribution(v_vessel3, R1_vessel3)
+dd1 = vessel_temperature_distribution(v_vessel1, R1_vessel1, yv)
+dd2 = vessel_temperature_distribution(v_vessel2, R1_vessel2, yv)
+dd3 = vessel_temperature_distribution(v_vessel3, R1_vessel3, yv)
 
 temp_vessel1, temp_vessel2, temp_vessel3 = dd1[1], dd2[1], dd3[1]
 
@@ -110,13 +111,13 @@ xgr = 25/100  # x-axis (length along vessel in cm)
 r = np.linspace(0, L0, 100)  # radial axis (from -1 cm to 1 cm)
 
 # Calculate normalized temperature difference
-T_distribution_v1 = temperature_distribution(v_vessel1, R1_vessel1, xgr)
+T_distribution_v1 = temperature_distribution(v_vessel1, R1_vessel1, xgr, yv)
 T_normalized_v1 = scale_t(T_distribution_v1)
 
-T_distribution_v2 = temperature_distribution(v_vessel2, R1_vessel2, xgr)
+T_distribution_v2 = temperature_distribution(v_vessel2, R1_vessel2, xgr, yv)
 T_normalized_v2 = scale_t(T_distribution_v2)
 
-T_distribution_v3 = temperature_distribution(v_vessel3, R1_vessel3, xgr)
+T_distribution_v3 = temperature_distribution(v_vessel3, R1_vessel3, xgr, yv)
 T_normalized_v3 = scale_t(T_distribution_v3)
 
 # print(T_normalized_v1[0], T_normalized_v2[0], T_normalized_v3[0])
@@ -134,25 +135,25 @@ vessel3_matlab = a[:, 3]
 
 
 # Plot results
-# plt.figure(figsize=(10, 5))
-# x_values = np.linspace(0, 100 * L, N)
+plt.figure(figsize=(10, 5))
+x_values = np.linspace(0, 100 * L, N)
 
-# # Plot each vessel
-# plt.plot(x_values, temp_ratio_vessel1, label='Vessel 1')
-# plt.plot(x_values, temp_ratio_vessel2, label='Vessel 2')
-# plt.plot(x_values, temp_ratio_vessel3, label='Vessel 3')
+# Plot each vessel
+plt.plot(x_values, temp_ratio_vessel1, label='Vessel 1')
+plt.plot(x_values, temp_ratio_vessel2, label='Vessel 2')
+plt.plot(x_values, temp_ratio_vessel3, label='Vessel 3')
 
-# # Directly label the lines
-# plt.text(100 * L - 5, temp_ratio_vessel1[-1] + 0.01, 'Vessel 1', fontsize=12, color='C0')
-# plt.text(100 * L - 5, temp_ratio_vessel2[-1] + 0.01, 'Vessel 2', fontsize=12, color='C1')
-# plt.text(100 * L - 5, temp_ratio_vessel3[-1] + 0.01, 'Vessel 3', fontsize=12, color='C2')
+# Directly label the lines
+plt.text(100 * L - 5, temp_ratio_vessel1[-1] + 0.01, 'Vessel 1', fontsize=12, color='C0')
+plt.text(100 * L - 5, temp_ratio_vessel2[-1] + 0.01, 'Vessel 2', fontsize=12, color='C1')
+plt.text(100 * L - 5, temp_ratio_vessel3[-1] + 0.01, 'Vessel 3', fontsize=12, color='C2')
 
-# plt.xlabel(r'Location along the vessel, $x$ (cm)', fontsize=12)
-# plt.ylabel(r'$\frac{T_{\text{fluid}}(x)-T_{\text{fluid}}(0)}{T_{\text{tumour}}-T_{\text{fluid}}(0)}$', fontsize=15)
-# plt.title('Temperature Ratio as a Function of Location Along Vessels', fontsize=14)
-# plt.grid(True)
-# plt.savefig(f"{src_dir}/data/simulations/t_ratio_along_vessel.png", dpi=120)
-# plt.show()
+plt.xlabel(r'Location along the vessel, $x$ (cm)', fontsize=12)
+plt.ylabel(r'$\frac{T_{\text{fluid}}(x)-T_{\text{fluid}}(0)}{T_{\text{tumour}}-T_{\text{fluid}}(0)}$', fontsize=15)
+plt.title('Temperature Ratio as a Function of Location Along Vessels', fontsize=14)
+plt.grid(True)
+plt.savefig(f"{src_dir}/data/simulations/cart_ratio_along_vessel.png", dpi=120)
+plt.show()
 
 # Plot the temperature distribution
 fig = plt.figure(figsize=(12, 8))
@@ -165,15 +166,17 @@ ax.plot(r*100, T_normalized_v3, color='C2', label='Vessel 3', linewidth=1.5)
 ax.plot(x_values_matlab*100, vessel3_matlab, color='C2', label='Perfusion 3', linewidth=1.2, linestyle="--")
 
 # Add 8 equally spaced dashed vertical lines from 0 to 1
-for i in range(8):
-    ax.axvline(i *L0*100/ 8, color='r', linestyle='--', linewidth=0.8)
+for i in y_tc:
+    ax.axvline(100*i, color='r', linestyle='--', linewidth=0.8)
 
+ax.set_xticks(100 * np.array(y_tc))
+ax.set_xticklabels([f"{100 * i:.2f}" for i in y_tc], fontsize=10)
 # Customize the plot
-ax.set_xlabel('Radial Distance, $r$ (cm)', fontsize=12)
+ax.set_xlabel('Height, $y$ (cm)', fontsize=12)
 ax.set_ylabel(r'$\frac{T_{\text{tissue}}(x, r) - T_{\text{fluid}}(0)}{T_{\text{tumour}} - T_{\text{fluid}}(0)}$', fontsize=12)
-ax.set_title(f'Temperature Distribution Along Radius, x={xgr} m', fontsize=14)
+ax.set_title(f'Temperature Distribution Along Height, x={xgr} m', fontsize=14)
 
 ax.legend()
 plt.grid(True)
-plt.savefig(f"{src_dir}/data/simulations/t_ratio_along_radius.png", dpi=120)
+plt.savefig(f"{src_dir}/data/simulations/cart_ratio_along_radius.png", dpi=120)
 plt.show()

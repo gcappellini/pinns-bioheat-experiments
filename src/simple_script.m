@@ -119,7 +119,7 @@ end
 
 function [pl, ql, pr, qr] = OneDimBHbc(xl, ul, xr, ur, t)
     theta0 = 0;
-    theta1 = 0.75;
+    theta1 = 0.9;
     % Left boundary conditions (Dirichlet: u = 1)
     pl = [ul(1) - theta0; ul(2) - theta0; ul(3) - theta0]; % pl = ul - desired_value
     ql = zeros(3, 1); % ql = 0 for Dirichlet
