@@ -155,10 +155,7 @@ df = extract_entries(timeseries_data, 0, 4*60*60)
 df2 = extract_entries(timeseries_data, 10299, 10301)
 h = 238
 k = 0.8
-sup_flux = h*(df2["y3"]-df2["y2"])
-in_depth_flux = (k/0.015)*(df2["gt1"]-df2["y1"])
 
-print(sup_flux, in_depth_flux)
 
 
     

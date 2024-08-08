@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import os
 import matlab.engine
 import json
+import import_vessel_data as ivd
 
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
@@ -23,6 +24,9 @@ P0, d = data["P0"], data["d"]
 def scale_t(t):
     return (t - T_fluid_initial) / (T_tumour - T_fluid_initial)
 
+def rescale_t(t):
+    return T_fluid_initial + t*(T_tumour - T_fluid_initial)
+
 # Calculate step size
 N = 100  # number of steps
 dx = L / N
@@ -42,14 +46,43 @@ def pwr_temperature_distribution(x):
 depth = np.linspace(0, L0, 500) 
 temperature = pwr_temperature_distribution(depth)
 y_tc = np.linspace(0, 1, 8).round(2)* 0.15
-print(y_tc[2]- y_tc[1])
 
+
+eng = matlab.engine.start_matlab()
+eng.cd(src_dir, nargout=0)
+eng.simple_script(nargout=0)
+eng.quit()
+a = np.loadtxt(f"{src_dir}/output_pbhe.txt")
+x_values_matlab = a[:, 0]*L0
+vessel1_matlab = a[:, 1]
+vessel2_matlab = a[:, 2]
+vessel3_matlab = a[:, 3]
+
+file_path = f"{src_dir}/data/vessel/20240522_1.txt"  # Replace with your file path
+timeseries_data = ivd.load_measurements(file_path)
+meas1 = ivd.extract_entries(timeseries_data, 2*60, 3*60)
+meas2 = ivd.extract_entries(timeseries_data, 28*60, 35*60)
+meas3 = ivd.extract_entries(timeseries_data, 56*60, 58*60)
+
+x_meas = np.array([y_tc[0],y_tc[1],y_tc[4],y_tc[7]])
+y_meas1 = np.array([meas1["y2"],meas1["gt2"],meas1["gt1"],meas1["y1"]])
+y_meas2 = np.array([meas2["y2"],meas2["gt2"],meas2["gt1"],meas2["y1"]])
+y_meas3 = np.array([meas3["y2"],meas3["gt2"],meas3["gt1"],meas3["y1"]])
 
 
 
 # Plotting
 plt.figure(figsize=(8, 6))
-plt.plot(depth * 100, temperature, label="Temperature Distribution")
+plt.plot(depth * 100, temperature, label="MW Heating Distribution")
+plt.plot(x_values_matlab * 100, rescale_t(vessel1_matlab), label="PBHE W1")
+plt.plot(x_values_matlab * 100, rescale_t(vessel2_matlab), label="PBHE W2")
+plt.plot(x_values_matlab * 100, rescale_t(vessel3_matlab), label="PBHE W3")
+
+plt.plot(x_meas * 100, y_meas1, label="meas 1")
+plt.plot(x_meas * 100, y_meas2, label="meas 2")
+plt.plot(x_meas * 100, y_meas3, label="meas 3")
+
+plt.plot(x_values_matlab * 100, rescale_t(vessel3_matlab), label="PBHE W3")
 plt.xlabel("Depth (cm)")
 plt.ylabel("Temperature (°C)")
 
@@ -69,7 +102,7 @@ plt.text(100 * y_tc[4], ytext, 'gt1', fontsize=12, color='r')
 plt.axvline(100*y_tc[7], color='r', linestyle='--', linewidth=0.8)
 plt.text(100 * y_tc[7], ytext, 'y1', fontsize=12, color='r')
 
-plt.title("Temperature Distribution in Tissue")
+plt.title("Temperature Distribution in Phantom")
 plt.grid(True)
 plt.legend()
 plt.show()
@@ -172,16 +205,6 @@ def temperature_distribution(v, R1, xcc):
 
 # # print(T_normalized_v1[0], T_normalized_v2[0], T_normalized_v3[0])
 
-
-# eng = matlab.engine.start_matlab()
-# eng.cd(src_dir, nargout=0)
-# eng.simple_script(nargout=0)
-# eng.quit()
-# a = np.loadtxt(f"{src_dir}/output_pbhe.txt")
-# x_values_matlab = a[:, 0]*L0
-# vessel1_matlab = a[:, 1]
-# vessel2_matlab = a[:, 2]
-# vessel3_matlab = a[:, 3]
 
 
 # # Plot results

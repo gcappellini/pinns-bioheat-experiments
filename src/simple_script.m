@@ -2,10 +2,10 @@ function main
     % Main function to solve PDE using pdepe
 
     % Define global variables for coefficients
-    global a1 a2 a3 a4 W1 W2 W3;
+    global a1 a2 a3 a4 a5 W1 W2 W3 theta1 thetaw;
 
     % Load properties from JSON file
-    [a1, a2, a3, a4, W1, W2, W3] = loadProperties('properties.json');
+    [a1, a2, a3, a4, a5, W1, W2, W3, theta1, thetaw] = loadProperties('properties.json');
 
     m = 0; % Symmetry for PDE (Cartesian coordinates)
     x = linspace(0, 1, 101); % Define spatial domain
@@ -39,7 +39,7 @@ function main
     grid on;
 end
 
-function [a1, a2, a3, a4, W1, W2, W3] = loadProperties(filename)
+function [a1, a2, a3, a4, a5, W1, W2, W3, theta1, thetaw] = loadProperties(filename)
     % Check if filename is provided
     if nargin < 1
         filename = 'properties.json'; % Default filename
@@ -70,6 +70,9 @@ function [a1, a2, a3, a4, W1, W2, W3] = loadProperties(filename)
         P0 = data.P0;
         d = data.d;
         z0 = data.z0;
+        t_tis = data.Ttis;
+        t_w = data.Tw;
+        h = data.h;
         dT = data.dT;
         W1 = data.W1;
         W2 = data.W2;
@@ -92,6 +95,9 @@ function [a1, a2, a3, a4, W1, W2, W3] = loadProperties(filename)
     fprintf('Loaded W1: %f\n', W1);
     fprintf('Loaded W2: %f\n', W2);
     fprintf('Loaded W3: %f\n', W3);
+    fprintf('Loaded h: %f\n', h);
+    fprintf('Loaded t_tis: %f\n', t_tis);
+    fprintf('Loaded t_w: %f\n', t_w);
 
     % Compute constants a1, a2, a3, and a4
     gamma = log(2)/(d - z0*10^(-2));
@@ -99,17 +105,22 @@ function [a1, a2, a3, a4, W1, W2, W3] = loadProperties(filename)
     a2 = L0^2* (c/k);
     a3 = (L0^2/dT)*(beta*P0)/(k*P0^(gamma*z0));
     a4 = gamma*L0;
+    % a3 = (L0^2/dT)*P0;
+    % a4 = L0/d;
+    a5 = k / (h*L0);
+    thetaw = (t_w - t_tis)/dT;
+    theta1 = 0;
 end
 
 function [c, f, s] = OneDimBHpde(x, t, u, dudx)
     % Define the coefficients of the PDE
-    global a1 a2 a3 a4 W1 W2 W3;
+    global a1 a2 a3 a4 W1 W2 W3 ;
     c = [a1; a1; a1]; % Coefficient c in PDE
     f = 1 * dudx; % Flux term with scaling
     % Source term with varying coefficients
-    s = [-W1 * a2 * u(1)+a3*exp(-a4*(1-x));
-         -W2 * a2 * u(2)+a3*exp(-a4*(1-x));
-         -W3 * a2 * u(3)+a3*exp(-a4*(1-x))];
+    s = [-W1 * a2 * u(1)+a3*exp(-a4*(-x));
+         -W2 * a2 * u(2)+a3*exp(-a4*(-x));
+         -W3 * a2 * u(3)+a3*exp(-a4*(-x))];
 end
 
 function u0 = OneDimBHic(x)
@@ -118,11 +129,11 @@ function u0 = OneDimBHic(x)
 end
 
 function [pl, ql, pr, qr] = OneDimBHbc(xl, ul, xr, ur, t)
-    theta0 = 0;
-    theta1 = 0.9;
-    % Left boundary conditions (Dirichlet: u = 1)
-    pl = [ul(1) - theta0; ul(2) - theta0; ul(3) - theta0]; % pl = ul - desired_value
-    ql = zeros(3, 1); % ql = 0 for Dirichlet
+    global a5 theta1 thetaw;
+
+    % Robin boundary condition at x=0
+    pl = thetaw - ul; % Represents (h*theta - h*theta_w)
+    ql = a5 * ones(3, 1);
 
     % Right boundary conditions (Dirichlet: u = 1)
     pr = ur - theta1; % pr = ur - desired_value
