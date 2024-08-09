@@ -4,6 +4,9 @@ import os
 import matlab.engine
 import json
 import import_vessel_data as ivd
+import sympy as sp
+from sympy.solvers import solve
+
 
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
@@ -18,7 +21,9 @@ k, cfl, rho, h = data["k"], data["c"], data["rho"], data["h"]
 T_tumour, Ttis, Tw = data["Tmax"], data["Ttis"], data["Tw"] # tumour temperature in °C
 T_fluid_initial = Ttis
 
-P0, d = data["P0"], data["d"]
+P0, d, a = data["P0"], data["d"], data["a"]
+
+x_tc = np.linspace(0, 1, 8).round(2)* 0.15
 
 
 def scale_t(t):
@@ -27,26 +32,81 @@ def scale_t(t):
 def rescale_t(t):
     return T_fluid_initial + t*(T_tumour - T_fluid_initial)
 
+
+def integrated_pde(x, C1, C2):
+    flux = P0 * np.exp(-a*x)+C1
+    temperature = (1/k)*(-a*P0*np.exp(-a*x)+C1*x+C2)
+    return flux, temperature
+
+
+def steady_rv(r, v):
+    # r1_vessel2 = 1.0 / 1000
+    xw1 = x_tc[2]-r
+    xw2 = x_tc[2]+r
+
+    hv = 3.66 * k / (2 * r)
+
+    Tfl = calculate_tfl(L/2, r, v)
+
+    # Define the temperature distribution function T(x)
+    def temperature_distribution_1(x, C1_var, C2_var):
+
+        flux_0, t_0 = integrated_pde(0, C1_var, C2_var)
+        flux_xw1, t_xw1 = integrated_pde(xw1, C1_var, C2_var)
+
+        eq1= sp.Eq(flux_0, h*(Tw-t_0)) 
+        eq2 = sp.Eq(flux_xw1, -hv*(t_xw1-Tfl))
+
+        # Solve for C1 and C2
+        solution = sp.solve([eq1, eq2], (C1_var, C2_var))
+        C1_solved, C2_solved = solution[C1_var], solution[C2_var]
+
+        array = []
+        for el in x:
+            _, theta = integrated_pde(el, C1_solved, C2_solved)
+            array.append(theta)
+
+        return np.array(array)
+
+
+    def temperature_distribution_2(x, C1_var, C2_var):
+
+        flux_xw2, t_xw2 = integrated_pde(xw2, C1_var, C2_var)
+        _, t_L0 = integrated_pde(L0, C1_var, C2_var)
+
+        eq1= sp.Eq(flux_xw2, hv*(t_xw2-Tfl)) 
+        eq2 = sp.Eq(t_L0, Ttis)
+
+        solution = sp.solve([eq1, eq2], (C1_var, C2_var))
+        C1_solved, C2_solved = solution[C1_var], solution[C2_var]
+
+        array = []
+        for el in x:
+            _, theta = integrated_pde(el, C1_solved, C2_solved)
+            array.append(theta)
+
+        return np.array(array)
+
+    def temperature_distribution(x_arr, C1_in, C2_in):
+
+        T = np.where(x_arr <= xw1, temperature_distribution_1(x_arr, C1_in, C2_in),
+                    np.where((xw1 < x_arr) & (x_arr <= xw2), Tfl,
+                            np.where((xw2 < x_arr) & (x_arr <= L0), temperature_distribution_2(x_arr, C1_in, C2_in),
+                                    Ttis
+                            )))
+        return T
+
 # Calculate step size
 N = 100  # number of steps
-dx = L / N
-x = np.linspace(0, L, N)
+dy = L / N
+y = np.linspace(0, L, N)
 
-# Solving for C1, C2, and T0
-
-T0 = (P0 * d**2 * (np.exp(-L0 / d) - 1) + L0 * h * Tw + k * Ttis + L0 * P0 * d) / (k + L0 * h)
-C1 = -h * (Tw - T0) - P0 * d
-C2 = k * T0 + P0 * d**2
-
-# Define the temperature distribution function T(x)
-def pwr_temperature_distribution(x):
-    return (-P0 * d**2 * np.exp(-x / d) + C1 * x + C2) / k
 
 # Generate depth values (x) and calculate temperature
-depth = np.linspace(0, L0, 500) 
-temperature = pwr_temperature_distribution(depth)
-y_tc = np.linspace(0, 1, 8).round(2)* 0.15
+depth = np.linspace(0, 3*L0, 100) 
 
+C1_ver, C2_ver = sp.symbols('C1 C2', real=True)
+temperature = temperature_distribution(depth, C1_ver, C2_ver)
 
 # eng = matlab.engine.start_matlab()
 # eng.cd(src_dir, nargout=0)
@@ -61,13 +121,15 @@ y_tc = np.linspace(0, 1, 8).round(2)* 0.15
 file_path = f"{src_dir}/data/vessel/20240522_1.txt"  # Replace with your file path
 timeseries_data = ivd.load_measurements(file_path)
 meas1 = ivd.extract_entries(timeseries_data, 2*60, 3*60)
-meas2 = ivd.extract_entries(timeseries_data, 28*60, 35*60)
+meas2 = ivd.extract_entries(timeseries_data, 30*60, 35*60)
 meas3 = ivd.extract_entries(timeseries_data, 56*60, 58*60)
+meas4 = ivd.extract_entries(timeseries_data, 83*60, 85*60)
 
-x_meas = np.array([y_tc[0],y_tc[1],y_tc[4],y_tc[7]])
+x_meas = np.array([x_tc[0],x_tc[1],x_tc[4],x_tc[7]])
 y_meas1 = np.array([meas1["y2"],meas1["gt2"],meas1["gt1"],meas1["y1"]])
 y_meas2 = np.array([meas2["y2"],meas2["gt2"],meas2["gt1"],meas2["y1"]])
 y_meas3 = np.array([meas3["y2"],meas3["gt2"],meas3["gt1"],meas3["y1"]])
+y_meas4 = np.array([meas4["y2"],meas4["gt2"],meas4["gt1"],meas4["y1"]])
 
 
 
@@ -81,26 +143,27 @@ plt.plot(depth * 100, temperature, label="MW Heating Distribution")
 plt.plot(x_meas * 100, y_meas1, label="meas 1")
 plt.plot(x_meas * 100, y_meas2, label="meas 2")
 plt.plot(x_meas * 100, y_meas3, label="meas 3")
+plt.plot(x_meas * 100, y_meas4, label="meas 4")
 
-plt.plot(x_values_matlab * 100, rescale_t(vessel3_matlab), label="PBHE W3")
-plt.xlabel("Depth (cm)")
-plt.ylabel("Temperature (°C)")
+# plt.plot(x_values_matlab * 100, rescale_t(vessel3_matlab), label="PBHE W3")
+# plt.xlabel("Depth (cm)")
+# plt.ylabel("Temperature (°C)")
 
 ytext = min(temperature)
-plt.axvline(100*y_tc[0], color='r', linestyle='--', linewidth=0.8)
-plt.text(100 * y_tc[0], ytext, 'y2', fontsize=12, color='r')
+plt.axvline(100*x_tc[0], color='r', linestyle='--', linewidth=0.8)
+plt.text(100 * x_tc[0], ytext, 'y2', fontsize=12, color='r')
 
-plt.axvline(100*y_tc[1], color='r', linestyle='--', linewidth=0.8)
-plt.text(100 * y_tc[1], ytext, 'gt2', fontsize=12, color='r')
+plt.axvline(100*x_tc[1], color='r', linestyle='--', linewidth=0.8)
+plt.text(100 * x_tc[1], ytext, 'gt2', fontsize=12, color='r')
 
-plt.axvline(100*y_tc[2], color='r', linestyle='--', linewidth=0.8)
-plt.text(100 * y_tc[2], ytext, 'w', fontsize=12, color='r')
+plt.axvline(100*x_tc[2], color='r', linestyle='--', linewidth=0.8)
+plt.text(100 * x_tc[2], ytext, 'w', fontsize=12, color='r')
 
-plt.axvline(100*y_tc[4], color='r', linestyle='--', linewidth=0.8)
-plt.text(100 * y_tc[4], ytext, 'gt1', fontsize=12, color='r')
+plt.axvline(100*x_tc[4], color='r', linestyle='--', linewidth=0.8)
+plt.text(100 * x_tc[4], ytext, 'gt1', fontsize=12, color='r')
 
-plt.axvline(100*y_tc[7], color='r', linestyle='--', linewidth=0.8)
-plt.text(100 * y_tc[7], ytext, 'y1', fontsize=12, color='r')
+plt.axvline(100*x_tc[7], color='r', linestyle='--', linewidth=0.8)
+plt.text(100 * x_tc[7], ytext, 'y1', fontsize=12, color='r')
 
 plt.title("Temperature Distribution in Phantom")
 plt.grid(True)
@@ -109,57 +172,58 @@ plt.show()
 
 
 
-# Function to calculate temperature distribution for a vessel
-def vessel_temperature_distribution(v, R1):
-    # Heat transfer coefficient (h)
-    h_flow = 3.66 * k / (2 * R1)
-    R2 = 2.25/100
 
-    # Resistances
-    R_w = 1 / (2 * np.pi * R1 * h_flow * dx)
-    R_t = np.log(R2 / R1) / (2 * np.pi * k * dx)
-    R_f = 1 / (np.pi * (R1 ** 2) * v * cfl * rho)
+# # Function to calculate temperature distribution for a vessel
+# def vessel_temperature_distribution(v, R1):
+#     # Heat transfer coefficient (h)
+#     h_flow = 3.66 * k / (2 * R1)
+#     R2 = 2.25/100
+
+#     # Resistances
+#     R_w = 1 / (2 * np.pi * R1 * h_flow * dx)
+#     R_t = np.log(R2 / R1) / (2 * np.pi * k * dx)
+#     R_f = 1 / (np.pi * (R1 ** 2) * v * cfl * rho)
 
 
-    # Arrays to store temperature values
-    T_fluid = np.zeros(N)
-    T_wall = np.zeros(N)
-    Q = np.zeros(N)
+#     # Arrays to store temperature values
+#     T_fluid = np.zeros(N)
+#     T_wall = np.zeros(N)
+#     Q = np.zeros(N)
 
-    # Set initial values
-    T_fluid[0] = T_fluid_initial
-    Q[0] = (T_tumour-T_fluid[0])/(R_f+R_w+R_t)
-    T_wall[0] = T_fluid[0] + Q[0]*R_w
+#     # Set initial values
+#     T_fluid[0] = T_fluid_initial
+#     Q[0] = (T_tumour-T_fluid[0])/(R_f+R_w+R_t)
+#     T_wall[0] = T_fluid[0] + Q[0]*R_w
 
-    # Iterative computation
-    for i in range(N - 1):
-        # Update fluid temperature
-        T_fluid[i + 1] = T_fluid[i] + Q[i]*R_f
-        Q[i+1] = (T_tumour-T_fluid[i + 1])/(R_f+R_w+R_t)
-        T_wall[i + 1] = T_fluid[i+1] + Q[i+1]*R_f
+#     # Iterative computation
+#     for i in range(N - 1):
+#         # Update fluid temperature
+#         T_fluid[i + 1] = T_fluid[i] + Q[i]*R_f
+#         Q[i+1] = (T_tumour-T_fluid[i + 1])/(R_f+R_w+R_t)
+#         T_wall[i + 1] = T_fluid[i+1] + Q[i+1]*R_f
     
-    df = np.vstack((x, T_fluid, T_wall, Q))
+#     df = np.vstack((x, T_fluid, T_wall, Q))
 
-    return df
+#     return df
 
 
 
-def temperature_distribution(v, R1, xcc):
-    r = np.linspace(0, L0, 100) 
-    # Calculate normalized temperature difference
-    df1 = vessel_temperature_distribution(v, R1)
-    x_vals, t_fluid, t_wall, q = df1[0], df1[1], df1[2], df1[3]
+# def temperature_distribution(v, R1, xcc):
+#     r = np.linspace(0, L0, 100) 
+#     # Calculate normalized temperature difference
+#     df1 = vessel_temperature_distribution(v, R1)
+#     x_vals, t_fluid, t_wall, q = df1[0], df1[1], df1[2], df1[3]
 
-    x_index = np.argmin(np.abs(x_vals - xcc))
-    T_fluid = t_fluid[x_index]
-    T_wall = t_wall[x_index]
-    r_trnsl = r - yv
-    T_tissue = T_wall + q[x_index] * ((np.log(np.abs(r_trnsl) / R1) / (2 * np.pi * k * dx)))
+#     x_index = np.argmin(np.abs(x_vals - xcc))
+#     T_fluid = t_fluid[x_index]
+#     T_wall = t_wall[x_index]
+#     r_trnsl = r - yv
+#     T_tissue = T_wall + q[x_index] * ((np.log(np.abs(r_trnsl) / R1) / (2 * np.pi * k * dx)))
 
-    T = np.where(r <= yv - R1, T_fluid_initial +(r/yv)*(T_fluid - T_fluid_initial),
-                np.where((yv - R1 < r) & (r <= yv + R1), T_fluid,
-                        T_tissue))
-    return T
+#     T = np.where(r <= yv - R1, T_fluid_initial +(r/yv)*(T_fluid - T_fluid_initial),
+#                 np.where((yv - R1 < r) & (r <= yv + R1), T_fluid,
+#                         T_tissue))
+#     return T
 
 
 
