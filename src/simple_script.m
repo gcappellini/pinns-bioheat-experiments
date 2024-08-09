@@ -69,7 +69,9 @@ function [a1, a2, a3, a4, a5, W1, W2, W3, theta1, thetaw] = loadProperties(filen
         beta = data.beta;
         P0 = data.P0;
         d = data.d;
-        z0 = data.z0;
+        a = data.a;
+        b = data.b;
+        x0 = data.x0;
         t_tis = data.Ttis;
         t_w = data.Tw;
         h = data.h;
@@ -90,7 +92,7 @@ function [a1, a2, a3, a4, a5, W1, W2, W3, theta1, thetaw] = loadProperties(filen
     fprintf('Loaded beta: %f\n', beta);
     fprintf('Loaded P0: %f\n', P0);
     fprintf('Loaded d: %f\n', d);
-    fprintf('Loaded z0: %f\n', z0);
+    fprintf('Loaded x0: %f\n', x0);
     fprintf('Loaded dT: %f\n', dT);
     fprintf('Loaded W1: %f\n', W1);
     fprintf('Loaded W2: %f\n', W2);
@@ -100,11 +102,10 @@ function [a1, a2, a3, a4, a5, W1, W2, W3, theta1, thetaw] = loadProperties(filen
     fprintf('Loaded t_w: %f\n', t_w);
 
     % Compute constants a1, a2, a3, and a4
-    gamma = log(2)/(d - z0*10^(-2));
     a1 = (L0^2/tauf)*(rho*c/k);
     a2 = L0^2* (c/k);
-    a3 = (L0^2/dT)*(beta*P0)/(k*P0^(gamma*z0));
-    a4 = gamma*L0;
+    a3 = (L0^2/(k*dT))*(beta*P0)*exp(a*x0);
+    a4 = -a*L0;
     % a3 = (L0^2/dT)*P0;
     % a4 = L0/d;
     a5 = k / (h*L0);
