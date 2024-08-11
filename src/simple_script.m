@@ -103,12 +103,12 @@ function [a1, a2, a3, a4, a5, W1, W2, W3, theta1, thetaw] = loadProperties(filen
 
     % Compute constants a1, a2, a3, and a4
     a1 = (L0^2/tauf)*(rho*c/k);
-    a2 = L0^2* (c/k);
+    a2 = L0^2*c/k;
     a3 = (L0^2/(k*dT))*(beta*P0)*exp(a*x0);
-    a4 = -a*L0;
+    a4 = a*L0;
     % a3 = (L0^2/dT)*P0;
     % a4 = L0/d;
-    a5 = k / (h*L0);
+    a5 = (h*L0)/k;
     thetaw = (t_w - t_tis)/dT;
     theta1 = 0;
 end
@@ -119,9 +119,9 @@ function [c, f, s] = OneDimBHpde(x, t, u, dudx)
     c = [a1; a1; a1]; % Coefficient c in PDE
     f = 1 * dudx; % Flux term with scaling
     % Source term with varying coefficients
-    s = [-W1 * a2 * u(1)+a3*exp(-a4*(-x));
-         -W2 * a2 * u(2)+a3*exp(-a4*(-x));
-         -W3 * a2 * u(3)+a3*exp(-a4*(-x))];
+    s = [-W1 * a2 * u(1)+a3*exp(-a4*x);
+         -W2 * a2 * u(2)+a3*exp(-a4*x);
+         -W3 * a2 * u(3)+a3*exp(-a4*x)];
 end
 
 function u0 = OneDimBHic(x)
@@ -133,8 +133,8 @@ function [pl, ql, pr, qr] = OneDimBHbc(xl, ul, xr, ur, t)
     global a5 theta1 thetaw;
 
     % Robin boundary condition at x=0
-    pl = thetaw - ul; % Represents (h*theta - h*theta_w)
-    ql = a5 * ones(3, 1);
+    pl = a5*(thetaw - ul); % Represents (h*theta - h*theta_w)
+    ql = ones(3, 1);
 
     % Right boundary conditions (Dirichlet: u = 1)
     pr = ur - theta1; % pr = ur - desired_value

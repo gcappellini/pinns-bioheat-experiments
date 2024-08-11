@@ -105,21 +105,21 @@ def scale_df(df):
     return new_df
 
 
-file_path = f"{src_dir}/data/vessel/20240522_1.txt"  # Replace with your file path
-timeseries_data = load_measurements(file_path)
-df = extract_entries(timeseries_data, 0, 4*60*60)
+# file_path = f"{src_dir}/data/vessel/20240522_1.txt"  # Replace with your file path
+# timeseries_data = load_measurements(file_path)
+# df = extract_entries(timeseries_data, 0, 4*60*60)
 
 # fig, ax = plt.subplots(figsize=(12, 6))  # Stretching layout horizontally
 
-# # Plotting data with specified attributes
+# Plotting data with specified attributes
 # ax.plot(df['t']/60, df['y1'], label='y1', marker='x')
 # ax.plot(df['t']/60, df['gt1'], label='gt1', alpha=1.0, linewidth=0.7)
 # ax.plot(df['t']/60, df['gt2'], label='gt2', alpha=1.0, linewidth=0.7)
 # ax.plot(df['t']/60, df['y2'], label='y2', alpha=1.0, linewidth=0.7)
 # ax.plot(df['t']/60, df['y3'], label='y3', alpha=1.0, linewidth=0.7)
-# # ax.plot(df['t']/60, df['bol_out'], label='bolus outlet', alpha=1.0, linewidth=0.7)
+# ax.plot(df['t']/60, df['bol_out'], label='bolus outlet', alpha=1.0, linewidth=0.7)
 
-# # Add vertical dashed red lines with labels on the plot
+# Add vertical dashed red lines with labels on the plot
 # ax.axvline(x=2, color='red', linestyle='--', linewidth=1.1)
 # ax.text(2.5, 35.8, 'RF on,\nmax perfusion', color='red', fontsize=10, verticalalignment='top')
 
@@ -132,29 +132,25 @@ df = extract_entries(timeseries_data, 0, 4*60*60)
 # ax.axvline(x=83, color='red', linestyle='--', linewidth=1.1)
 # ax.text(83.5, 35.8, 'RF off, max perfusion', color='red', fontsize=10, verticalalignment='top')
 
-# # Adding legend for the plotted data (excluding the vertical lines)
+# Adding legend for the plotted data (excluding the vertical lines)
 # ax.legend()
 
-# # Setting title and labels with modifications
+# Setting title and labels with modifications
 # ax.set_title("Vessel Experiment", fontweight='bold')
 # ax.set_xlabel("Time (min)", fontsize=12)
 # ax.set_ylabel("Temperature (°C)", fontsize=12)
 # ax.set_xlim(0, 234)
 
-# # Adjust layout for better horizontal stretching
+# Adjust layout for better horizontal stretching
 # plt.tight_layout()
 
-# # Display and save plot
+# Display and save plot
 
-# plt.savefig(f"{src_dir}/data/vessel/vessel_experiment.png", dpi=120)
+# plt.savefig(f"{src_dir}/data/vessel/bolus.png", dpi=120)
 # plt.show()
 # plt.close()
 # plt.clf()
 
-
-df2 = extract_entries(timeseries_data, 10299, 10301)
-h = 238
-k = 0.8
 
 
 
