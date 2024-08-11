@@ -28,14 +28,13 @@ P0, d, a, b, x0, beta = data["P0"], data["d"], data["a"], data["b"], data["x0"],
 P0_x = beta* P0 * np.exp(a*x0)
 
 
-R1 = 0.001
+tcs = np.linspace(0, 1, 10).round(2)* 0.1+0.015
 
-tfl = T_fluid_initial
-tr2 = 24.0
-Nu, K = 4.01, 1.0
+out = np.concatenate(([0], tcs, [0.13]))
 
-out = tfl+(tr2-tfl)*(1+0.5*Nu*K*np.log(0.01/R1))
+x_tc = np.array((0, tcs[0], tcs[1], tcs[3], tcs[6]))
 
-print(out)
+xr2 = x_tc[2]-0.013
+print(xr2)
 
 
