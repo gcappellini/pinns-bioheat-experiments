@@ -29,13 +29,11 @@ W1, W2, W3, alpha = data["W1"], data["W2"], data["W3"], data["alpha"]
 
 x_tc = np.array([0., 0.015, 0.026, 0.048, 0.082])
 
-Tfl = None
 
-def calculate_tfl(y, v, r):
-    global Tfl
-    Tfl = np.where(r<=0.0005, Ttis+ 0.1*dT,
-                 np.where(np.logical_and(r > 0.0005, r <= 0.001), Ttis+ 0.33*dT,Ttis+ 0.66*dT))
-    return Tfl
+def calculate_tfl(y, v, r, w):
+    e = np.load(f"{src_dir}/data/simulations/simulation/y_axis_{r}_{v}_{w}.npz", allow_pickle=True)
+    index = int((y + L/2)*100/L)
+    return e["vessel"][index]
 
 def calculate_keff(w):
     return k*(1 + alpha*w)
@@ -82,7 +80,7 @@ def temperature_distribution(x, w):
 xr2 = x_tc[2]-0.010
 
 def t_distribution(x_arr, r, v, w):
-    Tfl = calculate_tfl(0, v, r)
+    Tfl = calculate_tfl(0, v, r, w)
     
     xw2 = x_tc[2]+r
     xw1 = x_tc[2]-r
@@ -100,19 +98,19 @@ def t_distribution(x_arr, r, v, w):
 # # Calculate step size
 # N = 100  # number of steps
 
-# # Generate depth values (x) and calculate temperature
-# depth = np.linspace(0, x_tc[-1], 100) 
+# Generate depth values (x) and calculate temperature
+depth = np.linspace(0, x_tc[-1], 100) 
 
 
-# # eng = matlab.engine.start_matlab()
-# # eng.cd(src_dir, nargout=0)
-# # eng.simple_script(nargout=0)
-# # eng.quit()
-# # a = np.loadtxt(f"{src_dir}/output_pbhe.txt")
-# # x_values_matlab = a[:, 0]*L0
-# # pbhe1_matlab = a[:, 1]
-# # pbhe2_matlab = a[:, 2]
-# # pbhe3_matlab = a[:, 3]
+eng = matlab.engine.start_matlab()
+eng.cd(src_dir, nargout=0)
+eng.simple_script(nargout=0)
+eng.quit()
+a = np.loadtxt(f"{src_dir}/output_pbhe.txt")
+x_values_matlab = a[:, 0]*L0
+pbhe1_matlab = a[:, 1]
+pbhe2_matlab = a[:, 2]
+pbhe3_matlab = a[:, 3]
 
 # file_path = f"{src_dir}/data/vessel/20240522_1.txt"  # Replace with your file path
 # timeseries_data = ivd.load_measurements(file_path)
@@ -162,44 +160,44 @@ def t_distribution(x_arr, r, v, w):
 # pure = loaded_data4['pure']
 # ttf = np.array((calculate_tfl(0, 0, R1_vessel1), calculate_tfl(0, 0, R1_vessel2), calculate_tfl(0, 0, R1_vessel3))).round(3)
 # kkeff =np.array((calculate_keff(W1),calculate_keff(W2),calculate_keff(W3))).round(3)
-# # Plotting
-# plt.figure(figsize=(8, 6))
-# plt.plot(depth * 100, vessel1, label=f"Tfl, k_eff={ttf[0], kkeff[0]}")
-# plt.plot(depth * 100, vessel2, label=f"Tfl, k_eff={ttf[1], kkeff[1]}")
-# plt.plot(depth * 100, vessel3, label=f"Tfl, k_eff={ttf[2], kkeff[2]}")
+# Plotting
+plt.figure(figsize=(8, 6))
+# plt.plot(depth * 100, vessel1, label=f"Vessel 1", color="C0")
+# plt.plot(depth * 100, vessel2, label=f"Vessel 2", color="C1")
+# plt.plot(depth * 100, vessel3, label=f"Vessel 3", color="C2")
 # plt.plot(np.linspace(0, 0.05, 100)  * 100, pure, linestyle="-.", label=f"No Vessel")
-# # plt.plot(x_values_matlab * 100, rescale_t(pbhe1_matlab), label="PBHE W1")
-# # plt.plot(x_values_matlab * 100, rescale_t(pbhe2_matlab), label="PBHE W2")
-# # plt.plot(x_values_matlab * 100, rescale_t(pbhe3_matlab), label="PBHE W3")
+plt.plot(x_values_matlab * 100, rescale_t(pbhe1_matlab), label="PBHE W1", color="C3")
+plt.plot(x_values_matlab * 100, rescale_t(pbhe2_matlab), label="PBHE W2", color="C4")
+plt.plot(x_values_matlab * 100, rescale_t(pbhe3_matlab), label="PBHE W3", color="C5")
 
-# plt.plot(x_meas * 100, y_meas1, label="meas t=0")
-# plt.plot(x_meas * 100, y_meas2, label="meas v=max")
-# plt.plot(x_meas * 100, y_meas3, label="meas v=min")
-# plt.plot(x_meas * 100, y_meas4, label="meas v = 0")
+# plt.plot(x_meas * 100, y_meas1, label="meas t=0", color="C6")
+# plt.plot(x_meas * 100, y_meas2, label="meas v=max", color="C7")
+# plt.plot(x_meas * 100, y_meas3, label="meas v=min", color="C8")
+# plt.plot(x_meas * 100, y_meas4, label="meas v = 0", color="C9")
 
-# # plt.plot(x_values_matlab * 100, rescale_t(vessel3_matlab), label="PBHE W3")
-# plt.xlabel("Depth (cm)")
-# plt.ylabel("Temperature (°C)")
 
-# ytext = min(vessel1)
-# plt.axvline(100*x_tc[0], color='r', linestyle='--', linewidth=0.8)
-# plt.text(100 * x_tc[0], ytext, 'y2', fontsize=12, color='r')
+ytext = 22
+plt.axvline(100*x_tc[0], color='r', linestyle='--', linewidth=0.8)
+plt.text(100 * x_tc[0], ytext, 'y2', fontsize=12, color='r')
 
-# plt.axvline(100*x_tc[1], color='r', linestyle='--', linewidth=0.8)
-# plt.text(100 * x_tc[1], ytext, 'gt2', fontsize=12, color='r')
+plt.axvline(100*x_tc[1], color='r', linestyle='--', linewidth=0.8)
+plt.text(100 * x_tc[1], ytext, 'gt2', fontsize=12, color='r')
 
-# plt.axvline(100*x_tc[2], color='r', linestyle='--', linewidth=0.8)
-# plt.text(100 * x_tc[2], ytext, 'w', fontsize=12, color='r')
+plt.axvline(100*x_tc[2], color='r', linestyle='--', linewidth=0.8)
+plt.text(100 * x_tc[2], ytext, 'w', fontsize=12, color='r')
 
-# plt.axvline(100*x_tc[3], color='r', linestyle='--', linewidth=0.8)
-# plt.text(100 * x_tc[3], ytext, 'gt1', fontsize=12, color='r')
+plt.axvline(100*x_tc[3], color='r', linestyle='--', linewidth=0.8)
+plt.text(100 * x_tc[3], ytext, 'gt1', fontsize=12, color='r')
 
-# plt.axvline(100*x_tc[4], color='r', linestyle='--', linewidth=0.8)
-# plt.text(100 * x_tc[4], ytext, 'y1', fontsize=12, color='r')
+plt.axvline(100*x_tc[4], color='r', linestyle='--', linewidth=0.8)
+plt.text(100 * x_tc[4], ytext, 'y1', fontsize=12, color='r')
 
-# plt.title("Temperature Distribution in Phantom")
-# plt.grid(True)
-# plt.legend()
-# plt.show()
+plt.xlabel(r'Location along the vessel, $x$ (cm)', fontsize=12)
+plt.ylabel(r'Temperature $(^{\circ}C)$', fontsize=15)
+
+plt.title("Temperature Distribution x-axis, y=0, z=0")
+plt.grid(True)
+plt.legend()
+plt.show()
 
 
