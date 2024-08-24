@@ -6,7 +6,6 @@ import import_vessel_data as ivd
 import sympy as sp
 from sympy.solvers import solve
 from scipy import special
-import simulation as se
 
 
 current_file = os.path.abspath(__file__)
@@ -19,10 +18,9 @@ with open(f"{src_dir}/properties.json", 'r') as f:
 L, L0 = data["L"], data["L0"]
 k, cfl, rho, h = data["k"], data["c"], data["rho"], data["h"]
 
-Tmax, Ttis, Tw, dT= data["Tmax"], data["Ttis"], data["Tw"], data["dT"] # tumour temperature in °C
-
-P0, d, a, b, x0, beta = data["P0"], data["d"], data["a"], data["b"], data["x0"], data["beta"]
-P0_x = beta * P0 * np.exp(a*x0)
+Tmax, Troom, Tw, dT= data["Tmax"], data["Troom"], data["Tw"], data["dT"] # tumour temperature in °C
+SAR0, d, a, b, x0, beta = data["SAR0"], data["d"], data["a"], data["b"], data["x0"], data["beta"]
+P0_x = beta * SAR0 * np.exp(a*x0)
 
 W1, W2, W3, alpha, eta = data["W1"], data["W2"], data["W3"], data["alpha"], data["eta"]
 
@@ -45,32 +43,63 @@ def integrated_pde_x(x, C1, C2, w):
     temperature = (1/calculate_keff(w))*(-a*P0_x*np.exp(-b*((L**2)/4))*np.exp(-a*x)+C1*x+C2)
     return flux, temperature
 
-def Tr2_start(w):
+def integrated_pde_y(y, C1, C2, w):
+    SAR0_y = beta*SAR0*np.exp(-a*(xr2-x0))*np.sqrt(np.pi)/2
+    temperature = -(1/calculate_keff(w))*(SAR0_y*(np.sqrt(b)*y*special.erf(np.sqrt(b)*y)+np.exp(-b*y**2)/np.sqrt(np.pi)+C2)+C1*y)
+    return temperature
+
+# def Tr2_start(w):
+#     C1_var, C2_var  = sp.symbols('C1 C2', real=True)
+
+#     flux_0, t_0 = integrated_pde_x(0, C1_var, C2_var, w)
+#     _, t_L0 = integrated_pde_x(L0, C1_var, C2_var, w)
+
+#     eq1= sp.Eq(flux_0, (h/calculate_keff(w))*(Tw-t_0)) 
+#     eq2 = sp.Eq(t_L0, Troom)
+
+#     # Solve for C1 and C2
+#     solution = sp.solve([eq1, eq2], (C1_var, C2_var))
+#     C1_solved, C2_solved = solution[C1_var], solution[C2_var]
+
+#     # if isinstance(x, int):
+#     _, theta = integrated_pde_x(-L/2, C1_solved, C2_solved, w)
+
+
+#     return theta
+
+
+# def Tr2(y, w):
+#     f = se.temperature_distribution(xr2, w)
+#     tmin = Troom
+#     e1 = 4*(tmin-f)/(L**2)
+
+#     return e1*y**2 + f
+
+def Tr2(y, w):
     C1_var, C2_var  = sp.symbols('C1 C2', real=True)
 
-    flux_0, t_0 = integrated_pde_x(0, C1_var, C2_var, w)
-    _, t_L0 = integrated_pde_x(L0, C1_var, C2_var, w)
+    t_0 = integrated_pde_y(0, C1_var, C2_var, w)
+    t_L = integrated_pde_y(L, C1_var, C2_var, w)
 
-    eq1= sp.Eq(flux_0, (h/calculate_keff(w))*(Tw-t_0)) 
-    eq2 = sp.Eq(t_L0, Ttis)
+    eq1= sp.Eq(t_0, Troom) 
+    eq2 = sp.Eq(t_L, Troom)
 
     # Solve for C1 and C2
     solution = sp.solve([eq1, eq2], (C1_var, C2_var))
     C1_solved, C2_solved = solution[C1_var], solution[C2_var]
 
-    # if isinstance(x, int):
-    _, theta = integrated_pde_x(-L/2, C1_solved, C2_solved, w)
-
+    if isinstance(y, int):
+        theta = integrated_pde_y(y, C1_solved, C2_solved, w)
+    elif isinstance(y, float):
+        theta = integrated_pde_y(y, C1_solved, C2_solved, w)
+    else:
+        thetas = []
+        for el in y:
+            thet = integrated_pde_y(el, C1_solved, C2_solved, w)
+            thetas.append(thet)
+        theta = np.array(thetas)
 
     return theta
-
-
-def Tr2(y, w):
-    f = se.temperature_distribution(xr2, w)
-    tmin = Ttis
-    e1 = 4*(tmin-f)/(L**2)
-
-    return e1*y**2 + f
 
 # Function to calculate temperature distribution for a vessel
 def vessel_temperature_distribution(v, R1, w):
@@ -88,7 +117,7 @@ def vessel_temperature_distribution(v, R1, w):
     Q = np.zeros(N)
 
     # Set initial values
-    T_fluid[0] = Ttis
+    T_fluid[0] = Troom
     Q[0] = eta*(Tr2(y[0], w)-T_fluid[0])/(R_f+R_w+R_t)
 
     # Iterative computation
@@ -103,7 +132,7 @@ def vessel_temperature_distribution(v, R1, w):
     return df
 
 def scale_t(t):
-    return (t - Ttis) / (Tmax - Ttis)
+    return (t - Troom) / (Tmax - Troom)
 
 
 
@@ -119,41 +148,41 @@ v_vessel2 = 1.5 / 100  # velocity in m/s
 R1_vessel3 = 1.5 / 1000  # radius in meters
 v_vessel3 = 2.0 / 100  # velocity in m/s
 
-# Calculate temperature distribution for each vessel
-dd1 = vessel_temperature_distribution(v_vessel1, R1_vessel1, W1)
-dd2 = vessel_temperature_distribution(v_vessel2, R1_vessel2, W2)
-dd3 = vessel_temperature_distribution(v_vessel3, R1_vessel3, W3)
+# # Calculate temperature distribution for each vessel
+# dd1 = vessel_temperature_distribution(v_vessel1, R1_vessel1, W1)
+# dd2 = vessel_temperature_distribution(v_vessel2, R1_vessel2, W2)
+# dd3 = vessel_temperature_distribution(v_vessel3, R1_vessel3, W3)
 
-temp_vessel1, temp_vessel2, temp_vessel3 = dd1[1], dd2[1], dd3[1]
-np.savez(f"{src_dir}/data/simulations/simulation/y_axis_{R1_vessel1}_{v_vessel1}_{W1}.npz", vessel=temp_vessel1)
-np.savez(f"{src_dir}/data/simulations/simulation/y_axis_{R1_vessel2}_{v_vessel2}_{W2}.npz", vessel=temp_vessel2)
-np.savez(f"{src_dir}/data/simulations/simulation/y_axis_{R1_vessel3}_{v_vessel3}_{W3}.npz", vessel=temp_vessel3)
+# temp_vessel1, temp_vessel2, temp_vessel3 = dd1[1], dd2[1], dd3[1]
+# np.savez(f"{src_dir}/data/simulations/simulation/y_axis_{R1_vessel1}_{v_vessel1}_{W1}.npz", vessel=temp_vessel1)
+# np.savez(f"{src_dir}/data/simulations/simulation/y_axis_{R1_vessel2}_{v_vessel2}_{W2}.npz", vessel=temp_vessel2)
+# np.savez(f"{src_dir}/data/simulations/simulation/y_axis_{R1_vessel3}_{v_vessel3}_{W3}.npz", vessel=temp_vessel3)
 
-temp_ratio_vessel1 = scale_t(temp_vessel1)
-temp_ratio_vessel2 = scale_t(temp_vessel2)
-temp_ratio_vessel3 = scale_t(temp_vessel3)
+# temp_ratio_vessel1 = scale_t(temp_vessel1)
+# temp_ratio_vessel2 = scale_t(temp_vessel2)
+# temp_ratio_vessel3 = scale_t(temp_vessel3)
 
 
-# Plot results
-plt.figure(figsize=(10, 5))
-x_values = np.linspace(0, 100 * L, N)
+# # Plot results
+# plt.figure(figsize=(10, 5))
+# x_values = np.linspace(0, 100 * L, N)
 
-# Plot each vessel
-plt.plot(x_values, temp_ratio_vessel1, label='Vessel 1')
-plt.plot(x_values, temp_ratio_vessel2, label='Vessel 2')
-plt.plot(x_values, temp_ratio_vessel3, label='Vessel 3')
+# # Plot each vessel
+# plt.plot(x_values, temp_ratio_vessel1, label='Vessel 1')
+# plt.plot(x_values, temp_ratio_vessel2, label='Vessel 2')
+# plt.plot(x_values, temp_ratio_vessel3, label='Vessel 3')
 
-# Directly label the lines
-plt.text(100 * L - 5, temp_ratio_vessel1[-1] + 0.01, 'Vessel 1', fontsize=12, color='C0')
-plt.text(100 * L - 3, temp_ratio_vessel2[-1] + 0.08, 'Vessel 2', fontsize=12, color='C1')
-plt.text(100 * L - 2, temp_ratio_vessel3[-1] + 0.03, 'Vessel 3', fontsize=12, color='C2')
+# # Directly label the lines
+# plt.text(100 * L - 5, temp_ratio_vessel1[-1] + 0.01, 'Vessel 1', fontsize=12, color='C0')
+# plt.text(100 * L - 3, temp_ratio_vessel2[-1] + 0.08, 'Vessel 2', fontsize=12, color='C1')
+# plt.text(100 * L - 2, temp_ratio_vessel3[-1] + 0.03, 'Vessel 3', fontsize=12, color='C2')
 
-plt.xlabel(r'Location along the vessel, $y$ (cm)', fontsize=12)
-plt.ylabel(r'$\frac{T_{\text{fluid}}(y)-T_{\text{room}}}{T_{\text{max}}-T_{\text{room}}}$', fontsize=15)
-plt.title('Temperature Ratio as a Function of Location Along Vessels', fontsize=14)
-plt.grid(True)
-# plt.savefig(f"{src_dir}/data/simulations/t_ratio_along_vessel.png", dpi=120)
-plt.show()
+# plt.xlabel(r'Location along the vessel, $y$ (cm)', fontsize=12)
+# plt.ylabel(r'$\frac{T_{\text{fluid}}(y)-T_{\text{room}}}{T_{\text{max}}-T_{\text{room}}}$', fontsize=15)
+# plt.title('Temperature Ratio as a Function of Location Along Vessels', fontsize=14)
+# plt.grid(True)
+# # plt.savefig(f"{src_dir}/data/simulations/t_ratio_along_vessel.png", dpi=120)
+# plt.show()
 
 plt.plot(y, Tr2(y, W1), label=f'W1 = {W1}')
 plt.plot(y, Tr2(y, W2), label=f'W2 = {W2}')
