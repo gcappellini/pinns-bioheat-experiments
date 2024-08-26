@@ -28,6 +28,20 @@ function main
     end
 
     fclose(fileID);
+    % Print Solution PDE to a file with time variation
+    fileID_time = fopen('output_time_pbhe.txt', 'w');
+
+    % Loop over time and spatial points to write data
+    for j = 1:101  % Loop over each time step
+        for i = 1:101  % Loop over each spatial point
+            fprintf(fileID_time, '%12.8f %12.8f %12.8f %12.8f %12.8f\n', ...
+                x(i), t(j), u1(j, i), u2(j, i), u3(j, i));
+        end
+        % Optional: Add a newline for clarity after each time step
+        fprintf(fileID_time, '\n');
+    end
+
+    fclose(fileID_time);
 
     % Plotting the solution for visualization
     figure;
@@ -67,11 +81,11 @@ function [a1, a2, a3, a4, a5, W1, W2, W3, theta1, thetaw] = loadProperties(filen
         rho = data.rho;
         c = data.c;
         beta = data.beta;
-        P0 = data.P0;
+        SAR0 = data.SAR0;
         d = data.d;
         a = data.a;
         x0 = data.x0;
-        t_tis = data.Ttis;
+        t_room = data.Troom;
         t_w = data.Tw;
         h = data.h;
         dT = data.dT;
@@ -88,7 +102,7 @@ function [a1, a2, a3, a4, a5, W1, W2, W3, theta1, thetaw] = loadProperties(filen
     fprintf('Loaded k: %f\n', k);
     fprintf('Loaded rho: %f\n', rho);
     fprintf('Loaded c: %f\n', c);
-    fprintf('Loaded P0: %f\n', P0);
+    fprintf('Loaded SAR0: %f\n', SAR0);
     fprintf('Loaded d: %f\n', d);
     fprintf('Loaded x0: %f\n', x0);
     fprintf('Loaded dT: %f\n', dT);
@@ -96,18 +110,18 @@ function [a1, a2, a3, a4, a5, W1, W2, W3, theta1, thetaw] = loadProperties(filen
     fprintf('Loaded W2: %f\n', W2);
     fprintf('Loaded W3: %f\n', W3);
     fprintf('Loaded h: %f\n', h);
-    fprintf('Loaded t_tis: %f\n', t_tis);
+    fprintf('Loaded t_tis: %f\n', t_room);
     fprintf('Loaded t_w: %f\n', t_w);
 
     % Compute constants a1, a2, a3, and a4
     a1 = (L0^2/tauf)*(rho*c/k);
     a2 = L0^2*c/k;
-    a3 = (L0^2/(k*dT))*3e+03*beta*(P0)*exp(a*x0);
+    a3 = (L0^2/(k*dT))*3e+03*beta*(SAR0)*exp(a*x0);
     a4 = a*L0;
     % a3 = (L0^2/dT)*P0;
     % a4 = L0/d;
     a5 = (h*L0)/k;
-    thetaw = (t_w - t_tis)/dT;
+    thetaw = (t_w - t_room)/dT;
     theta1 = 0;
 end
 
@@ -124,7 +138,7 @@ end
 
 function u0 = OneDimBHic(x)
     % Initial conditions for the PDE
-    u0 = ones(3, 1); % Example: all ones for initial conditions
+    u0 = zeros(3, 1); % Example: all ones for initial conditions
 end
 
 function [pl, ql, pr, qr] = OneDimBHbc(xl, ul, xr, ur, t)

@@ -39,7 +39,18 @@ prj_figs, prj_models, prj_logs, run_figs, run_models, run_logs = [None]*6
 
 f1, f2, f3 = [None]*3
 
+with open(f"{src_dir}/properties.json", 'r') as f:
+  data = json.load(f)
 
+# Constants
+L, L0 = data["L"], data["L0"]
+k, cfl, rho, h = data["k"], data["c"], data["rho"], data["h"]
+
+Tmax, Troom, Tw, dT= data["Tmax"], data["Troom"], data["Tw"], data["dT"] # tumour temperature in °C
+SAR0, d, a, b, x0, beta = data["SAR0"], data["d"], data["a"], data["b"], data["x0"], data["beta"]
+P0_x = beta * SAR0 * np.exp(a*x0)
+
+W1, W2, W3, alpha, eta = data["W1"], data["W2"], data["W3"], data["alpha"], data["eta"]
 
 def set_prj(prj):
     global prj_figs, prj_models, prj_logs
@@ -55,6 +66,10 @@ def set_prj(prj):
 
     return prj_figs, prj_models, prj_logs
 
+def scale_t(t):
+    return (t - Troom) / (Tmax - Troom)
+
+theta_w = scale_t(Tw)
 
 def set_run(run):
     global prj_figs, prj_models, prj_logs, run_figs, run_models, run_logs
@@ -91,7 +106,7 @@ def create_default_config():
         "activation": "tanh", 
         "initial_weights_regularizer": True, 
         "initialization": "Glorot normal",
-        "iterations": 30000,
+        "iterations": 20000,
         "LBFGS": False,
         "learning_rate": 0.001,
         "num_dense_layers": 4,
@@ -348,15 +363,19 @@ def train_and_save_model(model, iterations, callbacks, optimizer_name):
 
 
 def gen_testdata(n):
-    data = np.loadtxt(f"{src_dir}/data/simulations/{n}/output_matlab_{n}.txt")
-    x, t, exact, obs1, mm, sup, bol = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:4].T, data[:, 4:5].T, data[:, 5:6].T, data[:, 6:7].T
+    data = np.loadtxt(f"{src_dir}/output_time_pbhe.txt")
+    x, t, sys1, sys2, sys3 = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:4].T, data[:, 4:5].T
     X = np.vstack((x, t)).T
-    y = exact.flatten()[:, None]
-    y_obs1 = obs1.flatten()[:, None]
-    y_mm = mm.flatten()[:, None]
-    y_sup = sup.flatten()[:, None]
-    y_bol = bol.flatten()[:, None]
-    return X, y, y_obs1, y_mm, y_sup, y_bol
+    y_sys1 = sys1.flatten()[:, None]
+    y_sys2 = sys2.flatten()[:, None]
+    y_sys3 = sys3.flatten()[:, None]
+        # Return only the specified y_sysn based on n
+    if n == 1:
+        return X, y_sys1
+    elif n == 2:
+        return X, y_sys2
+    elif n == 3:
+        return X, y_sys3
 
 
 def gen_obsdata(n):
@@ -369,18 +388,14 @@ def gen_obsdata(n):
     def f1(j):
         return np.zeros_like(j)
 
-
-    y2 = rows_1[:, -2].reshape(len(instants),)
+    y2 = rows_1[:, -1].reshape(len(instants),)
     f2 = interp1d(instants, y2, kind='previous')
 
-    y3 = rows_1[:, -1].reshape(len(instants),)
-    f3 = interp1d(instants, y3, kind='previous')
-
-    Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
+    Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), np.full_like(g[:, 0], theta_w), g[:, 1])).T
     return Xobs
 
 def import_testdata(n):
-    path = f"{src_dir}/data/vessel/{n}.pkl"
+    path = f"{src_dir}/data/{n}.pkl"
     df = load_from_pickle(path)
     x_tcs = np.linspace(0, 1, num=8).round(4)
     x_y1 = x_tcs[0]
@@ -433,9 +448,9 @@ def import_obsdata(n):
     return Xobs
 
 
-def plot_and_metrics(model):
-    e, theta_true, theta_obs, _, _, _ = gen_testdata()
-    g = gen_obsdata()
+def plot_and_metrics(model, n):
+    e, theta_true = gen_testdata(n)
+    g = gen_obsdata(n)
 
     # o = import_testdata(n_test)
     # e, theta_true = o[:, 0:2], o[:, 2]
@@ -444,7 +459,7 @@ def plot_and_metrics(model):
     theta_pred = model.predict(g)
 
     plot_comparison(e, theta_true, theta_pred)
-    check_obs(e, theta_obs, theta_pred)
+    # check_obs(e, theta_obs, theta_pred)
     plot_l2_tf(e, theta_true, theta_pred, model)
     # plot_tf(e, theta_true, model)
     metrics = compute_metrics(theta_true, theta_pred)
@@ -575,7 +590,7 @@ def plot_l2_tf(e, theta_true, theta_pred, model):
     x = np.linspace(0, 1, 100)
     true = final[:, -1]
 
-    Xobs = np.vstack((x, f1(np.ones_like(x)), f2(np.ones_like(x)), f3(np.ones_like(x)), np.ones_like(x))).T
+    Xobs = np.vstack((x, f1(np.ones_like(x)), f2(np.ones_like(x)), np.full_like(x, theta_w), np.ones_like(x))).T
     pred = model.predict(Xobs)
 
     ax2 = fig.add_subplot(122)
@@ -616,7 +631,7 @@ def configure_subplot(ax, XS, surface):
     ax.set_zlabel('Theta', fontsize=7, labelpad=-4)
 
 
-def single_observer(name_prj, name_run):
+def single_observer(name_prj, name_run, n_t):
     set_prj(name_prj)
     set_run(name_run)
     config = read_json("config.json")
@@ -628,8 +643,7 @@ def single_observer(name_prj, name_run):
     #     config=combined_config
     # )
     mo = train_model()
-    # metrics = plot_and_metrics(mo)
-    metrics=0
+    metrics = plot_and_metrics(mo, n_t)
     # wandb.log(metrics)
     # wandb.finish()
 
@@ -640,11 +654,17 @@ def mm_observer(name_prj, n_test):
     global prj_logs
     # get_properties(n_test)
 
+    with open(f"{src_dir}/properties.json", 'r') as f:
+        data = json.load(f)
+
+
+    W1, W2, W3 = data["W1"], data["W2"], data["W3"]
+
     set_prj(name_prj)
 
-    obs = np.array([1, 2, 3, 5, 6, 8, 9, 10])
+    obs = np.array([W1, W2, W3, 5*W3, 6*W3, 7*W3, 8*W3, 9*W3])
     a2_obs = np.dot(cc.a2, obs).round(4)
-    lam = 100
+    lam = data["lambda"]
 
     n_obs = len(obs)
 
@@ -665,12 +685,10 @@ def mm_observer(name_prj, n_test):
         # lam = properties["lam"]
         properties["a2"] = a2_new
         write_json(properties, "properties.json")
-        model, _ = single_observer(name_prj, run)
+        model, _ = single_observer(name_prj, run, n_test)
         multi_obs.append(model)
 
     p0 = np.full((n_obs,), 1/n_obs)
-    # gen_obsdata(n_test)
-    import_obsdata(n_test)
     def f(t, p):
         a = mu(multi_obs, t)
         e = np.exp(-1*a)
@@ -704,7 +722,7 @@ def mu(o, tau):
     K = net["output_injection_gain"]
     upsilon = net["upsilon"]
 
-    xo = np.vstack((np.ones_like(tau), f1(tau), f2(tau), f3(tau), tau)).T
+    xo = np.vstack((np.ones_like(tau), f1(tau), f2(tau), np.full_like(tau, theta_w), tau)).T
     muu = []
     for el in o:
         oss = el.predict(xo)
@@ -768,12 +786,12 @@ def plot_mu(multi_obs, t):
 
 
 def mm_plot_and_metrics(multi_obs, lam, n):
-    # e, theta_true, _, _, _, _ = gen_testdata(n)
-    # g = gen_obsdata(n)
-    a = import_testdata(n)
-    e = a[:, 0:2]
-    theta_true = a[:, 2]
-    g = import_obsdata(n)
+    e, theta_true = gen_testdata(n)
+    g = gen_obsdata(n)
+    # a = import_testdata(n)
+    # e = a[:, 0:2]
+    # theta_true = a[:, 2]
+    # g = import_obsdata(n)
 
     theta_pred = mm_predict(multi_obs, lam, g).reshape(theta_true.shape)
 
@@ -821,7 +839,7 @@ def mm_plot_l2_tf(e, theta_true, theta_pred, multi_obs, lam):
     x = np.linspace(0, 1, 100)
     true = final[:, -1]
 
-    Xobs = np.vstack((x, np.zeros_like(x), f2(np.ones_like(x)), f3(np.ones_like(x)), np.ones_like(x))).T
+    Xobs = np.vstack((x, np.zeros_like(x), f2(np.ones_like(x)), np.full_like(x, theta_w), np.ones_like(x))).T
     pred = mm_predict(multi_obs, lam, Xobs)
 
     ax2 = fig.add_subplot(122)
