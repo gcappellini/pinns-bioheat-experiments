@@ -44,8 +44,8 @@ def integrated_pde_x(x, C1, C2, w):
     return flux, temperature
 
 def integrated_pde_y(y, C1, C2, w):
-    SAR0_y = beta*SAR0*np.exp(-a*(xr2-x0))*np.sqrt(np.pi)/2
-    temperature = -(1/calculate_keff(w))*(SAR0_y*(np.sqrt(b)*y*special.erf(np.sqrt(b)*y)+np.exp(-b*y**2)/np.sqrt(np.pi)+C2)+C1*y)
+    S_y = rho*beta*SAR0*np.exp(-a*xr2)/calculate_keff(w)
+    temperature = -S_y*((np.sqrt(np.pi)/(2*b))*(y*special.erf(np.sqrt(b)*y)+np.exp(-b*y**2)/np.sqrt(np.pi))+C2+C1*y)
     return temperature
 
 # def Tr2_start(w):
@@ -78,8 +78,8 @@ def integrated_pde_y(y, C1, C2, w):
 def Tr2(y, w):
     C1_var, C2_var  = sp.symbols('C1 C2', real=True)
 
-    t_0 = integrated_pde_y(0, C1_var, C2_var, w)
-    t_L = integrated_pde_y(L, C1_var, C2_var, w)
+    t_0 = integrated_pde_y(-L/2, C1_var, C2_var, w)
+    t_L = integrated_pde_y(L/2, C1_var, C2_var, w)
 
     eq1= sp.Eq(t_0, Troom) 
     eq2 = sp.Eq(t_L, Troom)
