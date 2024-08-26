@@ -92,6 +92,8 @@ function [a1, a2, a3, a4, a5, W1, W2, W3, theta1, thetaw] = loadProperties(filen
         W1 = data.W1;
         W2 = data.W2;
         W3 = data.W3;
+        alpha = data.alpha;
+
     catch
         error('Error accessing JSON fields. Ensure JSON contains required fields.');
     end

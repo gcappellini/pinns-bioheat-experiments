@@ -124,10 +124,8 @@ def create_default_properties():
         "a3": cc.a3,
         "a4": cc.a4,
         "a5": cc.a5,
-        "a6": cc.a6,
-        "lam": cc.lam,
         "output_injection_gain": cc.K,
-        "upsilon": cc.upsilon,
+        "delta": cc.delta
     }
     return properties
 
@@ -229,13 +227,13 @@ def create_nbho():
     num_dense_layers = net["num_dense_layers"]
     num_dense_nodes = net["num_dense_nodes"]
 
-    K = properties["output_injection_gain"]
     a1 = properties["a1"]
     a2 = properties["a2"]
     a3 = properties["a3"]
     a4 = properties["a4"]
     a5 = properties["a5"]
-    a6 = properties["a6"]
+    K = properties["output_injection_gain"]
+    delta = properties["delta"]
 
 
     def pde(x, theta):
@@ -244,7 +242,7 @@ def create_nbho():
 
         return (
             a1 * dtheta_tau
-            - dtheta_xx + a2 * theta - a3 * torch.exp(-(1-x[:, 0:1])*a6)
+            - dtheta_xx + a2 * theta - a3 * torch.exp(-(1-x[:, 0:1])*a4)
         )
     
     def ic_obs(x):
@@ -253,15 +251,15 @@ def create_nbho():
         y2_0 = x[:, 2:3]
         y3_0 = x[:, 3:4]
 
-        b1 = (a5*y3_0+(K-a5)*y2_0-(2+K)*a4)/(1+K)
+        b1 = (a5*y3_0+(K-a5)*y2_0-(2+K)*delta)/(1+K)
 
-        return y1_0 + b1*z + a4*z**2
+        return y1_0 + b1*z + delta*z**2
 
-    def bc0_obs(x, theta, X):
+    def bc1_obs(x, theta, X):
 
         return theta - x[:, 1:2]
 
-    def bc1_obs(x, theta, X):
+    def bc0_obs(x, theta, X):
         dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0)
 
         return dtheta_x - a5 * (x[:, 3:4] - x[:, 2:3]) - K * (x[:, 2:3] - theta)
