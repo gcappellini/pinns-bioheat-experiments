@@ -1,2 +1,4 @@
 file misure T è 20240403.txt
 file potenza è Guglielmo ecc ecc
+
+dalla fotografia dovrei riuscire a recuperare numero seriale di una termocoppia che sta al centro, da questa posso valutare TR quindi SAR
