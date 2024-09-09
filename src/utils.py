@@ -42,16 +42,6 @@ f1, f2, f3 = [None]*3
 with open(f"{src_dir}/properties.json", 'r') as f:
   data = json.load(f)
 
-# Constants
-L, L0 = data["L"], data["L0"]
-k, cfl, rho, h = data["k"], data["c"], data["rho"], data["h"]
-
-Tmax, Troom, Tw, dT= data["Tmax"], data["Troom"], data["Tw"], data["dT"] # tumour temperature in °C
-SAR0, d, a, b, x0, beta = data["SAR0"], data["d"], data["a"], data["b"], data["x0"], data["beta"]
-P0_x = beta * SAR0 * np.exp(a*x0)
-
-W1, W2, W3, alpha, eta = data["W1"], data["W2"], data["W3"], data["alpha"], data["eta"]
-
 def set_prj(prj):
     global prj_figs, prj_models, prj_logs
 
@@ -66,10 +56,6 @@ def set_prj(prj):
 
     return prj_figs, prj_models, prj_logs
 
-def scale_t(t):
-    return (t - Troom) / (Tmax - Troom)
-
-theta_w = scale_t(Tw)
 
 def set_run(run):
     global prj_figs, prj_models, prj_logs, run_figs, run_models, run_logs
@@ -122,10 +108,8 @@ def create_default_properties():
         "a1": cc.a1,
         "a2": cc.a2,
         "a3": cc.a3,
-        "a4": cc.a4,
-        "a5": cc.a5,
-        "output_injection_gain": cc.K,
-        "delta": cc.delta
+        "K": cc.K,
+        "lambda": cc.lamb,
     }
     return properties
 
@@ -151,7 +135,6 @@ def get_initial_loss(model):
     model.compile("adam", lr=0.001)
     losshistory, _ = model.train(0)
     return losshistory.loss_train[0]
-
 
 
 def plot_loss_components(losshistory):
@@ -230,9 +213,7 @@ def create_nbho():
     a1 = properties["a1"]
     a2 = properties["a2"]
     a3 = properties["a3"]
-    a4 = properties["a4"]
-    a5 = properties["a5"]
-    K = properties["output_injection_gain"]
+    K = properties["K"]
     delta = properties["delta"]
 
 
@@ -242,7 +223,7 @@ def create_nbho():
 
         return (
             a1 * dtheta_tau
-            - dtheta_xx + a2 * theta - a3 * torch.exp(-(1-x[:, 0:1])*a4)
+            - dtheta_xx + a2 * theta
         )
     
     def ic_obs(x):
@@ -251,7 +232,7 @@ def create_nbho():
         y2_0 = x[:, 2:3]
         y3_0 = x[:, 3:4]
 
-        b1 = (a5*y3_0+(K-a5)*y2_0-(2+K)*delta)/(1+K)
+        b1 = (a3*y3_0+(K-a3)*y2_0-(2+K)*delta)/(1+K)
 
         return y1_0 + b1*z + delta*z**2
 
@@ -262,7 +243,7 @@ def create_nbho():
     def bc0_obs(x, theta, X):
         dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0)
 
-        return dtheta_x - a5 * (x[:, 3:4] - x[:, 2:3]) - K * (x[:, 2:3] - theta)
+        return dtheta_x - a3 * (x[:, 3:4] - x[:, 2:3]) - K * (x[:, 2:3] - theta)
 
     xmin = [0, 0, 0, 0]
     xmax = [1, 1, 1, 1]
@@ -361,7 +342,7 @@ def train_and_save_model(model, iterations, callbacks, optimizer_name):
 
 
 def gen_testdata(n):
-    data = np.loadtxt(f"{src_dir}/output_time_pbhe.txt")
+    data = np.loadtxt(f"{src_dir}/cooling_scaled.txt")
     x, t, sys1, sys2, sys3 = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:4].T, data[:, 4:5].T
     X = np.vstack((x, t)).T
     y_sys1 = sys1.flatten()[:, None]
@@ -389,12 +370,16 @@ def gen_obsdata(n):
     y2 = rows_1[:, -1].reshape(len(instants),)
     f2 = interp1d(instants, y2, kind='previous')
 
-    Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), np.full_like(g[:, 0], theta_w), g[:, 1])).T
+    Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), np.full_like(g[:, 0]), g[:, 1])).T
     return Xobs
 
-def import_testdata(n):
-    path = f"{src_dir}/data/{n}.pkl"
-    df = load_from_pickle(path)
+def load_from_pickle(file_path):
+    with open(file_path, 'rb') as pkl_file:
+        return pickle.load(pkl_file)
+    
+def import_testdata():
+    df = load_from_pickle(f"{src_dir}/cooling_scaled.pkl")
+
     x_tcs = np.linspace(0, 1, num=8).round(4)
     x_y1 = x_tcs[0]
     x_gt1 = x_tcs[3]
@@ -425,9 +410,9 @@ def import_testdata(n):
     return np.hstack((vstack_array,boluses_arr))
 
 
-def import_obsdata(n):
+def import_obsdata():
     global f1, f2, f3
-    g = import_testdata(n)
+    g = import_testdata()
     instants = np.unique(g[:, 1])
 
     rows_1 = g[g[:, 0] == 1.0]
@@ -446,13 +431,11 @@ def import_obsdata(n):
     return Xobs
 
 
-def plot_and_metrics(model, n):
-    e, theta_true = gen_testdata(n)
-    g = gen_obsdata(n)
+def plot_and_metrics(model):
 
-    # o = import_testdata(n_test)
-    # e, theta_true = o[:, 0:2], o[:, 2]
-    # g = import_obsdata(n_test)
+    o = import_testdata()
+    e, theta_true = o[:, 0:2], o[:, -2]
+    g = import_obsdata()
 
     theta_pred = model.predict(g)
 
@@ -588,7 +571,7 @@ def plot_l2_tf(e, theta_true, theta_pred, model):
     x = np.linspace(0, 1, 100)
     true = final[:, -1]
 
-    Xobs = np.vstack((x, f1(np.ones_like(x)), f2(np.ones_like(x)), np.full_like(x, theta_w), np.ones_like(x))).T
+    Xobs = np.vstack((x, f1(np.ones_like(x)), f2(np.ones_like(x)), f3(np.ones_like(x)), np.ones_like(x))).T
     pred = model.predict(Xobs)
 
     ax2 = fig.add_subplot(122)
@@ -720,7 +703,7 @@ def mu(o, tau):
     K = net["output_injection_gain"]
     upsilon = net["upsilon"]
 
-    xo = np.vstack((np.ones_like(tau), f1(tau), f2(tau), np.full_like(tau, theta_w), tau)).T
+    xo = np.vstack((np.ones_like(tau), f1(tau), f2(tau), f3(tau), tau)).T
     muu = []
     for el in o:
         oss = el.predict(xo)
@@ -837,7 +820,7 @@ def mm_plot_l2_tf(e, theta_true, theta_pred, multi_obs, lam):
     x = np.linspace(0, 1, 100)
     true = final[:, -1]
 
-    Xobs = np.vstack((x, np.zeros_like(x), f2(np.ones_like(x)), np.full_like(x, theta_w), np.ones_like(x))).T
+    Xobs = np.vstack((x, np.zeros_like(x), f2(np.ones_like(x)), f3(np.ones_like(x)), np.ones_like(x))).T
     pred = mm_predict(multi_obs, lam, Xobs)
 
     ax2 = fig.add_subplot(122)
