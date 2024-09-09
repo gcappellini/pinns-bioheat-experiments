@@ -82,7 +82,8 @@ def read_json(filename):
         if filename == "config.json":
             data = create_default_config()
         elif filename == "properties.json":
-            data = create_default_properties()
+            with open(f"{src_dir}/{filename}", 'r') as file:
+                data = json.load(file)
         write_json(data, filename)
     return data
 
@@ -102,16 +103,6 @@ def create_default_config():
     }
     return network
 
-
-def create_default_properties():
-    properties = {
-        "a1": cc.a1,
-        "a2": cc.a2,
-        "a3": cc.a3,
-        "K": cc.K,
-        "lambda": cc.lamb,
-    }
-    return properties
 
 def write_json(data, filename):
     global run_logs
@@ -210,9 +201,9 @@ def create_nbho():
     num_dense_layers = net["num_dense_layers"]
     num_dense_nodes = net["num_dense_nodes"]
 
-    a1 = properties["a1"]
-    a2 = properties["a2"]
-    a3 = properties["a3"]
+    a1 = cc.a1
+    a2 = cc.a2
+    a3 = cc.a3
     K = properties["K"]
     delta = properties["delta"]
 
@@ -381,10 +372,10 @@ def import_testdata():
     df = load_from_pickle(f"{src_dir}/cooling_scaled.pkl")
 
     x_tcs = np.linspace(0, 1, num=8).round(4)
-    x_y1 = x_tcs[0]
-    x_gt1 = x_tcs[3]
-    x_gt2 = x_tcs[6]
-    x_y2 = x_tcs[7]
+    x_y1 = x_tcs[7]
+    x_gt1 = x_tcs[4]
+    x_gt2 = x_tcs[1]
+    x_y2 = x_tcs[0]
 
     positions = [x_y1, x_gt1, x_gt2, x_y2]
 
@@ -624,7 +615,7 @@ def single_observer(name_prj, name_run, n_t):
     #     config=combined_config
     # )
     mo = train_model()
-    metrics = plot_and_metrics(mo, n_t)
+    metrics = plot_and_metrics(mo)
     # wandb.log(metrics)
     # wandb.finish()
 
@@ -639,11 +630,11 @@ def mm_observer(name_prj, n_test):
         data = json.load(f)
 
 
-    W1, W2, W3 = data["W1"], data["W2"], data["W3"]
+    W0, W1, W2, W3, W4, W5, W6, W7 = data["W0"], data["W1"], data["W2"], data["W3"], data["W4"], data["W5"], data["W6"], data["W7"]
 
     set_prj(name_prj)
 
-    obs = np.array([W1, W2, W3, 5*W3, 6*W3, 7*W3, 8*W3, 9*W3])
+    obs = np.array([W0, W1, W2, W3, W4, W5, W6, W7])
     a2_obs = np.dot(cc.a2, obs).round(4)
     lam = data["lambda"]
 
@@ -700,7 +691,6 @@ def mm_observer(name_prj, n_test):
 def mu(o, tau):
     global f1, f2, f3
     net = read_json("properties.json")
-    K = net["output_injection_gain"]
     upsilon = net["upsilon"]
 
     xo = np.vstack((np.ones_like(tau), f1(tau), f2(tau), f3(tau), tau)).T
@@ -767,12 +757,12 @@ def plot_mu(multi_obs, t):
 
 
 def mm_plot_and_metrics(multi_obs, lam, n):
-    e, theta_true = gen_testdata(n)
-    g = gen_obsdata(n)
-    # a = import_testdata(n)
-    # e = a[:, 0:2]
-    # theta_true = a[:, 2]
-    # g = import_obsdata(n)
+    # e, theta_true = gen_testdata(n)
+    # g = gen_obsdata(n)
+    a = import_testdata()
+    e = a[:, 0:2]
+    theta_true = a[:, 2]
+    g = import_obsdata()
 
     theta_pred = mm_predict(multi_obs, lam, g).reshape(theta_true.shape)
 

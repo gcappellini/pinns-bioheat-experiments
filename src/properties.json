@@ -21,8 +21,8 @@
     "Tmax": 35.47,
     "Twater": 25.0,
 
-    "lambda": 100,
+    "lambda": 10.0,
     "K": 15.0,
     "delta": 0.1,
-    "upsilon": 1.0
+    "upsilon": 5.0
   }

@@ -7,9 +7,9 @@ global K lambda delta upsilon W W0 W1 W2 W3 W4 W5 W6 W7 theta_w theta1 om0 om1 o
 
 %function [a1, a2, a3, delta, lambda, upsilon, W0, W1, W2, W3, W4, W5, W6, W7, theta_w, theta1, K] = loadProperties(filename)
 % Check if filename is provided
-if nargin < 1
+%if nargin < 1
     filename = 'properties.json'; % Default filename
-end
+%end
 
 % Read JSON file
 try

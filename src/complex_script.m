@@ -24,7 +24,6 @@ function main
     u7 = sol(:,:,7); %soluzione dell'osservatore 5
     u8 = sol(:,:,8); %soluzione dell'osservatore 6
     u9 = sol(:,:,9); %soluzione dell'osservatore 7
-    
     u10 = sol(:,:,10); %soluzione del peso 0
     u11 = sol(:,:,11); %soluzione del peso 1
     u12 = sol(:,:,12); %soluzione del peso 2
@@ -99,7 +98,7 @@ function [a1, a2, a3, delta, lambda, upsilon, W0, W1, W2, W3, W4, W5, W6, W7, th
         k = data.k;
         K = data.K;
         rho = data.rho;
-        c = data.c;
+        cp = data.c;
         t_room = data.Troom;
         t_max = data.Tmax;
         t_w = data.Twater;
@@ -125,7 +124,7 @@ function [a1, a2, a3, delta, lambda, upsilon, W0, W1, W2, W3, W4, W5, W6, W7, th
     fprintf('Loaded tauf: %f\n', tauf);
     fprintf('Loaded k: %f\n', k);
     fprintf('Loaded rho: %f\n', rho);
-    fprintf('Loaded c: %f\n', c);
+    fprintf('Loaded c: %f\n', cp);
     fprintf('Loaded W0: %f\n', W0);
     fprintf('Loaded W1: %f\n', W1);
     fprintf('Loaded W2: %f\n', W2);
@@ -139,8 +138,8 @@ function [a1, a2, a3, delta, lambda, upsilon, W0, W1, W2, W3, W4, W5, W6, W7, th
     fprintf('Loaded t_w: %f\n', t_w);
 
     % Compute constants a1, a2, a3, and a4
-    a1 = (L0^2/tauf)*(rho*c/k);
-    a2 = L0^2*c/k;
+    a1 = (L0^2/tauf)*(rho*cp/k);
+    a2 = L0^2*cp/k;
     a3 = (h*L0)/k;
     thetaw = (t_w - t_room)/(t_max - t_room);
     theta1 = 0;
@@ -150,10 +149,11 @@ function [c, f, s] = OneDimBHpde(x, t, u, dudx)
     % Define the coefficients of the PDE
     global lambda a1 a2 a3 W0 W1 W2 W3 W4 W5 W6 W7 om0 om1 om2 om3 om4 om5 om6 om7;
     t
+    disp(length(u));
 
     c = [a1; a1; a1; a1; a1; a1; a1; a1; a1; 1; 1; 1; 1; 1; 1; 1; 1];
-    % f = [1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1].* dudx;
     f = 1.* dudx;
+    % f = [1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1] .* dudx;
 
     den=u(10)*exp(-om0)+u(11)*exp(-om1)+u(12)*exp(-om2)+u(13)*exp(-om3)+...
         u(14)*exp(-om4)+u(15)*exp(-om5)+u(16)*exp(-om6)+u(17)*exp(-om7);
@@ -176,6 +176,7 @@ function [c, f, s] = OneDimBHpde(x, t, u, dudx)
         -lambda*u(16)*(1-(exp(-om6)/den)); 
         -lambda*u(17)*(1-(exp(-om7)/den));
         ];
+    
 end
 
 function theta0 = sys_ic(x)
@@ -185,6 +186,7 @@ function theta0 = sys_ic(x)
     bb = 1.0;
     theta0 = A*(1-x)*exp(-bb*x);
 end
+
 
 function u0 = OneDimBHic(x)
     global K delta a3 theta_w
@@ -197,17 +199,6 @@ function u0 = OneDimBHic(x)
     u0 = [sys_ic(x); ic_obs;  ic_obs; ic_obs; ic_obs; ic_obs; ic_obs; ic_obs; ic_obs; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8];
 end
 
-% function [pl, ql, pr, qr] = OneDimBHbc(xl, ul, xr, ur, t)
-%     global a5 theta1 thetaw;
-
-%     % Robin boundary condition at x=0
-%     pl = a5*(thetaw - ul); % Represents (h*theta - h*theta_w)
-%     ql = ones(9, 1);
-
-%     % Right boundary conditions (Dirichlet: u = 1)
-%     pr = ur - theta1; % pr = ur - desired_value
-%     qr = zeros(9, 1); % qr = 0 for Dirichlet
-% end
 
 function [pl,ql,pr,qr] = OneDimBHbc(xl,ul,xr,ur,t)
     global K om0 om1 om2 om3 om4 om5 om6 om7 a3 upsilon theta1 thetaw

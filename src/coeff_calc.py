@@ -26,6 +26,8 @@ a1 = round((L0**2/tauf)*((rho*c)/k), 7)
 a2 = round(L0**2*c/k, 7)
 a3 = round(L0*h/k, 7)
 
+print(a1, a2, a3)
+
 
 
 
