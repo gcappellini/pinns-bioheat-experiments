@@ -1,7 +1,7 @@
 clear all
 close all
 
-global K lambda delta upsilon W W0 W1 W2 W3 W4 W5 W6 W7 theta_w theta1 om0 om1 om2  om3 om4  om5 om6 om7 a1 a2 a3
+global K lambda delta upsilon W W0 W1 W2 W3 W4 W5 W6 W7 theta_w theta1 theta20 om0 om1 om2  om3 om4  om5 om6 om7 a1 a2 a3
 
 
 
@@ -34,6 +34,7 @@ try
     rho = data.rho;
     cp = data.c;
     t_room = data.Troom;
+    t_y20 = data.Ty20;
     t_max = data.Tmax;
     t_w = data.Twater;
     h = data.h;
@@ -59,6 +60,7 @@ a1 = (L0^2/tauf)*(rho*cp/k);
 a2 = L0^2*cp/k;
 a3 = (h*L0)/k;
 theta_w = (t_w - t_room)/(t_max - t_room);
+theta20 = (t_y20 - t_room)/(t_max - t_room);
 theta1 = 0;
 
 om0=0;

@@ -33,93 +33,94 @@ uav=u2.*u10+u3.*u11+u4.*u12+u5.*u13+u6.*u14+u7.*u15+u8.*u16+u9.*u17;
 
 % Print Solution PDE
 
-fileID = fopen('output_matlab_1.txt','w');
+fileID = fopen('output_matlab.txt','w');
 
 for i = 1:101
    for j = 1:101
         
-     fprintf(fileID,'%6.2f %6.2f %12.8f %12.8f %12.8f %12.8f %12.8f\n', x(j), t(i), u1(i,j), u2(i,j), uav(i,j), u1(i,101));
+     fprintf(fileID,'%6.2f %6.2f %12.8f %12.8f %12.8f\n', x(j), t(i), u1(i,j), u2(i,j), uav(i,j));
+
         
    end
 end
 
-% surface plot of the system solution
-figure;
-surf(x,t,u1);
-title('Numerical solution of the system.');
-xlabel('Distance x');
-ylabel('Time t');
-saveas(gcf, '1_matlab_system.jpg');
+% % surface plot of the system solution
+% figure;
+% surf(x,t,u1);
+% title('Numerical solution of the system.');
+% xlabel('Distance x');
+% ylabel('Time t');
+% saveas(gcf, '1_matlab_system.jpg');
 
 
-% surface plot of the observer solution 
-figure;
-surf(x,t,uav);
-title('Numerical solution of the observer.');
-xlabel('Distance x');
-ylabel('Time t');
-saveas(gcf, '1_matlab_mm_obs.jpg');
+% % surface plot of the observer solution 
+% figure;
+% surf(x,t,uav);
+% title('Numerical solution of the observer.');
+% xlabel('Distance x');
+% ylabel('Time t');
+% saveas(gcf, '1_matlab_mm_obs.jpg');
 
-figure
-plot(t,u10,'r',t,u11,'g',t,u12,'b',t,u13,'cyan',t,u14,'.',t,u15,'-.',t,u16,'black',t,u17,'yellow') %plot the dynamic wheights
-title('dynamic weights');
-saveas(gcf, '1_matlab_weights.jpg');
-
-
-% surface plot of the observation error 
-figure;
-surf(x,t,u1-uav);
-title('Observation error with 100 mesh points.');
-xlabel('Distance x');
-ylabel('Time t');
-saveas(gcf, '1_matlab_err_3d.jpg');
+% figure
+% plot(t,u10,'r',t,u11,'g',t,u12,'b',t,u13,'cyan',t,u14,'.',t,u15,'-.',t,u16,'black',t,u17,'yellow') %plot the dynamic wheights
+% title('dynamic weights');
+% saveas(gcf, '1_matlab_weights.jpg');
 
 
-
-% Calculate the observation L2 error for each time step
-l2_error_vs_time = sqrt(sum((u1 - uav).^2, 2));
-
-% Plotting the 2D plot of L2 error vs. time
-figure;
-plot(t, l2_error_vs_time, 'LineWidth', 2);
-title('L2 Observation Error vs. Time');
-xlabel('Time t');
-ylabel('L2 Error');
-grid on;
-saveas(gcf, '1_matlab_l2.jpg');
+% % surface plot of the observation error 
+% figure;
+% surf(x,t,u1-uav);
+% title('Observation error with 100 mesh points.');
+% xlabel('Distance x');
+% ylabel('Time t');
+% saveas(gcf, '1_matlab_err_3d.jpg');
 
 
-%solution profile at t_final
-figure;
-plot(x,u1(end,:),'o',x,u2(end,:),'r',x,u3(end,:),'g',x,u4(end,:),'b',x,u5(end,:),'cyan',...
-    x,u6(end,:),'.',x,u7(end,:),'-.',x,u8(end,:),'black',x,u9(end,:),'yellow',x,uav(end,:),'x');
 
-title('Solutions at t = t_{final}');
-legend('System','Observer0','Observer1','Observer2','Observer3','Observer4','Observer5',...
-    'Observer6','Observer7','ObserverMultiModel','Location', 'SouthWest');
-xlabel('Distance x');
-ylabel('temperature at t_{final}');
-saveas(gcf, '1_matlab_tf.jpg');
+% % Calculate the observation L2 error for each time step
+% l2_error_vs_time = sqrt(sum((u1 - uav).^2, 2));
 
-omegas = calculateOmegas(sol, x, t);
+% % Plotting the 2D plot of L2 error vs. time
+% figure;
+% plot(t, l2_error_vs_time, 'LineWidth', 2);
+% title('L2 Observation Error vs. Time');
+% xlabel('Time t');
+% ylabel('L2 Error');
+% grid on;
+% saveas(gcf, '1_matlab_l2.jpg');
 
-% Plot omega evolution
-figure;
-plot(t, omegas(:, 1), 'r-', 'LineWidth', 1.5, 'DisplayName', 'e_0'); hold on;
-plot(t, omegas(:, 2), 'g-', 'LineWidth', 1.5, 'DisplayName', 'e_1');
-plot(t, omegas(:, 3), 'b-', 'LineWidth', 1.5, 'DisplayName', 'e_2');
-plot(t, omegas(:, 4), 'c-', 'LineWidth', 1.5, 'DisplayName', 'e_3');
-plot(t, omegas(:, 5), 'm-', 'LineWidth', 1.5, 'DisplayName', 'e_4');
-plot(t, omegas(:, 6), '-.', 'LineWidth', 1.5, 'DisplayName', 'e_5');
-plot(t, omegas(:, 7), 'k-', 'LineWidth', 1.5, 'DisplayName', 'e_6');
-plot(t, omegas(:, 8), 'y-', 'LineWidth', 1.5, 'DisplayName', 'e_7');
-hold off;
-title('Evolution of Observation errors');
-xlabel('Time t');
-ylabel('\omega Values');
-legend('show', 'Location', 'best');
-grid on;
-saveas(gcf, '1_matlab_obs_err.jpg');
+
+% %solution profile at t_final
+% figure;
+% plot(x,u1(end,:),'o',x,u2(end,:),'r',x,u3(end,:),'g',x,u4(end,:),'b',x,u5(end,:),'cyan',...
+%     x,u6(end,:),'.',x,u7(end,:),'-.',x,u8(end,:),'black',x,u9(end,:),'yellow',x,uav(end,:),'x');
+
+% title('Solutions at t = t_{final}');
+% legend('System','Observer0','Observer1','Observer2','Observer3','Observer4','Observer5',...
+%     'Observer6','Observer7','ObserverMultiModel','Location', 'SouthWest');
+% xlabel('Distance x');
+% ylabel('temperature at t_{final}');
+% saveas(gcf, '1_matlab_tf.jpg');
+
+% omegas = calculateOmegas(sol, x, t);
+
+% % Plot omega evolution
+% figure;
+% plot(t, omegas(:, 1), 'r-', 'LineWidth', 1.5, 'DisplayName', 'e_0'); hold on;
+% plot(t, omegas(:, 2), 'g-', 'LineWidth', 1.5, 'DisplayName', 'e_1');
+% plot(t, omegas(:, 3), 'b-', 'LineWidth', 1.5, 'DisplayName', 'e_2');
+% plot(t, omegas(:, 4), 'c-', 'LineWidth', 1.5, 'DisplayName', 'e_3');
+% plot(t, omegas(:, 5), 'm-', 'LineWidth', 1.5, 'DisplayName', 'e_4');
+% plot(t, omegas(:, 6), '-.', 'LineWidth', 1.5, 'DisplayName', 'e_5');
+% plot(t, omegas(:, 7), 'k-', 'LineWidth', 1.5, 'DisplayName', 'e_6');
+% plot(t, omegas(:, 8), 'y-', 'LineWidth', 1.5, 'DisplayName', 'e_7');
+% hold off;
+% title('Evolution of Observation errors');
+% xlabel('Time t');
+% ylabel('\omega Values');
+% legend('show', 'Location', 'best');
+% grid on;
+% saveas(gcf, '1_matlab_obs_err.jpg');
 
 % Helper function to calculate omegas
 function omegas = calculateOmegas(sol, x, t)
@@ -173,27 +174,34 @@ s = [-W*a2*u(1);
 % --------------------------------------------------------------------------
 
 function theta0 = sys_ic(x)
-global a3 theta_w
+global a3 theta_w theta20
 
 %A = theta_w/(a3+1);
 %bb = 1.0;
 %theta0 = A*(1-x)*exp(-bb*x);
-cc = 0.3;
-bb = a3*(theta_w-cc);
-aa = -(bb+cc)
-theta0 = aa*x^2 + bb*x + cc;
+cc = theta20;
+bb = a3*(theta_w-theta20)+ cc;
+aa = -0.1;
+theta0 = -(1-x)*(aa*x^2 + bb*x + cc);
 
 % --------------------------------------------------------------------------
 
-function u0 = OneDimBHic(x)
-global K a3 delta theta_w
+function thetahat0 = obs_ic(x)
+global a3 theta_w theta20 K delta
 
-y1_0 = sys_ic(1);
-y2_0 = sys_ic(0);
-y3_0 = theta_w;
-b1 = (a3*y3_0+(K-a3)*y2_0-(2+K)*delta)/(1+K);
-ic_obs = y1_0 + b1*x + delta*x^2;
-u0 = [sys_ic(x); ic_obs;  ic_obs; ic_obs; ic_obs; ic_obs; ic_obs; ic_obs; ic_obs; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8];
+%A = theta_w/(a3+1);
+%bb = 1.0;
+%theta0 = A*(1-x)*exp(-bb*x);
+ff = theta20;
+ee = a3*(theta_w-ff)+ ff;
+dd = delta;
+thetahat0 = -(1-x)*(dd*x^2 + ee*x + ff);
+    
+    % --------------------------------------------------------------------------
+
+function u0 = OneDimBHic(x)
+
+u0 = [sys_ic(x); obs_ic(x);  obs_ic(x); obs_ic(x); obs_ic(x); obs_ic(x); obs_ic(x); obs_ic(x); obs_ic(x); 1/8; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8];
 % --------------------------------------------------------------------------
 
 

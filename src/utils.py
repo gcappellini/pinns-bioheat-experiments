@@ -39,9 +39,6 @@ prj_figs, prj_models, prj_logs, run_figs, run_models, run_logs = [None]*6
 
 f1, f2, f3 = [None]*3
 
-with open(f"{src_dir}/properties.json", 'r') as f:
-  data = json.load(f)
-
 def set_prj(prj):
     global prj_figs, prj_models, prj_logs
 
@@ -80,8 +77,12 @@ def read_json(filename):
             data = json.load(file)
     else:
         if filename == "config.json":
-            data = create_default_config()
+            with open(f"{src_dir}/{filename}", 'r') as file:
+                data = json.load(file)
         elif filename == "properties.json":
+            with open(f"{src_dir}/{filename}", 'r') as file:
+                data = json.load(file)
+        elif filename == "parameters.json":
             with open(f"{src_dir}/{filename}", 'r') as file:
                 data = json.load(file)
         write_json(data, filename)
@@ -332,41 +333,51 @@ def train_and_save_model(model, iterations, callbacks, optimizer_name):
     return losshistory, train_state
 
 
-def gen_testdata(n):
-    data = np.loadtxt(f"{src_dir}/cooling_scaled.txt")
-    x, t, sys1, sys2, sys3 = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:4].T, data[:, 4:5].T
+def gen_testdata():
+    data = np.loadtxt(f"{src_dir}/output_matlab.txt")
+    x, t, sys, obs1, mmobs = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:4].T, data[:, 4:5].T
     X = np.vstack((x, t)).T
-    y_sys1 = sys1.flatten()[:, None]
-    y_sys2 = sys2.flatten()[:, None]
-    y_sys3 = sys3.flatten()[:, None]
-        # Return only the specified y_sysn based on n
-    if n == 1:
-        return X, y_sys1
-    elif n == 2:
-        return X, y_sys2
-    elif n == 3:
-        return X, y_sys3
+    y_sys = sys.flatten()[:, None]
+    y_obs1 = obs1.flatten()[:, None]
+    y_mmobs = mmobs.flatten()[:, None]
+
+    return X, y_sys, y_obs1, y_mmobs
 
 
-def gen_obsdata(n):
+def gen_obsdata():
     global f1, f2, f3
-    g = np.hstack((gen_testdata(n)))
+    g = np.hstack((gen_testdata()))
     instants = np.unique(g[:, 1])
 
     rows_1 = g[g[:, 0] == 1.0]
+    rows_0 = g[g[:, 0] == 0.0]
 
-    def f1(j):
-        return np.zeros_like(j)
+    y1 = rows_0[:, 2].reshape(len(instants),)
+    f1 = interp1d(instants, y1, kind='previous')
 
-    y2 = rows_1[:, -1].reshape(len(instants),)
+    y2 = rows_1[:, 2].reshape(len(instants),)
     f2 = interp1d(instants, y2, kind='previous')
 
-    Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), np.full_like(g[:, 0]), g[:, 1])).T
+    properties = read_json("properties.json")
+    theta_w = scale_t(properties["Twater"])
+    y3 = np.full_like(y2, theta_w)
+    f3 = interp1d(instants, y3, kind='previous')
+
+    Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
     return Xobs
+
 
 def load_from_pickle(file_path):
     with open(file_path, 'rb') as pkl_file:
         return pickle.load(pkl_file)
+    
+def scale_t(t):
+
+    prop = read_json("properties.json")
+    Troom = prop["Troom"]
+    Tmax = prop["Tmax"]
+
+    return (t - Troom) / (Tmax - Troom)
     
 def import_testdata():
     df = load_from_pickle(f"{src_dir}/cooling_scaled.pkl")
@@ -603,32 +614,29 @@ def configure_subplot(ax, XS, surface):
     ax.set_zlabel('Theta', fontsize=7, labelpad=-4)
 
 
-def single_observer(name_prj, name_run, n_t):
+def single_observer(name_prj, name_run):
     set_prj(name_prj)
     set_run(name_run)
     config = read_json("config.json")
     properties = read_json("properties.json")
-    combined_config = {**config, **properties}
 
     # wandb.init(
     #     project=name_prj, name=name_run,
     #     config=combined_config
     # )
     mo = train_model()
-    metrics = plot_and_metrics(mo)
+    # metrics = plot_and_metrics(mo)
     # wandb.log(metrics)
     # wandb.finish()
 
-    return mo, metrics
+    return mo
 
 
 def mm_observer(name_prj, n_test):
     global prj_logs
-    # get_properties(n_test)
 
     with open(f"{src_dir}/properties.json", 'r') as f:
         data = json.load(f)
-
 
     W0, W1, W2, W3, W4, W5, W6, W7 = data["W0"], data["W1"], data["W2"], data["W3"], data["W4"], data["W5"], data["W6"], data["W7"]
 
@@ -660,37 +668,13 @@ def mm_observer(name_prj, n_test):
         model, _ = single_observer(name_prj, run, n_test)
         multi_obs.append(model)
 
-    p0 = np.full((n_obs,), 1/n_obs)
-    def f(t, p):
-        a = mu(multi_obs, t)
-        e = np.exp(-1*a)
-        d = np.inner(p, e)
-        f = []
-        for el in range(len(p)):
-            ccc = - lam * (1-(e[el]/d))*p[el]
-            f.append(ccc)
-        return np.array(f)
 
-
-    sol = integrate.solve_ivp(f, (0, 1), p0, t_eval=np.linspace(0, 1, 100))
-    x = sol.y
-    t = sol.t
-    weights = np.zeros((sol.y.shape[0]+1, sol.y.shape[1]))
-    weights[0] = sol.t
-    weights[1:] = sol.y
-    np.save(f'{prj_logs}/weights_lam_{lam}.npy', weights)
-    plot_weights(x, t, lam)
-    plot_mu(multi_obs, t)
-    metrics = mm_plot_and_metrics(multi_obs, lam, n_test)
-
-    # wandb.log(metrics)
-    # wandb.finish()
-    # return mo, metrics
+    return multi_obs
 
 
 def mu(o, tau):
     global f1, f2, f3
-    net = read_json("properties.json")
+    net = read_json("parameters.json")
     upsilon = net["upsilon"]
 
     xo = np.vstack((np.ones_like(tau), f1(tau), f2(tau), f3(tau), tau)).T
@@ -757,12 +741,12 @@ def plot_mu(multi_obs, t):
 
 
 def mm_plot_and_metrics(multi_obs, lam, n):
-    # e, theta_true = gen_testdata(n)
-    # g = gen_obsdata(n)
-    a = import_testdata()
-    e = a[:, 0:2]
-    theta_true = a[:, 2]
-    g = import_obsdata()
+    e, theta_true = gen_testdata(n)
+    g = gen_obsdata(n)
+    # a = import_testdata()
+    # e = a[:, 0:2]
+    # theta_true = a[:, 2]
+    # g = import_obsdata()
 
     theta_pred = mm_predict(multi_obs, lam, g).reshape(theta_true.shape)
 

@@ -1,0 +1,12 @@
+{
+    "activation": "tanh", 
+    "initial_weights_regularizer": "True", 
+    "initialization": "Glorot normal",
+    "iterations": 20000,
+    "LBFGS": "False",
+    "learning_rate": 0.001,
+    "num_dense_layers": 4,
+    "num_dense_nodes": 100,
+    "resampling": "True",
+    "resampler_period": 100
+}
