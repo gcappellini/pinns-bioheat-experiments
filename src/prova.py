@@ -12,14 +12,19 @@ eng.cd(src_dir, nargout=0)
 eng.BioHeat(nargout=0)
 eng.quit()
 
-uu.set_prj("test_matlab")
-uu.set_run("09")
-
-x, sys, obs1, mmobs = uu.gen_testdata()
-uu.plot_comparison(x, sys, obs1)
+# uu.set_prj("test_matlab")
+# uu.set_run("20")
 
 
-# multi_obs = uu.mm_observer("cooling_02", "02")
+# X, y_sys, y_obs, y_mmobs = uu.gen_testdata()
+# a = uu.compute_mu()
+# uu.plot_comparison(X, y_sys, y_mmobs)
+# uu.plot_mu_gt(a, np.unique(X[:, 1]))
+
+# t, weights = uu.load_weights()
+# uu.plot_weights(weights, t, gt=True)
+
+multi_obs = uu.mm_observer()
 
 # n_obs = 8
 

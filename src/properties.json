@@ -1,29 +1,24 @@
 {
     "L0": 0.13,
-
     "tauf": 9052.0,
-
     "k": 0.6,
     "rho": 1000.0,
     "c": 4186.0,
-
-    "W0": 0.00036,
-    "W1": 0.122,
-    "W2": 0.22,
-    "W3": 0.32,
-    "W4": 0.42,
-    "W5": 0.52,
-    "W6": 0.62,
-    "W7": 0.72,
-
-    "h": 100.0,
+    "W": 0.72,
+    "h": 238.0,
     "Troom": 22.89,
     "Tmax": 35.47,
-    "Twater": 25.0,
-    "Ty20": 28.0,
-
-    "lambda": 10.0,
+    "Ty20": 33.0,
     "K": 50.0,
-    "delta": -0.1,
-    "upsilon": 5.0
-  }
+    "delta": 3.0,
+    "activation": "tanh",
+    "initial_weights_regularizer": true,
+    "initialization": "Glorot normal",
+    "iterations": 2,
+    "LBFGS": false,
+    "learning_rate": 0.001,
+    "num_dense_layers": 4,
+    "num_dense_nodes": 100,
+    "resampling": true,
+    "resampler_period": 100
+}

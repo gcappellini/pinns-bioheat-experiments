@@ -12,6 +12,8 @@ from scipy import integrate
 import pickle
 import pandas as pd
 import coeff_calc as cc
+import hashlib
+import joblib 
 
 dde.config.set_random_seed(200)
 
@@ -25,88 +27,45 @@ tests_dir = os.path.join(git_dir, "tests")
 os.makedirs(tests_dir, exist_ok=True)
 
 
-models = os.path.join(tests_dir, "models")
+models = os.path.join(git_dir, "models")
 os.makedirs(models, exist_ok=True)
 
 figures = os.path.join(tests_dir, "figures")
 os.makedirs(figures, exist_ok=True)
 
-logs = os.path.join(tests_dir, "logs")
-os.makedirs(logs, exist_ok=True)
 
-prj_figs, prj_models, prj_logs, run_figs, run_models, run_logs = [None]*6
+prj_figs, run_figs = [None]*2
 
 
 f1, f2, f3 = [None]*3
 
 def set_prj(prj):
-    global prj_figs, prj_models, prj_logs
-
-    prj_logs = os.path.join(logs, prj)
-    os.makedirs(prj_logs, exist_ok=True)
-
-    prj_models = os.path.join(models, prj)
-    os.makedirs(prj_models, exist_ok=True)
+    global prj_figs
 
     prj_figs = os.path.join(figures, prj)
     os.makedirs(prj_figs, exist_ok=True)
 
-    return prj_figs, prj_models, prj_logs
+    return prj_figs
 
 
 def set_run(run):
-    global prj_figs, prj_models, prj_logs, run_figs, run_models, run_logs
-
-    run_logs = os.path.join(prj_logs, run)
-    os.makedirs(run_logs, exist_ok=True)
-
-    run_models = os.path.join(prj_models, run)
-    os.makedirs(run_models, exist_ok=True)
+    global prj_figs, run_figs
 
     run_figs = os.path.join(prj_figs, run)
     os.makedirs(run_figs, exist_ok=True)
 
-    return run_figs, run_models, run_logs
-
+    return run_figs
 
 
 def read_json(filename):
-    filepath = f"{run_logs}/{filename}"
+    filepath = f"{src_dir}/{filename}"
     if os.path.exists(filepath):
         with open(filepath, 'r') as file:
             data = json.load(file)
-    else:
-        if filename == "config.json":
-            with open(f"{src_dir}/{filename}", 'r') as file:
-                data = json.load(file)
-        elif filename == "properties.json":
-            with open(f"{src_dir}/{filename}", 'r') as file:
-                data = json.load(file)
-        elif filename == "parameters.json":
-            with open(f"{src_dir}/{filename}", 'r') as file:
-                data = json.load(file)
-        write_json(data, filename)
     return data
 
 
-def create_default_config():
-    network = {
-        "activation": "tanh", 
-        "initial_weights_regularizer": True, 
-        "initialization": "Glorot normal",
-        "iterations": 20000,
-        "LBFGS": False,
-        "learning_rate": 0.001,
-        "num_dense_layers": 4,
-        "num_dense_nodes": 100,
-        "resampling": True,
-        "resampler_period": 100
-    }
-    return network
-
-
 def write_json(data, filename):
-    global run_logs
     def convert_to_serializable(obj):
         if isinstance(obj, (np.int32, np.int64)):
             return int(obj)
@@ -118,9 +77,15 @@ def write_json(data, filename):
 
     serializable_data = {k: convert_to_serializable(v) for k, v in data.items()}
 
-    filepath = f"{run_logs}/{filename}"
+    filepath = f"{src_dir}/{filename}"
     with open(filepath, 'w') as file:
         json.dump(serializable_data, file, indent=4)
+
+
+def generate_config_hash(config_data):
+    config_string = json.dumps(config_data, sort_keys=True)  # Sort to ensure consistent ordering
+    config_hash = hashlib.md5(config_string.encode()).hexdigest()  # Create a unique hash
+    return config_hash
 
 
 def get_initial_loss(model):
@@ -130,7 +95,9 @@ def get_initial_loss(model):
 
 
 def plot_loss_components(losshistory):
-    global run_figs
+    global models
+    prop = read_json("properties.json")
+    hash = generate_config_hash(prop)
     loss_train = losshistory.loss_train
     loss_test = losshistory.loss_test
     matrix = np.array(loss_train)
@@ -155,7 +122,7 @@ def plot_loss_components(losshistory):
         plt.xlabel('iterations')
         plt.legend(ncol=2)
         plt.tight_layout()
-        plt.savefig(f"{run_figs}/losses.png", dpi=120)
+        plt.savefig(f"{models}/losses_{hash}.png", dpi=120)
         plt.close()
     
 
@@ -207,6 +174,7 @@ def create_nbho():
     a3 = cc.a3
     K = properties["K"]
     delta = properties["delta"]
+    W = properties["W"]
 
 
     def pde(x, theta):
@@ -215,7 +183,7 @@ def create_nbho():
 
         return (
             a1 * dtheta_tau
-            - dtheta_xx + a2 * theta
+            - dtheta_xx + W * a2 * theta
         )
     
     def ic_obs(x):
@@ -276,36 +244,26 @@ def create_nbho():
 
 
 def train_model():
-    global prj_logs, run_models
-    conf = read_json("config.json")
+    global models
+    conf = read_json("properties.json")
+    config_hash = generate_config_hash(conf)
+    model_path = os.path.join(models, f"model_{config_hash}.pt")
+
     mm = create_nbho()
 
+    if os.path.exists(model_path):
+        # Model exists, load it
+        print(f"Loading model from {model_path}")
+        mm.restore(model_path, verbose=0)
+    
     LBFGS = conf["LBFGS"]
-    epochs = conf["iterations"]
     ini_w = conf["initial_weights_regularizer"]
     resampler = conf["resampling"]
     resampler_period = conf["resampler_period"]
 
-    optim = "lbfgs" if LBFGS else "adam"
-    iters = "*" if LBFGS else epochs
-
-    # Check if a trained model with the exact configuration already exists
-    trained_models = sorted(glob.glob(f"{run_models}/{optim}-{iters}.pt"))
-    if trained_models:
-        mm.compile("L-BFGS") if LBFGS else None
-        mm.restore(trained_models[0], verbose=0)
-        return mm
-
     callbacks = [dde.callbacks.PDEPointResampler(period=resampler_period)] if resampler else []
 
     if LBFGS:
-        # Attempt to restore from a previously trained Adam model if exists
-        adam_models = sorted(glob.glob(f"{run_models}/adam-{epochs}.pt"))
-        if adam_models:
-            mm.restore(adam_models[0], verbose=0)
-        else:
-            losshistory, train_state = train_and_save_model(mm, epochs, callbacks, "adam")
-        
         if ini_w:
             initial_losses = get_initial_loss(mm)
             loss_weights = len(initial_losses) / initial_losses
@@ -313,42 +271,57 @@ def train_model():
         else:
             mm.compile("L-BFGS")
         
-        losshistory, train_state = train_and_save_model(mm, epochs, callbacks, "lbfgs")
+        losshistory, train_state = train_and_save_model(mm, callbacks)
     else:
-        losshistory, train_state = train_and_save_model(mm, epochs, callbacks, "adam")
+        losshistory, train_state = train_and_save_model(mm, callbacks)
 
     plot_loss_components(losshistory)
     return mm
 
 
-def train_and_save_model(model, iterations, callbacks, optimizer_name):
-    global run_models
+def train_and_save_model(model, callbacks):
+    global models
+
+    conf = read_json("properties.json")
+    config_hash = generate_config_hash(conf)
+    model_path = os.path.join(models, f"model_{config_hash}.pt")
+
+    conf = read_json("properties.json")
     display_every = 1000
     losshistory, train_state = model.train(
-        iterations=iterations,
+        iterations=conf["iterations"],
         callbacks=callbacks,
-        model_save_path=f"{run_models}/{optimizer_name}",
+        model_save_path=model_path,
         display_every=display_every
     )
+
+    config_path = model_path.replace(".pt", ".json")
+    with open(config_path, 'w') as f:
+        json.dump(conf, f, indent=4)
+
     return losshistory, train_state
 
 
 def gen_testdata():
     data = np.loadtxt(f"{src_dir}/output_matlab.txt")
-    x, t, sys, obs1, mmobs = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:4].T, data[:, 4:5].T
+    x, t, sys, obs, mmobs = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:11].T, data[:, 11:12].T
     X = np.vstack((x, t)).T
     y_sys = sys.flatten()[:, None]
-    y_obs1 = obs1.flatten()[:, None]
     y_mmobs = mmobs.flatten()[:, None]
 
-    return X, y_sys, y_obs1, y_mmobs
+    return X, y_sys, obs.T, y_mmobs
+
+def load_weights():
+    data = np.loadtxt(f"{src_dir}/weights_matlab.txt")
+    t, weights = data[:, 0:1], data[:, 1:9].T
+    return t, np.array(weights)
 
 
 def gen_obsdata():
     global f1, f2, f3
     g = np.hstack((gen_testdata()))
     instants = np.unique(g[:, 1])
-
+    
     rows_1 = g[g[:, 0] == 1.0]
     rows_0 = g[g[:, 0] == 0.0]
 
@@ -614,37 +587,15 @@ def configure_subplot(ax, XS, surface):
     ax.set_zlabel('Theta', fontsize=7, labelpad=-4)
 
 
-def single_observer(name_prj, name_run):
-    set_prj(name_prj)
-    set_run(name_run)
-    config = read_json("config.json")
-    properties = read_json("properties.json")
 
-    # wandb.init(
-    #     project=name_prj, name=name_run,
-    #     config=combined_config
-    # )
-    mo = train_model()
-    # metrics = plot_and_metrics(mo)
-    # wandb.log(metrics)
-    # wandb.finish()
+def mm_observer():
 
-    return mo
-
-
-def mm_observer(name_prj, n_test):
-    global prj_logs
-
-    with open(f"{src_dir}/properties.json", 'r') as f:
-        data = json.load(f)
+    data =  read_json("parameters.json")
 
     W0, W1, W2, W3, W4, W5, W6, W7 = data["W0"], data["W1"], data["W2"], data["W3"], data["W4"], data["W5"], data["W6"], data["W7"]
 
-    set_prj(name_prj)
-
     obs = np.array([W0, W1, W2, W3, W4, W5, W6, W7])
-    a2_obs = np.dot(cc.a2, obs).round(4)
-    lam = data["lambda"]
+    # a2_obs = np.dot(cc.a2, obs).round(4)
 
     n_obs = len(obs)
 
@@ -656,16 +607,15 @@ def mm_observer(name_prj, n_test):
     multi_obs = []
     
     for j in range(n_obs):
-        run = f"n{j}_W{a2_obs[j]}"
-        set_run(run)
+        # run = f"n{j}_W{a2_obs[j]}"
+        # set_run(run)
         # config = read_config()
-        a2_new = a2_obs[j]
+        perf = obs[j]
         properties = read_json("properties.json")
-        properties["lam"] = lam
-        # lam = properties["lam"]
-        properties["a2"] = a2_new
+        properties["W"] = perf
         write_json(properties, "properties.json")
-        model, _ = single_observer(name_prj, run, n_test)
+
+        model = train_model()
         multi_obs.append(model)
 
 
@@ -687,15 +637,39 @@ def mu(o, tau):
     return muu
 
 
-def plot_weights(x, t, lam):
-    global prj_figs
+def compute_mu():
+    net = read_json("parameters.json")
+    upsilon = net["upsilon"]
+    g = np.hstack((gen_testdata()))
+
+    rows_0 = g[g[:, 0] == 0.0]
+    sys_0 = rows_0[:, 2:3]
+    obss_0 = rows_0[:, 3:11]
+    sys_0 = sys_0.reshape(obss_0[:, 0].shape)
+    e = np.abs(obss_0[:, 0] - sys_0)
+
+    muu = []
+    # Loop through each column of obss_0
+    for el in range(obss_0.shape[1]):
+        
+        # Compute mu for each element and append to the list
+        mu_value = upsilon * np.abs(obss_0[:, el] - sys_0)**2
+        muu.append(mu_value)
+
+    return np.array(muu)
+
+
+def plot_weights(weights, t, gt=False):
+    global run_figs
+    param = read_json("parameters.json")
+    lam = param["lambda"]
     fig = plt.figure()
     ax1 = fig.add_subplot(111)
     colors = ['C3', 'lime', 'blue', 'aqua', 'm', 'darkred', 'k', 'yellow']
 
-    for i in range(x.shape[0]):
+    for i in range(weights.shape[0]):
         # plt.plot(tauf * t, x[i], alpha=1.0, linewidth=1.8, color=colors[i], label=f"Weight $p_{i+1}$")
-        plt.plot(t, x[i], alpha=1.0, linewidth=1.0, color=colors[i], label=f"Weight $p_{i}$")
+        plt.plot(t, weights[i], alpha=1.0, linewidth=1.0, color=colors[i], label=f"Weight $p_{i}$")
 
     ax1.set_xlim(0, 1)
     ax1.set_ylim(bottom=0.0)
@@ -705,11 +679,15 @@ def plot_weights(x, t, lam):
     ax1.legend()
     ax1.set_title(r"Dynamic weights, $\lambda=$"f"{lam}", weight='semibold')
     plt.grid()
-    plt.savefig(f"{prj_figs}/weights_lam_{lam}.png", dpi=120, bbox_inches='tight')
+    if gt:
+        plt.savefig(f"{run_figs}/weights_lam_{lam}_matlab.png", dpi=120, bbox_inches='tight')
+    else:
+        plt.savefig(f"{run_figs}/weights_lam_{lam}.png", dpi=120, bbox_inches='tight')
 
     # plt.show()
     plt.close()
     # plt.clf()
+
 
 def plot_mu(multi_obs, t):
     global prj_figs
@@ -734,6 +712,30 @@ def plot_mu(multi_obs, t):
     ax1.set_title(r"Observation errors", weight='semibold')
     plt.grid()
     plt.savefig(f"{prj_figs}/obs_error.png", dpi=120, bbox_inches='tight')
+
+    # plt.show()
+    plt.close()
+    # plt.clf()
+
+def plot_mu_gt(mus, t):
+    global run_figs
+    fig = plt.figure()
+    ax1 = fig.add_subplot(111)
+
+    colors = ['C3', 'lime', 'blue', 'aqua', 'm', 'darkred', 'k', 'yellow']
+    for i in range(mus.shape[0]):
+        # plt.plot(tauf * t, x[i], alpha=1.0, linewidth=1.8, color=colors[i], label=f"Weight $p_{i+1}$")
+        plt.plot(t, mus[i], alpha=1.0, linewidth=1.0, color=colors[i], label=f"$e_{i}$")
+
+    ax1.set_xlim(0, 1)
+    ax1.set_ylim(bottom=0.0)
+
+    ax1.set_xlabel(xlabel=r"Time t")  # xlabel
+    ax1.set_ylabel(ylabel=r"Error")  # ylabel
+    ax1.legend()
+    ax1.set_title(r"Observation errors", weight='semibold')
+    plt.grid()
+    plt.savefig(f"{run_figs}/obs_error_matlab.png", dpi=120, bbox_inches='tight')
 
     # plt.show()
     plt.close()
@@ -798,8 +800,8 @@ def mm_plot_l2_tf(e, theta_true, theta_pred, multi_obs, lam):
     pred = mm_predict(multi_obs, lam, Xobs)
 
     ax2 = fig.add_subplot(122)
-    ax2.plot(xtr, true, marker="o", linestyle="None", alpha=1.0, linewidth=0.75, color='blue', label="true", markevery=6)
-    ax2.plot(x, pred, linestyle='None', marker="X", linewidth=0.75, color='gold', label="mm_obs", markevery=6)
+    ax2.plot(xtr, true, marker="o", linestyle="None", alpha=1.0, linewidth=0.75, color='blue', label="true")
+    ax2.plot(x, pred, linestyle='None', marker="X", linewidth=0.75, color='gold', label="mm_obs")
 
     colors = ['C3', 'lime', 'blue', 'aqua', 'm', 'darkred', 'k', 'yellow']
 

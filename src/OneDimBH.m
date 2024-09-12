@@ -38,12 +38,23 @@ fileID = fopen('output_matlab.txt','w');
 for i = 1:101
    for j = 1:101
         
-     fprintf(fileID,'%6.2f %6.2f %12.8f %12.8f %12.8f\n', x(j), t(i), u1(i,j), u2(i,j), uav(i,j));
+     fprintf(fileID,'%6.2f %6.2f %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f\n', ...
+     x(j), t(i), u1(i,j), u2(i,j), u3(i,j), u4(i,j), u5(i,j), u6(i,j), u7(i,j), u8(i,j), u9(i,j), uav(i,j));
 
         
    end
 end
 
+
+fileID = fopen('weights_matlab.txt','w');
+
+for i = 1:101
+        
+     fprintf(fileID,'%6.2f %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f %12.8f\n', ...
+     t(i), u10(i,1), u11(i,1), u12(i,1), u13(i,1), u14(i,1), u15(i,1), u16(i,1), u17(i,1));
+
+        
+end
 % % surface plot of the system solution
 % figure;
 % surf(x,t,u1);
@@ -144,9 +155,8 @@ global upsilon
 %-----------------
 function [c,f,s] = OneDimBHpde(x,t,u,dudx)
 global lambda om0 om1 om2 om3 om4 om5 om6 om7 W W0 W1 W2 W3 W4 W5 W6 W7 a1 a2
-%la prima equazione è quella del sistema, a seguire gli osservatori
+%la prima equazione è quella del sistema, a seguire gli osservatoris
 t
-
 c = [a1; a1; a1; a1; a1; a1; a1; a1; a1; 1; 1; 1; 1; 1; 1; 1; 1];
 f = [1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1].* dudx;
 
@@ -176,28 +186,22 @@ s = [-W*a2*u(1);
 function theta0 = sys_ic(x)
 global a3 theta_w theta20
 
-%A = theta_w/(a3+1);
-%bb = 1.0;
-%theta0 = A*(1-x)*exp(-bb*x);
 cc = theta20;
-bb = a3*(theta_w-theta20)+ cc;
+bb = a3*(theta_w-cc)+ cc;
 aa = -0.1;
-theta0 = -(1-x)*(aa*x^2 + bb*x + cc);
+theta0 = (1-x)*(aa*x^2 + bb*x + cc);
 
 % --------------------------------------------------------------------------
 
 function thetahat0 = obs_ic(x)
-global a3 theta_w theta20 K delta
+global a3 theta_w theta20 delta
 
-%A = theta_w/(a3+1);
-%bb = 1.0;
-%theta0 = A*(1-x)*exp(-bb*x);
 ff = theta20;
 ee = a3*(theta_w-ff)+ ff;
 dd = delta;
-thetahat0 = -(1-x)*(dd*x^2 + ee*x + ff);
+thetahat0 = (1-x)*(dd*x^2 + ee*x + ff);
     
-    % --------------------------------------------------------------------------
+% --------------------------------------------------------------------------
 
 function u0 = OneDimBHic(x)
 
@@ -207,7 +211,7 @@ u0 = [sys_ic(x); obs_ic(x);  obs_ic(x); obs_ic(x); obs_ic(x); obs_ic(x); obs_ic(
 
 function [pl,ql,pr,qr] = OneDimBHbc(xl,ul,xr,ur,t)
 global K om0 om1 om2 om3 om4 om5 om6 om7 upsilon a3 theta_w theta1
-flusso = a3*(theta_w-ur(1));
+flusso = -a3*(theta_w-ul(1));
 
 pl = [-flusso;
     -flusso+K*(ul(1)-ul(2));
