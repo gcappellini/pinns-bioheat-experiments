@@ -15,7 +15,7 @@ eng.BioHeat(nargout=0)
 eng.quit()
 
 co.set_prj("test_matlab")
-run_figs = co.set_run("20")
+run_figs = co.set_run("21")
 print(run_figs)
 
 multi_obs = uu.mm_observer()
@@ -30,13 +30,17 @@ for el in range(len(multi_obs)):
     true = y_obs[:, el].reshape(pred.shape)
     # print(pred.shape, true.shape)
     pp.check_obs(X, true, pred, el, run_figs)
+    pp.plot_l2_tf(X, true, pred, multi_obs[el], el, run_figs)
 
 
+# Comparing observation error 
+X, _, _, _ = uu.gen_testdata()
+t = X[:, 1]
+mu = uu.mu(multi_obs, t)
+pp.plot_mu(mu, t, run_figs, gt=True)
 
-# a = uu.compute_mu()
+
 # uu.plot_comparison(X, y_sys, y_mmobs)
-# uu.plot_mu_gt(a, np.unique(X[:, 1]))
-
 # t, weights = uu.load_weights()
 # uu.plot_weights(weights, t, gt=True)
 

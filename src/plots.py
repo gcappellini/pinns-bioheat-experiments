@@ -87,13 +87,19 @@ def plot_weights(weights, t, run_figs, gt=False):
 
 
 def plot_mu(mus, t, run_figs, gt=False):
+
+    true_mus = uu.compute_mu()
     fig = plt.figure()
     ax1 = fig.add_subplot(111)
 
     colors = ['C3', 'lime', 'blue', 'aqua', 'm', 'darkred', 'k', 'yellow']
-    for i in range(mus.shape[0]):
-        # plt.plot(tauf * t, x[i], alpha=1.0, linewidth=1.8, color=colors[i], label=f"Weight $p_{i+1}$")
-        plt.plot(t, mus[i], alpha=1.0, linewidth=1.0, color=colors[i], label=f"$e_{i}$")
+    if gt:
+        for i in range(mus.shape[0]):
+            plt.plot(t, true_mus[i], alpha=0.6, linestyle="-.", color=colors[i], label=f"$e_{i}$ matlab")
+            plt.plot(t, mus[i], alpha=1.0, linewidth=1.0, color=colors[i], label=f"$e_{i}$")
+    else:
+        for i in range(mus.shape[0]):
+            plt.plot(t, mus[i], alpha=1.0, linewidth=1.0, color=colors[i], label=f"$e_{i}$")
 
     ax1.set_xlim(0, 1)
     ax1.set_ylim(bottom=0.0)
@@ -104,10 +110,7 @@ def plot_mu(mus, t, run_figs, gt=False):
     ax1.set_title(r"Observation errors", weight='semibold')
     plt.grid()
 
-    if gt:
-        plt.savefig(f"{run_figs}/obs_error_matlab.png", dpi=120, bbox_inches='tight')
-    else:
-        plt.savefig(f"{run_figs}/obs_error.png", dpi=120, bbox_inches='tight')
+    plt.savefig(f"{run_figs}/obs_error.png", dpi=120, bbox_inches='tight')
 
     # plt.show()
     plt.close()
@@ -221,7 +224,7 @@ def plot_l2_norm(e, theta_true, theta_pred):
     return fig, ax1
 
 
-def plot_l2_tf(e, theta_true, theta_pred, model, run_figs):
+def plot_l2_tf(e, theta_true, theta_pred, model, number, run_figs):
 
     e, theta_true, theta_pred = e.reshape((len(e), 2)), theta_true.reshape((len(e), 1)), theta_pred.reshape((len(e), 1))
 
@@ -250,7 +253,7 @@ def plot_l2_tf(e, theta_true, theta_pred, model, run_figs):
 
     plt.grid()
     ax2.set_box_aspect(1)
-    plt.savefig(f"{run_figs}/l2_tf.png", dpi=120)
+    plt.savefig(f"{run_figs}/l2_tf_obs{number}.png", dpi=120)
     
     # plt.show()
     plt.close()
@@ -330,3 +333,21 @@ def plot_and_metrics(model):
     return metrics
 
 
+
+
+
+def mm_plot_and_metrics(multi_obs, lam, n):
+    e, theta_true = uu.gen_testdata(n)
+    g = uu.gen_obsdata(n)
+    # a = import_testdata()
+    # e = a[:, 0:2]
+    # theta_true = a[:, 2]
+    # g = import_obsdata()
+
+    theta_pred = uu.mm_predict(multi_obs, lam, g).reshape(theta_true.shape)
+
+    plot_comparison(e, theta_true, theta_pred, MObs=True)
+    mm_plot_l2_tf(e, theta_true, theta_pred, multi_obs, lam)
+
+    metrics = uu.compute_metrics(theta_true, theta_pred)
+    return metrics

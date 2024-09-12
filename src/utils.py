@@ -132,7 +132,6 @@ def output_transform(x, y):
 
 def create_nbho():
     prop = read_json("properties.json")
-    param = read_json("parameters.json")
 
     activation = prop["activation"]
     initial_weights_regularizer = prop["initial_weights_regularizer"]
@@ -148,8 +147,8 @@ def create_nbho():
     delta = prop["delta"]
     W = prop["W"]
 
-    Twater = param["Twater"]
-    Ty20 = param["Ty20"]
+    Twater = prop["Twater"]
+    Ty20 = prop["Ty20"]
     theta_w, theta_y20 = scale_t(Twater), scale_t(Ty20)
 
 
@@ -169,7 +168,7 @@ def create_nbho():
         b = a3*(theta_w-theta_y20) + theta_y20
         a = delta
 
-        return (1-z)*(a*x**2+b*x+c)
+        return (1-z)*(a*z**2+b*z+c)
 
     def bc1_obs(x, theta, X):
 
@@ -455,23 +454,6 @@ def compute_mu():
 
     return np.array(muu)
 
-
-
-def mm_plot_and_metrics(multi_obs, lam, n):
-    e, theta_true = gen_testdata(n)
-    g = gen_obsdata(n)
-    # a = import_testdata()
-    # e = a[:, 0:2]
-    # theta_true = a[:, 2]
-    # g = import_obsdata()
-
-    theta_pred = mm_predict(multi_obs, lam, g).reshape(theta_true.shape)
-
-    plot_comparison(e, theta_true, theta_pred, MObs=True)
-    mm_plot_l2_tf(e, theta_true, theta_pred, multi_obs, lam)
-
-    metrics = compute_metrics(theta_true, theta_pred)
-    return metrics
 
 
 def mm_predict(multi_obs, lam, g):
