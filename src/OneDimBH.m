@@ -211,17 +211,17 @@ u0 = [sys_ic(x); obs_ic(x);  obs_ic(x); obs_ic(x); obs_ic(x); obs_ic(x); obs_ic(
 
 function [pl,ql,pr,qr] = OneDimBHbc(xl,ul,xr,ur,t)
 global K om0 om1 om2 om3 om4 om5 om6 om7 upsilon a3 theta_w theta1
-flusso = -a3*(theta_w-ul(1));
+flusso = a3*(theta_w-ul(1));
 
-pl = [-flusso;
-    -flusso+K*(ul(1)-ul(2));
-    -flusso+K*(ul(1)-ul(3));
-    -flusso+K*(ul(1)-ul(4));
-    -flusso+K*(ul(1)-ul(5));
-    -flusso+K*(ul(1)-ul(6));
-    -flusso+K*(ul(1)-ul(7));
-    -flusso+K*(ul(1)-ul(8));
-    -flusso+K*(ul(1)-ul(9));
+pl = [flusso;
+    flusso+K*(ul(1)-ul(2));
+    flusso+K*(ul(1)-ul(3));
+    flusso+K*(ul(1)-ul(4));
+    flusso+K*(ul(1)-ul(5));
+    flusso+K*(ul(1)-ul(6));
+    flusso+K*(ul(1)-ul(7));
+    flusso+K*(ul(1)-ul(8));
+    flusso+K*(ul(1)-ul(9));
     0;0;0;0;0;0;0;0];
 ql = [1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1];
 pr = [ur(1) - theta1; 

@@ -3,6 +3,8 @@ import os
 import matlab.engine
 import numpy as np
 from scipy import integrate
+import common as co
+import plots as pp
 
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
@@ -12,11 +14,25 @@ eng.cd(src_dir, nargout=0)
 eng.BioHeat(nargout=0)
 eng.quit()
 
-# uu.set_prj("test_matlab")
-# uu.set_run("20")
+co.set_prj("test_matlab")
+run_figs = co.set_run("20")
+print(run_figs)
+
+multi_obs = uu.mm_observer()
+
+X, y_sys, y_obs, y_mmobs = uu.gen_testdata()
+x_obs = uu.gen_obsdata()
+
+print(len(multi_obs), y_obs.shape)
+
+for el in range(len(multi_obs)):
+    pred = multi_obs[el].predict(x_obs)
+    true = y_obs[:, el].reshape(pred.shape)
+    # print(pred.shape, true.shape)
+    pp.check_obs(X, true, pred, el, run_figs)
 
 
-# X, y_sys, y_obs, y_mmobs = uu.gen_testdata()
+
 # a = uu.compute_mu()
 # uu.plot_comparison(X, y_sys, y_mmobs)
 # uu.plot_mu_gt(a, np.unique(X[:, 1]))
@@ -24,7 +40,7 @@ eng.quit()
 # t, weights = uu.load_weights()
 # uu.plot_weights(weights, t, gt=True)
 
-multi_obs = uu.mm_observer()
+
 
 # n_obs = 8
 

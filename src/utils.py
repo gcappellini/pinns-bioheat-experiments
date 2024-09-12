@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import torch
 import seaborn as sns
 import wandb
-import glob
 import json
 from scipy.interpolate import interp1d
 from scipy import integrate
@@ -13,7 +12,7 @@ import pickle
 import pandas as pd
 import coeff_calc as cc
 import hashlib
-import joblib 
+import plots as pp
 
 dde.config.set_random_seed(200)
 
@@ -34,27 +33,27 @@ figures = os.path.join(tests_dir, "figures")
 os.makedirs(figures, exist_ok=True)
 
 
-prj_figs, run_figs = [None]*2
+# prj_figs, run_figs = [None]*2
 
 
 f1, f2, f3 = [None]*3
 
-def set_prj(prj):
-    global prj_figs
+# def set_prj(prj):
+#     global prj_figs
 
-    prj_figs = os.path.join(figures, prj)
-    os.makedirs(prj_figs, exist_ok=True)
+#     prj_figs = os.path.join(figures, prj)
+#     os.makedirs(prj_figs, exist_ok=True)
 
-    return prj_figs
+#     return prj_figs
 
 
-def set_run(run):
-    global prj_figs, run_figs
+# def set_run(run):
+#     global prj_figs, run_figs
 
-    run_figs = os.path.join(prj_figs, run)
-    os.makedirs(run_figs, exist_ok=True)
+#     run_figs = os.path.join(prj_figs, run)
+#     os.makedirs(run_figs, exist_ok=True)
 
-    return run_figs
+#     return run_figs
 
 
 def read_json(filename):
@@ -94,36 +93,9 @@ def get_initial_loss(model):
     return losshistory.loss_train[0]
 
 
-def plot_loss_components(losshistory):
-    global models
-    prop = read_json("properties.json")
-    hash = generate_config_hash(prop)
-    loss_train = losshistory.loss_train
-    loss_test = losshistory.loss_test
-    matrix = np.array(loss_train)
-    test = np.array(loss_test).sum(axis=1).ravel()
-    train = np.array(loss_train).sum(axis=1).ravel()
-    loss_res = matrix[:, 0]
-    loss_bc0 = matrix[:, 1]   
-    loss_bc1 = matrix[:, 2]  
-    loss_ic = matrix[:, 3]
-
-    fig = plt.figure(figsize=(6, 5))
-    iters = losshistory.steps
-    with sns.axes_style("darkgrid"):
-        plt.clf()
-        plt.plot(iters, loss_res, label=r'$\mathcal{L}_{res}$')
-        plt.plot(iters, loss_bc0, label=r'$\mathcal{L}_{bc0}$')
-        plt.plot(iters, loss_bc1, label=r'$\mathcal{L}_{bc1}$')
-        plt.plot(iters, loss_ic, label=r'$\mathcal{L}_{ic}$')
-        plt.plot(iters, test, label='test loss')
-        plt.plot(iters, train, label='train loss')
-        plt.yscale('log')
-        plt.xlabel('iterations')
-        plt.legend(ncol=2)
-        plt.tight_layout()
-        plt.savefig(f"{models}/losses_{hash}.png", dpi=120)
-        plt.close()
+def load_from_pickle(file_path):
+    with open(file_path, 'rb') as pkl_file:
+        return pickle.load(pkl_file)
     
 
 def compute_metrics(true, pred):
@@ -159,22 +131,26 @@ def output_transform(x, y):
     return x[:, 0:1] * y
 
 def create_nbho():
-    net = read_json("config.json")
-    properties = read_json("properties.json")
+    prop = read_json("properties.json")
+    param = read_json("parameters.json")
 
-    activation = net["activation"]
-    initial_weights_regularizer = net["initial_weights_regularizer"]
-    initialization = net["initialization"]
-    learning_rate = net["learning_rate"]
-    num_dense_layers = net["num_dense_layers"]
-    num_dense_nodes = net["num_dense_nodes"]
+    activation = prop["activation"]
+    initial_weights_regularizer = prop["initial_weights_regularizer"]
+    initialization = prop["initialization"]
+    learning_rate = prop["learning_rate"]
+    num_dense_layers = prop["num_dense_layers"]
+    num_dense_nodes = prop["num_dense_nodes"]
 
     a1 = cc.a1
     a2 = cc.a2
     a3 = cc.a3
-    K = properties["K"]
-    delta = properties["delta"]
-    W = properties["W"]
+    K = prop["K"]
+    delta = prop["delta"]
+    W = prop["W"]
+
+    Twater = param["Twater"]
+    Ty20 = param["Ty20"]
+    theta_w, theta_y20 = scale_t(Twater), scale_t(Ty20)
 
 
     def pde(x, theta):
@@ -188,13 +164,12 @@ def create_nbho():
     
     def ic_obs(x):
         z = x[:, 0:1]
-        y1_0 = x[:, 1:2]
-        y2_0 = x[:, 2:3]
-        y3_0 = x[:, 3:4]
 
-        b1 = (a3*y3_0+(K-a3)*y2_0-(2+K)*delta)/(1+K)
+        c = theta_y20
+        b = a3*(theta_w-theta_y20) + theta_y20
+        a = delta
 
-        return y1_0 + b1*z + delta*z**2
+        return (1-z)*(a*x**2+b*x+c)
 
     def bc1_obs(x, theta, X):
 
@@ -247,7 +222,8 @@ def train_model():
     global models
     conf = read_json("properties.json")
     config_hash = generate_config_hash(conf)
-    model_path = os.path.join(models, f"model_{config_hash}.pt")
+    n = conf["iterations"]
+    model_path = os.path.join(models, f"model_{config_hash}.pt-{n}.pt")
 
     mm = create_nbho()
 
@@ -255,6 +231,7 @@ def train_model():
         # Model exists, load it
         print(f"Loading model from {model_path}")
         mm.restore(model_path, verbose=0)
+        return mm
     
     LBFGS = conf["LBFGS"]
     ini_w = conf["initial_weights_regularizer"]
@@ -271,11 +248,11 @@ def train_model():
         else:
             mm.compile("L-BFGS")
         
-        losshistory, train_state = train_and_save_model(mm, callbacks)
+        losshistory, _ = train_and_save_model(mm, callbacks)
     else:
-        losshistory, train_state = train_and_save_model(mm, callbacks)
+        losshistory, _ = train_and_save_model(mm, callbacks)
 
-    plot_loss_components(losshistory)
+    pp.plot_loss_components(losshistory)
     return mm
 
 
@@ -284,7 +261,8 @@ def train_and_save_model(model, callbacks):
 
     conf = read_json("properties.json")
     config_hash = generate_config_hash(conf)
-    model_path = os.path.join(models, f"model_{config_hash}.pt")
+    n = conf["iterations"]
+    model_path = os.path.join(models, f"model_{config_hash}.pt-{n}.pt")
 
     conf = read_json("properties.json")
     display_every = 1000
@@ -311,6 +289,7 @@ def gen_testdata():
 
     return X, y_sys, obs.T, y_mmobs
 
+
 def load_weights():
     data = np.loadtxt(f"{src_dir}/weights_matlab.txt")
     t, weights = data[:, 0:1], data[:, 1:9].T
@@ -331,7 +310,7 @@ def gen_obsdata():
     y2 = rows_1[:, 2].reshape(len(instants),)
     f2 = interp1d(instants, y2, kind='previous')
 
-    properties = read_json("properties.json")
+    properties = read_json("parameters.json")
     theta_w = scale_t(properties["Twater"])
     y3 = np.full_like(y2, theta_w)
     f3 = interp1d(instants, y3, kind='previous')
@@ -406,188 +385,6 @@ def import_obsdata():
     return Xobs
 
 
-def plot_and_metrics(model):
-
-    o = import_testdata()
-    e, theta_true = o[:, 0:2], o[:, -2]
-    g = import_obsdata()
-
-    theta_pred = model.predict(g)
-
-    plot_comparison(e, theta_true, theta_pred)
-    # check_obs(e, theta_obs, theta_pred)
-    plot_l2_tf(e, theta_true, theta_pred, model)
-    # plot_tf(e, theta_true, model)
-    metrics = compute_metrics(theta_true, theta_pred)
-    return metrics
-
-
-def check_obs(e, theta_true, theta_pred):
-    global run_figs, prj_figs
-
-    la = len(np.unique(e[:, 0]))
-    le = len(np.unique(e[:, 1]))
-
-    # Predictions
-    fig = plt.figure(3, figsize=(9, 4))
-
-    col_titles = ['MATLAB', 'PINNs', 'Error']
-    surfaces = [
-        [theta_true.reshape(le, la), theta_pred.reshape(le, la),
-            np.abs(theta_true - theta_pred).reshape(le, la)]
-    ]
-
-    # Create a grid of subplots
-    grid = plt.GridSpec(1, 3)
-
-    # Iterate over columns to add subplots
-    for col in range(3):
-        ax = fig.add_subplot(grid[0, col], projection='3d')
-        configure_subplot(ax, e, surfaces[0][col])
-
-        # Set column titles
-        ax.set_title(col_titles[col], fontsize=8, y=.96, weight='semibold')
-
-    # Adjust spacing between subplots
-    plt.subplots_adjust(wspace=0.15)
-
-    plt.tight_layout()
-
-    plt.savefig(f"{run_figs}/check_obs.png", dpi=120)
-
-    # plt.show()
-    plt.close()
-    # plt.clf()
-
-
-def plot_comparison(e, t_true, t_pred, MObs=False):
-    global run_figs, prj_figs
-
-    la = len(np.unique(e[:, 0]))
-    le = len(np.unique(e[:, 1]))
-
-    theta_true = t_true.reshape(le, la)
-    theta_pred = t_pred.reshape(le, la)
-
-    # Predictions
-    fig = plt.figure(3, figsize=(9, 4))
-
-    col_titles = ['Measured', 'Observed', 'Error']
-    surfaces = [
-        [theta_true, theta_pred,
-            np.abs(theta_true - theta_pred)]
-    ]
-
-    # Create a grid of subplots
-    grid = plt.GridSpec(1, 3)
-
-    # Iterate over columns to add subplots
-    for col in range(3):
-        ax = fig.add_subplot(grid[0, col], projection='3d')
-        configure_subplot(ax, e, surfaces[0][col])
-
-        # Set column titles
-        ax.set_title(col_titles[col], fontsize=8, y=.96, weight='semibold')
-
-    # Adjust spacing between subplots
-    plt.subplots_adjust(wspace=0.15)
-
-    # plt.tight_layout()
-
-    if MObs:
-        plt.savefig(f"{prj_figs}/comparison.png", dpi=120)
-
-    else:
-        plt.savefig(f"{run_figs}/comparison.png", dpi=120)
-
-    # plt.show()
-    plt.close()
-    # plt.clf()
-
-
-def plot_l2_norm(e, theta_true, theta_pred):
-    t = np.unique(e[:, 1])
-    l2 = []
-    t_filtered = t[t > 0.0001]
-
-    theta_true = theta_true.reshape(len(e), 1)
-    theta_pred = theta_pred.reshape(len(e), 1)
-    tot = np.hstack((e, theta_true, theta_pred))
-    t = t_filtered
-
-    for el in t:
-        df = tot[tot[:, 1] == el]
-        l2.append(dde.metrics.l2_relative_error(df[:, 2], df[:, 3]))
-
-    fig = plt.figure(figsize=(10, 5))  # Adjust the size as needed
-    ax1 = fig.add_subplot(121)
-    ax1.plot(t, l2, alpha=1.0, linewidth=1.2, color='C0')
-    ax1.grid()
-
-    ax1.set_xlabel(xlabel=r"Time t", fontsize=7)  # xlabel
-    ax1.set_ylabel(ylabel=r"$L^2$ norm", fontsize=7)  # ylabel
-    ax1.set_title(r"Prediction error norm", fontsize=7, weight='semibold')
-    ax1.set_ylim(bottom=0.0)
-    ax1.set_xlim(0, 1.01)
-    ax1.set_box_aspect(1)
-
-    return fig, ax1
-
-
-def plot_l2_tf(e, theta_true, theta_pred, model):
-    global run_figs
-    e, theta_true, theta_pred = e.reshape((len(e), 2)), theta_true.reshape((len(e), 1)), theta_pred.reshape((len(e), 1))
-
-    fig, ax1 = plot_l2_norm(e, theta_true, theta_pred)
-
-    tot = np.hstack((e, theta_true))
-    final = tot[tot[:, 1]==1]
-    xtr = np.unique(tot[:, 0])
-    x = np.linspace(0, 1, 100)
-    true = final[:, -1]
-
-    Xobs = np.vstack((x, f1(np.ones_like(x)), f2(np.ones_like(x)), f3(np.ones_like(x)), np.ones_like(x))).T
-    pred = model.predict(Xobs)
-
-    ax2 = fig.add_subplot(122)
-    ax2.plot(xtr, true, marker="x", linestyle="None", alpha=1.0, color='C0', label="true")
-    ax2.plot(x, pred, alpha=1.0, linewidth=1.0, color='C2', label="pred")
-
-    ax2.set_xlabel(xlabel=r"Space x", fontsize=7)  # xlabel
-    ax2.set_ylabel(ylabel=r"$\Theta$", fontsize=7)  # ylabel
-    ax2.set_title(r"Prediction at tf", fontsize=7, weight='semibold')
-    ax2.set_ylim(bottom=0.0)
-    ax2.set_xlim(0, 1.01)
-    ax2.legend()
-    plt.yticks(fontsize=7)
-
-    plt.grid()
-    ax2.set_box_aspect(1)
-    plt.savefig(f"{run_figs}/l2_tf.png", dpi=120)
-    
-    # plt.show()
-    plt.close()
-    # plt.clf()
-
-
-def configure_subplot(ax, XS, surface):
-    la = len(np.unique(XS[:, 0:1]))
-    le = len(np.unique(XS[:, 1:]))
-    X = XS[:, 0].reshape(le, la)
-    T = XS[:, 1].reshape(le, la)
-
-    ax.plot_surface(X, T, surface, cmap='inferno', alpha=.8)
-    ax.tick_params(axis='both', labelsize=7, pad=2)
-    ax.dist = 10
-    ax.view_init(20, -120)
-
-    # Set axis labels
-    ax.set_xlabel('Depth', fontsize=7, labelpad=-1)
-    ax.set_ylabel('Time', fontsize=7, labelpad=-1)
-    ax.set_zlabel('Theta', fontsize=7, labelpad=-4)
-
-
-
 def mm_observer():
 
     data =  read_json("parameters.json")
@@ -659,88 +456,6 @@ def compute_mu():
     return np.array(muu)
 
 
-def plot_weights(weights, t, gt=False):
-    global run_figs
-    param = read_json("parameters.json")
-    lam = param["lambda"]
-    fig = plt.figure()
-    ax1 = fig.add_subplot(111)
-    colors = ['C3', 'lime', 'blue', 'aqua', 'm', 'darkred', 'k', 'yellow']
-
-    for i in range(weights.shape[0]):
-        # plt.plot(tauf * t, x[i], alpha=1.0, linewidth=1.8, color=colors[i], label=f"Weight $p_{i+1}$")
-        plt.plot(t, weights[i], alpha=1.0, linewidth=1.0, color=colors[i], label=f"Weight $p_{i}$")
-
-    ax1.set_xlim(0, 1)
-    ax1.set_ylim(bottom=0.0)
-
-    ax1.set_xlabel(xlabel=r"Time t")  # xlabel
-    ax1.set_ylabel(ylabel=r"Weights $p_j$")  # ylabel
-    ax1.legend()
-    ax1.set_title(r"Dynamic weights, $\lambda=$"f"{lam}", weight='semibold')
-    plt.grid()
-    if gt:
-        plt.savefig(f"{run_figs}/weights_lam_{lam}_matlab.png", dpi=120, bbox_inches='tight')
-    else:
-        plt.savefig(f"{run_figs}/weights_lam_{lam}.png", dpi=120, bbox_inches='tight')
-
-    # plt.show()
-    plt.close()
-    # plt.clf()
-
-
-def plot_mu(multi_obs, t):
-    global prj_figs
-    fig = plt.figure()
-    ax1 = fig.add_subplot(111)
-    muy = []
-    for el in t:
-        muy.append(mu(multi_obs, el))
-
-    mus = np.array(muy)
-    colors = ['C3', 'lime', 'blue', 'aqua', 'm', 'darkred', 'k', 'yellow']
-    for i in range(mus.shape[1]):
-        # plt.plot(tauf * t, x[i], alpha=1.0, linewidth=1.8, color=colors[i], label=f"Weight $p_{i+1}$")
-        plt.plot(t, mus[:, i], alpha=1.0, linewidth=1.0, color=colors[i], label=f"$e_{i}$")
-
-    ax1.set_xlim(0, 1)
-    ax1.set_ylim(bottom=0.0)
-
-    ax1.set_xlabel(xlabel=r"Time t")  # xlabel
-    ax1.set_ylabel(ylabel=r"Error")  # ylabel
-    ax1.legend()
-    ax1.set_title(r"Observation errors", weight='semibold')
-    plt.grid()
-    plt.savefig(f"{prj_figs}/obs_error.png", dpi=120, bbox_inches='tight')
-
-    # plt.show()
-    plt.close()
-    # plt.clf()
-
-def plot_mu_gt(mus, t):
-    global run_figs
-    fig = plt.figure()
-    ax1 = fig.add_subplot(111)
-
-    colors = ['C3', 'lime', 'blue', 'aqua', 'm', 'darkred', 'k', 'yellow']
-    for i in range(mus.shape[0]):
-        # plt.plot(tauf * t, x[i], alpha=1.0, linewidth=1.8, color=colors[i], label=f"Weight $p_{i+1}$")
-        plt.plot(t, mus[i], alpha=1.0, linewidth=1.0, color=colors[i], label=f"$e_{i}$")
-
-    ax1.set_xlim(0, 1)
-    ax1.set_ylim(bottom=0.0)
-
-    ax1.set_xlabel(xlabel=r"Time t")  # xlabel
-    ax1.set_ylabel(ylabel=r"Error")  # ylabel
-    ax1.legend()
-    ax1.set_title(r"Observation errors", weight='semibold')
-    plt.grid()
-    plt.savefig(f"{run_figs}/obs_error_matlab.png", dpi=120, bbox_inches='tight')
-
-    # plt.show()
-    plt.close()
-    # plt.clf()
-
 
 def mm_plot_and_metrics(multi_obs, lam, n):
     e, theta_true = gen_testdata(n)
@@ -783,47 +498,3 @@ def mm_predict(multi_obs, lam, g):
     return np.array(predictions)
 
 
-def mm_plot_l2_tf(e, theta_true, theta_pred, multi_obs, lam):
-    global prj_figs
-    # Plot the L2 norm
-    fig, ax1 = plot_l2_norm(e, theta_true, theta_pred)
-
-    theta_true = theta_true.reshape(len(e), 1)
-
-    tot = np.hstack((e, theta_true))
-    final = tot[tot[:, 1]==1.0]
-    xtr = np.unique(tot[:, 0])
-    x = np.linspace(0, 1, 100)
-    true = final[:, -1]
-
-    Xobs = np.vstack((x, np.zeros_like(x), f2(np.ones_like(x)), f3(np.ones_like(x)), np.ones_like(x))).T
-    pred = mm_predict(multi_obs, lam, Xobs)
-
-    ax2 = fig.add_subplot(122)
-    ax2.plot(xtr, true, marker="o", linestyle="None", alpha=1.0, linewidth=0.75, color='blue', label="true")
-    ax2.plot(x, pred, linestyle='None', marker="X", linewidth=0.75, color='gold', label="mm_obs")
-
-    colors = ['C3', 'lime', 'blue', 'aqua', 'm', 'darkred', 'k', 'yellow']
-
-    for el in range(len(multi_obs)):
-        ax2.plot(x, multi_obs[el].predict(Xobs), alpha=1.0, color=colors[el], linewidth=0.75, label=f"$obs_{el}$")
-
-    ax2.set_xlabel(xlabel=r"Space x", fontsize=7)  # xlabel
-    ax2.set_ylabel(ylabel=r"$\Theta$", fontsize=7)  # ylabel
-    ax2.set_title(r"Prediction at tf", fontsize=7, weight='semibold')
-    ax2.set_ylim(bottom=0.0)
-    ax2.set_xlim(0, 1.01)
-    ax2.legend()
-    plt.yticks(fontsize=7)
-
-    plt.grid()
-    ax2.set_box_aspect(1)
-    plt.savefig(f"{prj_figs}/l2_tf_lam{lam}.png", dpi=120)
-    # plt.show()
-    # plt.clf()
-    plt.close()
-
-
-def load_from_pickle(file_path):
-    with open(file_path, 'rb') as pkl_file:
-        return pickle.load(pkl_file)
