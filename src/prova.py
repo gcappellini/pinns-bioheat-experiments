@@ -9,14 +9,15 @@ import plots as pp
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
 
+# Ground truth with Matlab:
 eng = matlab.engine.start_matlab()
 eng.cd(src_dir, nargout=0)
 eng.BioHeat(nargout=0)
 eng.quit()
 
+# PINNs implementation
 co.set_prj("test_matlab")
 run_figs = co.set_run("21")
-print(run_figs)
 
 multi_obs = uu.mm_observer()
 
@@ -28,7 +29,6 @@ print(len(multi_obs), y_obs.shape)
 for el in range(len(multi_obs)):
     pred = multi_obs[el].predict(x_obs)
     true = y_obs[:, el].reshape(pred.shape)
-    # print(pred.shape, true.shape)
     pp.check_obs(X, true, pred, el, run_figs)
     pp.plot_l2_tf(X, true, pred, multi_obs[el], el, run_figs)
 
