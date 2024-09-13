@@ -3,6 +3,7 @@ import numpy as np
 from uncertainties import ufloat
 import json
 import hashlib
+import utils as uu
 
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
@@ -33,6 +34,7 @@ def scale_t(t):
 a1 = round((L0**2/tauf)*((rho*c)/k), 7)
 a2 = round(L0**2*c/k, 7)
 a3 = round(L0*h/k, 7)
+
 
 
 

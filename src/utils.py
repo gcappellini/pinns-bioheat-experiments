@@ -139,6 +139,7 @@ def create_nbho():
     learning_rate = prop["learning_rate"]
     num_dense_layers = prop["num_dense_layers"]
     num_dense_nodes = prop["num_dense_nodes"]
+    # w_res, w_bc0, w_bc1, w_ic = prop["w_res"], prop["w_bc0"], prop["w_bc1"], prop["w_ic"]
 
     a1 = cc.a1
     a2 = cc.a2
@@ -209,10 +210,11 @@ def create_nbho():
 
     if initial_weights_regularizer:
         initial_losses = get_initial_loss(model)
-        loss_weights = len(initial_losses) / initial_losses
+        loss_weights = len(initial_losses)/ initial_losses
         model.compile("adam", lr=learning_rate, loss_weights=loss_weights)
     else:
-        model.compile("adam", lr=learning_rate)
+        # loss_weights = [w_res, w_bc0, w_bc1, w_ic]
+        model.compile("adam", lr=learning_rate, loss_weights=loss_weights)
 
     return model
 
@@ -261,7 +263,7 @@ def train_and_save_model(model, callbacks):
     conf = read_json("properties.json")
     config_hash = generate_config_hash(conf)
     n = conf["iterations"]
-    model_path = os.path.join(models, f"model_{config_hash}.pt-{n}.pt")
+    model_path = os.path.join(models, f"model_{config_hash}.pt")
 
     conf = read_json("properties.json")
     display_every = 1000
@@ -303,13 +305,13 @@ def gen_obsdata():
     rows_1 = g[g[:, 0] == 1.0]
     rows_0 = g[g[:, 0] == 0.0]
 
-    y1 = rows_0[:, 2].reshape(len(instants),)
+    y1 = rows_1[:, 2].reshape(len(instants),)
     f1 = interp1d(instants, y1, kind='previous')
 
-    y2 = rows_1[:, 2].reshape(len(instants),)
+    y2 = rows_0[:, 2].reshape(len(instants),)
     f2 = interp1d(instants, y2, kind='previous')
 
-    properties = read_json("parameters.json")
+    properties = read_json("properties.json")
     theta_w = scale_t(properties["Twater"])
     y3 = np.full_like(y2, theta_w)
     f3 = interp1d(instants, y3, kind='previous')
@@ -371,13 +373,13 @@ def import_obsdata():
     rows_1 = g[g[:, 0] == 1.0]
     rows_0 = g[g[:, 0] == 0.0]
 
-    y1 = rows_0[:, -2].reshape(len(instants),)
+    y1 = rows_1[:, -2].reshape(len(instants),)
     f1 = interp1d(instants, y1, kind='previous')
 
-    y2 = rows_1[:, -2].reshape(len(instants),)
+    y2 = rows_0[:, -2].reshape(len(instants),)
     f2 = interp1d(instants, y2, kind='previous')
 
-    y3 = rows_1[:, -1].reshape(len(instants),)
+    y3 = rows_0[:, -1].reshape(len(instants),)
     f3 = interp1d(instants, y3, kind='previous')
 
     Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
@@ -420,39 +422,40 @@ def mm_observer():
 
 def mu(o, tau):
     global f1, f2, f3
-    net = read_json("parameters.json")
-    upsilon = net["upsilon"]
 
-    xo = np.vstack((np.ones_like(tau), f1(tau), f2(tau), f3(tau), tau)).T
+    xo = np.vstack((np.zeros_like(tau), f1(tau), f2(tau), f3(tau), tau)).T
     muu = []
+
     for el in o:
         oss = el.predict(xo)
-        scrt = upsilon*np.abs(oss-f2(tau))**2
+        true = f2(tau)
+        scrt = calculate_mu(oss, true)
         muu.append(scrt)
-    muu = np.array(muu).reshape(len(muu),)
+    muu = np.column_stack(muu)#.reshape(len(muu),)
     return muu
+
+def calculate_mu(os, tr):
+    tr = tr.reshape(os.shape)
+    net = read_json("parameters.json")
+    upsilon = net["upsilon"]
+    scrt = upsilon*np.abs(os-tr)**2
+    return scrt
 
 
 def compute_mu():
-    net = read_json("parameters.json")
-    upsilon = net["upsilon"]
-    g = np.hstack((gen_testdata()))
 
+    g = np.hstack((gen_testdata()))
     rows_0 = g[g[:, 0] == 0.0]
     sys_0 = rows_0[:, 2:3]
     obss_0 = rows_0[:, 3:11]
-    sys_0 = sys_0.reshape(obss_0[:, 0].shape)
-    e = np.abs(obss_0[:, 0] - sys_0)
 
     muu = []
-    # Loop through each column of obss_0
-    for el in range(obss_0.shape[1]):
-        
-        # Compute mu for each element and append to the list
-        mu_value = upsilon * np.abs(obss_0[:, el] - sys_0)**2
-        muu.append(mu_value)
 
-    return np.array(muu)
+    for el in range(obss_0.shape[1]):
+        mu_value = calculate_mu(obss_0[:, el], sys_0)
+        muu.append(mu_value)
+    muu = np.column_stack(muu)#.reshape(len(muu),)
+    return muu
 
 
 
@@ -478,5 +481,6 @@ def mm_predict(multi_obs, lam, g):
         predictions.append(prediction)
 
     return np.array(predictions)
+
 
 

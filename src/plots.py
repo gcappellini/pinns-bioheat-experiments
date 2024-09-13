@@ -79,7 +79,7 @@ def plot_weights(weights, t, run_figs, gt=False):
     if gt:
         plt.savefig(f"{run_figs}/weights_lam_{lam}_matlab.png", dpi=120, bbox_inches='tight')
     else:
-        plt.savefig(f"{run_figs}/weights_lam_{lam}.png", dpi=120, bbox_inches='tight')
+        plt.savefig(f"{run_figs}/weights_lam_{lam}_pinns.png", dpi=120, bbox_inches='tight')
 
     # plt.show()
     plt.close()
@@ -93,13 +93,9 @@ def plot_mu(mus, t, run_figs, gt=False):
     ax1 = fig.add_subplot(111)
 
     colors = ['C3', 'lime', 'blue', 'aqua', 'm', 'darkred', 'k', 'yellow']
-    if gt:
-        for i in range(mus.shape[0]):
-            plt.plot(t, true_mus[i], alpha=0.6, linestyle="-.", color=colors[i], label=f"$e_{i}$ matlab")
-            plt.plot(t, mus[i], alpha=1.0, linewidth=1.0, color=colors[i], label=f"$e_{i}$")
-    else:
-        for i in range(mus.shape[0]):
-            plt.plot(t, mus[i], alpha=1.0, linewidth=1.0, color=colors[i], label=f"$e_{i}$")
+
+    for i in range(mus.shape[1]):
+        plt.plot(t, mus[:, i], alpha=1.0, linewidth=1.0, color=colors[i], label=f"$e_{i}$")
 
     ax1.set_xlim(0, 1)
     ax1.set_ylim(bottom=0.0)
@@ -110,7 +106,11 @@ def plot_mu(mus, t, run_figs, gt=False):
     ax1.set_title(r"Observation errors", weight='semibold')
     plt.grid()
 
-    plt.savefig(f"{run_figs}/obs_error.png", dpi=120, bbox_inches='tight')
+    if gt:
+        plt.savefig(f"{run_figs}/obs_error_matlab.png", dpi=120, bbox_inches='tight')
+    
+    else:
+        plt.savefig(f"{run_figs}/obs_error_pinns.png", dpi=120, bbox_inches='tight')
 
     # plt.show()
     plt.close()
@@ -118,6 +118,8 @@ def plot_mu(mus, t, run_figs, gt=False):
 
 
 def check_obs(e, theta_true, theta_pred, number, run_figs):
+
+    theta_true=theta_true.reshape(theta_pred.shape)
 
     la = len(np.unique(e[:, 0]))
     le = len(np.unique(e[:, 1]))
@@ -195,13 +197,15 @@ def plot_comparison(e, t_true, t_pred, run_figs):
     # plt.clf()
 
 
-def plot_l2_norm(e, theta_true, theta_pred):
+def plot_l2_norm(e, theta_true, theta_pred, gt=True):
     t = np.unique(e[:, 1])
     l2 = []
+
     t_filtered = t[t > 0.0001]
 
     theta_true = theta_true.reshape(len(e), 1)
     theta_pred = theta_pred.reshape(len(e), 1)
+
     tot = np.hstack((e, theta_true, theta_pred))
     t = t_filtered
 
