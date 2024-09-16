@@ -27,7 +27,7 @@ os.makedirs(models, exist_ok=True)
 
 def plot_loss_components(losshistory):
     global models
-    prop = uu.read_json("properties.json")
+    prop = uu.read_json(f"{src_dir}/properties.json")
     hash = uu.generate_config_hash(prop)
     loss_train = losshistory.loss_train
     loss_test = losshistory.loss_test
@@ -58,7 +58,7 @@ def plot_loss_components(losshistory):
 
 
 def plot_weights(weights, t, run_figs, gt=False):
-    param = uu.read_json("parameters.json")
+    param = uu.read_json(f"{src_dir}/parameters.json")
     lam = param["lambda"]
     fig = plt.figure()
     ax1 = fig.add_subplot(111)
@@ -88,7 +88,6 @@ def plot_weights(weights, t, run_figs, gt=False):
 
 def plot_mu(mus, t, run_figs, gt=False):
 
-    true_mus = uu.compute_mu()
     fig = plt.figure()
     ax1 = fig.add_subplot(111)
 
@@ -228,7 +227,7 @@ def plot_l2_norm(e, theta_true, theta_pred, gt=True):
     return fig, ax1
 
 
-def plot_l2_tf(e, theta_true, theta_pred, model, number, run_figs):
+def plot_l2_tf(e, theta_true, theta_pred, model, number, prj_figs, MultiObs=False):
 
     e, theta_true, theta_pred = e.reshape((len(e), 2)), theta_true.reshape((len(e), 1)), theta_pred.reshape((len(e), 1))
 
@@ -240,12 +239,22 @@ def plot_l2_tf(e, theta_true, theta_pred, model, number, run_figs):
     x = np.linspace(0, 1, 100)
     true = final[:, -1]
 
+    aa = uu.read_json(f"{src_dir}/parameters.json")
+    lam = aa["lambda"]
+
     Xobs = np.vstack((x, uu.f1(np.ones_like(x)), uu.f2(np.ones_like(x)), uu.f3(np.ones_like(x)), np.ones_like(x))).T
-    pred = model.predict(Xobs)
+    if MultiObs:
+        # pred = theta_pred[-4:]
+        pred = uu.mm_predict(model, lam, Xobs, prj_figs)
+    else:
+        pred = model.predict(Xobs)
 
     ax2 = fig.add_subplot(122)
     ax2.plot(xtr, true, marker="x", linestyle="None", alpha=1.0, color='C0', label="true")
-    ax2.plot(x, pred, alpha=1.0, linewidth=1.0, color='C2', label="pred")
+    if MultiObs:
+        ax2.plot(x, pred, alpha=1.0, linewidth=1.0, color='C2', label="pred")
+    else:
+        ax2.plot(x, pred, alpha=1.0, linewidth=1.0, color='C2', label="pred")
 
     ax2.set_xlabel(xlabel=r"Space x", fontsize=7)  # xlabel
     ax2.set_ylabel(ylabel=r"$\Theta$", fontsize=7)  # ylabel
@@ -257,7 +266,10 @@ def plot_l2_tf(e, theta_true, theta_pred, model, number, run_figs):
 
     plt.grid()
     ax2.set_box_aspect(1)
-    plt.savefig(f"{run_figs}/l2_tf_obs{number}.png", dpi=120)
+    if MultiObs:
+        plt.savefig(f"{prj_figs}/l2_tf_mm_obs.png", dpi=120)
+    else:
+        plt.savefig(f"{prj_figs}/l2_tf_obs{number}.png", dpi=120)
     
     # plt.show()
     plt.close()

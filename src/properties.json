@@ -4,7 +4,7 @@
     "k": 0.6,
     "rho": 1000.0,
     "c": 4186.0,
-    "W": 0.72,
+    "W": 0.36,
     "h": 238.0,
     "Troom": 22.89,
     "Tmax": 35.47,
@@ -17,9 +17,13 @@
     "initialization": "Glorot normal",
     "iterations": 20000,
     "LBFGS": false,
-    "learning_rate": 0.001,
-    "num_dense_layers": 4,
-    "num_dense_nodes": 100,
+    "learning_rate": 0.0001,
+    "num_dense_layers": 6,
+    "num_dense_nodes": 92,
     "resampling": true,
-    "resampler_period": 100
+    "resampler_period": 100,
+    "w_res": 1.0,
+    "w_bc0": 5.0,
+    "w_bc1": 1.0,
+    "w_ic": 1.0
 }

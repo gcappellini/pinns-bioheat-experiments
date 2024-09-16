@@ -196,5 +196,6 @@ pyrightconfig.json
 tests/*
 old/
 models/
+src/wandb
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,python
