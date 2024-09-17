@@ -89,6 +89,7 @@ def create_nbho(run_figs):
     num_dense_layers = prop["num_dense_layers"]
     num_dense_nodes = prop["num_dense_nodes"]
     w_res, w_bc0, w_bc1, w_ic = prop["w_res"], prop["w_bc0"], prop["w_bc1"], prop["w_ic"]
+    num_domain, num_boundary, num_initial, num_test = prop["num_domain"], prop["num_boundary"], prop["num_initial"], prop["num_test"]
 
     a1 = cc.a1
     a2 = cc.a2
@@ -145,10 +146,10 @@ def create_nbho(run_figs):
         geomtime,
         lambda x, theta: pde(x, theta),
         [bc_0, bc_1, ic],
-        num_domain=2560,
-        num_boundary=200,
-        num_initial=100,
-        num_test=10000,
+        num_domain=num_domain,
+        num_boundary=num_boundary,
+        num_initial=num_initial,
+        num_test=num_test,
     )
 
     layer_size = [5] + [num_dense_nodes] * num_dense_layers + [1]
@@ -413,7 +414,7 @@ def mm_observer():
         properties = co.read_json(f"{src_dir}/properties.json")
         properties["W"] = perf
         run_figs = co.set_run(f"obs_{j}")
-        write_json(properties, f"{run_figs}/properties.json")
+        co.write_json(properties, f"{run_figs}/properties.json")
 
         model = train_model(run_figs)
         multi_obs.append(model)

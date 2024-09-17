@@ -40,7 +40,7 @@ def finalize_wandb_logging(errors, use_wandb):
         wandb.log(errors)
         wandb.finish()
 
-def main(run, run_matlab=False, use_wandb=False):
+def main(run, n_obs, run_matlab=False, use_wandb=False):
     """
     Main function to test the network. Ground truth via MATLAB and wandb logging are optional.
     """
@@ -52,12 +52,14 @@ def main(run, run_matlab=False, use_wandb=False):
     setup_matlab_ground_truth(src_dir, run_matlab)
 
     # Project and run setup
-    prj = "network_test"
+    prj = "change_matlab"
     co.set_prj(prj)
     run_figs = co.set_run(run)
 
+
     # Load configuration
     config = co.read_json(f"{src_dir}/properties.json")
+    param = co.read_json(f"{src_dir}/parameters.json")
     network_config = {
         "activation": config["activation"],
         "learning_rate": config["learning_rate"],
@@ -68,9 +70,12 @@ def main(run, run_matlab=False, use_wandb=False):
         "resampler_period": config["resampler_period"]
     }
 
+    obs = f"W{n_obs}"
+    config["W"]=param[obs]
     # Optionally set up wandb logging
     setup_wandb_logging(prj, run, network_config, use_wandb)
     co.write_json(config, f"{run_figs}/properties.json")
+    co.write_json(config, f"{src_dir}/properties.json")
 
     # Plot Matlab
     t, weights = uu.load_weights()
@@ -91,7 +96,7 @@ def main(run, run_matlab=False, use_wandb=False):
     la = len(np.unique(X[:, 0]))
     le = len(np.unique(X[:, 1]))
 
-    true = y_obs[:, 0].reshape(le, la)
+    true = y_obs[:, n_obs].reshape(le, la)
     pred = y_pred.reshape(le, la)
 
     Xob_y2, y2_true = uu.gen_obs_y2()
@@ -99,13 +104,13 @@ def main(run, run_matlab=False, use_wandb=False):
     y2_pred, y1_pred = model.predict(Xob_y2), model.predict(Xob_y1)
 
     y = np.vstack([y2_true, y2_pred.reshape(y2_true.shape), y1_true, y1_pred.reshape(y2_true.shape)])
-    legend_labels = [r'$y_2(\tau)$', r'$\hat{\theta}(0)$', r'$y_1(\tau)$', r'$\hat{\theta}(1)$']
+    legend_labels = [r'$y_2(\tau)$', r'$\hat{\theta}(0, \tau)$', r'$y_1(\tau)$', r'$\hat{\theta}(1, \tau)$']
 
     # Check Model prediction
-    pp.plot_generic_3d(X[:, 0:2], pred, true, ["PINNs", "Matlab", "Error"], filename=f"{run_figs}/comparison_3d")
-    pp.plot_generic(t, y, "Comparison at the boundary", r"Time ($\tau$)", r"Theta ($\theta$)", legend_labels, filename=f"{run_figs}/comparison_outputs")
+    pp.plot_generic_3d(X[:, 0:2], pred, true, ["PINNs", "Matlab", "Error"], filename=f"{run_figs}/comparison_3d_{obs}")
+    pp.plot_generic(t, y, "Comparison at the boundary", r"Time ($\tau$)", r"Theta ($\theta$)", legend_labels, filename=f"{run_figs}/comparison_outputs_{obs}")
     # Compute and log errors
-    errors = uu.compute_metrics(y_obs[:, 0], y_pred)
+    errors = uu.compute_metrics(y_obs[:, n_obs], y_pred)
     finalize_wandb_logging(errors, use_wandb)
 
 if __name__ == "__main__":
@@ -115,9 +120,10 @@ if __name__ == "__main__":
     parser.add_argument("--use_wandb", action="store_true", help="Use wandb for logging.")
     args = parser.parse_args()
 
-    run = "hpo_conf2_more_iterations"
+    run = "perfusion_muscle"
+    n_obs = 2
     # Call main function with parsed arguments
-    main(run, run_matlab=args.run_matlab, use_wandb=args.use_wandb)
+    main(run, n_obs, run_matlab=args.run_matlab, use_wandb=args.use_wandb)
 
 
 
