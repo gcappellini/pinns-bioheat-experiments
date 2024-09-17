@@ -1,369 +1,252 @@
-import deepxde as dde
-import numpy as np
 import os
-import matplotlib.pyplot as plt
-import torch
-import seaborn as sns
-import wandb
 import json
-import pickle
-import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import deepxde as dde
+import torch
 import utils as uu
-from common import set_run
+import common as co
 
-
+# Set up directories and random seed
 dde.config.set_random_seed(200)
-
-# device = torch.device("cpu")
 device = torch.device("cuda")
 
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
 git_dir = os.path.dirname(src_dir)
 
-models = os.path.join(git_dir, "models")
-os.makedirs(models, exist_ok=True)
+models_dir = os.path.join(git_dir, "models")
+os.makedirs(models_dir, exist_ok=True)
 
+# Load parameters and properties
+param = co.read_json(f"{src_dir}/parameters.json")
+prop = co.read_json(f"{src_dir}/properties.json")
+config_hash = co.generate_config_hash(prop)
+lam = param["lambda"]
 
-def plot_loss_components(losshistory):
-    global models
-    prop = uu.read_json(f"{src_dir}/properties.json")
-    hash = uu.generate_config_hash(prop)
-    loss_train = losshistory.loss_train
-    loss_test = losshistory.loss_test
-    matrix = np.array(loss_train)
-    test = np.array(loss_test).sum(axis=1).ravel()
-    train = np.array(loss_train).sum(axis=1).ravel()
-    loss_res = matrix[:, 0]
-    loss_bc0 = matrix[:, 1]   
-    loss_bc1 = matrix[:, 2]  
-    loss_ic = matrix[:, 3]
+def plot_generic(x, y, title, xlabel, ylabel, legend_labels=None, log_scale=False, size=(6, 5), filename=None):
+    """
+    Create a generic 2D plot with support for multiple lines.
 
-    fig = plt.figure(figsize=(6, 5))
-    iters = losshistory.steps
-    with sns.axes_style("darkgrid"):
-        plt.clf()
-        plt.plot(iters, loss_res, label=r'$\mathcal{L}_{res}$')
-        plt.plot(iters, loss_bc0, label=r'$\mathcal{L}_{bc0}$')
-        plt.plot(iters, loss_bc1, label=r'$\mathcal{L}_{bc1}$')
-        plt.plot(iters, loss_ic, label=r'$\mathcal{L}_{ic}$')
-        plt.plot(iters, test, label='test loss')
-        plt.plot(iters, train, label='train loss')
-        plt.yscale('log')
-        plt.xlabel('iterations')
-        plt.legend(ncol=2)
-        plt.tight_layout()
-        plt.savefig(f"{models}/losses_{hash}.png", dpi=120)
-        plt.close()
+    :param x: x-axis data (1D array)
+    :param y: y-axis data (can be a list of arrays or a 2D array for multiple lines)
+    :param title: plot title
+    :param xlabel: x-axis label
+    :param ylabel: y-axis label
+    :param legend_labels: labels for the legend (must match the number of y lines)
+    :param log_scale: set y-axis to logarithmic scale if True
+    :param size: figure size
+    :param filename: path to save the plot (optional)
+    """
+    fig, ax = plt.subplots(figsize=size)
 
-
-def plot_weights(weights, t, run_figs, gt=False):
-    param = uu.read_json(f"{src_dir}/parameters.json")
-    lam = param["lambda"]
-    fig = plt.figure()
-    ax1 = fig.add_subplot(111)
-    colors = ['C3', 'lime', 'blue', 'aqua', 'm', 'darkred', 'k', 'yellow']
-
-    for i in range(weights.shape[0]):
-        # plt.plot(tauf * t, x[i], alpha=1.0, linewidth=1.8, color=colors[i], label=f"Weight $p_{i+1}$")
-        plt.plot(t, weights[i], alpha=1.0, linewidth=1.0, color=colors[i], label=f"Weight $p_{i}$")
-
-    ax1.set_xlim(0, 1)
-    ax1.set_ylim(bottom=0.0)
-
-    ax1.set_xlabel(xlabel=r"Time t")  # xlabel
-    ax1.set_ylabel(ylabel=r"Weights $p_j$")  # ylabel
-    ax1.legend()
-    ax1.set_title(r"Dynamic weights, $\lambda=$"f"{lam}", weight='semibold')
-    plt.grid()
-    if gt:
-        plt.savefig(f"{run_figs}/weights_lam_{lam}_matlab.png", dpi=120, bbox_inches='tight')
+    # Check if y is a 2D array or list of arrays
+    if isinstance(y, (list, np.ndarray)) and np.ndim(y) > 1:
+        # Plot each line in y with its corresponding legend label
+        for i, yi in enumerate(y):
+            label = legend_labels[i] if legend_labels else None
+            ax.plot(x, yi, label=label)
     else:
-        plt.savefig(f"{run_figs}/weights_lam_{lam}_pinns.png", dpi=120, bbox_inches='tight')
+        # If y is a single line, plot it directly
+        ax.plot(x, y, label=legend_labels)
 
-    # plt.show()
-    plt.close()
-    # plt.clf()
+    ax.set_title(title, fontweight='bold')
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
 
+    # Add legend if labels are provided
+    if legend_labels:
+        ax.legend()
 
-def plot_mu(mus, t, run_figs, gt=False):
+    # Set y-axis to log scale if specified
+    if log_scale:
+        ax.set_yscale('log')
 
-    fig = plt.figure()
-    ax1 = fig.add_subplot(111)
+    ax.grid(True)
+    save_and_close(fig, filename)
 
-    colors = ['C3', 'lime', 'blue', 'aqua', 'm', 'darkred', 'k', 'yellow']
-
-    for i in range(mus.shape[1]):
-        plt.plot(t, mus[:, i], alpha=1.0, linewidth=1.0, color=colors[i], label=f"$e_{i}$")
-
-    ax1.set_xlim(0, 1)
-    ax1.set_ylim(bottom=0.0)
-
-    ax1.set_xlabel(xlabel=r"Time t")  # xlabel
-    ax1.set_ylabel(ylabel=r"Error")  # ylabel
-    ax1.legend()
-    ax1.set_title(r"Observation errors", weight='semibold')
-    plt.grid()
-
-    if gt:
-        plt.savefig(f"{run_figs}/obs_error_matlab.png", dpi=120, bbox_inches='tight')
+def plot_generic_3d(XY, Z1, Z2, col_titles,  filename=None):
+    xlabel="X"
+    ylabel=r"$\tau$"
+    zlabel=r"$\theta$"
     
-    else:
-        plt.savefig(f"{run_figs}/obs_error_pinns.png", dpi=120, bbox_inches='tight')
-
-    # plt.show()
-    plt.close()
-    # plt.clf()
-
-
-def check_obs(e, theta_true, theta_pred, number, run_figs):
-
-    theta_true=theta_true.reshape(theta_pred.shape)
-
-    la = len(np.unique(e[:, 0]))
-    le = len(np.unique(e[:, 1]))
-
-    # Predictions
     fig = plt.figure(3, figsize=(9, 4))
-
-    col_titles = ['MATLAB', 'PINNs', 'Error']
     surfaces = [
-        [theta_true.reshape(le, la), theta_pred.reshape(le, la),
-            np.abs(theta_true - theta_pred).reshape(le, la)]
+        [Z1, Z2,
+            np.abs(Z1 - Z2)]
     ]
-
-    # Create a grid of subplots
     grid = plt.GridSpec(1, 3)
-
-    # Iterate over columns to add subplots
     for col in range(3):
         ax = fig.add_subplot(grid[0, col], projection='3d')
-        configure_subplot(ax, e, surfaces[0][col])
+        configure_subplot(ax, XY, surfaces[0][col], xlabel, ylabel, zlabel)
 
         # Set column titles
         ax.set_title(col_titles[col], fontsize=8, y=.96, weight='semibold')
 
     # Adjust spacing between subplots
     plt.subplots_adjust(wspace=0.15)
-    plt.tight_layout()
-    plt.savefig(f"{run_figs}/check_obs_{number}.png", dpi=120)
+    save_and_close(fig, filename)
 
-    # plt.show()
+
+# Helper functions for common plotting tasks
+def create_plot(title, xlabel, ylabel, size=(6, 5)):
+    fig, ax = plt.subplots(figsize=size)
+    ax.set_title(title, fontweight='bold')
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    return fig, ax
+
+
+def save_and_close(fig, filename):
+    fig.tight_layout()
+    plt.savefig(filename, dpi=120)
     plt.close()
-    # plt.clf()
-
-    m = uu.compute_metrics(theta_true, theta_pred)
-    with open(f"{run_figs}/metrics_obs_{number}.json", 'w') as json_file:
-        json.dump(m, json_file, indent=4) 
 
 
-def plot_comparison(e, t_true, t_pred, run_figs):
-
-    la = len(np.unique(e[:, 0]))
-    le = len(np.unique(e[:, 1]))
-
-    theta_true = t_true.reshape(le, la)
-    theta_pred = t_pred.reshape(le, la)
-
-    # Predictions
-    fig = plt.figure(3, figsize=(9, 4))
-
-    col_titles = ['Measured', 'MM Observer', 'Error']
-    surfaces = [
-        [theta_true, theta_pred,
-            np.abs(theta_true - theta_pred)]
-    ]
-
-    # Create a grid of subplots
-    grid = plt.GridSpec(1, 3)
-
-    # Iterate over columns to add subplots
-    for col in range(3):
-        ax = fig.add_subplot(grid[0, col], projection='3d')
-        configure_subplot(ax, e, surfaces[0][col])
-
-        # Set column titles
-        ax.set_title(col_titles[col], fontsize=8, y=.96, weight='semibold')
-
-    # Adjust spacing between subplots
-    plt.subplots_adjust(wspace=0.15)
-
-    # plt.tight_layout()
-    plt.savefig(f"{run_figs}/comparison.png", dpi=120)
-
-    # plt.show()
-    plt.close()
-    # plt.clf()
-
-
-def plot_l2_norm(e, theta_true, theta_pred, gt=True):
-    t = np.unique(e[:, 1])
-    l2 = []
-
-    t_filtered = t[t > 0.0001]
-
-    theta_true = theta_true.reshape(len(e), 1)
-    theta_pred = theta_pred.reshape(len(e), 1)
-
-    tot = np.hstack((e, theta_true, theta_pred))
-    t = t_filtered
-
-    for el in t:
-        df = tot[tot[:, 1] == el]
-        l2.append(dde.metrics.l2_relative_error(df[:, 2], df[:, 3]))
-
-    fig = plt.figure(figsize=(10, 5))  # Adjust the size as needed
-    ax1 = fig.add_subplot(121)
-    ax1.plot(t, l2, alpha=1.0, linewidth=1.2, color='C0')
-    ax1.grid()
-
-    ax1.set_xlabel(xlabel=r"Time t", fontsize=7)  # xlabel
-    ax1.set_ylabel(ylabel=r"$L^2$ norm", fontsize=7)  # ylabel
-    ax1.set_title(r"Prediction error norm", fontsize=7, weight='semibold')
-    ax1.set_ylim(bottom=0.0)
-    ax1.set_xlim(0, 1.01)
-    ax1.set_box_aspect(1)
-
-    return fig, ax1
-
-
-def plot_l2_tf(e, theta_true, theta_pred, model, number, prj_figs, MultiObs=False):
-
-    e, theta_true, theta_pred = e.reshape((len(e), 2)), theta_true.reshape((len(e), 1)), theta_pred.reshape((len(e), 1))
-
-    fig, ax1 = plot_l2_norm(e, theta_true, theta_pred)
-
-    tot = np.hstack((e, theta_true))
-    final = tot[tot[:, 1]==1]
-    xtr = np.unique(tot[:, 0])
-    x = np.linspace(0, 1, 100)
-    true = final[:, -1]
-
-    aa = uu.read_json(f"{src_dir}/parameters.json")
-    lam = aa["lambda"]
-
-    Xobs = np.vstack((x, uu.f1(np.ones_like(x)), uu.f2(np.ones_like(x)), uu.f3(np.ones_like(x)), np.ones_like(x))).T
-    if MultiObs:
-        # pred = theta_pred[-4:]
-        pred = uu.mm_predict(model, lam, Xobs, prj_figs)
-    else:
-        pred = model.predict(Xobs)
-
-    ax2 = fig.add_subplot(122)
-    ax2.plot(xtr, true, marker="x", linestyle="None", alpha=1.0, color='C0', label="true")
-    if MultiObs:
-        ax2.plot(x, pred, alpha=1.0, linewidth=1.0, color='C2', label="pred")
-    else:
-        ax2.plot(x, pred, alpha=1.0, linewidth=1.0, color='C2', label="pred")
-
-    ax2.set_xlabel(xlabel=r"Space x", fontsize=7)  # xlabel
-    ax2.set_ylabel(ylabel=r"$\Theta$", fontsize=7)  # ylabel
-    ax2.set_title(r"Prediction at tf", fontsize=7, weight='semibold')
-    ax2.set_ylim(bottom=0.0)
-    ax2.set_xlim(0, 1.01)
-    ax2.legend()
-    plt.yticks(fontsize=7)
-
-    plt.grid()
-    ax2.set_box_aspect(1)
-    if MultiObs:
-        plt.savefig(f"{prj_figs}/l2_tf_mm_obs.png", dpi=120)
-    else:
-        plt.savefig(f"{prj_figs}/l2_tf_obs{number}.png", dpi=120)
-    
-    # plt.show()
-    plt.close()
-    # plt.clf()
-
-
-def configure_subplot(ax, XS, surface):
+def configure_subplot(ax, XS, surface, xlabel, ylabel, zlabel):
     la = len(np.unique(XS[:, 0:1]))
     le = len(np.unique(XS[:, 1:]))
     X = XS[:, 0].reshape(le, la)
     T = XS[:, 1].reshape(le, la)
 
-    ax.plot_surface(X, T, surface, cmap='inferno', alpha=.8)
+    ax.plot_surface(X, T, surface, cmap='inferno', alpha=0.8)
     ax.tick_params(axis='both', labelsize=7, pad=2)
     ax.dist = 10
     ax.view_init(20, -120)
-
-    # Set axis labels
-    ax.set_xlabel('Depth', fontsize=7, labelpad=-1)
-    ax.set_ylabel('Time', fontsize=7, labelpad=-1)
-    ax.set_zlabel('Theta', fontsize=7, labelpad=-4)
+    ax.set_xlabel(xlabel, fontsize=7, labelpad=-1)
+    ax.set_ylabel(ylabel, fontsize=7, labelpad=-1)
+    ax.set_zlabel(zlabel, fontsize=7, labelpad=-4)
 
 
-def mm_plot_l2_tf(e, theta_true, theta_pred, multi_obs, lam, run_figs):
-    # Plot the L2 norm
-    fig, ax1 = plot_l2_norm(e, theta_true, theta_pred)
+# Main plot functions
+def plot_loss_components(losshistory):
+    loss_train = np.array(losshistory.loss_train)
+    loss_test = np.array(losshistory.loss_test).sum(axis=1).ravel()
+    train = loss_train.sum(axis=1).ravel()
+    loss_res, loss_bc0, loss_bc1, loss_ic = loss_train[:, 0], loss_train[:, 1], loss_train[:, 2], loss_train[:, 3]
+
+    fig, ax = create_plot("Loss Components", "iterations", "loss")
+    iters = losshistory.steps
+    sns.set_style("darkgrid")
+
+    ax.plot(iters, loss_res, label=r'$\mathcal{L}_{res}$')
+    ax.plot(iters, loss_bc0, label=r'$\mathcal{L}_{bc0}$')
+    ax.plot(iters, loss_bc1, label=r'$\mathcal{L}_{bc1}$')
+    ax.plot(iters, loss_ic, label=r'$\mathcal{L}_{ic}$')
+    ax.plot(iters, loss_test, label='test loss')
+    ax.plot(iters, train, label='train loss')
+
+    ax.set_yscale('log')
+    ax.legend(ncol=2)
+    save_and_close(fig, f"{models_dir}/losses_{config_hash}.png")
+
+
+def plot_weights(weights, t, run_figs, gt=False):
+    fig, ax = create_plot(f"Dynamic weights, λ={lam}", r"Time $\tau$", r"Weights $p_j$")
+    colors = ['C3', 'lime', 'blue', 'aqua', 'm', 'darkred', 'k', 'yellow']
+
+    for i, color in enumerate(colors[:weights.shape[0]]):
+        ax.plot(t, weights[i], color=color, label=f"Weight $p_{i}$")
+
+    ax.set_xlim(0, 1)
+    ax.set_ylim(bottom=0.0)
+    ax.legend()
+    save_and_close(fig, f"{run_figs}/weights_lam_{lam}_{'matlab' if gt else 'pinns'}.png")
+
+
+def plot_mu(mus, t, run_figs, gt=False):
+    fig, ax = create_plot("Observation errors", r"Time $\tau$", "Error")
+    colors = ['C3', 'lime', 'blue', 'aqua', 'm', 'darkred', 'k', 'yellow']
+
+    for i, color in enumerate(colors[:mus.shape[1]]):
+        ax.plot(t, mus[:, i], color=color, label=f"$e_{i}$")
+
+    ax.set_xlim(0, 1)
+    ax.set_ylim(bottom=0.0)
+    ax.legend()
+    save_and_close(fig, f"{run_figs}/obs_error_{'matlab' if gt else 'pinns'}.png")
+
+
+def plot_l2_norm(e, theta_true, theta_pred):
+    t = np.unique(e[:, 1])
+    t_filtered = t[t > 0.0001]
+    l2 = []
 
     theta_true = theta_true.reshape(len(e), 1)
+    theta_pred = theta_pred.reshape(len(e), 1)
+    tot = np.hstack((e, theta_true, theta_pred))
+
+    for el in t_filtered:
+        df = tot[tot[:, 1] == el]
+        l2.append(dde.metrics.l2_relative_error(df[:, 2], df[:, 3]))
+
+    fig, ax = create_plot("Prediction error norm", r"Time $\tau$", r"$L^2$ norm")
+    ax.plot(t_filtered, l2, color='C0')
+    ax.set_ylim(bottom=0.0)
+    ax.set_xlim(0, 1.01)
+    ax.grid()
+
+    return fig, ax
+
+
+def plot_l2_tf(e, theta_true, theta_pred, model, number, prj_figs, MultiObs=False):
+    e, theta_true, theta_pred = e.reshape(len(e), 2), theta_true.reshape(len(e), 1), theta_pred.reshape(len(e), 1)
+    fig, ax1 = plot_l2_norm(e, theta_true, theta_pred)
 
     tot = np.hstack((e, theta_true))
-    final = tot[tot[:, 1]==1.0]
+    final = tot[tot[:, 1] == 1]
     xtr = np.unique(tot[:, 0])
     x = np.linspace(0, 1, 100)
     true = final[:, -1]
 
-    Xobs = np.vstack((x, np.zeros_like(x), uu.f2(np.ones_like(x)), uu.f3(np.ones_like(x)), np.ones_like(x))).T
-    pred = uu.mm_predict(multi_obs, lam, Xobs)
+    Xobs = np.vstack((x, uu.f1(np.ones_like(x)), uu.f2(np.ones_like(x)), uu.f3(np.ones_like(x)), np.ones_like(x))).T
+    pred = uu.mm_predict(model, lam, Xobs, prj_figs) if MultiObs else model.predict(Xobs)
 
     ax2 = fig.add_subplot(122)
-    ax2.plot(xtr, true, marker="o", linestyle="None", alpha=1.0, linewidth=0.75, color='blue', label="true")
-    ax2.plot(x, pred, linestyle='None', marker="X", linewidth=0.75, color='gold', label="mm_obs")
+    ax2.plot(xtr, true, marker="x", linestyle="None", color='C0', label="true")
+    ax2.plot(x, pred, color='C2', label="pred")
 
-    colors = ['C3', 'lime', 'blue', 'aqua', 'm', 'darkred', 'k', 'yellow']
-
-    for el in range(len(multi_obs)):
-        ax2.plot(x, multi_obs[el].predict(Xobs), alpha=1.0, color=colors[el], linewidth=0.75, label=f"$obs_{el}$")
-
-    ax2.set_xlabel(xlabel=r"Space x", fontsize=7)  # xlabel
-    ax2.set_ylabel(ylabel=r"$\Theta$", fontsize=7)  # ylabel
-    ax2.set_title(r"Prediction at tf", fontsize=7, weight='semibold')
-    ax2.set_ylim(bottom=0.0)
     ax2.set_xlim(0, 1.01)
+    ax2.set_ylim(bottom=0.0)
     ax2.legend()
-    plt.yticks(fontsize=7)
-
-    plt.grid()
-    ax2.set_box_aspect(1)
-    plt.savefig(f"{run_figs}/l2_tf_lam{lam}.png", dpi=120)
-    # plt.show()
-    # plt.clf()
-    plt.close()
+    save_and_close(fig, f"{prj_figs}/l2_tf_{'mm_obs' if MultiObs else f'obs{number}'}.png")
 
 
-def plot_and_metrics(model):
+def plot_comparison(e, t_true, t_pred, run_figs):
+    la = len(np.unique(e[:, 0]))
+    le = len(np.unique(e[:, 1]))
+    theta_true = t_true.reshape(le, la)
+    theta_pred = t_pred.reshape(le, la)
 
-    o = uu.import_testdata()
-    e, theta_true = o[:, 0:2], o[:, -2]
-    g = uu.import_obsdata()
+    fig = plt.figure(figsize=(9, 4))
+    col_titles = ['Measured', 'MM Observer', 'Error']
+    surfaces = [theta_true, theta_pred, np.abs(theta_true - theta_pred)]
+    
+    for col in range(3):
+        ax = fig.add_subplot(1, 3, col, projection='3d')
+        configure_subplot(ax, e, surfaces[col])
+        ax.set_title(col_titles[col], fontsize=8, weight='semibold')
 
-    theta_pred = model.predict(g)
-
-    plot_comparison(e, theta_true, theta_pred)
-    # check_obs(e, theta_obs, theta_pred)
-    plot_l2_tf(e, theta_true, theta_pred, model)
-    # plot_tf(e, theta_true, model)
-    metrics = uu.compute_metrics(theta_true, theta_pred)
-    return metrics
-
+    plt.subplots_adjust(wspace=0.15)
+    save_and_close(fig, f"{run_figs}/comparison.png")
 
 
+def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, prj_figs):
+    fig, ax = plt.subplots(figsize=(12, 6))
+    ax.plot(df['t'] / 60, df['y1'], linestyle="--", alpha=0.8)
+    ax.plot(df['t'] / 60, df['gt1'], linestyle="--", alpha=0.8)
+    ax.plot(df['t'] / 60, df['gt2'], linestyle="--", alpha=0.8)
+    ax.plot(df['t'] / 60, df['y2'], linestyle="--", alpha=0.8)
 
+    ax.plot(df['t'] / 60, y1_pred, label='y1', color="C0", linewidth=0.7)
+    ax.plot(df['t'] / 60, gt1_pred, label='gt1', color="C1", linewidth=0.7)
+    ax.plot(df['t'] / 60, gt2_pred, label='gt2', color="C2", linewidth=0.7)
+    ax.plot(df['t'] / 60, y2_pred, label='y2', color="C3", linewidth=0.7)
 
-def mm_plot_and_metrics(multi_obs, lam, n):
-    e, theta_true = uu.gen_testdata(n)
-    g = uu.gen_obsdata(n)
-    # a = import_testdata()
-    # e = a[:, 0:2]
-    # theta_true = a[:, 2]
-    # g = import_obsdata()
+    ax.legend()
+    ax.set_title("Cooling Experiment", fontweight='bold')
+    ax.set_xlabel("Time (min)", fontsize=12)
+    ax.set_ylabel("Temperature (°C)", fontsize=12)
 
-    theta_pred = uu.mm_predict(multi_obs, lam, g).reshape(theta_true.shape)
-
-    plot_comparison(e, theta_true, theta_pred, MObs=True)
-    mm_plot_l2_tf(e, theta_true, theta_pred, multi_obs, lam)
-
-    metrics = uu.compute_metrics(theta_true, theta_pred)
-    return metrics
+    save_and_close(fig, f"{prj_figs}/comparison.png")

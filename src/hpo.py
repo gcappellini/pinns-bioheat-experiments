@@ -39,7 +39,7 @@ n_calls = 50
 dim_learning_rate = Real(low=1e-4, high=5e-2, name="learning_rate", prior="log-uniform")
 dim_num_dense_layers = Integer(low=1, high=6, name="num_dense_layers")
 dim_num_dense_nodes = Integer(low=5, high=100, name="num_dense_nodes")
-dim_activation = Categorical(categories=["elu", "relu", "selu", "silu", "sigmoid", "sin", "swish", "tanh"], name="activation")
+dim_activation = Categorical(categories=["elu", "silu", "sigmoid", "swish", "tanh"], name="activation")
 dim_initialization = Categorical(categories=["Glorot normal", "Glorot uniform", "He normal", "He uniform"], name="initialization")
 # dim_w_bc0 = Integer(low=1, high=1e+2, name="w_bc0", prior="log-uniform")
 

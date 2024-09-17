@@ -1,5 +1,5 @@
 {
-    "L0": 0.13,
+    "L0": 0.08,
     "tauf": 9052.0,
     "k": 0.6,
     "rho": 1000.0,
@@ -14,8 +14,8 @@
     "delta": 3.0,
     "activation": "tanh",
     "initial_weights_regularizer": true,
-    "initialization": "Glorot normal",
-    "iterations": 20000,
+    "initialization": "Glorot uniform",
+    "iterations": 40000,
     "LBFGS": false,
     "learning_rate": 0.0001,
     "num_dense_layers": 6,

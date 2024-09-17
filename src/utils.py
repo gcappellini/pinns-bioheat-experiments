@@ -33,57 +33,7 @@ os.makedirs(models, exist_ok=True)
 figures = os.path.join(tests_dir, "figures")
 os.makedirs(figures, exist_ok=True)
 
-
-# prj_figs, run_figs = [None]*2
-
-
 f1, f2, f3 = [None]*3
-
-# def set_prj(prj):
-#     global prj_figs
-
-#     prj_figs = os.path.join(figures, prj)
-#     os.makedirs(prj_figs, exist_ok=True)
-
-#     return prj_figs
-
-
-# def set_run(run):
-#     global prj_figs, run_figs
-
-#     run_figs = os.path.join(prj_figs, run)
-#     os.makedirs(run_figs, exist_ok=True)
-
-#     return run_figs
-
-
-def read_json(filepath):
-    if os.path.exists(filepath):
-        with open(filepath, 'r') as file:
-            data = json.load(file)
-    return data
-
-
-def write_json(data, filepath):
-    def convert_to_serializable(obj):
-        if isinstance(obj, (np.int32, np.int64)):
-            return int(obj)
-        elif isinstance(obj, (np.float32, np.float64)):
-            return float(obj)
-        elif isinstance(obj, np.ndarray):
-            return obj.tolist()
-        return obj
-
-    serializable_data = {k: convert_to_serializable(v) for k, v in data.items()}
-
-    with open(filepath, 'w') as file:
-        json.dump(serializable_data, file, indent=4)
-
-
-def generate_config_hash(config_data):
-    config_string = json.dumps(config_data, sort_keys=True)  # Sort to ensure consistent ordering
-    config_hash = hashlib.md5(config_string.encode()).hexdigest()  # Create a unique hash
-    return config_hash
 
 
 def get_initial_loss(model):
@@ -130,7 +80,7 @@ def output_transform(x, y):
     return x[:, 0:1] * y
 
 def create_nbho(run_figs):
-    prop = read_json(f"{run_figs}/properties.json")
+    prop = co.read_json(f"{run_figs}/properties.json")
 
     activation = prop["activation"]
     initial_weights_regularizer = prop["initial_weights_regularizer"]
@@ -221,8 +171,8 @@ def create_nbho(run_figs):
 
 def train_model(run_figs):
     global models
-    conf = read_json(f"{run_figs}/properties.json")
-    config_hash = generate_config_hash(conf)
+    conf = co.read_json(f"{run_figs}/properties.json")
+    config_hash = co.generate_config_hash(conf)
     n = conf["iterations"]
     model_path = os.path.join(models, f"model_{config_hash}.pt-{n}.pt")
 
@@ -260,8 +210,8 @@ def train_model(run_figs):
 def train_and_save_model(model, callbacks, run_figs):
     global models
 
-    conf = read_json(f"{run_figs}/properties.json")
-    config_hash = generate_config_hash(conf)
+    conf = co.read_json(f"{run_figs}/properties.json")
+    config_hash = co.generate_config_hash(conf)
     model_path = os.path.join(models, f"model_{config_hash}.pt")
 
     display_every = 1000
@@ -309,7 +259,7 @@ def gen_obsdata():
     y2 = rows_0[:, 2].reshape(len(instants),)
     f2 = interp1d(instants, y2, kind='previous')
 
-    properties = read_json(f"{src_dir}/properties.json")
+    properties = co.read_json(f"{src_dir}/properties.json")
     theta_w = scale_t(properties["Twater"])
     y3 = np.full_like(y2, theta_w)
     f3 = interp1d(instants, y3, kind='previous')
@@ -317,6 +267,50 @@ def gen_obsdata():
     Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
     return Xobs
 
+def gen_obs_y2():
+    global f1, f2, f3
+    g = np.hstack((gen_testdata()))
+    instants = np.unique(g[:, 1])
+    
+    rows_1 = g[g[:, 0] == 1.0]
+    rows_0 = g[g[:, 0] == 0.0]
+
+    y1 = rows_1[:, 2].reshape(len(instants),)
+    f1 = interp1d(instants, y1, kind='previous')
+
+    y2 = rows_0[:, 2].reshape(len(instants),)
+    f2 = interp1d(instants, y2, kind='previous')
+
+    properties = co.read_json(f"{src_dir}/properties.json")
+    theta_w = scale_t(properties["Twater"])
+    y3 = np.full_like(y2, theta_w)
+    f3 = interp1d(instants, y3, kind='previous')
+
+    Xobs = np.vstack((np.zeros_like(instants), f1(instants), f2(instants), f3(instants), instants)).T
+    return Xobs, f2(instants)
+
+
+def gen_obs_y1():
+    global f1, f2, f3
+    g = np.hstack((gen_testdata()))
+    instants = np.unique(g[:, 1])
+    
+    rows_1 = g[g[:, 0] == 1.0]
+    rows_0 = g[g[:, 0] == 0.0]
+
+    y1 = rows_1[:, 2].reshape(len(instants),)
+    f1 = interp1d(instants, y1, kind='previous')
+
+    y2 = rows_0[:, 2].reshape(len(instants),)
+    f2 = interp1d(instants, y2, kind='previous')
+
+    properties = co.read_json(f"{src_dir}/properties.json")
+    theta_w = scale_t(properties["Twater"])
+    y3 = np.full_like(y2, theta_w)
+    f3 = interp1d(instants, y3, kind='previous')
+
+    Xobs = np.vstack((np.ones_like(instants), f1(instants), f2(instants), f3(instants), instants)).T
+    return Xobs, f1(instants)
 
 def load_from_pickle(file_path):
     with open(file_path, 'rb') as pkl_file:
@@ -324,7 +318,7 @@ def load_from_pickle(file_path):
     
 def scale_t(t):
 
-    prop = read_json(f"{src_dir}/properties.json")
+    prop = co.read_json(f"{src_dir}/properties.json")
     Troom = prop["Troom"]
     Tmax = prop["Tmax"]
 
@@ -332,19 +326,19 @@ def scale_t(t):
 
 def rescale_t(theta):
 
-    prop = read_json(f"{src_dir}/properties.json")
+    prop = co.read_json(f"{src_dir}/properties.json")
     Troom = prop["Troom"]
     Tmax = prop["Tmax"]
 
     return Troom + (Tmax - Troom)*theta
 
 def get_tc_positions():
-    daa = read_json(f"{src_dir}/properties.json")
+    daa = co.read_json(f"{src_dir}/properties.json")
     L0 = daa["L0"]
     x_y2 = 0
-    x_gt2 = 0.015/L0
-    x_gt1 = 0.045/L0
-    x_y1 = 0.075/L0
+    x_gt2 = 0.02/L0
+    x_gt1 = 0.05/L0
+    x_y1 = 1
 
     return [x_y2, x_gt2, x_gt1, x_y1] 
 
@@ -399,7 +393,7 @@ def import_obsdata():
 
 def mm_observer():
 
-    data =  read_json(f"{src_dir}/parameters.json")
+    data =  co.read_json(f"{src_dir}/parameters.json")
 
     W0, W1, W2, W3, W4, W5, W6, W7 = data["W0"], data["W1"], data["W2"], data["W3"], data["W4"], data["W5"], data["W6"], data["W7"]
 
@@ -416,7 +410,7 @@ def mm_observer():
     
     for j in range(n_obs):
         perf = obs[j]
-        properties = read_json(f"{src_dir}/properties.json")
+        properties = co.read_json(f"{src_dir}/properties.json")
         properties["W"] = perf
         run_figs = co.set_run(f"obs_{j}")
         write_json(properties, f"{run_figs}/properties.json")
@@ -444,7 +438,7 @@ def mu(o, tau):
 
 def calculate_mu(os, tr):
     tr = tr.reshape(os.shape)
-    net = read_json(f"{src_dir}/parameters.json")
+    net = co.read_json(f"{src_dir}/parameters.json")
     upsilon = net["upsilon"]
     scrt = upsilon*np.abs(os-tr)**2
     return scrt

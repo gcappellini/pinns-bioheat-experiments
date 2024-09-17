@@ -49,3 +49,32 @@ def set_run(run):
     os.makedirs(run_figs, exist_ok=True)
 
     return run_figs
+
+def read_json(filepath):
+    if os.path.exists(filepath):
+        with open(filepath, 'r') as file:
+            data = json.load(file)
+    return data
+
+
+def generate_config_hash(config_data):
+    config_string = json.dumps(config_data, sort_keys=True)  # Sort to ensure consistent ordering
+    config_hash = hashlib.md5(config_string.encode()).hexdigest()  # Create a unique hash
+    return config_hash
+
+
+
+def write_json(data, filepath):
+    def convert_to_serializable(obj):
+        if isinstance(obj, (np.int32, np.int64)):
+            return int(obj)
+        elif isinstance(obj, (np.float32, np.float64)):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return obj
+
+    serializable_data = {k: convert_to_serializable(v) for k, v in data.items()}
+
+    with open(filepath, 'w') as file:
+        json.dump(serializable_data, file, indent=4)

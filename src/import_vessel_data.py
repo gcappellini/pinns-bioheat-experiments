@@ -107,10 +107,12 @@ def scale_df(df):
 
 file_path = f"{src_dir}/data/vessel/20240522_1.txt"
 timeseries_data = load_measurements(file_path)
-df = extract_entries(timeseries_data, 83*60, 4*60*60)
+# df = extract_entries(timeseries_data, 83*60, 4*60*60)
+df = extract_entries(timeseries_data, 200*60, 4*60*60)
+# print(df["t"], df["y2"])
 # print(df['gt2'].max(), df['y1'].min(), df['gt2'].max() - df['y1'].min())
-df1 = scale_df(df)
-save_to_pickle(df1, f"{src_dir}/cooling_scaled.pkl")
+# df1 = scale_df(df)
+# save_to_pickle(df1, f"{src_dir}/cooling_scaled.pkl")
 # df1.to_csv(f"{src_dir}/cooling_scaled.txt", index=False, header=False)
 
 # fig, ax = plt.subplots(figsize=(12, 6))  # Stretching layout horizontally
