@@ -8,6 +8,16 @@ from scipy import integrate
 from import_vessel_data import load_measurements, extract_entries
 import plots as pp
 
+current_file = os.path.abspath(__file__)
+src_dir = os.path.dirname(current_file)
+
+a = co.read_json(f"{src_dir}/properties.json")
+b = co.read_json(f"{src_dir}/parameters.json")
+
+a["Ty20"] = b["y20_measured"]
+
+co.write_json(a, f"{src_dir}/properties.json")
+
 def initialize_project(project_name):
     """
     Initializes the project directories and setups for saving figures.

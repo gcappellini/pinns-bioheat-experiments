@@ -402,10 +402,6 @@ def mm_observer():
 
     n_obs = len(obs)
 
-    # wandb.init(
-    #     project=name_prj, name=name_run,
-    #     config=read_config(name_run)
-    # )
 
     multi_obs = []
     
@@ -483,6 +479,4 @@ def mm_predict(multi_obs, lam, obs_grid, prj_figs):
         predictions.append(prediction)
 
     return np.array(predictions)
-
-
 

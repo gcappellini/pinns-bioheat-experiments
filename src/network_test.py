@@ -121,7 +121,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     run = "perfusion_muscle"
-    n_obs = 2
+    n_obs = 6
     # Call main function with parsed arguments
     main(run, n_obs, run_matlab=args.run_matlab, use_wandb=args.use_wandb)
 

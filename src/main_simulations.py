@@ -11,7 +11,14 @@ import argparse
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
 
-def run_matlab_ground_truth(src_dir, run_matlab):
+a = co.read_json(f"{src_dir}/properties.json")
+b = co.read_json(f"{src_dir}/parameters.json")
+
+a["Ty20"] = b["y20_simulated"]
+
+co.write_json(a, f"{src_dir}/properties.json")
+
+def run_matlab_ground_truth(src_dir, prj_figs, run_matlab):
     """
     Optionally run MATLAB ground truth.
     """
@@ -21,6 +28,17 @@ def run_matlab_ground_truth(src_dir, run_matlab):
         eng.cd(src_dir, nargout=0)
         eng.BioHeat(nargout=0)
         eng.quit()
+
+        X, y_sys, _, y_mmobs = uu.gen_testdata()
+        t = np.unique(X[:, 1])
+
+        mu = uu.compute_mu()
+        pp.plot_mu(mu, t, prj_figs, gt=True)
+        pp.plot_comparison(X, y_sys, y_mmobs, prj_figs)
+
+        t, weights = uu.load_weights()
+        pp.plot_weights(weights, t, prj_figs, gt=True)
+
         print("MATLAB ground truth completed.")
     else:
         print("Skipping MATLAB ground truth calculation.")
@@ -49,25 +67,11 @@ def check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, y_obs, run_wand
             wandb.log(metrics)
             wandb.finish()
 
-def run_pinns(prj_figs):
-    """
-    Run the physics-informed neural networks (PINNs) implementation and generate plots.
-    """
-    X, y_sys, _, y_mmobs = uu.gen_testdata()
-    t = np.unique(X[:, 1])
-
-    mu = uu.compute_mu()
-    pp.plot_mu(mu, t, prj_figs, gt=True)
-    pp.plot_comparison(X, y_sys, y_mmobs, prj_figs)
-
-    t, weights = uu.load_weights()
-    pp.plot_weights(weights, t, prj_figs, gt=True)
 
 def solve_ivp_and_plot(multi_obs, prj_figs, n_obs):
     """
     Solve the IVP for observer weights and plot the results.
     """
-    x_obs = uu.gen_obsdata()
     p0 = np.full((n_obs,), 1/n_obs)
     par = co.read_json(f"{src_dir}/parameters.json")
     lam = par["lambda"]
@@ -95,12 +99,11 @@ def main(run_matlab=False, run_wandb=False):
     Main function to run the testing of the network, MATLAB ground truth, observer checks, and PINNs.
     """
 
-    # Optionally run MATLAB ground truth
-    run_matlab_ground_truth(src_dir, run_matlab)
-
     # Setup for PINNs implementation
     prj_figs = co.set_prj("test_matlab6")
-    run_pinns(prj_figs)
+
+    # Optionally run MATLAB ground truth
+    run_matlab_ground_truth(src_dir, prj_figs, run_matlab)
 
     # Generate and check observers if needed
     multi_obs = uu.mm_observer()
