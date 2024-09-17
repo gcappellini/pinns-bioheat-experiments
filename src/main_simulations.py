@@ -58,7 +58,6 @@ def check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, y_obs, run_wand
         pred = multi_obs[el].predict(x_obs)
         y_sys = y_sys.reshape(pred.shape)
         
-        pp.check_obs(X, y_obs[:, el], pred, el, run_figs)
         pp.plot_l2_tf(X, y_sys, pred, multi_obs[el], el, run_figs)
         
         metrics = uu.compute_metrics(y_obs[:, el], pred)
@@ -107,7 +106,7 @@ def main(run_matlab=False, run_wandb=False):
 
     # Generate and check observers if needed
     multi_obs = uu.mm_observer()
-    X, y_sys, y_obs, _ = uu.gen_testdata()
+    X, y_sys, y_obs, y_mm_obs = uu.gen_testdata()
     x_obs = uu.gen_obsdata()
     
     # Optionally check observers and upload to wandb
@@ -115,6 +114,22 @@ def main(run_matlab=False, run_wandb=False):
 
     # Solve IVP and plot weights
     solve_ivp_and_plot(multi_obs, prj_figs, n_obs=8)
+
+    kk = co.read_json(f"{src_dir}/parameters.json")
+    lam = kk["lambda"]
+    
+    # Model prediction
+    y_pred = uu.mm_predict(multi_obs, lam, x_obs, prj_figs)
+    la = len(np.unique(X[:, 0]))
+    le = len(np.unique(X[:, 1]))
+
+    true = y_mm_obs.reshape(le, la)
+    pred = y_pred.reshape(le, la)
+    sys = y_sys.reshape(le, la)
+
+    pp.plot_generic_3d(X[:, 0:2], pred, true, ["PINNs", "Matlab", "Error"], filename=f"{prj_figs}/comparison_3d_mm_obs")
+    pp.plot_generic_3d(X[:, 0:2], pred, sys, ["MultiObserver", "System", "Error"], filename=f"{prj_figs}/obs_3d_pinns")
+
 
 if __name__ == "__main__":
     # Parse command-line arguments

@@ -14,7 +14,7 @@ src_dir = os.path.dirname(current_file)
 a = co.read_json(f"{src_dir}/properties.json")
 b = co.read_json(f"{src_dir}/parameters.json")
 
-a["Ty20"] = b["y20_measured"]
+a["Ty20"] = correggere
 
 co.write_json(a, f"{src_dir}/properties.json")
 
