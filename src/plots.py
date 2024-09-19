@@ -168,9 +168,10 @@ def plot_mu(mus, t, run_figs, gt=False):
     save_and_close(fig, f"{run_figs}/obs_error_{'matlab' if gt else 'pinns'}.png")
 
 
-def plot_l2_norm(e, theta_true, theta_pred):
+def plot_l2(e, theta_true, theta_pred, number, folder, MultiObs=False):
+    e, theta_true, theta_pred = e.reshape(len(e), 2), theta_true.reshape(len(e), 1), theta_pred.reshape(len(e), 1)
     t = np.unique(e[:, 1])
-    t_filtered = t[t > 0.0001]
+    t_filtered = t[t > 0.000]
     l2 = []
 
     theta_true = theta_true.reshape(len(e), 1)
@@ -187,12 +188,11 @@ def plot_l2_norm(e, theta_true, theta_pred):
     ax.set_xlim(0, 1.01)
     ax.grid()
 
-    return fig, ax
+    save_and_close(fig, f"{folder}/l2_{'mm_obs' if MultiObs else f'obs{number}'}.png")
 
 
-def plot_l2_tf(e, theta_true, theta_pred, model, number, prj_figs, MultiObs=False):
+def plot_tf(e, theta_true, theta_pred, model, number, prj_figs, MultiObs=False):
     e, theta_true, theta_pred = e.reshape(len(e), 2), theta_true.reshape(len(e), 1), theta_pred.reshape(len(e), 1)
-    fig, ax1 = plot_l2_norm(e, theta_true, theta_pred)
 
     tot = np.hstack((e, theta_true))
     final = tot[tot[:, 1] == 1]
@@ -203,14 +203,15 @@ def plot_l2_tf(e, theta_true, theta_pred, model, number, prj_figs, MultiObs=Fals
     Xobs = np.vstack((x, uu.f1(np.ones_like(x)), uu.f2(np.ones_like(x)), uu.f3(np.ones_like(x)), np.ones_like(x))).T
     pred = uu.mm_predict(model, lam, Xobs, prj_figs) if MultiObs else model.predict(Xobs)
 
-    ax2 = fig.add_subplot(122)
+    fig, ax2 = create_plot("Prediction at final time", r"Depth $X$", r"$\theta$")
     ax2.plot(xtr, true, marker="x", linestyle="None", color='C0', label="true")
     ax2.plot(x, pred, color='C2', label="pred")
 
     ax2.set_xlim(0, 1.01)
     ax2.set_ylim(bottom=0.0)
     ax2.legend()
-    save_and_close(fig, f"{prj_figs}/l2_tf_{'mm_obs' if MultiObs else f'obs{number}'}.png")
+
+    save_and_close(fig, f"{prj_figs}/tf_{'mm_obs' if MultiObs else f'obs{number}'}.png")
 
 
 def plot_comparison(e, t_true, t_pred, run_figs):

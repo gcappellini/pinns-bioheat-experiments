@@ -1,15 +1,15 @@
 import deepxde as dde
 import numpy as np
 import os
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import torch
-import seaborn as sns
-import wandb
+# import seaborn as sns
+# import wandb
 import json
-from scipy.interpolate import interp1d
-from scipy import integrate
-import pickle
-import pandas as pd
+# from scipy.interpolate import interp1d
+# from scipy import integrate
+# import pickle
+# import pandas as pd
 import hashlib
 
 dde.config.set_random_seed(200)
@@ -78,3 +78,28 @@ def write_json(data, filepath):
 
     with open(filepath, 'w') as file:
         json.dump(serializable_data, file, indent=4)
+
+
+def find_matching_json(folder_path, target_dict):
+    # Loop through all the files in the folder
+    for filename in os.listdir(folder_path):
+        # Check if the file is a .json file
+        if filename.endswith('.json'):
+            file_path = os.path.join(folder_path, filename)
+            
+            # Open and read the JSON file
+            with open(file_path, 'r') as file:
+                try:
+                    # Load the content of the file
+                    json_data = json.load(file)
+                    
+                    # Compare the content of the JSON file with the target dictionary
+                    if json_data == target_dict:
+                        print(f"Matching file found: {filename}")
+                        return file_path
+                except json.JSONDecodeError:
+                    print(f"Skipping invalid JSON file: {filename}")
+    
+    # If no matching file is found
+    print("No matching file found.")
+    return None

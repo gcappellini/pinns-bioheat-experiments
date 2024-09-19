@@ -16,6 +16,8 @@ data = jsondecode(jsonData1);
 data2 = jsondecode(jsonData2);
 
 % Extract parameters from the struct
+n_obs = data2.n_obs
+
 L0 = data.L0;
 tauf = data.tauf;
 k = data.k;
@@ -27,14 +29,22 @@ t_y20 = data.Ty20;
 t_max = data.Tmax;
 t_w = data.Twater;
 h = data.h;
-W0 = data2.W0;
-W1 = data2.W1;
-W2 = data2.W2;
-W3 = data2.W3;
-W4 = data2.W4;
-W5 = data2.W5;
-W6 = data2.W6;
-W7 = data2.W7;
+
+if n_obs == 3
+    W0 = data2.W0;
+    W1= data2.W4;
+    W2 = data2.W7;
+else 
+    W0 = data2.W0;
+    W1 = data2.W1;
+    W2 = data2.W2;
+    W3 = data2.W3;
+    W4 = data2.W4;
+    W5 = data2.W5;
+    W6 = data2.W6;
+    W7 = data2.W7;
+end
+
 delta = data.delta;
 lambda = data2.lambda;
 upsilon = data2.upsilon;
@@ -56,6 +66,10 @@ om5 = 0;
 om6 = 0;
 om7 = 0;
 
-W = W4;
+W = data2.W4;
 
-sol = OneDimBH;
+if n_obs == 3
+    sol = OneDimBH_3Obs;  % Call the 3-observer case
+else
+    sol = OneDimBH; % Call the default or other number of observers case
+end

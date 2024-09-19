@@ -14,35 +14,12 @@ src_dir = os.path.dirname(current_file)
 a = co.read_json(f"{src_dir}/properties.json")
 b = co.read_json(f"{src_dir}/parameters.json")
 
-a["Ty20"] = b["y20_simulated"]
+a["Ty20"] = b["y20_measured"]
 
 co.write_json(a, f"{src_dir}/properties.json")
 
-def run_matlab_ground_truth(n_obs, src_dir, prj_figs, run_matlab):
-    """
-    Optionally run MATLAB ground truth.
-    """
-    if run_matlab:
-        print("Running MATLAB ground truth calculation...")
-        eng = matlab.engine.start_matlab()
-        eng.cd(src_dir, nargout=0)
-        eng.BioHeat(nargout=0)
-        eng.quit()
 
-        X, y_sys, _, y_mmobs = uu.gen_testdata(n_obs)
-        t = np.unique(X[:, 1])
-
-        mu = uu.compute_mu(n_obs)
-        pp.plot_mu(mu, t, prj_figs, gt=True)
-
-        t, weights = uu.load_weights(n_obs)
-        pp.plot_weights(weights, t, prj_figs, gt=True)
-
-        print("MATLAB ground truth completed.")
-    else:
-        print("Skipping MATLAB ground truth calculation.")
-
-def check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, y_obs, run_wandb):
+def check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, run_wandb):
     """
     Check observers and optionally upload results to wandb.
     """
@@ -59,7 +36,8 @@ def check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, y_obs, run_wand
         
         pp.plot_l2(X, y_sys, pred, el, run_figs)
         pp.plot_tf(X, y_sys, pred, multi_obs[el], el, run_figs)
-        metrics = uu.test_observer(multi_obs[el], run_figs, X, x_obs, y_obs, el)
+
+        metrics = uu.compute_metrics(y_sys, pred)
  
         
         if run_wandb:
@@ -67,7 +45,7 @@ def check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, y_obs, run_wand
             wandb.finish()
 
 
-def solve_ivp_and_plot(multi_obs, fold, n_obs, x_obs, X, y_sys, y_mm_obs, run_wandb):
+def solve_ivp_and_plot(multi_obs, fold, n_obs, x_obs, X, y_sys, run_wandb):
     """
     Solve the IVP for observer weights and plot the results.
     """
@@ -100,7 +78,6 @@ def solve_ivp_and_plot(multi_obs, fold, n_obs, x_obs, X, y_sys, y_mm_obs, run_wa
 
     t = np.unique(X[:, 1:2])
 
-    true = y_mm_obs.reshape(le, la)
     pred = y_pred.reshape(le, la)
     sys = y_sys.reshape(le, la)
     mus = uu.mu(multi_obs, t)
@@ -109,7 +86,7 @@ def solve_ivp_and_plot(multi_obs, fold, n_obs, x_obs, X, y_sys, y_mm_obs, run_wa
         print(f"Initializing wandb for multi observer ...")
         wandb.init(project=prj, name=f"mm_obs")
 
-    metrics = uu.compute_metrics(y_mm_obs, y_pred)
+    metrics = uu.compute_metrics(y_sys, y_pred)
     
     if run_wandb:
         wandb.log(metrics)
@@ -118,41 +95,39 @@ def solve_ivp_and_plot(multi_obs, fold, n_obs, x_obs, X, y_sys, y_mm_obs, run_wa
     pp.plot_mu(mus, t, fold)
     pp.plot_l2(X, y_sys, pred, 0, fold, MultiObs=True)
     pp.plot_tf(X, y_sys, pred, multi_obs, 0, fold, MultiObs=True)
-    pp.plot_generic_3d(X[:, 0:2], pred, true, ["PINNs", "Matlab", "Error"], filename=f"{fold}/comparison_3d_mm_obs")
     pp.plot_generic_3d(X[:, 0:2], pred, sys, ["MultiObserver", "System", "Error"], filename=f"{fold}/obs_3d_pinns")
 
 
-def main(n_obs, prj, run_matlab=False, run_wandb=False):
+def main(n_obs, prj, run_wandb=False):
     """
     Main function to run the testing of the network, MATLAB ground truth, observer checks, and PINNs.
     """
 
     # Setup for PINNs implementation
-    prj_figs = co.set_prj(prj)
-
-    # Optionally run MATLAB ground truth
-    run_matlab_ground_truth(n_obs, src_dir, prj_figs, run_matlab)
+    co.set_prj(prj)
 
     # Generate and check observers if needed
     multi_obs = uu.mm_observer(n_obs)
-    X, y_sys, y_obs, y_mm_obs = uu.gen_testdata(n_obs)
-    x_obs = uu.gen_obsdata(n_obs)
+    a = uu.import_testdata()
+    X = a[:, 0:2]
+    meas = a[:, 2:3]
+    bolus = a[:, 3:4]
+    x_obs = uu.import_obsdata()
     
     # Optionally check observers and upload to wandb
-    check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, y_obs, run_wandb)
+    check_observers_and_wandb_upload(multi_obs, x_obs, X, meas, run_wandb)
 
     run_figs = co.set_run(f"mm_obs")
     # Solve IVP and plot weights
-    solve_ivp_and_plot(multi_obs, run_figs, n_obs, x_obs, X, y_sys, y_mm_obs, run_wandb)
+    solve_ivp_and_plot(multi_obs, run_figs, n_obs, x_obs, X, meas, run_wandb)
 
 
 if __name__ == "__main__":
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description="Run network testing with optional features.")
-    parser.add_argument("--run_matlab", action="store_true", help="Run MATLAB ground truth.")
     parser.add_argument("--run_wandb", action="store_true", help="Use wandb for logging observers.")
     args = parser.parse_args()
-    prj = "3Obs"
+    prj = "3Obs_meas"
     n_obs = b["n_obs"]
     # Run main function with options
-    main(n_obs, prj, run_matlab=args.run_matlab, run_wandb=args.run_wandb)
+    main(n_obs, prj, run_wandb=args.run_wandb)

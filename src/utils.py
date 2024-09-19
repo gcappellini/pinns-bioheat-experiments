@@ -132,7 +132,7 @@ def create_nbho(run_figs):
         # return dtheta_x - a3 * (x[:, 3:4] - x[:, 2:3]) - K * (x[:, 2:3] - theta)
 
     xmin = [0, 0, 0, 0]
-    xmax = [1, 1, 1, 1]
+    xmax = [1, 0.2, 1, 1]
     geom = dde.geometry.Hypercube(xmin, xmax)
     timedomain = dde.geometry.TimeDomain(0, 2)
     geomtime = dde.geometry.GeometryXTime(geom, timedomain)
@@ -230,9 +230,13 @@ def train_and_save_model(model, callbacks, run_figs):
     return losshistory, train_state
 
 
-def gen_testdata():
-    data = np.loadtxt(f"{src_dir}/output_matlab.txt")
-    x, t, sys, obs, mmobs = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:11], data[:, 11:12].T
+def gen_testdata(n):
+    if n==8:
+        data = np.loadtxt(f"{src_dir}/output_matlab.txt")
+        x, t, sys, obs, mmobs = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:11], data[:, 11:12].T
+    if n==3:
+        data = np.loadtxt(f"{src_dir}/output_matlab_3Obs.txt")
+        x, t, sys, obs, mmobs = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:6], data[:, 6:7].T       
     X = np.vstack((x, t)).T
     y_sys = sys.flatten()[:, None]
     y_mmobs = mmobs.flatten()[:, None]
@@ -240,15 +244,19 @@ def gen_testdata():
     return X, y_sys, obs, y_mmobs
 
 
-def load_weights():
-    data = np.loadtxt(f"{src_dir}/weights_matlab.txt")
-    t, weights = data[:, 0:1], data[:, 1:9].T
+def load_weights(n):
+    if n==8:
+        data = np.loadtxt(f"{src_dir}/weights_matlab.txt")
+        t, weights = data[:, 0:1], data[:, 1:9].T
+    if n==3:
+        data = np.loadtxt(f"{src_dir}/weights_matlab_3Obs.txt")
+        t, weights = data[:, 0:1], data[:, 1:4].T
     return t, np.array(weights)
 
 
-def gen_obsdata():
+def gen_obsdata(n):
     global f1, f2, f3
-    g = np.hstack((gen_testdata()))
+    g = np.hstack((gen_testdata(n)))
     instants = np.unique(g[:, 1])
     
     rows_1 = g[g[:, 0] == 1.0]
@@ -268,9 +276,9 @@ def gen_obsdata():
     Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
     return Xobs
 
-def gen_obs_y2():
+def gen_obs_y2(n):
     global f1, f2, f3
-    g = np.hstack((gen_testdata()))
+    g = np.hstack((gen_testdata(n)))
     instants = np.unique(g[:, 1])
     
     rows_1 = g[g[:, 0] == 1.0]
@@ -291,9 +299,9 @@ def gen_obs_y2():
     return Xobs, f2(instants)
 
 
-def gen_obs_y1():
+def gen_obs_y1(n):
     global f1, f2, f3
-    g = np.hstack((gen_testdata()))
+    g = np.hstack((gen_testdata(n)))
     instants = np.unique(g[:, 1])
     
     rows_1 = g[g[:, 0] == 1.0]
@@ -392,15 +400,18 @@ def import_obsdata():
     return Xobs
 
 
-def mm_observer():
+def mm_observer(n_obs):
 
     data =  co.read_json(f"{src_dir}/parameters.json")
 
-    W0, W1, W2, W3, W4, W5, W6, W7 = data["W0"], data["W1"], data["W2"], data["W3"], data["W4"], data["W5"], data["W6"], data["W7"]
+    if n_obs==8:
+        W0, W1, W2, W3, W4, W5, W6, W7 = data["W0"], data["W1"], data["W2"], data["W3"], data["W4"], data["W5"], data["W6"], data["W7"]
+        obs = np.array([W0, W1, W2, W3, W4, W5, W6, W7])
+    if n_obs==3:
+        W0, W1, W2 = data["W0"], data["W4"], data["W7"]
+        obs = np.array([W0, W1, W2])        
 
-    obs = np.array([W0, W1, W2, W3, W4, W5, W6, W7])
 
-    n_obs = len(obs)
 
 
     multi_obs = []
@@ -441,12 +452,15 @@ def calculate_mu(os, tr):
     return scrt
 
 
-def compute_mu():
+def compute_mu(n_obs):
 
-    g = np.hstack((gen_testdata()))
+    g = np.hstack((gen_testdata(n_obs)))
     rows_0 = g[g[:, 0] == 0.0]
     sys_0 = rows_0[:, 2:3]
-    obss_0 = rows_0[:, 3:11]
+    if n_obs==8:
+        obss_0 = rows_0[:, 3:11]
+    if n_obs==3:
+        obss_0 = rows_0[:, 3:6]
 
     muu = []
 
@@ -480,3 +494,34 @@ def mm_predict(multi_obs, lam, obs_grid, prj_figs):
 
     return np.array(predictions)
 
+
+def test_observer(model, run_figs, X, x_obs, y_obs, number):
+        obs = f"W{number}"
+        b = co.read_json(f"{src_dir}/parameters.json")
+        n_obs = b["n_obs"]
+        
+        # Model prediction
+        y_pred = model.predict(x_obs)
+        la = len(np.unique(X[:, 0]))
+        le = len(np.unique(X[:, 1]))
+
+        true = y_obs[:, number].reshape(le, la)
+        pred = y_pred.reshape(le, la)
+        y2_true = true[:, 0]
+        y1_true = true[:, -1]
+
+        Xob_y2, _ = gen_obs_y2(n_obs)
+        Xob_y1, _ = gen_obs_y1(n_obs)
+        y2_pred, y1_pred = model.predict(Xob_y2), model.predict(Xob_y1)
+
+        t = np.unique(Xob_y2[:, -1])
+
+        y = np.vstack([y2_true, y2_pred.reshape(y2_true.shape), y1_true, y1_pred.reshape(y2_true.shape)])
+        legend_labels = [r'$\hat{\theta}_{true}(0, \tau)$', r'$\hat{\theta}_{pred}(0, \tau)$', r'$\hat{\theta}_{true}(1, \tau)$', r'$\hat{\theta}_{pred}(1, \tau)$']
+
+        # Check Model prediction
+        pp.plot_generic_3d(X[:, 0:2], pred, true, ["PINNs", "Matlab", "Error"], filename=f"{run_figs}/comparison_3d_{obs}")
+        pp.plot_generic(t, y, "Comparison at the boundary", r"Time ($\tau$)", r"Theta ($\theta$)", legend_labels, filename=f"{run_figs}/comparison_outputs_{obs}")
+        # Compute and log errors
+        errors = compute_metrics(y_obs[:, number], y_pred)
+        return errors
