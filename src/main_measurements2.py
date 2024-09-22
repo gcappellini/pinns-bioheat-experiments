@@ -154,7 +154,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run network testing with optional features.")
     parser.add_argument("--run_wandb", action="store_true", help="Use wandb for logging observers.")
     args = parser.parse_args()
-    prj = "3Obs_meas2"
+    prj = "3Obs_measurements"
     n_obs = b["n_obs"]
     # Run main function with options
     main(n_obs, prj, run_wandb=args.run_wandb)
