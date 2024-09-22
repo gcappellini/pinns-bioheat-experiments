@@ -1,6 +1,5 @@
 import os
 import numpy as np
-from uncertainties import ufloat
 import json
 import hashlib
 import utils as uu

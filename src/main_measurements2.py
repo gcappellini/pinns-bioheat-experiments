@@ -1,6 +1,5 @@
 import utils as uu
 import os
-import matlab.engine
 import numpy as np
 from scipy import integrate
 import common as co
