@@ -10,6 +10,12 @@ src_dir = os.path.dirname(current_file)
 git_dir = os.path.dirname(src_dir)
 models = os.path.join(git_dir, "models")
 
-a = uu.gen_obsdata(8)
-print(uu.rescale_t(a[0, 2]))
 
+
+co.set_prj("3Obs_meas2")
+ss = co.set_run("obs_2")
+
+e = co.read_json(f"{ss}/properties.json")
+
+
+co.find_matching_json(models, e)
