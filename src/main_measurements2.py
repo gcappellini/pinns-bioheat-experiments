@@ -34,12 +34,11 @@ def check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, run_wandb):
         
         pred = multi_obs[el].predict(x_obs)
         
-        pp.plot_l2(X, y_sys, pred, el, run_figs)
+        # pp.plot_l2(x_obs, y_sys, multi_obs[el], el, run_figs)
         pp.plot_tf(X, y_sys, multi_obs[el], el, run_figs)
 
         metrics = uu.compute_metrics(y_sys, pred)
  
-        
         if run_wandb:
             wandb.log(metrics)
             wandb.finish()
@@ -68,7 +67,7 @@ def solve_ivp_and_plot(multi_obs, fold, n_obs, x_obs, X, y_sys, run_wandb):
     weights[1:] = sol.y
     
     np.save(f'{fold}/weights_lam_{lam}.npy', weights)
-    pp.plot_weights(weights[1:], weights[0], fold)
+    pp.plot_weights(weights[1:], weights[0], fold, lam)
     
     # Model prediction
     y_pred = uu.mm_predict(multi_obs, lam, x_obs, fold)

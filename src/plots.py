@@ -41,15 +41,10 @@ def plot_generic(x, y, title, xlabel, ylabel, legend_labels=None, log_scale=Fals
     """
     fig, ax = plt.subplots(figsize=size)
 
-    # Check if y is a 2D array or list of arrays
-    if isinstance(y, (list, np.ndarray)) and np.ndim(y) > 1:
-        # Plot each line in y with its corresponding legend label
-        for i, yi in enumerate(y):
-            label = legend_labels[i] if legend_labels else None
-            ax.plot(x, yi, label=label)
-    else:
-        # If y is a single line, plot it directly
-        ax.plot(x, y, label=legend_labels)
+    # Plot each line with its corresponding x and y values
+    for i, (xi, yi) in enumerate(zip(x, y)):
+        label = legend_labels[i] if legend_labels else None
+        ax.plot(xi, yi, label=label)
 
     ax.set_title(title, fontweight='bold')
     ax.set_xlabel(xlabel)
@@ -161,7 +156,7 @@ def plot_weights(weights, t, run_figs, lam, gt=False):
     # Call the generic plotting function
     plot_generic(
         x=t,                       # Time data for the x-axis
-        y=weights,                 # Weights data (each row is a separate line)
+        y=weights.T,                 # Weights data (each row is a separate line)
         title=title,               # Plot title with dynamic lambda value
         xlabel=r"Time $\tau$",      # x-axis label
         ylabel=r"Weights $p_j$",    # y-axis label
@@ -213,6 +208,9 @@ def plot_l2(xobs, theta_true, model, number, folder, MultiObs=False):
     t = np.unique(e[:, 1])
     t_filtered = t[t > 0.000]  # Filter out small time values
 
+    # Store corresponding time values for each model's predictions
+    x_vals = [t_filtered]  # Initialize with time values for the combined prediction or single prediction
+
     if MultiObs:
         # Combine predictions using mm_predict
         combined_pred = uu.mm_predict(model, lam, xobs)
@@ -226,7 +224,7 @@ def plot_l2(xobs, theta_true, model, number, folder, MultiObs=False):
         l2.append(l2_combined)  # Store the combined L2 error
 
         # Calculate L2 error for each individual model
-        for i, individual_model in enumerate(model):
+        for i, individual_model in enumerate(model.models):  # Assuming `model.models` holds individual models
             theta_pred = individual_model.predict(xobs).reshape(len(e), 1)
             tot_individual = np.hstack((e, theta_true, theta_pred))
             l2_individual = []
@@ -234,6 +232,7 @@ def plot_l2(xobs, theta_true, model, number, folder, MultiObs=False):
                 df = tot_individual[tot_individual[:, 1] == el]
                 l2_individual.append(dde.metrics.l2_relative_error(df[:, 2], df[:, 3]))
             l2.append(l2_individual)  # Store the individual model L2 error
+            x_vals.append(t_filtered)  # Add corresponding x values for each individual model
 
     else:
         # Single model prediction
@@ -242,19 +241,20 @@ def plot_l2(xobs, theta_true, model, number, folder, MultiObs=False):
         for el in t_filtered:
             df = tot[tot[:, 1] == el]
             l2.append(dde.metrics.l2_relative_error(df[:, 2], df[:, 3]))
+        x_vals = [t_filtered]  # Just a single time series for x values
 
     # Prepare labels for the legend
     legend_labels = ['MultiObs Pred'] if MultiObs else ['Predicted']
 
     # Add individual model labels if MultiObs is True
     if MultiObs:
-        for i in range(len(model)):
+        for i in range(len(model.models)):
             legend_labels.append(f'Pred Model {i + 1}')
 
     # Call the generic plotting function
     plot_generic(
-        x=t_filtered,
-        y=l2,  # Multiple lines to plot
+        x=xobs[:, 0:1],   # Provide time values for each line (either one for each model or just one for single prediction)
+        y=l2,       # Multiple L2 error lines to plot
         title="Prediction error norm",
         xlabel=r"Time $\tau$",
         ylabel=r"$L^2$ norm",
@@ -289,7 +289,6 @@ def plot_tf(e, theta_true, model, number, prj_figs, MultiObs=False):
     x = np.linspace(0, 1, 100)   # Depth values for prediction
     Xobs = np.vstack((x, uu.f1(np.ones_like(x)), uu.f2(np.ones_like(x)), uu.f3(np.ones_like(x)), np.ones_like(x))).T
 
-    # MultiObs: Plot individual model predictions along with the combined prediction
     if MultiObs:
         # Combined prediction using multi-observer model
         multi_pred = uu.mm_predict(model, lam, Xobs, prj_figs)
@@ -300,6 +299,9 @@ def plot_tf(e, theta_true, model, number, prj_figs, MultiObs=False):
         # Stack all predictions (true values + individual predictions + combined prediction)
         all_preds = [true] + individual_preds + [multi_pred]
         
+        # x values: use xtr for true data, and 'x' for predictions
+        x_vals = [xtr] + [x] * len(individual_preds) + [x]
+
         # Generate corresponding legend labels
         legend_labels = ['True'] + [f'Pred Model {i+1}' for i in range(len(individual_preds))] + ['MultiObs Pred']
 
@@ -309,11 +311,12 @@ def plot_tf(e, theta_true, model, number, prj_figs, MultiObs=False):
         
         # Only two lines to plot: true and single prediction
         all_preds = [true, pred]
+        x_vals = [xtr, x]  # xtr for true, x for predicted
         legend_labels = ['True', 'Predicted']
 
     # Call the generic plotting function
     plot_generic(
-        x=xtr, 
+        x=x_vals,  # Different x values for true and predicted
         y=all_preds,  # List of true and predicted lines
         title="Prediction at final time",
         xlabel=r"Depth $X$",

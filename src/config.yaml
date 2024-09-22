@@ -1,0 +1,59 @@
+# Configuration for model properties
+model_properties:
+  L0: 0.08
+  tauf: 9052.0
+  k: 0.6
+  rho: 1000.0
+  c: 4186.0
+  W: 8.0
+  h: 238.0
+  Troom: 22.89
+  Tmax: 35.47
+  Ty20: 29.3
+  Twater: 33.0
+  K: 50.0
+  delta: 3.0
+  activation: "tanh"
+  initial_weights_regularizer: true
+  initialization: "Glorot uniform"
+  iterations: 40000
+  LBFGS: false
+  learning_rate: 0.0001
+  num_dense_layers: 6
+  num_dense_nodes: 92
+  num_domain: 1500
+  num_boundary: 2000
+  num_initial: 800
+  num_test: 10000
+  resampling: true
+  resampler_period: 100
+  w_res: 1.0
+  w_bc0: 1.0
+  w_bc1: 1.0
+  w_ic: 1.0
+
+# Configuration for model parameters (applied after training)
+model_parameters:
+  lam: 100.0
+  upsilon: 250.0
+  W0: 0.0
+  W1: 0.1
+  W2: 0.2
+  W3: 0.3
+  W4: 0.4
+  W5: 0.5
+  W6: 0.6
+  W7: 0.7
+  y20_simulated: 33.0
+  y20_measured: 29.3
+  n_obs: 3
+
+# Experiment type: can be either 'simulation' or 'measurement', with different observers (3 or 8)
+experiment:
+  type: "simulation"  # Choose between 'simulation' or 'measurement'
+  observers: 3        # Choose 3 or 8 observers
+
+# Output directory management
+output:
+  base_dir: "${hydra:runtime.output_dir}"  # Hydra auto-generates subdirectories per run
+  save_figures: true

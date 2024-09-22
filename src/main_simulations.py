@@ -59,9 +59,9 @@ def check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, y_obs, run_wand
         
         pp.plot_l2(X, y_sys, pred, el, run_figs)
         pp.plot_tf(X, y_sys, pred, multi_obs[el], el, run_figs)
+
         metrics = uu.test_observer(multi_obs[el], run_figs, X, x_obs, y_obs, el)
  
-        
         if run_wandb:
             wandb.log(metrics)
             wandb.finish()
@@ -72,8 +72,7 @@ def solve_ivp_and_plot(multi_obs, fold, n_obs, x_obs, X, y_sys, y_mm_obs, run_wa
     Solve the IVP for observer weights and plot the results.
     """
     p0 = np.full((n_obs,), 1/n_obs)
-    par = co.read_json(f"{src_dir}/parameters.json")
-    lam = par["lambda"]
+    lam = b["lambda"]
 
     def f(t, p):
         a = uu.mu(multi_obs, t)
@@ -95,14 +94,7 @@ def solve_ivp_and_plot(multi_obs, fold, n_obs, x_obs, X, y_sys, y_mm_obs, run_wa
     
     # Model prediction
     y_pred = uu.mm_predict(multi_obs, lam, x_obs, fold)
-    la = len(np.unique(X[:, 0]))
-    le = len(np.unique(X[:, 1]))
-
     t = np.unique(X[:, 1:2])
-
-    true = y_mm_obs.reshape(le, la)
-    pred = y_pred.reshape(le, la)
-    sys = y_sys.reshape(le, la)
     mus = uu.mu(multi_obs, t)
 
     if run_wandb:
@@ -116,10 +108,10 @@ def solve_ivp_and_plot(multi_obs, fold, n_obs, x_obs, X, y_sys, y_mm_obs, run_wa
         wandb.finish()
 
     pp.plot_mu(mus, t, fold)
-    pp.plot_l2(X, y_sys, pred, 0, fold, MultiObs=True)
-    pp.plot_tf(X, y_sys, pred, multi_obs, 0, fold, MultiObs=True)
-    pp.plot_generic_3d(X[:, 0:2], pred, true, ["PINNs", "Matlab", "Error"], filename=f"{fold}/comparison_3d_mm_obs")
-    pp.plot_generic_3d(X[:, 0:2], pred, sys, ["MultiObserver", "System", "Error"], filename=f"{fold}/obs_3d_pinns")
+    pp.plot_l2(X, y_sys, y_pred, 0, fold, MultiObs=True)
+    pp.plot_tf(X, y_sys, multi_obs, 0, fold, MultiObs=True)
+    pp.plot_comparison_3d(X[:, 0:2], y_mm_obs, y_pred, f"{fold}/comparison_3d_mm_obs")
+    pp.plot_observation_3d(X[:, 0:2], y_sys, y_pred, filename=f"{fold}/obs_3d_pinns")
 
 
 def main(n_obs, prj, run_matlab=False, run_wandb=False):
