@@ -306,7 +306,7 @@ def plot_tf(e, theta_true, model, number, prj_figs, MultiObs=False):
         x_vals = [xtr] + [x] * len(individual_preds) + [x]
 
         # Generate corresponding legend labels
-        legend_labels = ['True'] + [f'Pred Model {i+1}' for i in range(len(individual_preds))] + ['MultiObs Pred']
+        legend_labels = ['True'] + [f'Obs {i}' for i in range(len(individual_preds))] + ['MultiObs Pred']
 
     else:
         # Single model prediction
