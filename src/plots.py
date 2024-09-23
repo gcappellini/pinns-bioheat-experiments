@@ -327,7 +327,7 @@ def plot_tf(e, theta_true, model, number, prj_figs, MultiObs=False):
     )
 
 
-def plot_comparison_3d(e, t_true, t_pred, run_figs):
+def plot_comparison_3d(e, t_true, t_pred, run_figs, gt=False):
     """
     Refactor the plot_comparison function to use plot_generic_3d for 3D comparisons.
     
@@ -347,13 +347,15 @@ def plot_comparison_3d(e, t_true, t_pred, run_figs):
     # Column titles for each subplot
     col_titles = ['Measured', 'MM Observer', 'Error']
 
+    fname = f"{run_figs}/comparison_3d_matlab.png" if gt else f"{run_figs}/comparison_3d_pinns.png"
+
     # Call plot_generic_3d with the data
     plot_generic_3d(
         XY=e,                       # 2D array containing X and Y coordinates
         Z1=theta_true,              # Surface 1: true values (Z1)
         Z2=theta_pred,              # Surface 2: predicted values (Z2)
         col_titles=col_titles,      # Titles for each subplot
-        filename=f"{run_figs}/comparison_3d.png"  # Path to save the plot
+        filename=fname  # Path to save the plot
     )
 
 def plot_observation_3d(e, t_true, t_pred, run_figs):

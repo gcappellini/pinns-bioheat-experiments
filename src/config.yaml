@@ -52,6 +52,8 @@ model_parameters:
 experiment:
   type: "simulation"  # Choose between 'simulation' or 'measurement'
   observers: 3        # Choose 3 or 8 observers
+  run_matlab: false
+  run_wandb: false
 
 # Output directory management
 output:

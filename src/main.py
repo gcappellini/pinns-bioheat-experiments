@@ -1,40 +1,35 @@
+import subprocess
+import os
 import hydra
 from omegaconf import DictConfig
-import os
 
-@hydra.main(config_path=".", config_name="config")  # Loads config.yaml from current directory
+@hydra.main(version_base=None, config_path="config", config_name="config")
 def main(cfg: DictConfig):
-    # Access model properties and parameters from Hydra config
-    model_props = cfg.model_properties
-    model_params = cfg.model_parameters
+    # Get the experiment type from the config
     experiment_type = cfg.experiment.type
-    n_observers = cfg.experiment.observers
-    output_dir = cfg.output.base_dir
-
-    # Example: print out the loaded configurations
-    print("Model Properties:", model_props)
-    print("Model Parameters:", model_params)
-    print(f"Experiment Type: {experiment_type} with {n_observers} observers")
-    print(f"Results will be saved in: {output_dir}")
-
-    # Create an example output subfolder for your test
-    results_dir = os.path.join(output_dir, f"test_obs_{n_observers}")
-    os.makedirs(results_dir, exist_ok=True)
-
-    # Continue with your existing model setup and experiments using the loaded properties
-    # ...
-    # For example, set lam, lambda from properties and parameters:
-    L0 = model_props.L0
-    lambda_value = model_params.lam
-    print(f"Lambda (model): {L0}, Lambda (parameters): {lambda_value}")
     
-    # Perform any model training or predictions
-    # if experiment_type == "simulation" ... else ...
-    
-    # Save some results in the newly created folder
-    result_path = os.path.join(results_dir, "results.txt")
-    with open(result_path, "w") as f:
-        f.write("Experiment results go here...\n")
+    # Path to the script directory
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # Define the mapping between experiment type and script file
+    script_mapping = {
+        'network_test': 'network_test.py',
+        'simulation': 'simulation.py',
+        'measurement': 'measurement.py'
+    }
+
+    # Check if the experiment type is valid
+    if experiment_type in script_mapping:
+        # Get the script filename
+        script_to_run = script_mapping[experiment_type]
+        
+        # Build the full path to the script
+        script_path = os.path.join(script_dir, script_to_run)
+        
+        # Execute the script using subprocess
+        subprocess.run(["python", script_path])
+    else:
+        print(f"Unknown experiment type: {experiment_type}")
 
 if __name__ == "__main__":
     main()
