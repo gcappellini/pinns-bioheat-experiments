@@ -152,11 +152,12 @@ def plot_weights(weights, t, run_figs, lam, gt=False):
 
     # Define the title with the lambda value
     title = f"Dynamic weights, λ={lam}"
+    times = np.full_like(weights, t)
     
     # Call the generic plotting function
     plot_generic(
-        x=t,                       # Time data for the x-axis
-        y=weights.T,                 # Weights data (each row is a separate line)
+        x=times,                       # Time data for the x-axis
+        y=weights,                 # Weights data (each row is a separate line)
         title=title,               # Plot title with dynamic lambda value
         xlabel=r"Time $\tau$",      # x-axis label
         ylabel=r"Weights $p_j$",    # y-axis label
@@ -172,10 +173,11 @@ def plot_mu(mus, t, run_figs, gt=False):
     
     # Define the title for the plot
     title = "Observation errors"
+    times = [t]*mus.shape[1]
     
     # Call the generic plotting function
     plot_generic(
-        x=t,                       # Time data for the x-axis
+        x=times,                       # Time data for the x-axis
         y=mus.T,                   # Transpose mus to get lines for each observation error
         title=title,               # Plot title
         xlabel=r"Time $\tau$",      # x-axis label
@@ -213,7 +215,7 @@ def plot_l2(xobs, theta_true, model, number, folder, MultiObs=False):
 
     if MultiObs:
         # Combine predictions using mm_predict
-        combined_pred = uu.mm_predict(model, lam, xobs)
+        combined_pred = uu.mm_predict(model, lam, xobs, folder)
 
         # Calculate L2 error for combined prediction
         tot_combined = np.hstack((e, theta_true, combined_pred.reshape(len(e), 1)))
@@ -224,7 +226,7 @@ def plot_l2(xobs, theta_true, model, number, folder, MultiObs=False):
         l2.append(l2_combined)  # Store the combined L2 error
 
         # Calculate L2 error for each individual model
-        for i, individual_model in enumerate(model.models):  # Assuming `model.models` holds individual models
+        for i, individual_model in enumerate(model):  # Assuming `model.models` holds individual models
             theta_pred = individual_model.predict(xobs).reshape(len(e), 1)
             tot_individual = np.hstack((e, theta_true, theta_pred))
             l2_individual = []
@@ -248,13 +250,14 @@ def plot_l2(xobs, theta_true, model, number, folder, MultiObs=False):
 
     # Add individual model labels if MultiObs is True
     if MultiObs:
-        for i in range(len(model.models)):
-            legend_labels.append(f'Pred Model {i + 1}')
-
+        for i in range(len(model)):
+            legend_labels.append(f'Obs {i}')
+    ll2 = np.array(l2)
+    times = [t[:-1]]*len(ll2)
     # Call the generic plotting function
     plot_generic(
-        x=xobs[:, 0:1],   # Provide time values for each line (either one for each model or just one for single prediction)
-        y=l2,       # Multiple L2 error lines to plot
+        x=times,   # Provide time values for each line (either one for each model or just one for single prediction)
+        y=ll2,       # Multiple L2 error lines to plot
         title="Prediction error norm",
         xlabel=r"Time $\tau$",
         ylabel=r"$L^2$ norm",
@@ -294,7 +297,7 @@ def plot_tf(e, theta_true, model, number, prj_figs, MultiObs=False):
         multi_pred = uu.mm_predict(model, lam, Xobs, prj_figs)
 
         # Generate individual predictions from each model in the ensemble
-        individual_preds = [m.predict(Xobs) for m in model.models]  # Assuming model.models holds individual models
+        individual_preds = [m.predict(Xobs) for m in model]  # Assuming model.models holds individual models
         
         # Stack all predictions (true values + individual predictions + combined prediction)
         all_preds = [true] + individual_preds + [multi_pred]
@@ -402,9 +405,10 @@ def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, p
     legend_labels = ['y1 (True)', 'gt1 (True)', 'gt2 (True)', 'y2 (True)', 
                      'y1 (Pred)', 'gt1 (Pred)', 'gt2 (Pred)', 'y2 (Pred)']
 
+    times = [time_in_minutes]*len(y_data)
     # Call the generic plotting function
     plot_generic(
-        x=time_in_minutes,        # Time data
+        x=times,        # Time data
         y=y_data,                 # All y data (ground truth + predictions)
         title="Cooling Experiment",
         xlabel="Time (min)",

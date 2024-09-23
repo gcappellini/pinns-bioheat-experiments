@@ -84,10 +84,9 @@ def solve_ivp_and_plot(multi_obs, fold, n_obs, x_obs, X, y_sys, run_wandb):
         wandb.finish()
 
     pp.plot_mu(mus, t, fold)
-    pp.plot_l2(X, y_sys, y_pred, 0, fold, MultiObs=True)
+    pp.plot_l2(x_obs, y_sys, multi_obs, 0, fold, MultiObs=True)
     pp.plot_tf(X, y_sys, multi_obs, 0, fold, MultiObs=True)
-    pp.plot_observation_3d(X[:, 0:2], y_sys, y_pred, filename=f"{fold}/obs_3d_pinns")
-    pp.plot_timeseries_with_predictions()
+    pp.plot_observation_3d(X[:, 0:2], y_sys, y_pred, fold)
 
 
 def scale_predictions(multi_obs, x_obs, prj_figs):
@@ -152,7 +151,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run network testing with optional features.")
     parser.add_argument("--run_wandb", action="store_true", help="Use wandb for logging observers.")
     args = parser.parse_args()
-    prj = "3Obs_measurements"
+    prj = "8Obs_measurements"
     n_obs = b["n_obs"]
     # Run main function with options
     main(n_obs, prj, run_wandb=args.run_wandb)
