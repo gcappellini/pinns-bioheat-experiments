@@ -36,7 +36,7 @@ def run_matlab_ground_truth(n_obs, src_dir, prj_figs, run_matlab):
         pp.plot_mu(mu, t, prj_figs, gt=True)
 
         t, weights = uu.load_weights(n_obs)
-        pp.plot_weights(weights, t, prj_figs, gt=True)
+        pp.plot_weights(weights, t, prj_figs, b["lambda"], gt=True)
 
         print("MATLAB ground truth completed.")
     else:
@@ -125,17 +125,17 @@ def main(n_obs, prj, run_matlab=False, run_wandb=False):
     # Optionally run MATLAB ground truth
     run_matlab_ground_truth(n_obs, src_dir, prj_figs, run_matlab)
 
-    # Generate and check observers if needed
-    multi_obs = uu.mm_observer(n_obs)
-    X, y_sys, y_obs, y_mm_obs = uu.gen_testdata(n_obs)
-    x_obs = uu.gen_obsdata(n_obs)
+    # # Generate and check observers if needed
+    # multi_obs = uu.mm_observer(n_obs)
+    # X, y_sys, y_obs, y_mm_obs = uu.gen_testdata(n_obs)
+    # x_obs = uu.gen_obsdata(n_obs)
     
-    # Optionally check observers and upload to wandb
-    check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, y_obs, run_wandb)
+    # # Optionally check observers and upload to wandb
+    # check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, y_obs, run_wandb)
 
-    run_figs = co.set_run(f"mm_obs")
-    # Solve IVP and plot weights
-    solve_ivp_and_plot(multi_obs, run_figs, n_obs, x_obs, X, y_sys, y_mm_obs, run_wandb)
+    # run_figs = co.set_run(f"mm_obs")
+    # # Solve IVP and plot weights
+    # solve_ivp_and_plot(multi_obs, run_figs, n_obs, x_obs, X, y_sys, y_mm_obs, run_wandb)
 
 
 if __name__ == "__main__":
@@ -144,7 +144,7 @@ if __name__ == "__main__":
     parser.add_argument("--run_matlab", action="store_true", help="Run MATLAB ground truth.")
     parser.add_argument("--run_wandb", action="store_true", help="Use wandb for logging observers.")
     args = parser.parse_args()
-    prj = "3Obs"
+    prj = "new_simulations"
     n_obs = b["n_obs"]
     # Run main function with options
     main(n_obs, prj, run_matlab=args.run_matlab, run_wandb=args.run_wandb)
