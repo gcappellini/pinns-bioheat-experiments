@@ -59,3 +59,22 @@ experiment:
 output:
   base_dir: "${hydra:runtime.output_dir}"  # Hydra auto-generates subdirectories per run
   save_figures: true
+
+# Plot configuration
+plot:
+  observers:
+    labels: ["Obs 0", "Obs 1", "Obs 2", "Obs 3", "Obs 4", "Obs 5", "Obs 6", "Obs 7"]
+    colors: ["C0", "C1", "C2", "C3", "C4", "C5", "C6", "C7"]
+    alpha: 0.8
+    linestyle: "solid"
+  mm_obs:
+    color: "yellow"
+    marker: "x"
+    linestyle: "None"
+    markevery: 6
+  loss_terms:
+    colors: ["blue", "green", "red", "purple"]
+    linestyle: "solid"
+  gt:
+    linestyle: "dashed"  # For ground truth plots
+    alpha: 0.6
