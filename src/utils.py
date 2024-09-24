@@ -204,7 +204,7 @@ def train_model(run_figs):
     else:
         losshistory, _ = train_and_save_model(mm, callbacks, run_figs)
 
-    pp.plot_loss_components(losshistory)
+    pp.plot_loss_components(losshistory, config_hash)
     return mm
 
 

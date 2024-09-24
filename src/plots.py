@@ -115,7 +115,7 @@ def configure_subplot(ax, XS, surface, xlabel, ylabel, zlabel):
 
 
 # Main plot functions
-def plot_loss_components(losshistory):
+def plot_loss_components(losshistory, nam):
     # Prepare the loss data
     loss_train = np.array(losshistory.loss_train)
     loss_test = np.array(losshistory.loss_test).sum(axis=1).ravel()
@@ -144,7 +144,7 @@ def plot_loss_components(losshistory):
         ylabel="loss",
         legend_labels=legend_labels,
         log_scale=True,  # We want a log scale on the y-axis
-        filename=f"{models_dir}/losses_{config_hash}.png"
+        filename=f"{models_dir}/losses_{nam}.png"
     )
 
 
