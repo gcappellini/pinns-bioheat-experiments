@@ -132,11 +132,13 @@ def plot_loss_components(losshistory):
     
     # Get iterations (x-axis)
     iters = losshistory.steps
+    loss_terms = np.array(y_values)
+    iterations = np.array([iters]*len(y_values))
 
     # Call the generic plotting function
     plot_generic(
-        x=iters,
-        y=y_values,
+        x=iterations,
+        y=loss_terms,
         title="Loss Components",
         xlabel="iterations",
         ylabel="loss",
