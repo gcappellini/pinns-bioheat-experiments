@@ -11,7 +11,7 @@
     "Ty20": 29.3,
     "Twater": 33.0,
     "K": 50.0,
-    "delta": 0.1,
+    "delta": -10.5,
     "activation": "tanh",
     "initial_weights_regularizer": true,
     "initialization": "Glorot uniform",
