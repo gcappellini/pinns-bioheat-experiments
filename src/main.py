@@ -9,13 +9,14 @@ def main(cfg: DictConfig):
     experiment_type = cfg.experiment.type
     
     # Path to the script directory
-    script_dir = os.path.dirname(os.path.abspath(__file__))
+    src_dir = os.path.dirname(os.path.abspath(__file__))
+    git_dir = os.path.dirname(src_dir)
 
     # Define the mapping between experiment type and script file
     script_mapping = {
         'network_test': 'network_test.py',
         'simulation': 'simulation.py',
-        'measurement': 'measurement.py'
+        'measurement': f'{src_dir}/main_measurements2.py'
     }
 
     # Check if the experiment type is valid
@@ -24,7 +25,7 @@ def main(cfg: DictConfig):
         script_to_run = script_mapping[experiment_type]
         
         # Build the full path to the script
-        script_path = os.path.join(script_dir, script_to_run)
+        script_path = os.path.join(git_dir, script_to_run)
         
         # Execute the script using subprocess
         subprocess.run(["python", script_path])
