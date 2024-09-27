@@ -35,6 +35,7 @@ def check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, run_wandb, outp
         
         # pp.plot_l2(x_obs, y_sys, multi_obs[el], el, run_figs)
         pp.plot_tf(X, y_sys, multi_obs[el], el, run_figs)
+        pp.plot_observation_3d(X[:, 0:2], y_sys, pred, run_figs)
 
         metrics = uu.compute_metrics(y_sys, pred)
  
@@ -140,7 +141,8 @@ def main():
     check_observers_and_wandb_upload(multi_obs, x_obs, X, meas, run_wandb, output_dir, config)
 
     run_figs = co.set_run(f"mm_obs")
-    lam = config.model_parameters.lam
+    config.model_properties.W = None
+    OmegaConf.save(config, f"{run_figs}/config.yaml") 
     # Solve IVP and plot weights
     solve_ivp_and_plot(multi_obs, run_figs, n_obs, x_obs, X, meas, lam)
 

@@ -198,8 +198,8 @@ def plot_l2(xobs, theta_true, model, number, folder, MultiObs=False):
     e = xobs[:, 0:2].reshape(len(xobs), 2)
     theta_true = theta_true.reshape(len(e), 1)
 
-    e = OmegaConf.load(f'{folder}/config.yaml')
-    lam = e.model_parameters.lam
+    f = OmegaConf.load(f'{folder}/config.yaml')
+    lam = f.model_parameters.lam
 
     # Prepare for L2 norm computation
     l2 = []
