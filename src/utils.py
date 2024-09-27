@@ -399,9 +399,7 @@ def import_obsdata():
 def mm_observer(n_obs, config):
 
     if n_obs==8:
-        W0, W1, W2, W3, W4, W5, W6, W7 = config.model_parameters.W0, config.model_parameters.W1, config.model_parameters.W2,
-        config.model_parameters.W3, config.model_parameters.W4, config.model_parameters.W5, config.model_parameters.W6, 
-        config.model_parameters.W7
+        W0, W1, W2, W3, W4, W5, W6, W7 = config.model_parameters.W0, config.model_parameters.W1, config.model_parameters.W2, config.model_parameters.W3, config.model_parameters.W4, config.model_parameters.W5, config.model_parameters.W6, config.model_parameters.W7
         obs = np.array([W0, W1, W2, W3, W4, W5, W6, W7])
     if n_obs==3:
         W0, W1, W2 = config.model_parameters.W0, config.model_parameters.W4, config.model_parameters.W7

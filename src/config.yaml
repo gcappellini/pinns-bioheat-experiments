@@ -1,6 +1,6 @@
 # Configuration for model properties
 model_properties:
-  L0: 0.08
+  L0: 0.07
   tauf: 9052.0
   k: 0.6
   rho: 1000.0
@@ -11,8 +11,8 @@ model_properties:
   Tmax: 35.47
   Ty20: 29.3
   Twater: 33.0
-  K: 50.0
-  delta: 3.0
+  K: 250.0
+  delta: -10.5
   activation: "tanh"
   initial_weights_regularizer: true
   initialization: "Glorot uniform"
@@ -21,7 +21,7 @@ model_properties:
   learning_rate: 0.0001
   num_dense_layers: 6
   num_dense_nodes: 92
-  num_domain: 1500
+  num_domain: 1000
   num_boundary: 2000
   num_initial: 800
   num_test: 10000
@@ -46,7 +46,7 @@ model_parameters:
   W7: 0.7
   y20_simulated: 33.0
   y20_measured: 29.3
-  n_obs: 3
+  n_obs: 8
 
 # Experiment type: can be either 'simulation' or 'measurement', with different observers (3 or 8)
 experiment:
