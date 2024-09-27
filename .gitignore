@@ -197,5 +197,6 @@ tests/*
 old/
 models/
 src/wandb
+src/outputs
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,python

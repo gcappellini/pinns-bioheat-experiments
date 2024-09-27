@@ -16,7 +16,7 @@ model_properties:
   activation: "tanh"
   initial_weights_regularizer: true
   initialization: "Glorot uniform"
-  iterations: 40000
+  iterations: 60000
   LBFGS: false
   learning_rate: 0.0001
   num_dense_layers: 6
@@ -59,7 +59,7 @@ experiment:
 output:
   base_dir: "${hydra:runtime.output_dir}"  # Hydra auto-generates subdirectories per run
   save_figures: true
-  
+
 output_dir: ${hydra:run.dir}
 # Plot configuration
 plot:

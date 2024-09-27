@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import torch
 import seaborn as sns
 import wandb
-import json
 from scipy.interpolate import interp1d
 from scipy import integrate
 import pickle
@@ -14,6 +13,7 @@ import coeff_calc as cc
 import hashlib
 import plots as pp
 import common as co
+from omegaconf import OmegaConf
 
 dde.config.set_random_seed(200)
 
@@ -80,26 +80,26 @@ def output_transform(x, y):
     return x[:, 0:1] * y
 
 def create_nbho(run_figs):
-    prop = co.read_json(f"{run_figs}/properties.json")
+    config = OmegaConf.load(f'{run_figs}/config.yaml')
 
-    activation = prop["activation"]
-    initial_weights_regularizer = prop["initial_weights_regularizer"]
-    initialization = prop["initialization"]
-    learning_rate = prop["learning_rate"]
-    num_dense_layers = prop["num_dense_layers"]
-    num_dense_nodes = prop["num_dense_nodes"]
-    w_res, w_bc0, w_bc1, w_ic = prop["w_res"], prop["w_bc0"], prop["w_bc1"], prop["w_ic"]
-    num_domain, num_boundary, num_initial, num_test = prop["num_domain"], prop["num_boundary"], prop["num_initial"], prop["num_test"]
+    activation = config.model_properties.activation
+    initial_weights_regularizer = config.model_properties.initial_weights_regularizer
+    initialization = config.model_properties.initialization
+    learning_rate = config.model_properties.learning_rate
+    num_dense_layers = config.model_properties.num_dense_layers
+    num_dense_nodes = config.model_properties.num_dense_nodes
+    w_res, w_bc0, w_bc1, w_ic = config.model_properties.w_res, config.model_properties.w_bc0, config.model_properties.w_bc1, config.model_properties.w_ic
+    num_domain, num_boundary, num_initial, num_test = config.model_properties.num_domain, config.model_properties.num_boundary, config.model_properties.num_initial, config.model_properties.num_test
 
     a1 = cc.a1
     a2 = cc.a2
     a3 = cc.a3
-    K = prop["K"]
-    delta = prop["delta"]
-    W = prop["W"]
+    K = config.model_properties.K
+    delta = config.model_properties.delta
+    W = config.model_properties.W
 
-    Twater = prop["Twater"]
-    Ty20 = prop["Ty20"]
+    Twater = config.model_properties.Twater
+    Ty20 = config.model_properties.Ty20
     theta_w, theta_y20 = scale_t(Twater), scale_t(Ty20)
 
 
@@ -172,9 +172,9 @@ def create_nbho(run_figs):
 
 def train_model(run_figs):
     global models
-    conf = co.read_json(f"{run_figs}/properties.json")
-    config_hash = co.generate_config_hash(conf)
-    n = conf["iterations"]
+    config = OmegaConf.load(f'{run_figs}/config.yaml')
+    config_hash = co.generate_config_hash(config.model_properties)
+    n = config.model_properties.iterations
     model_path = os.path.join(models, f"model_{config_hash}.pt-{n}.pt")
 
     mm = create_nbho(run_figs)
@@ -185,10 +185,10 @@ def train_model(run_figs):
         mm.restore(model_path, verbose=0)
         return mm
     
-    LBFGS = conf["LBFGS"]
-    ini_w = conf["initial_weights_regularizer"]
-    resampler = conf["resampling"]
-    resampler_period = conf["resampler_period"]
+    LBFGS = config.model_properties.LBFGS
+    ini_w = config.model_properties.initial_weights_regularizer
+    resampler = config.model_properties.resampling
+    resampler_period = config.model_properties.resampler_period
 
     callbacks = [dde.callbacks.PDEPointResampler(period=resampler_period)] if resampler else []
 
@@ -211,21 +211,19 @@ def train_model(run_figs):
 def train_and_save_model(model, callbacks, run_figs):
     global models
 
-    conf = co.read_json(f"{run_figs}/properties.json")
-    config_hash = co.generate_config_hash(conf)
+    conf = OmegaConf.load(f'{run_figs}/config.yaml')
+    config_hash = co.generate_config_hash(conf.model_properties)
     model_path = os.path.join(models, f"model_{config_hash}.pt")
 
     display_every = 1000
     losshistory, train_state = model.train(
-        iterations=conf["iterations"],
+        iterations=conf.model_properties.iterations,
         callbacks=callbacks,
         model_save_path=model_path,
         display_every=display_every
     )
-
-    config_path = model_path.replace(".pt", ".json")
-    with open(config_path, 'w') as f:
-        json.dump(conf, f, indent=4)
+    confi_path = os.path.join(models, f"config_{config_hash}.yaml")
+    OmegaConf.save(conf, confi_path)
 
     return losshistory, train_state
 
@@ -268,8 +266,8 @@ def gen_obsdata(n):
     y2 = rows_0[:, 2].reshape(len(instants),)
     f2 = interp1d(instants, y2, kind='previous')
 
-    properties = co.read_json(f"{src_dir}/properties.json")
-    theta_w = scale_t(properties["Twater"])
+    properties = OmegaConf.load(f"{src_dir}/config.yaml")
+    theta_w = scale_t(properties.model_properties.Twater)
     y3 = np.full_like(y2, theta_w)
     f3 = interp1d(instants, y3, kind='previous')
 
@@ -290,8 +288,8 @@ def gen_obs_y2(n):
     y2 = rows_0[:, 2].reshape(len(instants),)
     f2 = interp1d(instants, y2, kind='previous')
 
-    properties = co.read_json(f"{src_dir}/properties.json")
-    theta_w = scale_t(properties["Twater"])
+    properties = OmegaConf.load(f"{src_dir}/config.yaml")
+    theta_w = scale_t(properties.model_properties.Twater)
     y3 = np.full_like(y2, theta_w)
     f3 = interp1d(instants, y3, kind='previous')
 
@@ -313,8 +311,8 @@ def gen_obs_y1(n):
     y2 = rows_0[:, 2].reshape(len(instants),)
     f2 = interp1d(instants, y2, kind='previous')
 
-    properties = co.read_json(f"{src_dir}/properties.json")
-    theta_w = scale_t(properties["Twater"])
+    properties = OmegaConf.load(f"{src_dir}/config.yaml")
+    theta_w = scale_t(properties.model_properties.Twater)
     y3 = np.full_like(y2, theta_w)
     f3 = interp1d(instants, y3, kind='previous')
 
@@ -326,27 +324,25 @@ def load_from_pickle(file_path):
         return pickle.load(pkl_file)
     
 def scale_t(t):
-
-    prop = co.read_json(f"{src_dir}/properties.json")
-    Troom = prop["Troom"]
-    Tmax = prop["Tmax"]
+    properties = OmegaConf.load(f"{src_dir}/config.yaml")
+    Troom = properties.model_properties.Troom
+    Tmax = properties.model_properties.Tmax
 
     return (t - Troom) / (Tmax - Troom)
 
 def rescale_t(theta):
-
-    prop = co.read_json(f"{src_dir}/properties.json")
-    Troom = prop["Troom"]
-    Tmax = prop["Tmax"]
+    properties = OmegaConf.load(f"{src_dir}/config.yaml")
+    Troom = properties.model_properties.Troom
+    Tmax = properties.model_properties.Tmax
 
     return Troom + (Tmax - Troom)*theta
 
 def get_tc_positions():
-    daa = co.read_json(f"{src_dir}/properties.json")
-    L0 = daa["L0"]
+    daa = OmegaConf.load(f"{src_dir}/config.yaml")
+    L0 = daa.model_properties.L0
     x_y2 = 0
-    x_gt2 = 0.02/L0
-    x_gt1 = 0.05/L0
+    x_gt2 = 0.01/L0
+    x_gt1 = 0.04/L0
     x_y1 = 1
 
     return [x_y2, x_gt2, x_gt1, x_y1] 
@@ -400,15 +396,15 @@ def import_obsdata():
     return Xobs
 
 
-def mm_observer(n_obs):
-
-    data =  co.read_json(f"{src_dir}/parameters.json")
+def mm_observer(n_obs, config):
 
     if n_obs==8:
-        W0, W1, W2, W3, W4, W5, W6, W7 = data["W0"], data["W1"], data["W2"], data["W3"], data["W4"], data["W5"], data["W6"], data["W7"]
+        W0, W1, W2, W3, W4, W5, W6, W7 = config.model_parameters.W0, config.model_parameters.W1, config.model_parameters.W2,
+        config.model_parameters.W3, config.model_parameters.W4, config.model_parameters.W5, config.model_parameters.W6, 
+        config.model_parameters.W7
         obs = np.array([W0, W1, W2, W3, W4, W5, W6, W7])
     if n_obs==3:
-        W0, W1, W2 = data["W0"], data["W4"], data["W7"]
+        W0, W1, W2 = config.model_parameters.W0, config.model_parameters.W4, config.model_parameters.W7
         obs = np.array([W0, W1, W2])        
 
 
@@ -418,10 +414,9 @@ def mm_observer(n_obs):
     
     for j in range(n_obs):
         perf = obs[j]
-        properties = co.read_json(f"{src_dir}/properties.json")
-        properties["W"] = perf
+        config.model_properties.W = float(perf)
         run_figs = co.set_run(f"obs_{j}")
-        co.write_json(properties, f"{run_figs}/properties.json")
+        OmegaConf.save(config, f"{run_figs}/config.yaml") 
 
         model = train_model(run_figs)
         multi_obs.append(model)
@@ -446,8 +441,8 @@ def mu(o, tau):
 
 def calculate_mu(os, tr):
     tr = tr.reshape(os.shape)
-    net = co.read_json(f"{src_dir}/parameters.json")
-    upsilon = net["upsilon"]
+    net = OmegaConf.load(f"{src_dir}/config.yaml")
+    upsilon = net.model_parameters.upsilon
     scrt = upsilon*np.abs(os-tr)**2
     return scrt
 
@@ -496,9 +491,11 @@ def mm_predict(multi_obs, lam, obs_grid, prj_figs):
 
 
 def test_observer(model, run_figs, X, x_obs, y_obs, number):
-        obs = f"W{number}"
-        b = co.read_json(f"{src_dir}/parameters.json")
-        n_obs = b["n_obs"]
+        obs = f"Obs {number}"
+
+        conf = OmegaConf.load(f'{run_figs}/config.yaml')
+        n_obs = conf.model_parameters.n_obs
+
         
         # Model prediction
         y_pred = model.predict(x_obs)

@@ -4,7 +4,10 @@ import hydra
 from omegaconf import DictConfig, OmegaConf
 import tempfile
 
-@hydra.main(version_base=None, config_path="config", config_name="config")
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
+@hydra.main(version_base=None, config_path=current_dir, config_name="config")
+
 def main(cfg: DictConfig):
     # Get the experiment type from the config
     experiment_type = cfg.experiment.type

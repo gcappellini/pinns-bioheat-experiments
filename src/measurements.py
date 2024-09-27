@@ -8,6 +8,7 @@ import plots as pp
 import argparse
 from import_vessel_data import load_measurements, extract_entries
 from omegaconf import OmegaConf
+from datetime import datetime
 
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
@@ -26,9 +27,9 @@ def check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, run_wandb, outp
         run_figs = os.path.join(output_dir, f"obs_{el}")
         # aa = co.read_json(f"{run_figs}/properties.json")
         
-        if run_wandb:
-            print(f"Initializing wandb for observer {el}...")
-            wandb.init(project="mm_obs_simulation", name=f"obs_{el}", config=config)
+        # if run_wandb:
+        #     print(f"Initializing wandb for observer {el}...")
+        #     wandb.init(project=, name=f"obs_{el}", config=config)
         
         pred = multi_obs[el].predict(x_obs)
         
@@ -42,12 +43,11 @@ def check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, run_wandb, outp
             wandb.finish()
 
 
-def solve_ivp_and_plot(multi_obs, fold, n_obs, x_obs, X, y_sys, conf, run_wandb):
+def solve_ivp_and_plot(multi_obs, fold, n_obs, x_obs, X, y_sys, lam):
     """
     Solve the IVP for observer weights and plot the results.
     """
     p0 = np.full((n_obs,), 1/n_obs)
-    lam = conf.model_parameters.lam
 
     def f(t, p):
         a = uu.mu(multi_obs, t)
@@ -72,15 +72,15 @@ def solve_ivp_and_plot(multi_obs, fold, n_obs, x_obs, X, y_sys, conf, run_wandb)
     t = np.unique(X[:, 1:2])
     mus = uu.mu(multi_obs, t)
 
-    if run_wandb:
-        print(f"Initializing wandb for multi observer ...")
-        wandb.init(project= f"{conf.output.base_dir}", name=f"mm_obs")
+    # if run_wandb:
+    #     print(f"Initializing wandb for multi observer ...")
+    #     wandb.init(project= str, name=f"mm_obs")
 
     metrics = uu.compute_metrics(y_sys, y_pred)
     
-    if run_wandb:
-        wandb.log(metrics)
-        wandb.finish()
+    # if run_wandb:
+    #     wandb.log(metrics)
+    #     wandb.finish()
 
     pp.plot_mu(mus, t, fold)
     pp.plot_l2(x_obs, y_sys, multi_obs, 0, fold, MultiObs=True)
@@ -124,25 +124,24 @@ def main():
     experiment_type = config.experiment.type
     print(f"Running measurement with experiment type: {experiment_type}")
 
-    # Example: Access some configuration values
-    print(f"Measurement configuration: {config.measurement}")
     n_obs = config.model_parameters.n_obs
+    output_dir = co.set_prj("ok")
 
     # Generate and check observers if needed
-    multi_obs = uu.mm_observer(n_obs)
+    multi_obs = uu.mm_observer(n_obs, config)
     a = uu.import_testdata()
     X = a[:, 0:2]
     meas = a[:, 2:3]
     x_obs = uu.import_obsdata()
-    
-    run_wandb = config.experiment.run_mandb
+    run_wandb = config.experiment.run_wandb
+    lam = config.model_parameters.lam
     # Optionally check observers and upload to wandb
-    check_observers_and_wandb_upload(multi_obs, x_obs, X, meas, run_wandb, config)
+    check_observers_and_wandb_upload(multi_obs, x_obs, X, meas, run_wandb, output_dir, config)
 
-    run_figs = os.path.join(output_dir, f"mm_obs")
+    run_figs = co.set_run(f"mm_obs")
     lam = config.model_parameters.lam
     # Solve IVP and plot weights
-    solve_ivp_and_plot(multi_obs, run_figs, n_obs, x_obs, X, meas, lam, run_wandb)
+    solve_ivp_and_plot(multi_obs, run_figs, n_obs, x_obs, X, meas, lam)
 
     y1_pred, gt1_pred, gt2_pred, y2_pred = scale_predictions(multi_obs, x_obs, run_figs, lam)
 

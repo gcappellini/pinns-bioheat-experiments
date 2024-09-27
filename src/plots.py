@@ -1,12 +1,11 @@
 import os
-import json
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import deepxde as dde
 import torch
 import utils as uu
-import common as co
+from omegaconf import OmegaConf
 
 # Set up directories and random seed
 dde.config.set_random_seed(200)
@@ -18,12 +17,6 @@ git_dir = os.path.dirname(src_dir)
 
 models_dir = os.path.join(git_dir, "models")
 os.makedirs(models_dir, exist_ok=True)
-
-# Load parameters and properties
-param = co.read_json(f"{src_dir}/parameters.json")
-prop = co.read_json(f"{src_dir}/properties.json")
-config_hash = co.generate_config_hash(prop)
-lam = param["lambda"]
 
 def plot_generic(x, y, title, xlabel, ylabel, legend_labels=None, log_scale=False, size=(6, 5), filename=None):
     """
@@ -205,6 +198,9 @@ def plot_l2(xobs, theta_true, model, number, folder, MultiObs=False):
     e = xobs[:, 0:2].reshape(len(xobs), 2)
     theta_true = theta_true.reshape(len(e), 1)
 
+    e = OmegaConf.load(f'{folder}/config.yaml')
+    lam = e.model_parameters.lam
+
     # Prepare for L2 norm computation
     l2 = []
 
@@ -293,6 +289,9 @@ def plot_tf(e, theta_true, model, number, prj_figs, MultiObs=False):
     # Generate X values for prediction
     x = np.linspace(0, 1, 100)   # Depth values for prediction
     Xobs = np.vstack((x, uu.f1(np.ones_like(x)), uu.f2(np.ones_like(x)), uu.f3(np.ones_like(x)), np.ones_like(x))).T
+
+    e = OmegaConf.load(f'{prj_figs}/config.yaml')
+    lam = e.model_parameters.lam
 
     if MultiObs:
         # Combined prediction using multi-observer model

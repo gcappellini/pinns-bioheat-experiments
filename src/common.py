@@ -11,6 +11,7 @@ import json
 # import pickle
 # import pandas as pd
 import hashlib
+from omegaconf import OmegaConf
 
 dde.config.set_random_seed(200)
 
@@ -57,9 +58,17 @@ def read_json(filepath):
     return data
 
 
+
 def generate_config_hash(config_data):
-    config_string = json.dumps(config_data, sort_keys=True)  # Sort to ensure consistent ordering
-    config_hash = hashlib.md5(config_string.encode()).hexdigest()  # Create a unique hash
+    # Convert OmegaConf object to a dictionary (nested structure)
+    config_dict = OmegaConf.to_container(config_data, resolve=True)
+    
+    # Convert the dictionary to a sorted JSON string
+    config_string = json.dumps(config_dict, sort_keys=True)  # Sort to ensure consistent ordering
+    
+    # Create a unique hash using MD5
+    config_hash = hashlib.md5(config_string.encode()).hexdigest()
+    
     return config_hash
 
 
