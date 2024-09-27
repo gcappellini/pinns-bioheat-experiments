@@ -8,20 +8,20 @@ G : board 3, points 0-6, serial number 1186
 H : board 3, points 7-13, serial number 1201
 I : board 4, points 0-6, serial number 728
 J : board 4, points 7-13, serial number 731
-L : board 5, points 0-6, serial number 719
-M : board 5, points 7-13, serial number 720
-O : board 6, points 0-6, serial number 723
-Q : board 6, points 7-13, serial number 725
-R : board 7, points 0-6, serial number 701
-YZ : board 7, points 7-13, serial number 729
-board 8, points 0-6, serial number 732
-board 8, points 7-13, serial number 1202 and number 1207
-board 9, points 0-6, serial number 2508
-board 9, points 7-13, serial number 2509
-board 10, points 0-6, serial number 2510
-board 10, points 7-13, serial number 2511
-board 11, points 0-6, serial number 2512
-board 11, points 7-13, serial number 2513
+K : board 5, points 0-6, serial number 719
+L : board 5, points 7-13, serial number 720
+M : board 6, points 0-6, serial number 723
+N : board 6, points 7-13, serial number 725
+O : board 7, points 0-6, serial number 701
+P : board 7, points 7-13, serial number 729
+Q : board 8, points 0-6, serial number 732
+R : board 8, points 7-13, serial number 1202 and number 1207
+S : board 9, points 0-6, serial number 2508
+T : board 9, points 7-13, serial number 2509
+U : board 10, points 0-6, serial number 2510
+V : board 10, points 7-13, serial number 2511
+XY: board 11, points 0-6, serial number 2512
+Z : board 11, points 7-13, serial number 2513
 board 12, points 0-6, serial number 1206_1
 board 12, points 7-13, serial number 1206_2
 board 13, points 0-6, serial number 2516
