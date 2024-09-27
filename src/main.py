@@ -1,12 +1,14 @@
 import subprocess
 import os
 import hydra
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
+import tempfile
 
 @hydra.main(version_base=None, config_path="config", config_name="config")
 def main(cfg: DictConfig):
     # Get the experiment type from the config
     experiment_type = cfg.experiment.type
+
     
     # Path to the script directory
     src_dir = os.path.dirname(os.path.abspath(__file__))
@@ -16,7 +18,7 @@ def main(cfg: DictConfig):
     script_mapping = {
         'network_test': 'network_test.py',
         'simulation': 'simulation.py',
-        'measurement': f'{src_dir}/main_measurements2.py'
+        'measurement': f'{src_dir}/measurements.py'
     }
 
     # Check if the experiment type is valid
@@ -27,8 +29,12 @@ def main(cfg: DictConfig):
         # Build the full path to the script
         script_path = os.path.join(git_dir, script_to_run)
         
+        # Serialize the config and pass it as a YAML file to the script
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".yaml") as temp_config:
+            OmegaConf.save(config=cfg, f=temp_config.name)
+            temp_config_path = temp_config.name
         # Execute the script using subprocess
-        subprocess.run(["python", script_path])
+        subprocess.run(["python", script_path, "--config-path", temp_config_path])
     else:
         print(f"Unknown experiment type: {experiment_type}")
 

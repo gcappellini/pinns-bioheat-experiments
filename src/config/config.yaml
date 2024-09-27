@@ -59,7 +59,8 @@ experiment:
 output:
   base_dir: "${hydra:runtime.output_dir}"  # Hydra auto-generates subdirectories per run
   save_figures: true
-
+  
+output_dir: ${hydra:run.dir}
 # Plot configuration
 plot:
   observers:
