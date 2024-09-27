@@ -30,9 +30,6 @@ os.makedirs(tests_dir, exist_ok=True)
 models = os.path.join(git_dir, "models")
 os.makedirs(models, exist_ok=True)
 
-figures = os.path.join(tests_dir, "figures")
-os.makedirs(figures, exist_ok=True)
-
 f1, f2, f3 = [None]*3
 
 

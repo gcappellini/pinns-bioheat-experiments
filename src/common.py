@@ -28,16 +28,12 @@ os.makedirs(tests_dir, exist_ok=True)
 models = os.path.join(git_dir, "models")
 os.makedirs(models, exist_ok=True)
 
-figures = os.path.join(tests_dir, "figures")
-os.makedirs(figures, exist_ok=True)
-
-
 prj_figs, run_figs = [None]*2
 
 def set_prj(prj):
     global prj_figs
 
-    prj_figs = os.path.join(figures, prj)
+    prj_figs = os.path.join(tests_dir, prj)
     os.makedirs(prj_figs, exist_ok=True)
 
     return prj_figs

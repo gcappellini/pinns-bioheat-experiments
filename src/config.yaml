@@ -11,12 +11,12 @@ model_properties:
   Tmax: 35.47
   Ty20: 29.3
   Twater: 33.0
-  K: 250.0
+  K: 50.0
   delta: -10.5
   activation: "tanh"
   initial_weights_regularizer: true
   initialization: "Glorot uniform"
-  iterations: 60000
+  iterations: 10000
   LBFGS: false
   learning_rate: 0.0001
   num_dense_layers: 6
@@ -54,6 +54,7 @@ experiment:
   observers: 3        # Choose 3 or 8 observers
   run_matlab: false
   run_wandb: false
+  name: "prova_plot"
 
 # Output directory management
 output:

@@ -125,7 +125,8 @@ def main():
     print(f"Running measurement with experiment type: {experiment_type}")
 
     n_obs = config.model_parameters.n_obs
-    output_dir = co.set_prj("ok")
+    prj_name = config.experiment.name
+    output_dir = co.set_prj(prj_name)
 
     # Generate and check observers if needed
     multi_obs = uu.mm_observer(n_obs, config)

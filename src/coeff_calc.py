@@ -1,28 +1,39 @@
 import os
-import numpy as np
-import json
-import hashlib
-import utils as uu
+from omegaconf import OmegaConf
+
 
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
 
+cfg = OmegaConf.load(f'{src_dir}/config.yaml')
 
-with open(f"{src_dir}/properties.json", 'r') as f:
-  data = json.load(f)
+L0 = cfg.model_properties.L0
+tauf = cfg.model_properties.tauf
+k = cfg.model_properties.k
+c = cfg.model_properties.c
+rho = cfg.model_properties.rho
+h = cfg.model_properties.h
 
-with open(f"{src_dir}/parameters.json", 'r') as f:
-  data2 = json.load(f)
+Tmax = cfg.model_properties.Tmax
+Troom = cfg.model_properties.Troom
+Twater = cfg.model_properties.Twater
+Ty20 = cfg.model_properties.Ty20
 
-# Constants
-L0, tauf = data["L0"], data["tauf"]
-k, c, rho, h = data["k"], data["c"], data["rho"], data["h"]
+K = cfg.model_properties.K
+delta = cfg.model_properties.delta
 
-Tmax, Troom, Twater, Ty20 = data["Tmax"], data["Troom"], data["Twater"], data["Ty20"]   
+# Accessing model parameters from the config
+W0 = cfg.model_parameters.W0
+W1 = cfg.model_parameters.W1
+W2 = cfg.model_parameters.W2
+W3 = cfg.model_parameters.W3
+W4 = cfg.model_parameters.W4
+W5 = cfg.model_parameters.W5
+W6 = cfg.model_parameters.W6
+W7 = cfg.model_parameters.W7
 
-W0, W1, W2, W3, W4, W5, W6, W7 = data2["W0"], data2["W1"], data2["W2"], data2["W3"], data2["W4"], data2["W5"], data2["W6"], data2["W7"]
-
-K, lamb, delta = data["K"], data2["lambda"], data["delta"]
+lamb = cfg.model_parameters.lam  # Access the lambda parameter
+upsilon = cfg.model_parameters.upsilon
 
 def scale_t(t):
 

@@ -12,7 +12,6 @@ def main(cfg: DictConfig):
     # Get the experiment type from the config
     experiment_type = cfg.experiment.type
 
-    
     # Path to the script directory
     src_dir = os.path.dirname(os.path.abspath(__file__))
     git_dir = os.path.dirname(src_dir)
