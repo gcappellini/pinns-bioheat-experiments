@@ -44,7 +44,7 @@ def load_from_pickle(file_path):
     
 
 def extract_entries(timeseries_data, tmin, tmax):
-    keys_to_extract = {10: 'y1', 45: 'gt1', 66: 'gt2', 24: 'y2', 31: 'y3', 39:'bol_out'}
+    keys_to_extract = {10: 'y1', 45: 'gt1', 66: 'gt2', 24: 'y2', 31: 'y3', 37:'bol_out'}  # original bol_out: 39
     extracted_data = {new_key: timeseries_data.get(old_key, []) for old_key, new_key in keys_to_extract.items()}
 
     # Create a list of all unique times
@@ -106,24 +106,26 @@ def scale_df(df):
 
 
 file_path = f"{src_dir}/data/vessel/20240522_1.txt"
+# file_path = f"{src_dir}/data/vessel/Guglielmo3.txt" 
 timeseries_data = load_measurements(file_path)
-# df = extract_entries(timeseries_data, 83*60, 4*60*60)
-df = extract_entries(timeseries_data, 200*60, 4*60*60)
-# print(df["t"], df["y2"])
+df = extract_entries(timeseries_data, 106*60, 10*60*60)
+df = extract_entries(timeseries_data, 2*60, 29*60)
+
+print(df)
 # print(df['gt2'].max(), df['y1'].min(), df['gt2'].max() - df['y1'].min())
 # df1 = scale_df(df)
 # save_to_pickle(df1, f"{src_dir}/cooling_scaled.pkl")
 # df1.to_csv(f"{src_dir}/cooling_scaled.txt", index=False, header=False)
 
-# fig, ax = plt.subplots(figsize=(12, 6))  # Stretching layout horizontally
+fig, ax = plt.subplots(figsize=(12, 6))  # Stretching layout horizontally
 
-# # Plotting data with specified attributes
-# ax.plot(df['t']/60, df['y1'], label='y1', marker='x')
-# ax.plot(df['t']/60, df['gt1'], label='gt1', alpha=1.0, linewidth=0.7)
-# ax.plot(df['t']/60, df['gt2'], label='gt2', alpha=1.0, linewidth=0.7)
-# ax.plot(df['t']/60, df['y2'], label='y2', alpha=1.0, linewidth=0.7)
-# ax.plot(df['t']/60, df['y3'], label='y3', alpha=1.0, linewidth=0.7)
-# # ax.plot(df['t']/60, df['bol_out'], label='bolus outlet', alpha=1.0, linewidth=0.7)
+# Plotting data with specified attributes
+ax.plot(df['t']/60, df['y1'], label='y1', marker='x')
+ax.plot(df['t']/60, df['gt1'], label='gt1', alpha=1.0, linewidth=0.7)
+ax.plot(df['t']/60, df['gt2'], label='gt2', alpha=1.0, linewidth=0.7)
+ax.plot(df['t']/60, df['y2'], label='y2', alpha=1.0, linewidth=0.7)
+ax.plot(df['t']/60, df['y3'], label='y3', alpha=1.0, linewidth=0.7)
+# ax.plot(df['t']/60, df['bol_out'], label='bolus outlet', alpha=1.0, linewidth=0.7)
 
 # # Add vertical dashed red lines with labels on the plot
 # # ax.axvline(x=2, color='red', linestyle='--', linewidth=1.1)
@@ -138,24 +140,24 @@ df = extract_entries(timeseries_data, 200*60, 4*60*60)
 # # ax.axvline(x=83, color='red', linestyle='--', linewidth=1.1)
 # # ax.text(83.5, 35.8, 'RF off, max perfusion', color='red', fontsize=10, verticalalignment='top')
 
-# # Adding legend for the plotted data (excluding the vertical lines)
-# ax.legend()
+# Adding legend for the plotted data (excluding the vertical lines)
+ax.legend()
 
-# # Setting title and labels with modifications
-# ax.set_title("Cooling Experiment", fontweight='bold')
-# ax.set_xlabel("Time (min)", fontsize=12)
-# ax.set_ylabel("Temperature (°C)", fontsize=12)
-# # ax.set_xlim(0, 234)
+# Setting title and labels with modifications
+ax.set_title("Experiment 240521", fontweight='bold')
+ax.set_xlabel("Time (min)", fontsize=12)
+ax.set_ylabel("Temperature (°C)", fontsize=12)
+# ax.set_xlim(0, 234)
 
-# # Adjust layout for better horizontal stretching
-# plt.tight_layout()
+# Adjust layout for better horizontal stretching
+plt.tight_layout()
 
-# # Display and save plot
+# Display and save plot
 
-# # plt.savefig(f"{src_dir}/data/vessel/bolus.png", dpi=120)
-# plt.show()
-# plt.close()
-# plt.clf()
+plt.savefig(f"{src_dir}/data/vessel/experiment_240521.png", dpi=120)
+plt.show()
+plt.close()
+plt.clf()
 
 # # Plotting scaled data with specified attributes
 # ax.plot(df1['tau'], df1['y1'], label='y1', marker='x')
