@@ -9,4 +9,4 @@ git_dir = os.path.dirname(src_dir)
 models = os.path.join(git_dir, "models")
 co.set_prj("training")
 
-uu.mm_observer(8)
+print(src_dir)

@@ -18,8 +18,8 @@ def main(cfg: DictConfig):
 
     # Define the mapping between experiment type and script file
     script_mapping = {
-        'network_test': 'network_test.py',
-        'simulation': 'simulation.py',
+        'network_test': f'{src_dir}/network_test.py',
+        'simulation': f'{src_dir}/simulation.py',
         'measurement': f'{src_dir}/measurements.py'
     }
 
