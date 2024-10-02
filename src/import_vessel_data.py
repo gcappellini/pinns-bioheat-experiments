@@ -104,88 +104,88 @@ def scale_df(df):
         new_df[ei] = (df[ei]-min_temp)/(max_temp - min_temp)    
     return new_df
 
+dates = ["20240522_1", "20240927_1", "20240927_2", "20240927_3", "20240930_1", "20240930_2", "20240930_3" ]
+for date in dates:
+    file_path = f"{src_dir}/data/vessel/{date}.txt"
 
-file_path = f"{src_dir}/data/vessel/20240522_1.txt"
-# file_path = f"{src_dir}/data/vessel/Guglielmo3.txt" 
-timeseries_data = load_measurements(file_path)
-df = extract_entries(timeseries_data, 106*60, 10*60*60)
-df = extract_entries(timeseries_data, 2*60, 29*60)
+    timeseries_data = load_measurements(file_path)
+    df = extract_entries(timeseries_data, 0, 60*60*60)
 
-print(df)
-# print(df['gt2'].max(), df['y1'].min(), df['gt2'].max() - df['y1'].min())
-# df1 = scale_df(df)
-# save_to_pickle(df1, f"{src_dir}/cooling_scaled.pkl")
-# df1.to_csv(f"{src_dir}/cooling_scaled.txt", index=False, header=False)
+    print(df)
+    # print(df['gt2'].max(), df['y1'].min(), df['gt2'].max() - df['y1'].min())
+    # df1 = scale_df(df)
+    # save_to_pickle(df1, f"{src_dir}/cooling_scaled.pkl")
+    # df1.to_csv(f"{src_dir}/cooling_scaled.txt", index=False, header=False)
 
-fig, ax = plt.subplots(figsize=(12, 6))  # Stretching layout horizontally
+    fig, ax = plt.subplots(figsize=(12, 6))  # Stretching layout horizontally
 
-# Plotting data with specified attributes
-ax.plot(df['t']/60, df['y1'], label='y1', marker='x')
-ax.plot(df['t']/60, df['gt1'], label='gt1', alpha=1.0, linewidth=0.7)
-ax.plot(df['t']/60, df['gt2'], label='gt2', alpha=1.0, linewidth=0.7)
-ax.plot(df['t']/60, df['y2'], label='y2', alpha=1.0, linewidth=0.7)
-ax.plot(df['t']/60, df['y3'], label='y3', alpha=1.0, linewidth=0.7)
-# ax.plot(df['t']/60, df['bol_out'], label='bolus outlet', alpha=1.0, linewidth=0.7)
+    # Plotting data with specified attributes
+    ax.plot(df['t']/60, df['y1'], label='y1', marker='x')
+    ax.plot(df['t']/60, df['gt1'], label='gt1', alpha=1.0, linewidth=0.7)
+    ax.plot(df['t']/60, df['gt2'], label='gt2', alpha=1.0, linewidth=0.7)
+    ax.plot(df['t']/60, df['y2'], label='y2', alpha=1.0, linewidth=0.7)
+    ax.plot(df['t']/60, df['y3'], label='y3', alpha=1.0, linewidth=0.7)
+    # ax.plot(df['t']/60, df['bol_out'], label='bolus outlet', alpha=1.0, linewidth=0.7)
 
-# # Add vertical dashed red lines with labels on the plot
-# # ax.axvline(x=2, color='red', linestyle='--', linewidth=1.1)
-# # ax.text(2.5, 35.8, 'RF on,\nmax perfusion', color='red', fontsize=10, verticalalignment='top')
+    # # Add vertical dashed red lines with labels on the plot
+    # # ax.axvline(x=2, color='red', linestyle='--', linewidth=1.1)
+    # # ax.text(2.5, 35.8, 'RF on,\nmax perfusion', color='red', fontsize=10, verticalalignment='top')
 
-# # ax.axvline(x=29, color='red', linestyle='--', linewidth=1.1)
-# # ax.text(29.5, 35.8, 'Min perfusion', color='red', fontsize=10, verticalalignment='top')
+    # # ax.axvline(x=29, color='red', linestyle='--', linewidth=1.1)
+    # # ax.text(29.5, 35.8, 'Min perfusion', color='red', fontsize=10, verticalalignment='top')
 
-# # ax.axvline(x=56, color='red', linestyle='--', linewidth=1.1)
-# # ax.text(56.5, 35.8, 'Zero perfusion', color='red', fontsize=10, verticalalignment='top')
+    # # ax.axvline(x=56, color='red', linestyle='--', linewidth=1.1)
+    # # ax.text(56.5, 35.8, 'Zero perfusion', color='red', fontsize=10, verticalalignment='top')
 
-# # ax.axvline(x=83, color='red', linestyle='--', linewidth=1.1)
-# # ax.text(83.5, 35.8, 'RF off, max perfusion', color='red', fontsize=10, verticalalignment='top')
+    # # ax.axvline(x=83, color='red', linestyle='--', linewidth=1.1)
+    # # ax.text(83.5, 35.8, 'RF off, max perfusion', color='red', fontsize=10, verticalalignment='top')
 
-# Adding legend for the plotted data (excluding the vertical lines)
-ax.legend()
+    # Adding legend for the plotted data (excluding the vertical lines)
+    ax.legend()
 
-# Setting title and labels with modifications
-ax.set_title("Experiment 240521", fontweight='bold')
-ax.set_xlabel("Time (min)", fontsize=12)
-ax.set_ylabel("Temperature (°C)", fontsize=12)
-# ax.set_xlim(0, 234)
+    # Setting title and labels with modifications
+    ax.set_title(f"Experiment {date}", fontweight='bold')
+    ax.set_xlabel("Time (min)", fontsize=12)
+    ax.set_ylabel("Temperature (°C)", fontsize=12)
+    # ax.set_xlim(0, 234)
 
-# Adjust layout for better horizontal stretching
-plt.tight_layout()
+    # Adjust layout for better horizontal stretching
+    plt.tight_layout()
 
-# Display and save plot
+    # Display and save plot
 
-plt.savefig(f"{src_dir}/data/vessel/experiment_240521.png", dpi=120)
-plt.show()
-plt.close()
-plt.clf()
+    plt.savefig(f"{src_dir}/data/vessel/{date}.png", dpi=120)
+    plt.show()
+    plt.close()
+    plt.clf()
 
-# # Plotting scaled data with specified attributes
-# ax.plot(df1['tau'], df1['y1'], label='y1', marker='x')
-# ax.plot(df1['tau'], df1['gt1'], label='gt1', alpha=1.0, linewidth=0.7)
-# ax.plot(df1['tau'], df1['gt2'], label='gt2', alpha=1.0, linewidth=0.7)
-# ax.plot(df1['tau'], df1['y2'], label='y2', alpha=1.0, linewidth=0.7)
-# ax.plot(df1['tau'], df1['y3'], label='y3', alpha=1.0, linewidth=0.7)
-# # ax.plot(df['t']/60, df['bol_out'], label='bolus outlet', alpha=1.0, linewidth=0.7)
+    # # Plotting scaled data with specified attributes
+    # ax.plot(df1['tau'], df1['y1'], label='y1', marker='x')
+    # ax.plot(df1['tau'], df1['gt1'], label='gt1', alpha=1.0, linewidth=0.7)
+    # ax.plot(df1['tau'], df1['gt2'], label='gt2', alpha=1.0, linewidth=0.7)
+    # ax.plot(df1['tau'], df1['y2'], label='y2', alpha=1.0, linewidth=0.7)
+    # ax.plot(df1['tau'], df1['y3'], label='y3', alpha=1.0, linewidth=0.7)
+    # # ax.plot(df['t']/60, df['bol_out'], label='bolus outlet', alpha=1.0, linewidth=0.7)
 
 
-# # Adding legend for the plotted data (excluding the vertical lines)
-# ax.legend()
+    # # Adding legend for the plotted data (excluding the vertical lines)
+    # ax.legend()
 
-# # Setting title and labels with modifications
-# ax.set_title("Cooling Experiment", fontweight='bold')
-# ax.set_xlabel(r"$\tau$", fontsize=12)
-# ax.set_ylabel(r"$\theta$", fontsize=12)
-# # ax.set_xlim(0, 234)
+    # # Setting title and labels with modifications
+    # ax.set_title("Cooling Experiment", fontweight='bold')
+    # ax.set_xlabel(r"$\tau$", fontsize=12)
+    # ax.set_ylabel(r"$\theta$", fontsize=12)
+    # # ax.set_xlim(0, 234)
 
-# # Adjust layout for better horizontal stretching
-# plt.tight_layout()
+    # # Adjust layout for better horizontal stretching
+    # plt.tight_layout()
 
-# # Display and save plot
+    # # Display and save plot
 
-# # plt.savefig(f"{src_dir}/data/vessel/bolus.png", dpi=120)
-# plt.show()
-# # plt.close()
-# # plt.clf()
+    # # plt.savefig(f"{src_dir}/data/vessel/bolus.png", dpi=120)
+    # plt.show()
+    # # plt.close()
+    # # plt.clf()
 
 
     
