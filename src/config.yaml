@@ -17,7 +17,7 @@ model_properties:
   activation: "tanh"
   initial_weights_regularizer: true
   initialization: "Glorot uniform"
-  iterations: 10000
+  iterations: 1
   LBFGS: false
   learning_rate: 0.0001
   num_dense_layers: 6
@@ -47,14 +47,14 @@ model_parameters:
   W7: 2.5
   # y20_simulated: 33.0
   # y20_measured: 29.3
-  n_obs: 3
+  n_obs: 8
 
 # Experiment type: can be either 'simulation' or 'measurement', with different observers (3 or 8)
 experiment:
   type: "simulation"  # Choose between 'simulation' or 'measurement'
-  run_matlab: true
+  run_matlab: false
   run_wandb: false
-  name: "prova_matlab"
+  name: "prova_simulation"
 
 # Output directory management
 output:

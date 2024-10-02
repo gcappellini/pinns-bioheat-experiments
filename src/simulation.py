@@ -42,23 +42,25 @@ def run_matlab_ground_truth(n_obs, src_dir, prj_figs, lam, run_matlab):
         print("Skipping MATLAB ground truth calculation.")
 
 
-def main(n_obs, prj_figs, lam, run_matlab=False, run_wandb=False):
+def main(n_obs, prj_figs, conf, run_matlab=False, run_wandb=False):
     """
     Main function to run the testing of the network, MATLAB ground truth, observer checks, and PINNs.
     """
-
+    lam = config.model_parameters.lam
     # Optionally run MATLAB ground truth
     run_matlab_ground_truth(n_obs, src_dir, prj_figs, lam, run_matlab)
 
     # Generate and check observers if needed
-    multi_obs = uu.mm_observer(n_obs)
+    multi_obs = uu.mm_observer(n_obs, conf)
     X, y_sys, y_obs, y_mm_obs = uu.gen_testdata(n_obs)
     x_obs = uu.gen_obsdata(n_obs)
-    uu.check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, y_obs, run_wandb)
+    uu.check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, run_wandb, prj_figs)
 
     run_figs = co.set_run(f"mm_obs")
+    config.model_properties.W = None
+    OmegaConf.save(config, f"{run_figs}/config.yaml") 
     # Solve IVP and plot weights
-    uu.solve_ivp_and_plot(multi_obs, run_figs, n_obs, x_obs, X, y_sys, y_mm_obs, lam, run_wandb)
+    uu.solve_ivp_and_plot(multi_obs, run_figs, n_obs, x_obs, X, y_sys, lam)
 
 
 if __name__ == "__main__":
@@ -76,7 +78,7 @@ if __name__ == "__main__":
 
     n_obs = config.model_parameters.n_obs
     prj_name = config.experiment.name
-    lam = config.model_parameters.lam
+    
     output_dir = co.set_prj(prj_name)
     # Run main function with options
-    main(n_obs, output_dir, lam, run_matlab=config.experiment.run_matlab, run_wandb=config.experiment.run_wandb)
+    main(n_obs, output_dir, config, run_matlab=config.experiment.run_matlab, run_wandb=config.experiment.run_wandb)
