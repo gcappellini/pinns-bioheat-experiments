@@ -6,7 +6,7 @@ model_properties:
   rho: 1000.0
   c: 4186.0
   W: 8.0
-  h: 238.0
+  h: 10.0
   Troom: 22.89
   # Tmax: 35.47
   Tmax: 32.0
@@ -54,7 +54,7 @@ experiment:
   type: "simulation"  # Choose between 'simulation' or 'measurement'
   run_matlab: true
   run_wandb: false
-  name: "prova_matlab"
+  name: "cooling_newbc"
 
 # Output directory management
 output:
