@@ -198,6 +198,6 @@ old/
 models/
 src/wandb
 src/outputs
-src/data/foto&video
+src/data/vessel/foto&video
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,python

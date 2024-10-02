@@ -227,10 +227,10 @@ def train_and_save_model(model, callbacks, run_figs):
 
 def gen_testdata(n):
     if n==8:
-        data = np.loadtxt(f"{src_dir}/output_matlab.txt")
+        data = np.loadtxt(f"{src_dir}/output_matlab_{n}Obs.txt")
         x, t, sys, obs, mmobs = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:11], data[:, 11:12].T
     if n==3:
-        data = np.loadtxt(f"{src_dir}/output_matlab_3Obs.txt")
+        data = np.loadtxt(f"{src_dir}/output_matlab_{n}Obs.txt")
         x, t, sys, obs, mmobs = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:6], data[:, 6:7].T       
     X = np.vstack((x, t)).T
     y_sys = sys.flatten()[:, None]
@@ -241,10 +241,10 @@ def gen_testdata(n):
 
 def load_weights(n):
     if n==8:
-        data = np.loadtxt(f"{src_dir}/weights_matlab.txt")
+        data = np.loadtxt(f"{src_dir}/weights_matlab_{n}Obs.txt")
         t, weights = data[:, 0:1], data[:, 1:9].T
     if n==3:
-        data = np.loadtxt(f"{src_dir}/weights_matlab_3Obs.txt")
+        data = np.loadtxt(f"{src_dir}/weights_matlab_{n}Obs.txt")
         t, weights = data[:, 0:1], data[:, 1:4].T
     return t, np.array(weights)
 
@@ -535,24 +535,29 @@ def test_observer(model, run_figs, X, x_obs, y_obs, number):
         return errors
 
 
-def check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, run_wandb, output_dir):
+def check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, conf, output_dir):
     """
     Check observers and optionally upload results to wandb.
     """
+    run_wandb = conf.experiment.run_wandb
+    exp_type = conf.experiment.type
+    name = conf.experiment.nam
     for el in range(len(multi_obs)):
-        # run_figs = co.set_run(f"obs_{el}")
+
         run_figs = os.path.join(output_dir, f"obs_{el}")
-        # aa = co.read_json(f"{run_figs}/properties.json")
-        
-        # if run_wandb:
-        #     print(f"Initializing wandb for observer {el}...")
-        #     wandb.init(project=, name=f"obs_{el}", config=config)
+
+        if run_wandb:
+            aa = OmegaConf.load(f"{run_figs}/config.yaml")
+            print(f"Initializing wandb for observer {el}...")
+            wandb.init(project=name, name=f"obs_{el}", config=aa)
         
         pred = multi_obs[el].predict(x_obs)
         
-        # pp.plot_l2(x_obs, y_sys, multi_obs[el], el, run_figs)
+        pp.plot_l2(x_obs, y_sys, multi_obs[el], el, run_figs)
         pp.plot_tf(X, y_sys, multi_obs[el], el, run_figs)
-        pp.plot_observation_3d(X[:, 0:2], y_sys, pred, run_figs)
+        
+        if exp_type == "simulation":
+            pp.plot_observation_3d(X[:, 0:2], y_sys, pred, run_figs)
 
         metrics = compute_metrics(y_sys, pred)
  

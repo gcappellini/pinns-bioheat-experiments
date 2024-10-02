@@ -33,7 +33,7 @@ uav=u2.*u10+u3.*u11+u4.*u12+u5.*u13+u6.*u14+u7.*u15+u8.*u16+u9.*u17;
 
 % Print Solution PDE
 
-fileID = fopen('output_matlab.txt','w');
+fileID = fopen('output_matlab_8Obs.txt','w');
 
 for i = 1:101
    for j = 1:101
@@ -46,7 +46,7 @@ for i = 1:101
 end
 
 
-fileID = fopen('weights_matlab.txt','w');
+fileID = fopen('weights_matlab_8Obs.txt','w');
 
 for i = 1:101
         

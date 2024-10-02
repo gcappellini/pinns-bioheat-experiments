@@ -146,7 +146,7 @@ def plot_loss_components(losshistory, nam):
     )
 
 
-def plot_weights(weights, t, run_figs, lam, gt=False):
+def plot_weights(weights, t, run_figs, lam, n_obs, gt=False):
     # Prepare the labels for each weight line
     legend_labels = [f"Weight $p_{i}$" for i in range(weights.shape[0])]
 
@@ -164,11 +164,11 @@ def plot_weights(weights, t, run_figs, lam, gt=False):
         ylabel=r"Weights $p_j$",    # y-axis label
         legend_labels=legend_labels, # Labels for each weight
         size=(6, 5),               # Figure size
-        filename=f"{run_figs}/weights_lam_{lam}_{'matlab' if gt else 'pinns'}.png"  # Filename to save the plot
+        filename=f"{run_figs}/weights_lam_{lam}_{'matlab' if gt else 'pinns'}_{n_obs}obs.png"  # Filename to save the plot
     )
 
 
-def plot_mu(mus, t, run_figs, gt=False):
+def plot_mu(mus, t, run_figs, n_obs, gt=False):
     # Prepare the labels for each line based on the number of columns in `mus`
     legend_labels = [f"$e_{i}$" for i in range(mus.shape[1])]
     
@@ -185,7 +185,7 @@ def plot_mu(mus, t, run_figs, gt=False):
         ylabel="Error",             # y-axis label
         legend_labels=legend_labels, # Labels for each observation error
         size=(6, 5),               # Figure size
-        filename=f"{run_figs}/obs_error_{'matlab' if gt else 'pinns'}.png"  # Filename to save the plot
+        filename=f"{run_figs}/obs_error_{'matlab' if gt else 'pinns'}_{n_obs}obs.png"  # Filename to save the plot
     )
 
 
@@ -368,6 +368,7 @@ def plot_comparison_3d(e, t_true, t_pred, run_figs, rescale=False, gt=False):
         filename=fname,  # Path to save the plot
         rescale=rescale
     )
+
 
 def plot_observation_3d(e, t_true, t_pred, run_figs):
     """

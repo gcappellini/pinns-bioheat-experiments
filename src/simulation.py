@@ -31,10 +31,10 @@ def run_matlab_ground_truth(n_obs, src_dir, prj_figs, lam, run_matlab):
         t = np.unique(X[:, 1])
 
         mu = uu.compute_mu(n_obs)
-        pp.plot_mu(mu, t, prj_figs, gt=True)
+        pp.plot_mu(mu, t, prj_figs, n_obs, gt=True)
 
         t, weights = uu.load_weights(n_obs)
-        pp.plot_weights(weights, t, prj_figs, lam, gt=True)
+        pp.plot_weights(weights, t, prj_figs, lam, n_obs, gt=True)
         pp.plot_comparison_3d(X, y_sys, y_mmobs, prj_figs, rescale= True, gt= True)
 
         print("MATLAB ground truth completed.")
@@ -54,7 +54,7 @@ def main(n_obs, prj_figs, conf, run_matlab=False, run_wandb=False):
     # multi_obs = uu.mm_observer(n_obs, conf)
     # X, y_sys, y_obs, y_mm_obs = uu.gen_testdata(n_obs)
     # x_obs = uu.gen_obsdata(n_obs)
-    # uu.check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, run_wandb, prj_figs)
+    # uu.check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, conf, prj_figs)
 
     # run_figs = co.set_run(f"mm_obs")
     # config.model_properties.W = None

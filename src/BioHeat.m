@@ -68,5 +68,5 @@ W = config_data.model_parameters.W4;
 if n_obs == 3
     sol = OneDimBH_3Obs;  % Call the 3-observer case
 else
-    sol = OneDimBH;  % Call the default or other number of observers case
+    sol = OneDimBH_8Obs;  % Call the default or other number of observers case
 end
