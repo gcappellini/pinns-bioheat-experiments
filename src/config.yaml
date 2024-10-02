@@ -13,7 +13,7 @@ model_properties:
   Ty20: 29.3
   Twater: 30.18
   K: 10.0
-  delta: -4.5
+  delta: -1.6
   activation: "tanh"
   initial_weights_regularizer: true
   initialization: "Glorot uniform"

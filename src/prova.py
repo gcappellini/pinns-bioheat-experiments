@@ -10,7 +10,7 @@ git_dir = os.path.dirname(src_dir)
 models = os.path.join(git_dir, "models")
 co.set_prj("calc")
 
-# a = uu.rescale_t(0.8)
-a = cc.a3
+a = uu.scale_t(30.18)
+b = uu.scale_t(29.3)
 
-print(a)
+print(a, b)
