@@ -51,7 +51,7 @@ model_parameters:
 
 # Experiment type: can be either 'simulation' or 'measurement', with different observers (3 or 8)
 experiment:
-  type: "simulation"  # Choose between 'simulation' or 'measurement'
+  type: "measurement"  # Choose between 'simulation' or 'measurement'
   run_matlab: true
   run_wandb: false
   name: "cooling_newbc"
