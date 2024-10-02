@@ -15,17 +15,17 @@ N : board 6, points 7-13, serial number 725
 O : board 7, points 0-6, serial number 701
 P : board 7, points 7-13, serial number 729
 Q : board 8, points 0-6, serial number 732
-R : board 8, points 7-13, serial number 1202 and number 1207
+R : board 8, points 7-13, serial number 1202 and number 1207 (data più recente)
 S : board 9, points 0-6, serial number 2508
 T : board 9, points 7-13, serial number 2509
 U : board 10, points 0-6, serial number 2510
 V : board 10, points 7-13, serial number 2511
-XY: board 11, points 0-6, serial number 2512
-Z : board 11, points 7-13, serial number 2513
-board 12, points 0-6, serial number 1206_1
-board 12, points 7-13, serial number 1206_2
-board 13, points 0-6, serial number 2516
-board 13, points 7-13, serial number 2515
+W : board 11, points 0-6, serial number 2512
+X : board 11, points 7-13, serial number 2513
+Y : board 12, points 0-6, serial number 1206_1
+Z : board 12, points 7-13, serial number 1206_2
+A1: board 13, points 0-6, serial number 2516
+A2: board 13, points 7-13, serial number 2515
 
 
 missing: SN 1000, 732, 1207, 2508, 2509, 2510, 2511
