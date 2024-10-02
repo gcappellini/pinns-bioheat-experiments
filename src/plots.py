@@ -147,7 +147,8 @@ def plot_weights(weights, t, run_figs, lam, gt=False):
 
     # Define the title with the lambda value
     title = f"Dynamic weights, λ={lam}"
-    times = np.full_like(weights, t)
+    a = t.reshape(len(t),)
+    times = np.full_like(weights, a)
     
     # Call the generic plotting function
     plot_generic(

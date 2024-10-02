@@ -3,12 +3,12 @@ close all
 
 global K lambda delta upsilon W W0 W1 W2 W3 W4 W5 W6 W7 theta_w theta1 theta20 om0 om1 om2  om3 om4  om5 om6 om7 a1 a2 a3
 
-addpath('/Users/guglielmocappellini/Desktop/phd/code/yamlmatlab-master')
+addpath('/Users/guglielmocappellini/Desktop/phd/code/readyaml')
 % Default filename for YAML config
 filename = 'config.yaml';
 
 % Read and parse the YAML file into a MATLAB struct
-config_data = ReadYaml(filename);
+config_data = readyaml(filename);
 % Extract parameters from the struct
 n_obs = config_data.model_parameters.n_obs;
 L0 = config_data.model_properties.L0;
