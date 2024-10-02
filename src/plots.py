@@ -54,10 +54,15 @@ def plot_generic(x, y, title, xlabel, ylabel, legend_labels=None, log_scale=Fals
     ax.grid(True)
     save_and_close(fig, filename)
 
-def plot_generic_3d(XY, Z1, Z2, col_titles,  filename=None):
-    xlabel="X"
-    ylabel=r"$\tau$"
-    zlabel=r"$\theta$"
+def plot_generic_3d(XYa, Z1a, Z2a, col_titles,  filename=None, rescale = False):
+    xlabel=r"$x \, (m)$" if rescale else "X"
+    ylabel=r"$t \, (s)$" if rescale else r"$\tau$"
+    zlabel=r"$T \, (^{\circ}C)$" if rescale else r"$\theta$"
+
+    Z1 = uu.rescale_t(Z1a) if rescale else Z1a
+    Z2 = uu.rescale_t(Z2a) if rescale else Z2a
+
+    XY = np.hstack((uu.rescale_x(XYa[:, 0:1]), uu.rescale_time(XYa[:, 1:2]))) if rescale else XYa
     
     fig = plt.figure(3, figsize=(9, 4))
     surfaces = [
@@ -332,7 +337,7 @@ def plot_tf(e, theta_true, model, number, prj_figs, MultiObs=False):
     )
 
 
-def plot_comparison_3d(e, t_true, t_pred, run_figs, gt=False):
+def plot_comparison_3d(e, t_true, t_pred, run_figs, rescale=False, gt=False):
     """
     Refactor the plot_comparison function to use plot_generic_3d for 3D comparisons.
     
@@ -356,11 +361,12 @@ def plot_comparison_3d(e, t_true, t_pred, run_figs, gt=False):
 
     # Call plot_generic_3d with the data
     plot_generic_3d(
-        XY=e,                       # 2D array containing X and Y coordinates
-        Z1=theta_true,              # Surface 1: true values (Z1)
-        Z2=theta_pred,              # Surface 2: predicted values (Z2)
+        e,                       # 2D array containing X and Y coordinates
+        theta_true,              # Surface 1: true values (Z1)
+        theta_pred,              # Surface 2: predicted values (Z2)
         col_titles=col_titles,      # Titles for each subplot
-        filename=fname  # Path to save the plot
+        filename=fname,  # Path to save the plot
+        rescale=rescale
     )
 
 def plot_observation_3d(e, t_true, t_pred, run_figs):

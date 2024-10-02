@@ -47,14 +47,14 @@ model_parameters:
   W7: 2.5
   # y20_simulated: 33.0
   # y20_measured: 29.3
-  n_obs: 8
+  n_obs: 3
 
 # Experiment type: can be either 'simulation' or 'measurement', with different observers (3 or 8)
 experiment:
   type: "simulation"  # Choose between 'simulation' or 'measurement'
-  run_matlab: false
+  run_matlab: true
   run_wandb: false
-  name: "prova_simulation"
+  name: "prova_matlab"
 
 # Output directory management
 output:

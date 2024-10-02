@@ -334,7 +334,21 @@ def rescale_t(theta):
     Tmax = properties.model_properties.Tmax
     j = Troom + (Tmax - Troom)*theta
 
-    return round(j, 2)
+    return np.round(j, 2)
+
+def rescale_x(X):
+    properties = OmegaConf.load(f"{src_dir}/config.yaml")
+    L0 = properties.model_properties.L0
+    j = X*L0
+
+    return np.round(j, 4)
+
+def rescale_time(tau):
+    properties = OmegaConf.load(f"{src_dir}/config.yaml")
+    tauf = properties.model_properties.tauf
+    j = tau*tauf
+
+    return np.round(j, 0)
 
 def get_tc_positions():
     daa = OmegaConf.load(f"{src_dir}/config.yaml")
