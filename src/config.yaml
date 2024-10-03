@@ -34,7 +34,7 @@ model_properties:
 
 # Configuration for model parameters (applied after training)
 model_parameters:
-  lam: 1000.0
+  lam: 200.0
   upsilon: 1.0
   W0: 0.1
   W1: 0.2
@@ -50,7 +50,7 @@ model_parameters:
 # Experiment type: can be either 'simulation' or 'measurement', with different observers (3 or 8)
 experiment:
   type: "simulation"  # Choose between 'simulation' or 'measurement'
-  run_matlab: false
+  run_matlab: true
   run_wandb: false
   name: "cooling_free"
 
