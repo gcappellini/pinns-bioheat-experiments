@@ -18,12 +18,13 @@ git_dir = os.path.dirname(src_dir)
 models_dir = os.path.join(git_dir, "models")
 os.makedirs(models_dir, exist_ok=True)
 
-def plot_generic(x, y, title, xlabel, ylabel, legend_labels=None, log_scale=False, size=(6, 5), filename=None):
+def plot_generic(x, y, title, xlabel, ylabel, legend_labels=None, log_scale=False, 
+                 size=(6, 5), filename=None, colors=None, linestyles=None):
     """
-    Create a generic 2D plot with support for multiple lines.
+    Create a generic 2D plot with support for multiple lines, colors, and linestyles.
 
-    :param x: x-axis data (1D array)
-    :param y: y-axis data (can be a list of arrays or a 2D array for multiple lines)
+    :param x: x-axis data (1D array or list of arrays)
+    :param y: y-axis data (list of arrays or 2D array for multiple lines)
     :param title: plot title
     :param xlabel: x-axis label
     :param ylabel: y-axis label
@@ -31,13 +32,18 @@ def plot_generic(x, y, title, xlabel, ylabel, legend_labels=None, log_scale=Fals
     :param log_scale: set y-axis to logarithmic scale if True
     :param size: figure size
     :param filename: path to save the plot (optional)
+    :param colors: list of colors for each line (optional)
+    :param linestyles: list of linestyles for each line (optional)
     """
     fig, ax = plt.subplots(figsize=size)
 
-    # Plot each line with its corresponding x and y values
+    # Plot each line with its corresponding x, y values, color, and linestyle
     for i, (xi, yi) in enumerate(zip(x, y)):
         label = legend_labels[i] if legend_labels else None
-        ax.plot(xi, yi, label=label)
+        color = colors[i] if colors else None  # Use provided colors or default
+        linestyle = linestyles[i] if linestyles else '-'  # Default to solid line
+
+        ax.plot(xi, yi, label=label, color=color, linestyle=linestyle)
 
     ax.set_title(title, fontweight='bold')
     ax.set_xlabel(xlabel)
@@ -52,7 +58,10 @@ def plot_generic(x, y, title, xlabel, ylabel, legend_labels=None, log_scale=Fals
         ax.set_yscale('log')
 
     ax.grid(True)
+
+    # Save and close the figure if filename is provided
     save_and_close(fig, filename)
+
 
 def plot_generic_3d(XYa, Z1a, Z2a, col_titles,  filename=None, rescale = False):
     xlabel=r"$x \, (m)$" if rescale else "X"
@@ -294,7 +303,7 @@ def plot_tf(e, theta_true, model, number, prj_figs, MultiObs=False):
 
     # Generate X values for prediction
     x = np.linspace(0, 1, 100)   # Depth values for prediction
-    Xobs = np.vstack((x, uu.f1(np.ones_like(x)), uu.f2(np.ones_like(x)), uu.f3(np.ones_like(x)), np.ones_like(x))).T
+    Xobs = np.vstack((x, uu.f1(np.full_like(x, 0.9944)), uu.f2(np.full_like(x, 0.9944)), uu.f3(np.full_like(x, 0.9944)), np.ones_like(x))).T
 
     e = OmegaConf.load(f'{prj_figs}/config.yaml')
     lam = e.model_parameters.lam
@@ -334,6 +343,54 @@ def plot_tf(e, theta_true, model, number, prj_figs, MultiObs=False):
         legend_labels=legend_labels,  # Labels for the legend
         size=(6, 5),
         filename=f"{prj_figs}/tf_{'mm_obs' if MultiObs else f'obs{number}'}.png"
+    )
+
+
+def plot_tf_matlab(e, theta_true, theta_observers, theta_mmobs, number, prj_figs):
+    """
+    Plot true values and predicted values (single or multi-observer model).
+    
+    :param e: 2D array for depth (X) and time (tau).
+    :param theta_true: True theta values.
+    :param model: The model used for predictions.
+    :param number: Identifier for the observation.
+    :param prj_figs: Directory to save the figure.
+    :param MultiObs: If True, plot multiple model predictions and a weighted average.
+    """
+    # Reshape inputs
+    e = e.reshape(len(e), 2)
+    theta_true = theta_true.reshape(len(e), 1)
+    theta_mmobs = theta_mmobs.reshape(len(e), 1)
+
+    # Prepare true values for final time (tau = 1)
+    tot = np.hstack((e, theta_true, theta_observers, theta_mmobs))
+    final = tot[tot[:, 1] == 1]  # Select rows where time equals 1
+    xtr = np.unique(tot[:, 0])   # Depth values for true data
+    true = final[:, 2]          # True values at final time
+    observers = final[:, 3:-1]
+    mmobs = final[:, -1]
+
+    true_reshaped = true.reshape(len(xtr), 1)
+    mmobs_reshaped = mmobs.reshape(len(xtr), 1)
+    all_preds = np.hstack((true_reshaped, observers, mmobs_reshaped))
+    # x values: use xtr for true data, and 'x' for predictions
+    xxtr = xtr.reshape(len(xtr), 1)
+    x_vals = np.full_like(all_preds, xxtr)
+
+    # Generate corresponding legend labels
+    legend_labels = ['True'] + [f'Obs {i}' for i in range(number)] + ['MultiObs']
+
+
+    # Call the generic plotting function
+    plot_generic(
+        x=x_vals.T,  # Different x values for true and predicted
+        y=all_preds.T,  # List of true and predicted lines
+        title="Prediction at final time",
+        xlabel=r"Depth $X$",
+        ylabel=r"$\theta$",
+        legend_labels=legend_labels,  # Labels for the legend
+        size=(6, 5),
+        filename=f"{prj_figs}/tf_mmobs_matlab.png"
     )
 
 
@@ -413,6 +470,8 @@ def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, p
     # Labels for the legend (corresponding to each line in y_data)
     legend_labels = ['y1 (True)', 'gt1 (True)', 'gt2 (True)', 'y2 (True)', 
                      'y1 (Pred)', 'gt1 (Pred)', 'gt2 (Pred)', 'y2 (Pred)']
+    colors = ['C0', 'C1', 'C2', 'C3', 'C0', 'C1', 'C2', 'C3']
+    linestyles=["-", "-", "-", "-", "--", "--", "--", "--"]
 
     times = [time_in_minutes]*len(y_data)
     # Call the generic plotting function
@@ -423,6 +482,8 @@ def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, p
         xlabel="Time (min)",
         ylabel="Temperature (°C)",
         legend_labels=legend_labels,
+        colors=colors,
+        linestyles=linestyles,
         size=(12, 6),
         filename=f"{prj_figs}/timeseries_with_predictions.png"
     )

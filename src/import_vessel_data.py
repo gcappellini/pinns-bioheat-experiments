@@ -4,6 +4,7 @@ import pickle
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from utils import scale_t, rescale_time, rescale_x, scale_time
 
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
@@ -69,7 +70,8 @@ def extract_entries(timeseries_data, tmin, tmax):
     # return df
     df['time_diff'] = df['t'].diff()#.dt.total_seconds()
 
-    threshold = np.where((df['t'] > 2 * 60) & (df['t'] < 83 * 60), 50, 1)
+    # threshold = np.where((df['t'] > 2 * 60) & (df['t'] < 83 * 60), 50, 1)
+    threshold = 1
 
     # Identify the indices where a new interval starts
     new_intervals = df[df['time_diff'] > threshold].index
@@ -95,69 +97,71 @@ def extract_entries(timeseries_data, tmin, tmax):
 
 def scale_df(df):
     time = df['t']-df['t'][0]
-    new_df = pd.DataFrame({'tau': (time/np.max(time)).round(5)})
-
-    min_temp = np.min(df[['y1', 'gt1', 'gt2', 'y2', 'y3']].min())
-    max_temp = np.max(df[['y1', 'gt1', 'gt2', 'y2', 'y3']].max())
+    new_df = pd.DataFrame({'tau': scale_time(time)})
 
     for ei in ['y1', 'gt1', 'gt2', 'y2', 'y3']:
-        new_df[ei] = (df[ei]-min_temp)/(max_temp - min_temp)    
+        new_df[ei] = scale_t(df[ei])    
     return new_df
 
-dates = ["20240522_1", "20240927_1", "20240927_2", "20240927_3", "20240930_1", "20240930_2", "20240930_3" ]
-for date in dates:
-    file_path = f"{src_dir}/data/vessel/{date}.txt"
+# # dates = ["20240522_1", "20240927_1", "20240927_2", "20240927_3", "20240930_1", "20240930_2", "20240930_3" ]
+# dates = [ "20240930_1" ]
+# start_min = 80
+# end_min = start_min + 30
+# for date in dates:
+#     file_path = f"{src_dir}/data/vessel/{date}.txt"
 
-    timeseries_data = load_measurements(file_path)
-    df = extract_entries(timeseries_data, 0, 60*60*60)
+#     timeseries_data = load_measurements(file_path)
+#     df = extract_entries(timeseries_data, start_min*60, end_min*60)
 
-    print(df)
-    # print(df['gt2'].max(), df['y1'].min(), df['gt2'].max() - df['y1'].min())
-    # df1 = scale_df(df)
-    # save_to_pickle(df1, f"{src_dir}/cooling_scaled.pkl")
-    # df1.to_csv(f"{src_dir}/cooling_scaled.txt", index=False, header=False)
+#     print(df)
+#     # print(df['gt2'].max(), df['y1'].min(), df['gt2'].max() - df['y1'].min())
+#     df1 = scale_df(df)
+#     save_to_pickle(df1, f"{src_dir}/cooling_1.pkl")
+#     # df1.to_csv(f"{src_dir}/cooling_scaled.txt", index=False, header=False)
 
-    fig, ax = plt.subplots(figsize=(12, 6))  # Stretching layout horizontally
+#     fig, ax = plt.subplots(figsize=(12, 6))  # Stretching layout horizontally
 
-    # Plotting data with specified attributes
-    ax.plot(df['t']/60, df['y1'], label='y1', marker='x')
-    ax.plot(df['t']/60, df['gt1'], label='gt1', alpha=1.0, linewidth=0.7)
-    ax.plot(df['t']/60, df['gt2'], label='gt2', alpha=1.0, linewidth=0.7)
-    ax.plot(df['t']/60, df['y2'], label='y2', alpha=1.0, linewidth=0.7)
-    ax.plot(df['t']/60, df['y3'], label='y3', alpha=1.0, linewidth=0.7)
-    # ax.plot(df['t']/60, df['bol_out'], label='bolus outlet', alpha=1.0, linewidth=0.7)
+#     # Plotting data with specified attributes
+#     ax.plot(df['t']/60, df['y1'], label='y1', marker='x')
+#     ax.plot(df['t']/60, df['gt1'], label='gt1', alpha=1.0, linewidth=0.7)
+#     ax.plot(df['t']/60, df['gt2'], label='gt2', alpha=1.0, linewidth=0.7)
+#     ax.plot(df['t']/60, df['y2'], label='y2', alpha=1.0, linewidth=0.7)
+#     # ax.plot(df['t']/60, df['y3'], label='y3', alpha=1.0, linewidth=0.7)
+#     # ax.plot(df['t']/60, df['bol_out'], label='bolus outlet', alpha=1.0, linewidth=0.7)
 
-    # # Add vertical dashed red lines with labels on the plot
-    # # ax.axvline(x=2, color='red', linestyle='--', linewidth=1.1)
-    # # ax.text(2.5, 35.8, 'RF on,\nmax perfusion', color='red', fontsize=10, verticalalignment='top')
+#     # # Add vertical dashed red lines with labels on the plot
+#     # # ax.axvline(x=2, color='red', linestyle='--', linewidth=1.1)
+#     # # ax.text(2.5, 35.8, 'RF on,\nmax perfusion', color='red', fontsize=10, verticalalignment='top')
 
-    # # ax.axvline(x=29, color='red', linestyle='--', linewidth=1.1)
-    # # ax.text(29.5, 35.8, 'Min perfusion', color='red', fontsize=10, verticalalignment='top')
+#     # # ax.axvline(x=29, color='red', linestyle='--', linewidth=1.1)
+#     # # ax.text(29.5, 35.8, 'Min perfusion', color='red', fontsize=10, verticalalignment='top')
 
-    # # ax.axvline(x=56, color='red', linestyle='--', linewidth=1.1)
-    # # ax.text(56.5, 35.8, 'Zero perfusion', color='red', fontsize=10, verticalalignment='top')
+#     # # ax.axvline(x=56, color='red', linestyle='--', linewidth=1.1)
+#     # # ax.text(56.5, 35.8, 'Zero perfusion', color='red', fontsize=10, verticalalignment='top')
 
-    # # ax.axvline(x=83, color='red', linestyle='--', linewidth=1.1)
-    # # ax.text(83.5, 35.8, 'RF off, max perfusion', color='red', fontsize=10, verticalalignment='top')
+#     # # ax.axvline(x=83, color='red', linestyle='--', linewidth=1.1)
+#     # # ax.text(83.5, 35.8, 'RF off, max perfusion', color='red', fontsize=10, verticalalignment='top')
 
-    # Adding legend for the plotted data (excluding the vertical lines)
-    ax.legend()
+#     # Adding legend for the plotted data (excluding the vertical lines)
+#     ax.legend()
 
-    # Setting title and labels with modifications
-    ax.set_title(f"Experiment {date}", fontweight='bold')
-    ax.set_xlabel("Time (min)", fontsize=12)
-    ax.set_ylabel("Temperature (°C)", fontsize=12)
-    # ax.set_xlim(0, 234)
+#     # Setting title and labels with modifications
+#     # ax.set_title(f"Experiment {date}", fontweight='bold')
+#     ax.set_title(f"Cooling 1", fontweight='bold')
+#     ax.set_xlabel("Time (min)", fontsize=12)
+#     ax.set_ylabel("Temperature (°C)", fontsize=12)
+#     # ax.set_xlim(0, 234)
 
-    # Adjust layout for better horizontal stretching
-    plt.tight_layout()
+#     # Adjust layout for better horizontal stretching
+#     plt.tight_layout()
 
-    # Display and save plot
+#     # Display and save plot
 
-    plt.savefig(f"{src_dir}/data/vessel/{date}.png", dpi=120)
-    plt.show()
-    plt.close()
-    plt.clf()
+#     # plt.savefig(f"{src_dir}/data/vessel/{date}_cooling.png", dpi=120)
+#     plt.savefig(f"{src_dir}/data/vessel/cooling_1.png", dpi=120)
+#     plt.show()
+#     plt.close()
+#     plt.clf()
 
     # # Plotting scaled data with specified attributes
     # ax.plot(df1['tau'], df1['y1'], label='y1', marker='x')

@@ -353,6 +353,13 @@ def rescale_time(tau):
 
     return np.round(j, 0)
 
+def scale_time(t):
+    properties = OmegaConf.load(f"{src_dir}/config.yaml")
+    tauf = properties.model_properties.tauf
+    j = t/tauf
+
+    return np.round(j, 4)
+
 def get_tc_positions():
     daa = OmegaConf.load(f"{src_dir}/config.yaml")
     L0 = daa.model_properties.L0
@@ -363,8 +370,8 @@ def get_tc_positions():
 
     return [x_y2, x_gt2, x_gt1, x_y1] 
 
-def import_testdata():
-    df = load_from_pickle(f"{src_dir}/cooling_scaled.pkl")
+def import_testdata(name):
+    df = load_from_pickle(f"{src_dir}/{name}.pkl")
 
     positions = get_tc_positions()
     dfs = []
@@ -389,9 +396,9 @@ def import_testdata():
     return np.hstack((vstack_array,boluses_arr))
 
 
-def import_obsdata():
+def import_obsdata(nam):
     global f1, f2, f3
-    g = import_testdata()
+    g = import_testdata(nam)
     instants = np.unique(g[:, 1])
 
     positions = get_tc_positions()
@@ -405,7 +412,8 @@ def import_obsdata():
     y2 = rows_0[:, -2].reshape(len(instants),)
     f2 = interp1d(instants, y2, kind='previous')
 
-    y3 = rows_0[:, -1].reshape(len(instants),)
+    # y3 = rows_0[:, -1].reshape(len(instants),)
+    y3 = np.zeros_like(y2)
     f3 = interp1d(instants, y3, kind='previous')
 
     Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
@@ -439,9 +447,10 @@ def mm_observer(n_obs, config):
     return multi_obs
 
 
-def mu(o, tau):
+def mu(o, tau_in):
     global f1, f2, f3
 
+    tau = np.where(tau_in<0.9944, tau_in, 0.9944)
     xo = np.vstack((np.zeros_like(tau), f1(tau), f2(tau), f3(tau), tau)).T
     muu = []
 
@@ -557,7 +566,7 @@ def check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, conf, output_di
         pred = multi_obs[el].predict(x_obs)
         
         pp.plot_l2(x_obs, y_sys, multi_obs[el], el, run_figs)
-        pp.plot_tf(X, y_sys, multi_obs[el], el, run_figs)
+        # pp.plot_tf(X, y_sys, multi_obs[el], el, run_figs)
         
         if exp_type == "simulation":
             pp.plot_comparison_3d(X[:, 0:2], y_sys, pred, run_figs, rescale=True)
@@ -609,6 +618,6 @@ def solve_ivp_and_plot(multi_obs, fold, n_obs, x_obs, X, y_sys, lam):
     #     wandb.finish()
 
     pp.plot_mu(mus, t, fold, n_obs)
-    pp.plot_l2(x_obs, y_sys, multi_obs, 0, fold, MultiObs=True)
-    pp.plot_tf(X, y_sys, multi_obs, 0, fold, MultiObs=True)
+    # pp.plot_l2(x_obs, y_sys, multi_obs, 0, fold, MultiObs=True)
+    # pp.plot_tf(X, y_sys, multi_obs, 0, fold, MultiObs=True)
     pp.plot_observation_3d(X[:, 0:2], y_sys, y_pred, fold)

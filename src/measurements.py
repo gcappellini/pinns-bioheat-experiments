@@ -41,13 +41,13 @@ def scale_predictions(multi_obs, x_obs, prj_figs, lam):
 
 
 def main():
-    # Parse the config path argument
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--config-path', type=str, required=True, help="Path to the config file")
-    args = parser.parse_args()
+    # # Parse the config path argument
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument('--config-path', type=str, required=True, help="Path to the config file")
+    # args = parser.parse_args()
 
     # Load the configuration from the passed file
-    config = OmegaConf.load(args.config_path)
+    config = OmegaConf.load(f"{src_dir}/config.yaml")
 
     # Now you can access your config values
     experiment_type = config.experiment.type
@@ -60,34 +60,37 @@ def main():
     # Generate and check observers if needed
     multi_obs = uu.mm_observer(n_obs, config)
 
-    # # Import data
-    # a = uu.import_testdata()
-    # X = a[:, 0:2]
-    # meas = a[:, 2:3]
-    # x_obs = uu.import_obsdata()
+    # Import data
+    a = uu.import_testdata("cooling_1")
+    X = a[:, 0:2]
+    meas = a[:, 2:3]
+    x_obs = uu.import_obsdata("cooling_1")
 
-    # lam = config.model_parameters.lam
-
-    # y1_pred, gt1_pred, gt2_pred, y2_pred = scale_predictions(multi_obs, x_obs, run_figs, lam)
-
-    # # Load and plot timeseries data
-    # file_path = f"{src_dir}/data/vessel/20240522_1.txt"
-    # timeseries_data = load_measurements(file_path)
-    # df = extract_entries(timeseries_data, 83*60, 4*60*60)
+    lam = config.model_parameters.lam
 
 
-    # # Optionally check observers and upload to wandb
-    # uu.check_observers_and_wandb_upload(multi_obs, x_obs, X, meas, config, output_dir, config)
 
-    # run_figs = co.set_run(f"mm_obs")
-    # config.model_properties.W = None
-    # OmegaConf.save(config, f"{run_figs}/config.yaml")
-    
-    # # Solve IVP and plot weights
-    # uu.solve_ivp_and_plot(multi_obs, run_figs, n_obs, x_obs, X, meas, lam)
+    # Optionally check observers and upload to wandb
+    uu.check_observers_and_wandb_upload(multi_obs, x_obs, X, meas, config, output_dir)
 
-    # # Plot time series with predictions
-    # pp.plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, run_figs)
+    run_figs = co.set_run(f"mm_obs")
+    config.model_properties.W = None
+    OmegaConf.save(config, f"{run_figs}/config.yaml")
+
+    # Solve IVP and plot weights
+    uu.solve_ivp_and_plot(multi_obs, run_figs, n_obs, x_obs, X, meas, lam)
+
+
+    y1_pred, gt1_pred, gt2_pred, y2_pred = scale_predictions(multi_obs, x_obs, run_figs, lam)
+    date = "20240930_1"
+    start_min = 80
+    end_min = start_min + 30
+    file_path = f"{src_dir}/data/vessel/{date}.txt"
+
+    timeseries_data = load_measurements(file_path)
+    df = extract_entries(timeseries_data, start_min*60, end_min*60)
+    # Plot time series with predictions
+    pp.plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, run_figs)
 
 
 if __name__ == "__main__":

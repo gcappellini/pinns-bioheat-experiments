@@ -69,10 +69,6 @@ def main(n_obs, prj_figs, conf, run_matlab=False, run_wandb=False):
 
 
 if __name__ == "__main__":
-    # # Parse the config path argument
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument('--config-path', type=str, required=True, help="Path to the config file")
-    # args = parser.parse_args()
 
     # Load the configuration from the passed file
     config = OmegaConf.load(f"{src_dir}/config.yaml")
