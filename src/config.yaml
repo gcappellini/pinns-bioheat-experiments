@@ -10,8 +10,8 @@ model_properties:
   Troom: 22.89
   # Tmax: 35.47
   Tmax: 32.0
-  Ty20: 29.3
-  Twater: 30.18
+  # Ty20: 29.3
+  # Twater: 30.18
   K: 10.0
   delta: -1.6
   activation: "tanh"

@@ -95,9 +95,9 @@ def create_nbho(run_figs):
     delta = config.model_properties.delta
     W = config.model_properties.W
 
-    Twater = config.model_properties.Twater
-    Ty20 = config.model_properties.Ty20
-    theta_w, theta_y20 = scale_t(Twater), scale_t(Ty20)
+    # Twater = config.model_properties.Twater
+    # Ty20 = config.model_properties.Ty20
+    # theta_w, theta_y20 = scale_t(Twater), scale_t(Ty20)
 
 
     def pde(x, theta):
@@ -112,6 +112,9 @@ def create_nbho(run_figs):
     def ic_obs(x):
         z = x[:, 0:1]
 
+        # c = theta_y20
+        theta_y20 = x[:, 2:3]
+        theta_w = x[:, 3:4]
         c = theta_y20
         b = a3*(theta_w-theta_y20) + theta_y20
         a = delta
