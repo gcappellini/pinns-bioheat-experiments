@@ -90,11 +90,11 @@ s = [-W*a2*u(1);
 % --------------------------------------------------------------------------
 
 function theta0 = sys_ic(x)
-global a3 theta_w theta20
+global a3 theta_w theta20 delta_sys
 
 cc = theta20;
 bb = a3*(theta_w-cc)+ cc;
-aa = -2.0;
+aa = delta_sys;
 theta0 = (1-x)*(aa*x^2 + bb*x + cc);
 
 % --------------------------------------------------------------------------

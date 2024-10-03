@@ -17,8 +17,8 @@ from omegaconf import OmegaConf
 
 dde.config.set_random_seed(200)
 
-# device = torch.device("cpu")
-device = torch.device("cuda")
+dev = torch.device("cpu")
+# dev = torch.device("cuda")
 
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
@@ -182,7 +182,7 @@ def train_model(run_figs):
     if os.path.exists(model_path):
         # Model exists, load it
         print(f"Loading model from {model_path}")
-        mm.restore(model_path, verbose=0)
+        mm.restore(model_path, device=torch.device(dev), verbose=0)
         return mm
     
     LBFGS = config.model_properties.LBFGS
@@ -267,7 +267,7 @@ def gen_obsdata(n):
     f2 = interp1d(instants, y2, kind='previous')
 
     properties = OmegaConf.load(f"{src_dir}/config.yaml")
-    theta_w = scale_t(properties.model_properties.Twater)
+    theta_w = scale_t(properties.model_parameters.Twater)
     y3 = np.full_like(y2, theta_w)
     f3 = interp1d(instants, y3, kind='previous')
 
@@ -289,7 +289,7 @@ def gen_obs_y2(n):
     f2 = interp1d(instants, y2, kind='previous')
 
     properties = OmegaConf.load(f"{src_dir}/config.yaml")
-    theta_w = scale_t(properties.model_properties.Twater)
+    theta_w = scale_t(properties.model_parameters.Twater)
     y3 = np.full_like(y2, theta_w)
     f3 = interp1d(instants, y3, kind='previous')
 
@@ -312,7 +312,7 @@ def gen_obs_y1(n):
     f2 = interp1d(instants, y2, kind='previous')
 
     properties = OmegaConf.load(f"{src_dir}/config.yaml")
-    theta_w = scale_t(properties.model_properties.Twater)
+    theta_w = scale_t(properties.model_parameters.Twater)
     y3 = np.full_like(y2, theta_w)
     f3 = interp1d(instants, y3, kind='previous')
 
@@ -544,7 +544,7 @@ def check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, conf, output_di
     """
     run_wandb = conf.experiment.run_wandb
     exp_type = conf.experiment.type
-    name = conf.experiment.nam
+    name = conf.experiment.name
     for el in range(len(multi_obs)):
 
         run_figs = os.path.join(output_dir, f"obs_{el}")
@@ -560,7 +560,7 @@ def check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, conf, output_di
         pp.plot_tf(X, y_sys, multi_obs[el], el, run_figs)
         
         if exp_type == "simulation":
-            pp.plot_observation_3d(X[:, 0:2], y_sys, pred, run_figs)
+            pp.plot_comparison_3d(X[:, 0:2], y_sys, pred, run_figs, rescale=True)
 
         metrics = compute_metrics(y_sys, pred)
  
@@ -591,7 +591,7 @@ def solve_ivp_and_plot(multi_obs, fold, n_obs, x_obs, X, y_sys, lam):
     weights[1:] = sol.y
     
     np.save(f'{fold}/weights_lam_{lam}.npy', weights)
-    pp.plot_weights(weights[1:], weights[0], fold, lam)
+    pp.plot_weights(weights[1:], weights[0], fold, lam, n_obs)
     
     # Model prediction
     y_pred = mm_predict(multi_obs, lam, x_obs, fold)
@@ -608,7 +608,7 @@ def solve_ivp_and_plot(multi_obs, fold, n_obs, x_obs, X, y_sys, lam):
     #     wandb.log(metrics)
     #     wandb.finish()
 
-    pp.plot_mu(mus, t, fold)
+    pp.plot_mu(mus, t, fold, n_obs)
     pp.plot_l2(x_obs, y_sys, multi_obs, 0, fold, MultiObs=True)
     pp.plot_tf(X, y_sys, multi_obs, 0, fold, MultiObs=True)
     pp.plot_observation_3d(X[:, 0:2], y_sys, y_pred, fold)

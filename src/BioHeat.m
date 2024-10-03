@@ -1,7 +1,7 @@
 clear all
 close all
 
-global K lambda delta upsilon W W0 W1 W2 W3 W4 W5 W6 W7 theta_w theta1 theta20 om0 om1 om2  om3 om4  om5 om6 om7 a1 a2 a3
+global K lambda delta delta_sys upsilon W W0 W1 W2 W3 W4 W5 W6 W7 theta_w theta1 theta20 om0 om1 om2  om3 om4  om5 om6 om7 a1 a2 a3
 
 addpath('/Users/guglielmocappellini/Desktop/phd/code/readyaml')
 % Default filename for YAML config
@@ -18,9 +18,9 @@ K = config_data.model_properties.K;
 rho = config_data.model_properties.rho;
 cp = config_data.model_properties.c;
 t_room = config_data.model_properties.Troom;
-t_y20 = config_data.model_properties.Ty20;
+t_y20 = config_data.model_parameters.Ty20;
 t_max = config_data.model_properties.Tmax;
-t_w = config_data.model_properties.Twater;
+t_w = config_data.model_parameters.Twater;
 h = config_data.model_properties.h;
 
 % Observer weights based on the number of observers (3 or 8)
@@ -41,6 +41,7 @@ end
 
 % Other parameters
 delta = config_data.model_properties.delta;
+delta_sys = config_data.model_parameters.delta_sys;
 lambda = config_data.model_parameters.lam;
 upsilon = config_data.model_parameters.upsilon;
 

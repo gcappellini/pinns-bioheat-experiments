@@ -364,9 +364,9 @@ def plot_comparison_3d(e, t_true, t_pred, run_figs, rescale=False, gt=False):
         e,                       # 2D array containing X and Y coordinates
         theta_true,              # Surface 1: true values (Z1)
         theta_pred,              # Surface 2: predicted values (Z2)
-        col_titles=col_titles,      # Titles for each subplot
-        filename=fname,  # Path to save the plot
-        rescale=rescale
+        col_titles,      # Titles for each subplot
+        fname,  # Path to save the plot
+        rescale
     )
 
 
@@ -392,11 +392,11 @@ def plot_observation_3d(e, t_true, t_pred, run_figs):
 
     # Call plot_generic_3d with the data
     plot_generic_3d(
-        XY=e,                       # 2D array containing X and Y coordinates
-        Z1=theta_true,              # Surface 1: true values (Z1)
-        Z2=theta_pred,              # Surface 2: predicted values (Z2)
-        col_titles=col_titles,      # Titles for each subplot
-        filename=f"{run_figs}/observation_3d.png"  # Path to save the plot
+        e,                       # 2D array containing X and Y coordinates
+        theta_true,              # Surface 1: true values (Z1)
+        theta_pred,              # Surface 2: predicted values (Z2)
+        col_titles,      # Titles for each subplot
+        f"{run_figs}/observation_3d.png"  # Path to save the plot
     )
 
 

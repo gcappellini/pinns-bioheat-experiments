@@ -16,8 +16,6 @@ h = cfg.model_properties.h
 
 Tmax = cfg.model_properties.Tmax
 Troom = cfg.model_properties.Troom
-Twater = cfg.model_properties.Twater
-Ty20 = cfg.model_properties.Ty20
 
 K = cfg.model_properties.K
 delta = cfg.model_properties.delta
