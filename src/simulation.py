@@ -19,10 +19,10 @@ def main(prj_figs, conf, run_matlab=False, run_wandb=False):
     """
     n_obs = conf.model_parameters.n_obs
     # Optionally run MATLAB ground truth
-    uu.run_matlab_ground_truth(src_dir, prj_figs, conf, run_matlab)
+    # uu.run_matlab_ground_truth(src_dir, prj_figs, conf, run_matlab)
 
     # # Generate and check observers if needed
-    # multi_obs = uu.mm_observer(conf)
+    multi_obs = uu.mm_observer(conf)
     # X, y_sys, _, _ = uu.gen_testdata(n_obs)
     # x_obs = uu.gen_obsdata(n_obs)
     # uu.check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, conf, prj_figs)

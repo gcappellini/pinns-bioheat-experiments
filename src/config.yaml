@@ -16,14 +16,14 @@ model_properties:
   activation: "tanh"
   initial_weights_regularizer: true
   initialization: "Glorot uniform"
-  iterations: 60000
+  iterations: 100000
   LBFGS: false
   learning_rate: 0.0001
   num_dense_layers: 6
   num_dense_nodes: 92
-  num_domain: 1000
-  num_boundary: 2000
-  num_initial: 800
+  num_domain: 2000
+  num_boundary: 4000
+  num_initial: 1600
   num_test: 10000
   resampling: true
   resampler_period: 100
@@ -44,7 +44,7 @@ model_parameters:
   W5: 1.0
   W6: 1.2
   W7: 1.6
-  n_obs: 3
+  n_obs: 8
   delta_sys: 4.0
 
 # Experiment type: can be either 'simulation' or 'measurement', with different observers (3 or 8)
@@ -52,7 +52,7 @@ experiment:
   type: "simulation"  # Choose between 'simulation' or 'measurement'
   run_matlab: true
   run_wandb: false
-  name: "cooling_free"
+  name: "cooling_free_8Obs"
 
 # Output directory management
 output:

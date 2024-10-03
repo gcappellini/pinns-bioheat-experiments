@@ -14,12 +14,12 @@ import hashlib
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-import matlab.engine
+# import matlab.engine
 
 dde.config.set_random_seed(200)
 
-dev = torch.device("cpu")
-# dev = torch.device("cuda")
+# dev = torch.device("cpu")
+dev = torch.device("cuda")
 
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
