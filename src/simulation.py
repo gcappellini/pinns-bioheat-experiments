@@ -20,7 +20,7 @@ def run_matlab_ground_truth(n_obs, src_dir, prj_figs, conf, run_matlab):
     """
     Optionally run MATLAB ground truth.
     """
-    lam = conf.model_parameters.lam
+    # lam = conf.model_parameters.lam
     n_obs = conf.model_parameters.n_obs
     
     if run_matlab:
@@ -34,11 +34,11 @@ def run_matlab_ground_truth(n_obs, src_dir, prj_figs, conf, run_matlab):
         t = np.unique(X[:, 1])
 
         mu = uu.compute_mu(n_obs)
-        pp.plot_mu(mu, t, prj_figs, n_obs, gt=True)
+        pp.plot_mu(mu, t, prj_figs, conf, gt=True)
 
         t, weights = uu.load_weights(n_obs)
-        pp.plot_weights(weights, t, prj_figs, lam, n_obs, gt=True)
-        pp.plot_tf_matlab(X, y_sys, y_observers, y_mmobs, n_obs, prj_figs)
+        pp.plot_weights(weights, t, prj_figs, conf, gt=True)
+        pp.plot_tf_matlab(X, y_sys, y_observers, y_mmobs, conf, prj_figs)
         pp.plot_comparison_3d(X, y_sys, y_mmobs, prj_figs, rescale= True, gt= True)
 
 

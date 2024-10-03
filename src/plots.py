@@ -155,7 +155,11 @@ def plot_loss_components(losshistory, nam):
     )
 
 
-def plot_weights(weights, t, run_figs, lam, n_obs, gt=False):
+def plot_weights(weights, t, run_figs, conf, gt=False):
+    lam = conf.model_parameters.lam
+    n_obs = conf.model_parameters.n_obs
+    total_colors = conf.plot.colors
+
     # Prepare the labels for each weight line
     legend_labels = [f"Weight $p_{i}$" for i in range(weights.shape[0])]
 
@@ -163,6 +167,8 @@ def plot_weights(weights, t, run_figs, lam, n_obs, gt=False):
     title = f"Dynamic weights, λ={lam}"
     a = t.reshape(len(t),)
     times = np.full_like(weights, a)
+
+    colors = total_colors[:n_obs]
     
     # Call the generic plotting function
     plot_generic(
@@ -173,17 +179,21 @@ def plot_weights(weights, t, run_figs, lam, n_obs, gt=False):
         ylabel=r"Weights $p_j$",    # y-axis label
         legend_labels=legend_labels, # Labels for each weight
         size=(6, 5),               # Figure size
+        colors=colors,
         filename=f"{run_figs}/weights_lam_{lam}_{'matlab' if gt else 'pinns'}_{n_obs}obs.png"  # Filename to save the plot
     )
 
 
-def plot_mu(mus, t, run_figs, n_obs, gt=False):
+def plot_mu(mus, t, run_figs, conf, gt=False):
+    n_obs = conf.model_parameters.n_obs
+    total_colors = conf.plot.colors
     # Prepare the labels for each line based on the number of columns in `mus`
     legend_labels = [f"$e_{i}$" for i in range(mus.shape[1])]
     
     # Define the title for the plot
     title = "Observation errors"
     times = [t]*mus.shape[1]
+    colors = total_colors[:n_obs]
     
     # Call the generic plotting function
     plot_generic(
@@ -194,6 +204,7 @@ def plot_mu(mus, t, run_figs, n_obs, gt=False):
         ylabel="Error",             # y-axis label
         legend_labels=legend_labels, # Labels for each observation error
         size=(6, 5),               # Figure size
+        colors=colors,
         filename=f"{run_figs}/obs_error_{'matlab' if gt else 'pinns'}_{n_obs}obs.png"  # Filename to save the plot
     )
 
@@ -346,7 +357,7 @@ def plot_tf(e, theta_true, model, number, prj_figs, MultiObs=False):
     )
 
 
-def plot_tf_matlab(e, theta_true, theta_observers, theta_mmobs, number, prj_figs):
+def plot_tf_matlab(e, theta_true, theta_observers, theta_mmobs, conf, prj_figs):
     """
     Plot true values and predicted values (single or multi-observer model).
     
@@ -357,6 +368,8 @@ def plot_tf_matlab(e, theta_true, theta_observers, theta_mmobs, number, prj_figs
     :param prj_figs: Directory to save the figure.
     :param MultiObs: If True, plot multiple model predictions and a weighted average.
     """
+    number = conf.model_parameters.n_obs
+    total_colors = conf.plot.colors
     # Reshape inputs
     e = e.reshape(len(e), 2)
     theta_true = theta_true.reshape(len(e), 1)
@@ -372,14 +385,15 @@ def plot_tf_matlab(e, theta_true, theta_observers, theta_mmobs, number, prj_figs
 
     true_reshaped = true.reshape(len(xtr), 1)
     mmobs_reshaped = mmobs.reshape(len(xtr), 1)
-    all_preds = np.hstack((true_reshaped, observers, mmobs_reshaped))
+    all_preds = np.hstack((observers, true_reshaped, mmobs_reshaped))
     # x values: use xtr for true data, and 'x' for predictions
     xxtr = xtr.reshape(len(xtr), 1)
     x_vals = np.full_like(all_preds, xxtr)
 
     # Generate corresponding legend labels
-    legend_labels = ['True'] + [f'Obs {i}' for i in range(number)] + ['MultiObs']
+    legend_labels = [f'Obs {i}' for i in range(number)] + ['True'] + ['MultiObs']
 
+    colors = total_colors[:number]
 
     # Call the generic plotting function
     plot_generic(
@@ -390,7 +404,8 @@ def plot_tf_matlab(e, theta_true, theta_observers, theta_mmobs, number, prj_figs
         ylabel=r"$\theta$",
         legend_labels=legend_labels,  # Labels for the legend
         size=(6, 5),
-        filename=f"{prj_figs}/tf_mmobs_matlab.png"
+        # colors=colors,
+        filename=f"{prj_figs}/tf_mmobs_matlab_{number}obs.png"
     )
 
 
