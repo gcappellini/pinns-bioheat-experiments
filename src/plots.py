@@ -63,16 +63,8 @@ def plot_generic(x, y, title, xlabel, ylabel, legend_labels=None, log_scale=Fals
     save_and_close(fig, filename)
 
 
-def plot_generic_3d(XYa, Z1a, Z2a, col_titles,  filename=None, rescale = False):
-    xlabel=r"$x \, (m)$" if rescale else "X"
-    ylabel=r"$t \, (s)$" if rescale else r"$\tau$"
-    zlabel=r"$T \, (^{\circ}C)$" if rescale else r"$\theta$"
-
-    Z1 = uu.rescale_t(Z1a) if rescale else Z1a
-    Z2 = uu.rescale_t(Z2a) if rescale else Z2a
-
-    XY = np.hstack((uu.rescale_x(XYa[:, 0:1]), uu.rescale_time(XYa[:, 1:2]))) if rescale else XYa
-    
+def plot_generic_3d(XY, Z1, Z2, xlabel, ylabel, zlabel, col_titles,  filename=None):
+  
     fig = plt.figure(3, figsize=(9, 4))
     surfaces = [
         [Z1, Z2,
@@ -141,6 +133,8 @@ def plot_loss_components(losshistory, nam):
     iters = losshistory.steps
     loss_terms = np.array(y_values)
     iterations = np.array([iters]*len(y_values))
+    conf = OmegaConf.load(f"{src_dir}/config.yaml")
+    colors = conf.plot.colors.losses
 
     # Call the generic plotting function
     plot_generic(
@@ -151,14 +145,14 @@ def plot_loss_components(losshistory, nam):
         ylabel="loss",
         legend_labels=legend_labels,
         log_scale=True,  # We want a log scale on the y-axis
-        filename=f"{models_dir}/losses_{nam}.png"
+        filename=f"{models_dir}/losses_{nam}.png",
+        colors=colors
     )
 
 
 def plot_weights(weights, t, run_figs, conf, gt=False):
     lam = conf.model_parameters.lam
     n_obs = conf.model_parameters.n_obs
-    total_colors = conf.plot.colors
 
     # Prepare the labels for each weight line
     legend_labels = [f"Weight $p_{i}$" for i in range(weights.shape[0])]
@@ -168,14 +162,16 @@ def plot_weights(weights, t, run_figs, conf, gt=False):
     a = t.reshape(len(t),)
     times = np.full_like(weights, a)
 
-    colors = total_colors[:n_obs]
+    colors = uu.get_obs_colors(conf)
+    rescale = conf.plot.rescale
+    _, xlabel, _ = uu.get_scaled_labels(rescale) 
     
     # Call the generic plotting function
     plot_generic(
         x=times,                       # Time data for the x-axis
         y=weights,                 # Weights data (each row is a separate line)
         title=title,               # Plot title with dynamic lambda value
-        xlabel=r"Time $\tau$",      # x-axis label
+        xlabel=xlabel,      # x-axis label
         ylabel=r"Weights $p_j$",    # y-axis label
         legend_labels=legend_labels, # Labels for each weight
         size=(6, 5),               # Figure size
@@ -186,22 +182,22 @@ def plot_weights(weights, t, run_figs, conf, gt=False):
 
 def plot_mu(mus, t, run_figs, conf, gt=False):
     n_obs = conf.model_parameters.n_obs
-    total_colors = conf.plot.colors
     # Prepare the labels for each line based on the number of columns in `mus`
     legend_labels = [f"$e_{i}$" for i in range(mus.shape[1])]
     
     # Define the title for the plot
     title = "Observation errors"
     times = [t]*mus.shape[1]
-    colors = total_colors[:n_obs]
-    
+    colors = uu.get_obs_colors(conf)
+    rescale = conf.plot.rescale
+    times_plot = uu.rescale_t(times) if rescale else times     
     # Call the generic plotting function
     plot_generic(
-        x=times,                       # Time data for the x-axis
+        x=times_plot,                       # Time data for the x-axis
         y=mus.T,                   # Transpose mus to get lines for each observation error
         title=title,               # Plot title
         xlabel=r"Time $\tau$",      # x-axis label
-        ylabel="Error",             # y-axis label
+        ylabel=r"Error $\mu$",             # y-axis label
         legend_labels=legend_labels, # Labels for each observation error
         size=(6, 5),               # Figure size
         colors=colors,
@@ -313,11 +309,17 @@ def plot_tf(e, theta_true, model, number, prj_figs, MultiObs=False):
     true = final[:, -1]          # True values at final time
 
     # Generate X values for prediction
-    x = np.linspace(0, 1, 100)   # Depth values for prediction
+    # x = np.linspace(0, 1, 100)  # Depth values for prediction
+    x=xtr
     Xobs = np.vstack((x, uu.f1(np.full_like(x, 0.9944)), uu.f2(np.full_like(x, 0.9944)), uu.f3(np.full_like(x, 0.9944)), np.ones_like(x))).T
 
-    e = OmegaConf.load(f'{prj_figs}/config.yaml')
-    lam = e.model_parameters.lam
+    conf = OmegaConf.load(f'{prj_figs}/config.yaml')
+    lam = conf.model_parameters.lam
+    n_obs = conf.model_parameters.n_obs
+    obs_colors = uu.get_obs_colors(conf)
+    true_color, mm_obs_color = uu.get_sys_mm_colors(conf)
+    obs_linestyles = uu.get_obs_linestyle(conf)
+    true_linestyle, mm_obs_linestyle = uu.get_sys_mm_linestyle(conf)
 
     if MultiObs:
         # Combined prediction using multi-observer model
@@ -330,11 +332,14 @@ def plot_tf(e, theta_true, model, number, prj_figs, MultiObs=False):
         all_preds = [true] + individual_preds + [multi_pred]
         
         # x values: use xtr for true data, and 'x' for predictions
-        x_vals = [xtr] + [x] * len(individual_preds) + [x]
+            # xxtr = xtr.reshape(len(xtr), 1)
+        x_vals = [xtr] + Xobs[:, 0:1]*n_obs + Xobs[:, 0:1]
 
         # Generate corresponding legend labels
         legend_labels = ['True'] + [f'Obs {i}' for i in range(len(individual_preds))] + ['MultiObs Pred']
 
+        colors = [true_color] + obs_colors + [mm_obs_color]
+        linestyles = [true_linestyle] + obs_linestyles + [mm_obs_linestyle]
     else:
         # Single model prediction
         pred = model.predict(Xobs)
@@ -342,18 +347,29 @@ def plot_tf(e, theta_true, model, number, prj_figs, MultiObs=False):
         # Only two lines to plot: true and single prediction
         all_preds = [true, pred]
         x_vals = [xtr, x]  # xtr for true, x for predicted
-        legend_labels = ['True', 'Predicted']
+        legend_labels = ['True', f'Obs {number}']
+        colors = [true_color] + [obs_colors[number]]
+        linestyles = [true_linestyle] + [obs_linestyles[number]]
+
+    rescale = conf.plot.rescale
+    xlabel, _, ylabel = uu.get_scaled_labels(rescale)
+
+    x_vals = np.array(x_vals, dtype=float)
+    x_vals_plot = np.hstack((uu.rescale_x(x_vals[:, 0:1]), uu.rescale_time(x_vals[:, 1:2]))) if rescale else x_vals
+    all_preds_plot = uu.rescale_t(all_preds) if rescale else all_preds
 
     # Call the generic plotting function
     plot_generic(
-        x=x_vals,  # Different x values for true and predicted
-        y=all_preds,  # List of true and predicted lines
+        x=x_vals_plot,  # Different x values for true and predicted
+        y=all_preds_plot,  # List of true and predicted lines
         title="Prediction at final time",
-        xlabel=r"Depth $X$",
-        ylabel=r"$\theta$",
+        xlabel=xlabel,
+        ylabel=ylabel,
         legend_labels=legend_labels,  # Labels for the legend
         size=(6, 5),
-        filename=f"{prj_figs}/tf_{'mm_obs' if MultiObs else f'obs{number}'}.png"
+        filename=f"{prj_figs}/tf_{'mm_obs' if MultiObs else f'obs{number}'}.png",
+        colors = colors,
+        linestyles=linestyles
     )
 
 
@@ -368,8 +384,7 @@ def plot_tf_matlab(e, theta_true, theta_observers, theta_mmobs, conf, prj_figs):
     :param prj_figs: Directory to save the figure.
     :param MultiObs: If True, plot multiple model predictions and a weighted average.
     """
-    number = conf.model_parameters.n_obs
-    total_colors = conf.plot.colors
+
     # Reshape inputs
     e = e.reshape(len(e), 2)
     theta_true = theta_true.reshape(len(e), 1)
@@ -389,60 +404,41 @@ def plot_tf_matlab(e, theta_true, theta_observers, theta_mmobs, conf, prj_figs):
     # x values: use xtr for true data, and 'x' for predictions
     xxtr = xtr.reshape(len(xtr), 1)
     x_vals = np.full_like(all_preds, xxtr)
+    number = conf.model_parameters.n_obs
 
     # Generate corresponding legend labels
     legend_labels = [f'Obs {i}' for i in range(number)] + ['True'] + ['MultiObs']
 
-    colors = total_colors[:number]
+    obs_colors = uu.get_obs_colors(conf)
+    system_color, mm_obs_color = uu.get_sys_mm_colors(conf)
+    obs_linestyles = uu.get_obs_linestyle(conf)
+    system_linestyle, mm_obs_linestyle = uu.get_sys_mm_linestyle(conf)
+
+    colors = obs_colors + [system_color] + [mm_obs_color]
+    linestyles = obs_linestyles + [system_linestyle] + [mm_obs_linestyle]
+    rescale = conf.plot.rescale
+    xlabel, _, ylabel = uu.get_scaled_labels(rescale)
+
+    x_plot = uu.rescale_x(x_vals.T) if rescale else x_vals.T
+    y_plot = uu.rescale_t(all_preds.T) if rescale else all_preds.T
+
 
     # Call the generic plotting function
     plot_generic(
-        x=x_vals.T,  # Different x values for true and predicted
-        y=all_preds.T,  # List of true and predicted lines
+        x=x_plot,  # Different x values for true and predicted
+        y=y_plot,  # List of true and predicted lines
         title="Prediction at final time",
-        xlabel=r"Depth $X$",
-        ylabel=r"$\theta$",
+        xlabel=xlabel,
+        ylabel=ylabel,
         legend_labels=legend_labels,  # Labels for the legend
         size=(6, 5),
-        # colors=colors,
-        filename=f"{prj_figs}/tf_mmobs_matlab_{number}obs.png"
+        colors=colors,
+        filename=f"{prj_figs}/tf_mmobs_matlab_{number}obs.png",
+        linestyles=linestyles
     )
 
 
-def plot_comparison_3d(e, t_true, t_pred, run_figs, rescale=False, gt=False):
-    """
-    Refactor the plot_comparison function to use plot_generic_3d for 3D comparisons.
-    
-    :param e: 2D array for X and Y data.
-    :param t_true: True values reshaped for 3D plotting.
-    :param t_pred: Predicted values reshaped for 3D plotting.
-    :param run_figs: Directory to save the plot.
-    """
-    # Determine the unique points in X and Y dimensions
-    la = len(np.unique(e[:, 0]))  # Number of unique X points
-    le = len(np.unique(e[:, 1]))  # Number of unique Y points
-    
-    # Reshape the true and predicted theta values to match the 2D grid
-    theta_true = t_true.reshape(le, la)
-    theta_pred = t_pred.reshape(le, la)
-
-    # Column titles for each subplot
-    col_titles = ['Measured', 'MM Observer', 'Error']
-
-    fname = f"{run_figs}/comparison_3d_matlab.png" if gt else f"{run_figs}/comparison_3d_pinns.png"
-
-    # Call plot_generic_3d with the data
-    plot_generic_3d(
-        e,                       # 2D array containing X and Y coordinates
-        theta_true,              # Surface 1: true values (Z1)
-        theta_pred,              # Surface 2: predicted values (Z2)
-        col_titles,      # Titles for each subplot
-        fname,  # Path to save the plot
-        rescale
-    )
-
-
-def plot_observation_3d(e, t_true, t_pred, run_figs):
+def plot_comparison_3d(e, t_true, t_pred, run_figs, gt=False):
     """
     Refactor the plot_comparison function to use plot_generic_3d for 3D comparisons.
     
@@ -462,17 +458,26 @@ def plot_observation_3d(e, t_true, t_pred, run_figs):
     # Column titles for each subplot
     col_titles = ["System", "MultiObserver", "Error"]
 
+    fname = f"{run_figs}/comparison_3d_matlab.png" if gt else f"{run_figs}/comparison_3d_pinns.png"
+    conf = OmegaConf.load(f"{run_figs}/config.yaml")
+    rescale = conf.plot.rescale
+
+    theta_true_plot = uu.rescale_t(theta_true) if rescale else theta_true
+    theta_pred_plot = uu.rescale_t(theta_pred) if rescale else theta_pred
+    xlabel, ylabel, zlabel = uu.get_scaled_labels(rescale)
     # Call plot_generic_3d with the data
     plot_generic_3d(
         e,                       # 2D array containing X and Y coordinates
-        theta_true,              # Surface 1: true values (Z1)
-        theta_pred,              # Surface 2: predicted values (Z2)
+        theta_true_plot,              # Surface 1: true values (Z1)
+        theta_pred_plot,              # Surface 2: predicted values (Z2)
+        xlabel, ylabel, zlabel,
         col_titles,      # Titles for each subplot
-        f"{run_figs}/observation_3d.png"  # Path to save the plot
+        fname
     )
 
 
 def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, prj_figs):
+    conf = OmegaConf.load(f"{prj_figs}/config.yaml")
     # Prepare x-axis data (time in minutes)
     time_in_minutes = df['t'] / 60
     
@@ -485,7 +490,8 @@ def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, p
     # Labels for the legend (corresponding to each line in y_data)
     legend_labels = ['y1 (True)', 'gt1 (True)', 'gt2 (True)', 'y2 (True)', 
                      'y1 (Pred)', 'gt1 (Pred)', 'gt2 (Pred)', 'y2 (Pred)']
-    colors = ['C0', 'C1', 'C2', 'C3', 'C0', 'C1', 'C2', 'C3']
+    colors_points = conf.plot.colors.measuring_points
+    colors = colors_points * 2
     linestyles=["-", "-", "-", "-", "--", "--", "--", "--"]
 
     times = [time_in_minutes]*len(y_data)

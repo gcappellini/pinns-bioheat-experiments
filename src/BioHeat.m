@@ -18,9 +18,9 @@ K = config_data.model_properties.K;
 rho = config_data.model_properties.rho;
 cp = config_data.model_properties.c;
 t_room = config_data.model_properties.Troom;
-t_y20 = config_data.model_parameters.Ty20;
+t_y20 = config_data.model_properties.Ty20;
 t_max = config_data.model_properties.Tmax;
-t_w = config_data.model_parameters.Twater;
+t_w = config_data.model_properties.Twater;
 h = config_data.model_properties.h;
 
 % Observer weights based on the number of observers (3 or 8)

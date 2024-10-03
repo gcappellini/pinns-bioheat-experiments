@@ -14,6 +14,7 @@ import hashlib
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
+import matlab.engine
 
 dde.config.set_random_seed(200)
 
@@ -112,9 +113,13 @@ def create_nbho(run_figs):
     def ic_obs(x):
         z = x[:, 0:1]
 
-        # c = theta_y20
-        theta_y20 = x[:, 2:3]
-        theta_w = x[:, 3:4]
+        # theta_y20 = x[:, 2:3]
+        # theta_w = x[:, 3:4]
+        conf = OmegaConf.load(f"{src_dir}/config.yaml")
+        theta_y20 = scale_t(conf.model_properties.Ty20)
+        theta_w = scale_t(conf.model_properties.Twater)
+
+
         c = theta_y20
         b = a3*(theta_w-theta_y20) + theta_y20
         a = delta
@@ -335,6 +340,7 @@ def rescale_t(theta):
     properties = OmegaConf.load(f"{src_dir}/config.yaml")
     Troom = properties.model_properties.Troom
     Tmax = properties.model_properties.Tmax
+    theta = np.array(theta, dtype=float)
     j = Troom + (Tmax - Troom)*theta
 
     return np.round(j, 2)
@@ -420,7 +426,9 @@ def import_obsdata(nam):
     return Xobs
 
 
-def mm_observer(n_obs, config):
+def mm_observer(config):
+
+    n_obs = config.model_parameters.n_obs
 
     if n_obs==8:
         W0, W1, W2, W3, W4, W5, W6, W7 = config.model_parameters.W0, config.model_parameters.W1, config.model_parameters.W2, config.model_parameters.W3, config.model_parameters.W4, config.model_parameters.W5, config.model_parameters.W6, config.model_parameters.W7
@@ -445,6 +453,13 @@ def mm_observer(n_obs, config):
 
 
     return multi_obs
+
+def check_mm_obs(multi_obs, x_obs, X, y_sys, conf, prj_figs):
+    run_figs = co.set_run(f"mm_obs")
+    conf.model_properties.W = None
+    OmegaConf.save(conf, f"{run_figs}/config.yaml") 
+    # Solve IVP and plot weights
+    solve_ivp_and_plot(multi_obs, run_figs, conf, x_obs, X, y_sys)
 
 
 def mu(o, tau_in):
@@ -565,11 +580,12 @@ def check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, conf, output_di
         
         pred = multi_obs[el].predict(x_obs)
         
-        pp.plot_l2(x_obs, y_sys, multi_obs[el], el, run_figs)
-        # pp.plot_tf(X, y_sys, multi_obs[el], el, run_figs)
+        # pp.plot_l2(x_obs, y_sys, multi_obs[el], el, run_figs)
+        pp.plot_tf(X, y_sys, multi_obs[el], el, run_figs)
+        pp.plot_comparison_3d(X, y_sys, pred, run_figs)
         
         if exp_type == "simulation":
-            pp.plot_comparison_3d(X[:, 0:2], y_sys, pred, run_figs, rescale=True)
+            pp.plot_comparison_3d(X[:, 0:2], y_sys, pred, run_figs)
 
         metrics = compute_metrics(y_sys, pred)
  
@@ -578,10 +594,43 @@ def check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, conf, output_di
             wandb.finish()
 
 
-def solve_ivp_and_plot(multi_obs, fold, n_obs, x_obs, X, y_sys, lam):
+def get_scaled_labels(rescale):
+    xlabel=r"$x \, (m)$" if rescale else "X"
+    ylabel=r"$t \, (s)$" if rescale else r"$\tau$"
+    zlabel=r"$T \, (^{\circ}C)$" if rescale else r"$\theta$"
+    return xlabel, ylabel, zlabel
+
+
+
+def get_obs_colors(conf):
+    total_obs_colors = conf.plot.colors.observers
+    number = conf.model_parameters.n_obs
+    obs_colors = total_obs_colors[:number]
+    return obs_colors
+
+def get_sys_mm_colors(conf):
+    system_color = conf.plot.colors.system
+    mm_obs_color = conf.plot.colors.mm_obs
+    return system_color, mm_obs_color
+
+def get_obs_linestyle(conf):
+    total_obs_linestyles = conf.plot.linestyles.observers
+    number = conf.model_parameters.n_obs
+    obs_colors = total_obs_linestyles[:number]
+    return obs_colors
+
+def get_sys_mm_linestyle(conf):
+    system_linestyle = conf.plot.linestyles.system
+    mm_obs_linestyle = conf.plot.linestyles.mm_obs
+    return system_linestyle, mm_obs_linestyle
+
+
+def solve_ivp_and_plot(multi_obs, fold, conf, x_obs, X, y_sys):
     """
     Solve the IVP for observer weights and plot the results.
     """
+    n_obs = conf.model_parameters.n_obs
+    lam = conf.model_parameters.lam
     p0 = np.full((n_obs,), 1/n_obs)
 
     def f(t, p):
@@ -600,7 +649,7 @@ def solve_ivp_and_plot(multi_obs, fold, n_obs, x_obs, X, y_sys, lam):
     weights[1:] = sol.y
     
     np.save(f'{fold}/weights_lam_{lam}.npy', weights)
-    pp.plot_weights(weights[1:], weights[0], fold, lam, n_obs)
+    pp.plot_weights(weights[1:], weights[0], fold, conf)
     
     # Model prediction
     y_pred = mm_predict(multi_obs, lam, x_obs, fold)
@@ -617,7 +666,39 @@ def solve_ivp_and_plot(multi_obs, fold, n_obs, x_obs, X, y_sys, lam):
     #     wandb.log(metrics)
     #     wandb.finish()
 
-    pp.plot_mu(mus, t, fold, n_obs)
+    pp.plot_mu(mus, t, fold, conf)
     # pp.plot_l2(x_obs, y_sys, multi_obs, 0, fold, MultiObs=True)
-    # pp.plot_tf(X, y_sys, multi_obs, 0, fold, MultiObs=True)
-    pp.plot_observation_3d(X[:, 0:2], y_sys, y_pred, fold)
+    pp.plot_tf(X, y_sys, multi_obs, 0, fold, MultiObs=True)
+    pp.plot_comparison_3d(X[:, 0:2], y_sys, y_pred, fold)
+
+
+
+
+def run_matlab_ground_truth(src_dir, prj_figs, conf, run_matlab):
+    """
+    Optionally run MATLAB ground truth.
+    """
+    n_obs = conf.model_parameters.n_obs
+    
+    if run_matlab:
+        print("Running MATLAB ground truth calculation...")
+        eng = matlab.engine.start_matlab()
+        eng.cd(src_dir, nargout=0)
+        eng.BioHeat(nargout=0)
+        eng.quit()
+
+        X, y_sys, y_observers, y_mmobs = gen_testdata(n_obs)
+        t = np.unique(X[:, 1])
+
+        mu = compute_mu(n_obs)
+        pp.plot_mu(mu, t, prj_figs, conf, gt=True)
+
+        t, weights = load_weights(n_obs)
+        pp.plot_weights(weights, t, prj_figs, conf, gt=True)
+        pp.plot_tf_matlab(X, y_sys, y_observers, y_mmobs, conf, prj_figs)
+        pp.plot_comparison_3d(X, y_sys, y_mmobs, prj_figs, gt= True)
+
+
+        print("MATLAB ground truth completed.")
+    else:
+        print("Skipping MATLAB ground truth calculation.")

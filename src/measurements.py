@@ -58,7 +58,7 @@ def main():
     output_dir = co.set_prj(prj_name)
 
     # Generate and check observers if needed
-    multi_obs = uu.mm_observer(n_obs, config)
+    multi_obs = uu.mm_observer(config)
 
     # Import data
     a = uu.import_testdata("cooling_1")
@@ -72,13 +72,7 @@ def main():
 
     # Optionally check observers and upload to wandb
     uu.check_observers_and_wandb_upload(multi_obs, x_obs, X, meas, config, output_dir)
-
-    run_figs = co.set_run(f"mm_obs")
-    config.model_properties.W = None
-    OmegaConf.save(config, f"{run_figs}/config.yaml")
-
-    # Solve IVP and plot weights
-    uu.solve_ivp_and_plot(multi_obs, run_figs, n_obs, x_obs, X, meas, lam)
+    uu.check_mm_obs(multi_obs, x_obs, X, meas, config, output_dir)
 
 
     y1_pred, gt1_pred, gt2_pred, y2_pred = scale_predictions(multi_obs, x_obs, run_figs, lam)
