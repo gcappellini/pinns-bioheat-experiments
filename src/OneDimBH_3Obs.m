@@ -60,7 +60,7 @@ end
 
 %-----------------
 function [c,f,s] = OneDimBHpde_3Obs(x,t,u,dudx)
-global lambda om0 om1 om2 W W0 W1 W2 a1 a2
+global lambda om0 om1 om2 W W0 W1 W2 a1 a2 a3 a4
 %la prima equazione è quella del sistema, a seguire gli osservatoris
 t
 c = [a1; a1; a1; a1; 1; 1; 1];
@@ -68,10 +68,10 @@ f = [1; 1; 1; 1; 1; 1; 1].* dudx;
 
 den=u(5)*exp(-om0)+u(6)*exp(-om1)+u(7)*exp(-om2);
 
-s = [-W*a2*u(1); 
-    -W0*a2*u(2); 
-    -W1*a2*u(3); 
-    -W2*a2*u(4); 
+s = [-W*a2*u(1)+a3*exp(-a4*x); 
+    -W0*a2*u(2)+a3*exp(-a4*x); 
+    -W1*a2*u(3)+a3*exp(-a4*x); 
+    -W2*a2*u(4)+a3*exp(-a4*x); 
     -lambda*u(5)*(1-(exp(-om0)/den));
     -lambda*u(6)*(1-(exp(-om1)/den)); 
     -lambda*u(7)*(1-(exp(-om2)/den))
@@ -79,20 +79,20 @@ s = [-W*a2*u(1);
 % --------------------------------------------------------------------------
 
 function theta0 = sys_ic(x)
-global a3 theta_w theta20 delta_sys
+global a5 theta_w theta20 delta_sys
 
 cc = theta20;
-bb = a3*(theta_w-cc)+ cc;
+bb = a5*(theta_w-cc)+ cc;
 aa = delta_sys;
 theta0 = (1-x)*(aa*x^2 + bb*x + cc);
 
 % --------------------------------------------------------------------------
 
 function thetahat0 = obs_ic(x)
-global a3 theta_w theta20 delta
+global a5 theta_w theta20 delta
 
 ff = theta20;
-ee = a3*(theta_w-ff)+ ff;
+ee = a5*(theta_w-ff)+ ff;
 dd = delta;
 thetahat0 = (1-x)*(dd*x^2 + ee*x + ff);
     
@@ -105,8 +105,8 @@ u0 = [sys_ic(x); obs_ic(x);  obs_ic(x); obs_ic(x); 1/3; 1/3; 1/3];
 
 
 function [pl,ql,pr,qr] = OneDimBHbc_3Obs(xl,ul,xr,ur,t)
-global K om0 om1 om2 upsilon a3 theta_w theta1
-flusso = a3*(theta_w-ul(1));
+global K om0 om1 om2 upsilon a5 theta_w theta1
+flusso = a5*(theta_w-ul(1));
 
 pl = [flusso;
     flusso+K*(ul(1)-ul(2));

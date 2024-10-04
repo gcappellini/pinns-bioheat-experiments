@@ -60,7 +60,7 @@ end
 
 %-----------------
 function [c,f,s] = OneDimBHpde(x,t,u,dudx)
-global lambda om0 om1 om2 om3 om4 om5 om6 om7 W W0 W1 W2 W3 W4 W5 W6 W7 a1 a2
+global lambda om0 om1 om2 om3 om4 om5 om6 om7 W W0 W1 W2 W3 W4 W5 W6 W7 a1 a2 a3 a4
 %la prima equazione è quella del sistema, a seguire gli osservatoris
 t
 c = [a1; a1; a1; a1; a1; a1; a1; a1; a1; 1; 1; 1; 1; 1; 1; 1; 1];
@@ -69,15 +69,15 @@ f = [1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1].* dudx;
 den=u(10)*exp(-om0)+u(11)*exp(-om1)+u(12)*exp(-om2)+u(13)*exp(-om3)+...
     u(14)*exp(-om4)+u(15)*exp(-om5)+u(16)*exp(-om6)+u(17)*exp(-om7);
 
-s = [-W*a2*u(1); 
-    -W0*a2*u(2); 
-    -W1*a2*u(3); 
-    -W2*a2*u(4); 
-    -W3*a2*u(5); 
-    -W4*a2*u(6); 
-    -W5*a2*u(7); 
-    -W6*a2*u(8); 
-    -W7*a2*u(9); 
+s = [-W*a2*u(1)+a3*exp(-a4*x); 
+    -W0*a2*u(2)+a3*exp(-a4*x); 
+    -W1*a2*u(3)+a3*exp(-a4*x); 
+    -W2*a2*u(4)+a3*exp(-a4*x); 
+    -W3*a2*u(5)+a3*exp(-a4*x); 
+    -W4*a2*u(6)+a3*exp(-a4*x); 
+    -W5*a2*u(7)+a3*exp(-a4*x); 
+    -W6*a2*u(8)+a3*exp(-a4*x); 
+    -W7*a2*u(9)+a3*exp(-a4*x); 
     -lambda*u(10)*(1-(exp(-om0)/den));
     -lambda*u(11)*(1-(exp(-om1)/den)); 
     -lambda*u(12)*(1-(exp(-om2)/den)); 
@@ -90,20 +90,20 @@ s = [-W*a2*u(1);
 % --------------------------------------------------------------------------
 
 function theta0 = sys_ic(x)
-global a3 theta_w theta20 delta_sys
+global a5 theta_w theta20 delta_sys
 
 cc = theta20;
-bb = a3*(theta_w-cc)+ cc;
+bb = a5*(theta_w-cc)+ cc;
 aa = delta_sys;
 theta0 = (1-x)*(aa*x^2 + bb*x + cc);
 
 % --------------------------------------------------------------------------
 
 function thetahat0 = obs_ic(x)
-global a3 theta_w theta20 delta
+global a5 theta_w theta20 delta
 
 ff = theta20;
-ee = a3*(theta_w-ff)+ ff;
+ee = a5*(theta_w-ff)+ ff;
 dd = delta;
 thetahat0 = (1-x)*(dd*x^2 + ee*x + ff);
     
@@ -116,8 +116,8 @@ u0 = [sys_ic(x); obs_ic(x);  obs_ic(x); obs_ic(x); obs_ic(x); obs_ic(x); obs_ic(
 
 
 function [pl,ql,pr,qr] = OneDimBHbc(xl,ul,xr,ur,t)
-global K om0 om1 om2 om3 om4 om5 om6 om7 upsilon a3 theta_w theta1
-flusso = a3*(theta_w-ul(1));
+global K om0 om1 om2 om3 om4 om5 om6 om7 upsilon a5 theta_w theta1
+flusso = a5*(theta_w-ul(1));
 
 pl = [flusso;
     flusso+K*(ul(1)-ul(2));

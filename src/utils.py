@@ -92,6 +92,8 @@ def create_nbho(run_figs):
     a1 = cc.a1
     a2 = cc.a2
     a3 = cc.a3
+    a4 = cc.a4
+    a5 = cc.a5
     K = config.model_properties.K
     delta = config.model_properties.delta
     W = config.model_properties.W
@@ -107,7 +109,7 @@ def create_nbho(run_figs):
 
         return (
             a1 * dtheta_tau
-            - dtheta_xx + W * a2 * theta
+            - dtheta_xx + W * a2 * theta - a3 * torch.exp(-a4*x[:, 0:1])
         )
     
     def ic_obs(x):
@@ -121,7 +123,7 @@ def create_nbho(run_figs):
 
 
         c = theta_y20
-        b = a3*(theta_w-theta_y20) + theta_y20
+        b = a5*(theta_w-theta_y20) + theta_y20
         a = delta
 
         return (1-z)*(a*z**2+b*z+c)
@@ -133,8 +135,7 @@ def create_nbho(run_figs):
     def bc0_obs(x, theta, X):
         dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0)
 
-        return - dtheta_x - a3 * (x[:, 3:4] - x[:, 2:3]) - K * (x[:, 2:3] - theta)
-        # return dtheta_x - a3 * (x[:, 3:4] - x[:, 2:3]) - K * (x[:, 2:3] - theta)
+        return - dtheta_x - a5 * (x[:, 3:4] - x[:, 2:3]) - K * (x[:, 2:3] - theta)
 
     xmin = [0, 0, 0, 0]
     xmax = [1, 0.2, 1, 1]

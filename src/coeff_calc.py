@@ -1,5 +1,6 @@
 import os
 from omegaconf import OmegaConf
+import numpy as np
 
 
 current_file = os.path.abspath(__file__)
@@ -14,8 +15,14 @@ c = cfg.model_properties.c
 rho = cfg.model_properties.rho
 h = cfg.model_properties.h
 
+beta = cfg.model_properties.beta
+SAR_0 = cfg.model_properties.SAR_0
+PD = cfg.model_properties.PD
+x0 = cfg.model_properties.x0
+
 Tmax = cfg.model_properties.Tmax
 Troom = cfg.model_properties.Troom
+dT = (Tmax-Troom)
 
 K = cfg.model_properties.K
 delta = cfg.model_properties.delta
@@ -33,15 +40,20 @@ W7 = cfg.model_parameters.W7
 lamb = cfg.model_parameters.lam  # Access the lambda parameter
 upsilon = cfg.model_parameters.upsilon
 
-def scale_t(t):
+def rescale_t(t):
 
-    return (t - Troom) / (Tmax - Troom)
+    return Troom + t *(Tmax - Troom)
 
-"coefficients a1, a2, a3, a4"
+"coefficients a1, a2, a3, a4, a5"
 
 a1 = round((L0**2/tauf)*((rho*c)/k), 7)
 a2 = round(L0**2*c/k, 7)
-a3 = round(L0*h/k, 7)
+cc = np.log(2)/(PD - 10**(-2)*x0)
+a3 = round(rho*L0**2*beta*SAR_0*np.exp(cc*x0)/k*dT, 7)
+a4 = round(cc*L0, 7)
+a5 = round(L0*h/k, 7)
+
+# print(rescale_t(0.1))
 
 
 

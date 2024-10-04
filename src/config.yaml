@@ -1,18 +1,18 @@
 # Configuration for model properties
 model_properties:
   L0: 0.07
-  tauf: 1800.0
+  tauf: 2400.0
   k: 0.6
   rho: 1000.0
   c: 4186.0
   W: 0.8
-  h: 10.0
+  h: 238.0
   Troom: 21.5
   Tmax: 32.0
-  Ty20: 32.0
-  Twater: 21.5
-  K: 60.0
-  delta: 0.0
+  Ty20: 22.55
+  Twater: 22.55
+  K: 10.0
+  delta: 2.0
   activation: "tanh"
   initial_weights_regularizer: true
   initialization: "Glorot uniform"
@@ -31,28 +31,33 @@ model_properties:
   w_bc0: 1.0
   w_bc1: 1.0
   w_ic: 1.0
+  beta: 1.0
+  SAR_0: 0.38
+  PD: 0.03
+  x0: 0.004
+
 
 # Configuration for model parameters (applied after training)
 model_parameters:
-  lam: 150.0
-  upsilon: 40.0
-  W0: 0.1
-  W1: 0.2
-  W2: 0.3
-  W3: 0.4
-  W4: 0.5
-  W5: 0.6
+  lam: 100.0
+  upsilon: 1.0
+  W0: 0.3
+  W1: 0.3
+  W2: 0.4
+  W3: 0.5
+  W4: 0.6
+  W5: 0.7
   W6: 0.8
-  W7: 1.0
+  W7: 0.9
   n_obs: 3
-  delta_sys: 4.0
+  delta_sys: 0.4
 
 # Experiment type: can be either 'simulation' or 'measurement', with different observers (3 or 8)
 experiment:
   type: "simulation"  # Choose between 'simulation' or 'measurement'
   run_matlab: true
   run_wandb: false
-  name: "cooling_free_way_more_K"
+  name: "source"
 
 # Output directory management
 output:
