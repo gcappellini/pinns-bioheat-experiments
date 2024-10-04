@@ -12,4 +12,6 @@ models = os.path.join(git_dir, "models")
 
 
 a = OmegaConf.load(f"{src_dir}/config.yaml")
-print(type(a.colors))
+_, b = uu.get_sys_mm_colors(a)
+s = uu.get_obs_colors(a)
+print(s[0])

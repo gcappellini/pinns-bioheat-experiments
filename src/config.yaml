@@ -40,19 +40,21 @@ model_parameters:
   W1: 0.2
   W2: 0.4
   W3: 0.5
-  W4: 0.8
+  # W4: 0.8
+  W4: 0.2
   W5: 1.0
   W6: 1.2
-  W7: 1.6
-  n_obs: 8
+  # W7: 1.6
+  W7: 0.5
+  n_obs: 3
   delta_sys: 4.0
 
 # Experiment type: can be either 'simulation' or 'measurement', with different observers (3 or 8)
 experiment:
   type: "simulation"  # Choose between 'simulation' or 'measurement'
-  run_matlab: true
+  run_matlab: false
   run_wandb: false
-  name: "cooling_free_8Obs"
+  name: "cooling_free_smaller"
 
 # Output directory management
 output:
@@ -62,7 +64,7 @@ output:
 output_dir: ${hydra:run.dir}
 # Plot configuration
 plot:
-  rescale: false
+  rescale: true
   colors: 
     observers: ["C0", "C1", "C2", "C3", "C4", "C5", "C6", "C7"]
     system: "C9"

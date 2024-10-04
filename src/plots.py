@@ -37,6 +37,13 @@ def plot_generic(x, y, title, xlabel, ylabel, legend_labels=None, log_scale=Fals
     """
     fig, ax = plt.subplots(figsize=size)
 
+    # If colors is a single string, wrap it in a list
+    if isinstance(colors, str):
+        colors = [colors]
+    # If linestyles is a single string, wrap it in a list
+    if isinstance(linestyles, str):
+        linestyles = [linestyles]
+
     # Plot each line with its corresponding x, y values, color, and linestyle
     for i, (xi, yi) in enumerate(zip(x, y)):
         label = legend_labels[i] if legend_labels else None
@@ -163,12 +170,14 @@ def plot_weights(weights, t, run_figs, conf, gt=False):
     times = np.full_like(weights, a)
 
     colors = uu.get_obs_colors(conf)
+    linestyles = uu.get_obs_linestyles(conf)
     rescale = conf.plot.rescale
     _, xlabel, _ = uu.get_scaled_labels(rescale) 
+    times_plot = uu.rescale_time(times) if rescale else times
     
     # Call the generic plotting function
     plot_generic(
-        x=times,                       # Time data for the x-axis
+        x=times_plot,                       # Time data for the x-axis
         y=weights,                 # Weights data (each row is a separate line)
         title=title,               # Plot title with dynamic lambda value
         xlabel=xlabel,      # x-axis label
@@ -176,6 +185,7 @@ def plot_weights(weights, t, run_figs, conf, gt=False):
         legend_labels=legend_labels, # Labels for each weight
         size=(6, 5),               # Figure size
         colors=colors,
+        linestyles=linestyles,
         filename=f"{run_figs}/weights_lam_{lam}_{'matlab' if gt else 'pinns'}_{n_obs}obs.png"  # Filename to save the plot
     )
 
@@ -185,22 +195,30 @@ def plot_mu(mus, t, run_figs, conf, gt=False):
     # Prepare the labels for each line based on the number of columns in `mus`
     legend_labels = [f"$e_{i}$" for i in range(mus.shape[1])]
     
+    t = t.reshape(len(t), 1)
     # Define the title for the plot
     title = "Observation errors"
-    times = [t]*mus.shape[1]
+    times = np.full_like(mus, t)
     colors = uu.get_obs_colors(conf)
+    linestyles = uu.get_obs_linestyles(conf)
     rescale = conf.plot.rescale
-    times_plot = uu.rescale_t(times) if rescale else times     
+    times_plot = uu.rescale_time(times) if rescale else times  
+    _, xlabel, _ = uu.get_scaled_labels(rescale) 
+
+    # if gt:
+    times_plot = times_plot.T
+    mus = mus.T
     # Call the generic plotting function
     plot_generic(
-        x=times_plot,                       # Time data for the x-axis
-        y=mus.T,                   # Transpose mus to get lines for each observation error
+        x=np.array(times_plot),                       # Time data for the x-axis
+        y=np.array(mus),                   # Transpose mus to get lines for each observation error
         title=title,               # Plot title
-        xlabel=r"Time $\tau$",      # x-axis label
+        xlabel=xlabel,      # x-axis label
         ylabel=r"Error $\mu$",             # y-axis label
         legend_labels=legend_labels, # Labels for each observation error
         size=(6, 5),               # Figure size
         colors=colors,
+        linestyles=linestyles,
         filename=f"{run_figs}/obs_error_{'matlab' if gt else 'pinns'}_{n_obs}obs.png"  # Filename to save the plot
     )
 
@@ -217,74 +235,115 @@ def plot_l2(xobs, theta_true, model, number, folder, MultiObs=False):
     :param MultiObs: If True, use multiple models for predictions.
     """
     # Reshape the inputs
-    e = xobs[:, 0:2].reshape(len(xobs), 2)
+    e = np.hstack((xobs[:, 0:1], xobs[:, -1:]))
     theta_true = theta_true.reshape(len(e), 1)
 
-    f = OmegaConf.load(f'{folder}/config.yaml')
-    lam = f.model_parameters.lam
-
-    # Prepare for L2 norm computation
-    l2 = []
+    conf = OmegaConf.load(f'{folder}/config.yaml')
+    lam = conf.model_parameters.lam
+    n_obs = conf.model_parameters.n_obs
+    obs_colors = uu.get_obs_colors(conf)
+    obs_linestyles = uu.get_obs_linestyles(conf)
+    _, mm_obs_color = uu.get_sys_mm_colors(conf)
+    _, mm_obs_linestyle = uu.get_sys_mm_linestyle(conf)
 
     # Extract unique time values
     t = np.unique(e[:, 1])
-    t_filtered = t[t > 0.000]  # Filter out small time values
-
-    # Store corresponding time values for each model's predictions
-    x_vals = [t_filtered]  # Initialize with time values for the combined prediction or single prediction
 
     if MultiObs:
-        # Combine predictions using mm_predict
-        combined_pred = uu.mm_predict(model, lam, xobs, folder)
 
-        # Calculate L2 error for combined prediction
-        tot_combined = np.hstack((e, theta_true, combined_pred.reshape(len(e), 1)))
-        l2_combined = []
-        for el in t_filtered:
-            df = tot_combined[tot_combined[:, 1] == el]
-            l2_combined.append(dde.metrics.l2_relative_error(df[:, 2], df[:, 3]))
-        l2.append(l2_combined)  # Store the combined L2 error
+        combined_pred = uu.mm_predict(model, lam, xobs, folder)
+        l2 = uu.calculate_l2(e, theta_true, combined_pred)
+        l2_individual = []
 
         # Calculate L2 error for each individual model
         for i, individual_model in enumerate(model):  # Assuming `model.models` holds individual models
             theta_pred = individual_model.predict(xobs).reshape(len(e), 1)
-            tot_individual = np.hstack((e, theta_true, theta_pred))
-            l2_individual = []
-            for el in t_filtered:
-                df = tot_individual[tot_individual[:, 1] == el]
-                l2_individual.append(dde.metrics.l2_relative_error(df[:, 2], df[:, 3]))
-            l2.append(l2_individual)  # Store the individual model L2 error
-            x_vals.append(t_filtered)  # Add corresponding x values for each individual model
+            l2_individual.append(uu.calculate_l2(e, theta_true, theta_pred))
+
+        ee = np.array(l2_individual).T
+        l2 = l2.reshape(len(l2), 1)
+        ll2 = np.hstack((l2, ee))
 
     else:
         # Single model prediction
         theta_pred = model.predict(xobs).reshape(len(e), 1)
-        tot = np.hstack((e, theta_true, theta_pred))
-        for el in t_filtered:
-            df = tot[tot[:, 1] == el]
-            l2.append(dde.metrics.l2_relative_error(df[:, 2], df[:, 3]))
-        x_vals = [t_filtered]  # Just a single time series for x values
+        l2_individual = uu.calculate_l2(e, theta_true, theta_pred)
+        ll2 = l2_individual.reshape(len(l2_individual), 1)
 
     # Prepare labels for the legend
-    legend_labels = ['MultiObs Pred'] if MultiObs else ['Predicted']
+    legend_labels = ['MultiObs'] + [f'Obs {i}' for i in range(n_obs)] if MultiObs else [f'Obs {number}']
+    colors = [mm_obs_color] + obs_colors if MultiObs else [obs_colors[number]]
+    linestyles = [mm_obs_linestyle] + obs_linestyles if MultiObs else [obs_linestyles[number]]
 
-    # Add individual model labels if MultiObs is True
-    if MultiObs:
-        for i in range(len(model)):
-            legend_labels.append(f'Obs {i}')
-    ll2 = np.array(l2)
-    times = [t[:-1]]*len(ll2)
+
+    rescale = conf.plot.rescale
+    _, xlabel, _ = uu.get_scaled_labels(rescale)
+    t = t.reshape(len(t), 1)
+    t_tot = np.full_like(ll2, t)
+    t_plot = uu.rescale_time(t_tot) if rescale else t_tot
+
     # Call the generic plotting function
     plot_generic(
-        x=times,   # Provide time values for each line (either one for each model or just one for single prediction)
-        y=ll2,       # Multiple L2 error lines to plot
+        x=t_plot.T,   # Provide time values for each line (either one for each model or just one for single prediction)
+        y=ll2.T,       # Multiple L2 error lines to plot
         title="Prediction error norm",
-        xlabel=r"Time $\tau$",
+        xlabel=xlabel,
         ylabel=r"$L^2$ norm",
         legend_labels=legend_labels,  # Labels for the legend
         size=(6, 5),
-        filename=f"{folder}/l2_{'mm_obs' if MultiObs else f'obs{number}'}.png"
+        filename=f"{folder}/l2_{'mm_obs' if MultiObs else f'obs{number}'}.png",
+        colors=colors,
+        linestyles=linestyles
     )
+
+
+def plot_l2_matlab(X, theta_true, y_obs, y_mm_obs, folder):
+    theta_true = theta_true.reshape(len(X), 1)
+    t = np.unique(X[:, 1:2])
+    # t_filtered = t[t > 0.000] 
+    conf = OmegaConf.load(f"{folder}/config.yaml")
+    n_obs = conf.model_parameters.n_obs
+    obs_colors = uu.get_obs_colors(conf)
+    obs_linestyles = uu.get_obs_linestyles(conf)
+    _, mm_obs_color = uu.get_sys_mm_colors(conf)
+    _, mm_obs_linestyle = uu.get_sys_mm_linestyle(conf)
+
+    l2 = uu.calculate_l2(X, theta_true, y_mm_obs)
+    l2_individual = []
+    for i in range(n_obs):
+        l2_individual.append(uu.calculate_l2(X, theta_true, y_obs[:, i]))
+
+    ee = np.array(l2_individual).T
+    l2 = l2.reshape(len(l2), 1)
+    ll2 = np.hstack((l2, ee))
+
+    # Generate corresponding legend labels
+    legend_labels = ['MultiObs'] + [f'Obs {i}' for i in range(n_obs)]
+    colors = [mm_obs_color] + obs_colors 
+    linestyles = [mm_obs_linestyle] + obs_linestyles
+
+    rescale = conf.plot.rescale
+    _, xlabel, _ = uu.get_scaled_labels(rescale)
+
+    t = t.reshape(len(t), 1)
+    t_tot = np.full_like(ll2, t)
+    t_plot = uu.rescale_time(t_tot) if rescale else t_tot
+
+
+    # Call the generic plotting function
+    plot_generic(
+        x=t_plot.T,   # Provide time values for each line (either one for each model or just one for single prediction)
+        y=ll2.T,       # Multiple L2 error lines to plot
+        title="Prediction error norm",
+        xlabel=xlabel,
+        ylabel=r"$L^2$ norm",
+        legend_labels=legend_labels,  # Labels for the legend
+        size=(6, 5),
+        filename=f"{folder}/l2_matlab.png",
+        colors=colors,
+        linestyles=linestyles
+    )
+
 
 
 def plot_tf(e, theta_true, model, number, prj_figs, MultiObs=False):
@@ -306,24 +365,28 @@ def plot_tf(e, theta_true, model, number, prj_figs, MultiObs=False):
     tot = np.hstack((e, theta_true))
     final = tot[tot[:, 1] == 1]  # Select rows where time equals 1
     xtr = np.unique(tot[:, 0])   # Depth values for true data
+    xtr = xtr.reshape(len(xtr), 1)
     true = final[:, -1]          # True values at final time
+    true = true.reshape(xtr.shape)
 
     # Generate X values for prediction
     # x = np.linspace(0, 1, 100)  # Depth values for prediction
-    x=xtr
+    x=np.unique(e[:, 0:1])
     Xobs = np.vstack((x, uu.f1(np.full_like(x, 0.9944)), uu.f2(np.full_like(x, 0.9944)), uu.f3(np.full_like(x, 0.9944)), np.ones_like(x))).T
+    xpr = Xobs[:, 0:1].reshape(xtr.shape)
 
     conf = OmegaConf.load(f'{prj_figs}/config.yaml')
     lam = conf.model_parameters.lam
     n_obs = conf.model_parameters.n_obs
     obs_colors = uu.get_obs_colors(conf)
     true_color, mm_obs_color = uu.get_sys_mm_colors(conf)
-    obs_linestyles = uu.get_obs_linestyle(conf)
+    obs_linestyles = uu.get_obs_linestyles(conf)
     true_linestyle, mm_obs_linestyle = uu.get_sys_mm_linestyle(conf)
 
     if MultiObs:
         # Combined prediction using multi-observer model
         multi_pred = uu.mm_predict(model, lam, Xobs, prj_figs)
+        multi_pred = multi_pred.reshape(len(multi_pred), 1)
 
         # Generate individual predictions from each model in the ensemble
         individual_preds = [m.predict(Xobs) for m in model]  # Assuming model.models holds individual models
@@ -332,8 +395,7 @@ def plot_tf(e, theta_true, model, number, prj_figs, MultiObs=False):
         all_preds = [true] + individual_preds + [multi_pred]
         
         # x values: use xtr for true data, and 'x' for predictions
-            # xxtr = xtr.reshape(len(xtr), 1)
-        x_vals = [xtr] + Xobs[:, 0:1]*n_obs + Xobs[:, 0:1]
+        x_vals = [xtr] + [xpr for _ in range(n_obs + 1)]
 
         # Generate corresponding legend labels
         legend_labels = ['True'] + [f'Obs {i}' for i in range(len(individual_preds))] + ['MultiObs Pred']
@@ -346,7 +408,7 @@ def plot_tf(e, theta_true, model, number, prj_figs, MultiObs=False):
         
         # Only two lines to plot: true and single prediction
         all_preds = [true, pred]
-        x_vals = [xtr, x]  # xtr for true, x for predicted
+        x_vals = [xtr, xpr]  # xtr for true, x for predicted
         legend_labels = ['True', f'Obs {number}']
         colors = [true_color] + [obs_colors[number]]
         linestyles = [true_linestyle] + [obs_linestyles[number]]
@@ -354,8 +416,8 @@ def plot_tf(e, theta_true, model, number, prj_figs, MultiObs=False):
     rescale = conf.plot.rescale
     xlabel, _, ylabel = uu.get_scaled_labels(rescale)
 
-    x_vals = np.array(x_vals, dtype=float)
-    x_vals_plot = np.hstack((uu.rescale_x(x_vals[:, 0:1]), uu.rescale_time(x_vals[:, 1:2]))) if rescale else x_vals
+    # x_vals = np.array(x_vals, dtype=float)
+    x_vals_plot = uu.rescale_x(x_vals) if rescale else x_vals
     all_preds_plot = uu.rescale_t(all_preds) if rescale else all_preds
 
     # Call the generic plotting function
@@ -411,7 +473,7 @@ def plot_tf_matlab(e, theta_true, theta_observers, theta_mmobs, conf, prj_figs):
 
     obs_colors = uu.get_obs_colors(conf)
     system_color, mm_obs_color = uu.get_sys_mm_colors(conf)
-    obs_linestyles = uu.get_obs_linestyle(conf)
+    obs_linestyles = uu.get_obs_linestyles(conf)
     system_linestyle, mm_obs_linestyle = uu.get_sys_mm_linestyle(conf)
 
     colors = obs_colors + [system_color] + [mm_obs_color]
@@ -419,14 +481,14 @@ def plot_tf_matlab(e, theta_true, theta_observers, theta_mmobs, conf, prj_figs):
     rescale = conf.plot.rescale
     xlabel, _, ylabel = uu.get_scaled_labels(rescale)
 
-    x_plot = uu.rescale_x(x_vals.T) if rescale else x_vals.T
-    y_plot = uu.rescale_t(all_preds.T) if rescale else all_preds.T
+    x_plot = uu.rescale_x(x_vals) if rescale else x_vals
+    y_plot = uu.rescale_t(all_preds) if rescale else all_preds
 
 
     # Call the generic plotting function
     plot_generic(
-        x=x_plot,  # Different x values for true and predicted
-        y=y_plot,  # List of true and predicted lines
+        x=x_plot.T,  # Different x values for true and predicted
+        y=y_plot.T,  # List of true and predicted lines
         title="Prediction at final time",
         xlabel=xlabel,
         ylabel=ylabel,
@@ -464,10 +526,12 @@ def plot_comparison_3d(e, t_true, t_pred, run_figs, gt=False):
 
     theta_true_plot = uu.rescale_t(theta_true) if rescale else theta_true
     theta_pred_plot = uu.rescale_t(theta_pred) if rescale else theta_pred
+    e_plot = np.hstack((uu.rescale_x(e[:, 0:1]), uu.rescale_time(e[:, 1:2]))) if rescale else e
+    
     xlabel, ylabel, zlabel = uu.get_scaled_labels(rescale)
     # Call plot_generic_3d with the data
     plot_generic_3d(
-        e,                       # 2D array containing X and Y coordinates
+        e_plot,                       # 2D array containing X and Y coordinates
         theta_true_plot,              # Surface 1: true values (Z1)
         theta_pred_plot,              # Surface 2: predicted values (Z2)
         xlabel, ylabel, zlabel,

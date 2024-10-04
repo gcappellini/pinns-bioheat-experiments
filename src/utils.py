@@ -14,12 +14,12 @@ import hashlib
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-# import matlab.engine
+import matlab.engine
 
 dde.config.set_random_seed(200)
 
-# dev = torch.device("cpu")
-dev = torch.device("cuda")
+dev = torch.device("cpu")
+# dev = torch.device("cuda")
 
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
@@ -272,7 +272,7 @@ def gen_obsdata(n):
     f2 = interp1d(instants, y2, kind='previous')
 
     properties = OmegaConf.load(f"{src_dir}/config.yaml")
-    theta_w = scale_t(properties.model_parameters.Twater)
+    theta_w = scale_t(properties.model_properties.Twater)
     y3 = np.full_like(y2, theta_w)
     f3 = interp1d(instants, y3, kind='previous')
 
@@ -346,6 +346,7 @@ def rescale_t(theta):
     return np.round(j, 2)
 
 def rescale_x(X):
+    X = np.array(X, dtype=float)
     properties = OmegaConf.load(f"{src_dir}/config.yaml")
     L0 = properties.model_properties.L0
     j = X*L0
@@ -580,7 +581,7 @@ def check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, conf, output_di
         
         pred = multi_obs[el].predict(x_obs)
         
-        # pp.plot_l2(x_obs, y_sys, multi_obs[el], el, run_figs)
+        pp.plot_l2(x_obs, y_sys, multi_obs[el], el, run_figs)
         pp.plot_tf(X, y_sys, multi_obs[el], el, run_figs)
         pp.plot_comparison_3d(X, y_sys, pred, run_figs)
         
@@ -613,7 +614,7 @@ def get_sys_mm_colors(conf):
     mm_obs_color = conf.plot.colors.mm_obs
     return system_color, mm_obs_color
 
-def get_obs_linestyle(conf):
+def get_obs_linestyles(conf):
     total_obs_linestyles = conf.plot.linestyles.observers
     number = conf.model_parameters.n_obs
     obs_colors = total_obs_linestyles[:number]
@@ -667,7 +668,7 @@ def solve_ivp_and_plot(multi_obs, fold, conf, x_obs, X, y_sys):
     #     wandb.finish()
 
     pp.plot_mu(mus, t, fold, conf)
-    # pp.plot_l2(x_obs, y_sys, multi_obs, 0, fold, MultiObs=True)
+    pp.plot_l2(x_obs, y_sys, multi_obs, 0, fold, MultiObs=True)
     pp.plot_tf(X, y_sys, multi_obs, 0, fold, MultiObs=True)
     pp.plot_comparison_3d(X[:, 0:2], y_sys, y_pred, fold)
 
@@ -697,8 +698,22 @@ def run_matlab_ground_truth(src_dir, prj_figs, conf, run_matlab):
         pp.plot_weights(weights, t, prj_figs, conf, gt=True)
         pp.plot_tf_matlab(X, y_sys, y_observers, y_mmobs, conf, prj_figs)
         pp.plot_comparison_3d(X, y_sys, y_mmobs, prj_figs, gt= True)
+        pp.plot_l2_matlab(X, y_sys, y_observers, y_mmobs, prj_figs)
 
 
         print("MATLAB ground truth completed.")
     else:
         print("Skipping MATLAB ground truth calculation.")
+
+
+def calculate_l2(e, true, pred):
+    l2 = []
+    true = true.reshape(len(e), 1)
+    pred = pred.reshape(len(e), 1)
+    tot = np.hstack((e, true, pred))
+    t = np.unique(tot[:, 1])
+    for el in t:
+        tot_el = tot[tot[:, 1] == el]
+        l2_el = dde.metrics.l2_relative_error(tot_el[:, 2], tot_el[:, 3])
+        l2.append(l2_el)
+    return np.array(l2)
