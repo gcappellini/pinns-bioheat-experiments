@@ -55,7 +55,7 @@ model_parameters:
 # Experiment type: can be either 'simulation' or 'measurement', with different observers (3 or 8)
 experiment:
   type: "simulation"  # Choose between 'simulation' or 'measurement'
-  run_matlab: true
+  run_matlab: false
   run_wandb: false
   name: "source"
 
