@@ -291,7 +291,7 @@ def plot_l2(xobs, theta_true, model, number, folder, MultiObs=False):
         ylabel=r"$L^2$ norm",
         legend_labels=legend_labels,  # Labels for the legend
         size=(6, 5),
-        filename=f"{folder}/l2_{'mm_obs' if MultiObs else f'obs{number}'}.png",
+        filename=f"{folder}/l2_{f'mm_{n_obs}obs' if MultiObs else f'obs{number}'}.png",
         colors=colors,
         linestyles=linestyles
     )
@@ -339,7 +339,7 @@ def plot_l2_matlab(X, theta_true, y_obs, y_mm_obs, folder):
         ylabel=r"$L^2$ norm",
         legend_labels=legend_labels,  # Labels for the legend
         size=(6, 5),
-        filename=f"{folder}/l2_matlab.png",
+        filename=f"{folder}/l2_matlab_{n_obs}obs.png",
         colors=colors,
         linestyles=linestyles
     )
@@ -429,7 +429,7 @@ def plot_tf(e, theta_true, model, number, prj_figs, MultiObs=False):
         ylabel=ylabel,
         legend_labels=legend_labels,  # Labels for the legend
         size=(6, 5),
-        filename=f"{prj_figs}/tf_{'mm_obs' if MultiObs else f'obs{number}'}.png",
+        filename=f"{prj_figs}/tf_{f'mm_{n_obs}obs' if MultiObs else f'obs{number}'}.png",
         colors = colors,
         linestyles=linestyles
     )
