@@ -71,7 +71,7 @@ def extract_entries(timeseries_data, tmin, tmax):
     df['time_diff'] = df['t'].diff()#.dt.total_seconds()
 
     # threshold = np.where((df['t'] > 2 * 60) & (df['t'] < 83 * 60), 50, 1)
-    threshold = 0.5
+    threshold = 50
 
     # Identify the indices where a new interval starts
     new_intervals = df[df['time_diff'] > threshold].index
@@ -104,10 +104,10 @@ def scale_df(df):
     return new_df
 
 # dates = ["20240522_1", "20240927_1", "20240927_2", "20240927_3", "20240930_1", "20240930_2", "20240930_3" ]
-dates = [ "20240930_3" ]
-start_min = 30
+dates = ["20240930_1"]
+start_min = 5
 end_min = start_min + 30
-name = "cooling_meas_2"
+name = "heating_meas_3"
 for date in dates:
     file_path = f"{src_dir}/data/vessel/{date}.txt"
 
@@ -126,7 +126,7 @@ for date in dates:
     ax.plot(df['t']/60, df['gt1'], label='gt1', alpha=1.0, linewidth=0.7)
     ax.plot(df['t']/60, df['gt2'], label='gt2', alpha=1.0, linewidth=0.7)
     ax.plot(df['t']/60, df['y2'], label='y2', alpha=1.0, linewidth=0.7)
-    # ax.plot(df['t']/60, df['y3'], label='y3', alpha=1.0, linewidth=0.7)
+    ax.plot(df['t']/60, df['y3'], label='y3', alpha=1.0, linewidth=0.7)
     # ax.plot(df['t']/60, df['bol_out'], label='bolus outlet', alpha=1.0, linewidth=0.7)
 
     # # Add vertical dashed red lines with labels on the plot

@@ -12,9 +12,9 @@ models = os.path.join(git_dir, "models")
 
 
 a = OmegaConf.load(f"{src_dir}/config.yaml")
-y1_0 = a.cooling_meas_2.y1_0
-y2_0 = a.cooling_meas_2.y2_0
-y3_0 = a.cooling_meas_2.y3_0
+y1_0 = a.heating_meas_3.y1_0
+y2_0 = a.heating_meas_3.y2_0
+y3_0 = a.heating_meas_3.y3_0
 K = a.model_properties.K
 a5 = cc.a5
 

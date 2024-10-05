@@ -92,3 +92,32 @@ cooling_meas_2:
   y2_0: 28.6
   y3_0: 21.5
   delta: 8.0
+
+heating_meas_1:
+  date: "20240522_1"
+  start_min: 4
+  y1_0: 21.88
+  y2_0: 26.76
+  y3_0: 25.80
+  delta: -12.6 # Attenzione: questo valore comporta ic> 1. prova a partire da un altro istante
+
+heating_meas_2:
+  date: "20240927_3"
+  start_min: 105
+  y1_0: 22.87
+  y2_0: 24.71
+  y3_0: 23.98
+  delta: -8.6 
+
+heating_meas_3:
+  date: "20240930_1"
+  start_min: 5
+  y1_0: 21.61
+  y2_0: 23.24
+  y3_0: 23.82
+  delta: -2.8 
+
+characterize_antenna:
+  date: "20240930_2"
+  start_min: 0
+  end_min: 17
