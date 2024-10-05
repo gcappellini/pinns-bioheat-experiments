@@ -1,11 +1,9 @@
 import utils as uu
 import os
 import numpy as np
-from scipy import integrate
 import common as co
 import wandb
 import plots as pp
-import argparse
 from import_vessel_data import load_measurements, extract_entries
 from omegaconf import OmegaConf
 from datetime import datetime
@@ -41,50 +39,45 @@ def scale_predictions(multi_obs, x_obs, prj_figs, lam):
 
 
 def main():
-    # # Parse the config path argument
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument('--config-path', type=str, required=True, help="Path to the config file")
-    # args = parser.parse_args()
 
     # Load the configuration from the passed file
     config = OmegaConf.load(f"{src_dir}/config.yaml")
 
     # Now you can access your config values
     experiment_type = config.experiment.type
-    print(f"Running measurement with experiment type: {experiment_type}")
+    print(f"Running experiment type: {experiment_type}")
 
-    n_obs = config.model_parameters.n_obs
     prj_name = config.experiment.name
     output_dir = co.set_prj(prj_name)
 
     # Generate and check observers if needed
     multi_obs = uu.mm_observer(config)
 
-    # Import data
-    a = uu.import_testdata("cooling_1")
-    X = a[:, 0:2]
-    meas = a[:, 2:3]
-    x_obs = uu.import_obsdata("cooling_1")
+    # # Import data
+    # a = uu.import_testdata("cooling_1")
+    # X = a[:, 0:2]
+    # meas = a[:, 2:3]
+    # x_obs = uu.import_obsdata("cooling_1")
 
-    lam = config.model_parameters.lam
-
-
-
-    # Optionally check observers and upload to wandb
-    uu.check_observers_and_wandb_upload(multi_obs, x_obs, X, meas, config, output_dir)
-    uu.check_mm_obs(multi_obs, x_obs, X, meas, config, output_dir)
+    # lam = config.model_parameters.lam
 
 
-    y1_pred, gt1_pred, gt2_pred, y2_pred = scale_predictions(multi_obs, x_obs, run_figs, lam)
-    date = "20240930_1"
-    start_min = 80
-    end_min = start_min + 30
-    file_path = f"{src_dir}/data/vessel/{date}.txt"
 
-    timeseries_data = load_measurements(file_path)
-    df = extract_entries(timeseries_data, start_min*60, end_min*60)
-    # Plot time series with predictions
-    pp.plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, run_figs)
+    # # Optionally check observers and upload to wandb
+    # uu.check_observers_and_wandb_upload(multi_obs, x_obs, X, meas, config, output_dir)
+    # uu.check_mm_obs(multi_obs, x_obs, X, meas, config, output_dir)
+
+
+    # y1_pred, gt1_pred, gt2_pred, y2_pred = scale_predictions(multi_obs, x_obs, run_figs, lam)
+    # date = "20240930_1"
+    # start_min = 80
+    # end_min = start_min + 30
+    # file_path = f"{src_dir}/data/vessel/{date}.txt"
+
+    # timeseries_data = load_measurements(file_path)
+    # df = extract_entries(timeseries_data, start_min*60, end_min*60)
+    # # Plot time series with predictions
+    # pp.plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, run_figs)
 
 
 if __name__ == "__main__":

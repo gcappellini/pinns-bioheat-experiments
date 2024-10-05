@@ -51,7 +51,7 @@ model_parameters:
   delta_sys: 1.0
 
 experiment:
-  type: "simulation"
+  type: "measurement"
   run_matlab: false
   run_wandb: false
   name: "cooling_meas_2"
