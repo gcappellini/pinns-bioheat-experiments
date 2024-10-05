@@ -95,12 +95,8 @@ def create_nbho(run_figs):
     a4 = cc.a4
     a5 = cc.a5
     K = config.model_properties.K
-    delta = config.model_properties.delta
     W = config.model_properties.W
 
-    # Twater = config.model_properties.Twater
-    # Ty20 = config.model_properties.Ty20
-    # theta_w, theta_y20 = scale_t(Twater), scale_t(Ty20)
 
 
     def pde(x, theta):
@@ -115,18 +111,14 @@ def create_nbho(run_figs):
     def ic_obs(x):
         z = x[:, 0:1]
 
-        # theta_y20 = x[:, 2:3]
-        # theta_w = x[:, 3:4]
         conf = OmegaConf.load(f"{src_dir}/config.yaml")
+        theta_y10 = scale_t(conf.model_properties.Ty10)
         theta_y20 = scale_t(conf.model_properties.Ty20)
-        theta_w = scale_t(conf.model_properties.Twater)
+        theta_y30 = scale_t(conf.model_properties.Ty30)
+        b1 = conf.model_properties.delta
+        b2, b3, b4 = solve_ic_comp(theta_y10, theta_y20, theta_y30, K, a5)
 
-
-        c = theta_y20
-        b = a5*(theta_w-theta_y20) + theta_y20
-        a = delta
-
-        return (1-z)*(a*z**2+b*z+c)
+        return (1-z)*(b1*z**2+b2*z+b3)+b4
 
     def bc1_obs(x, theta, X):
 
@@ -273,8 +265,8 @@ def gen_obsdata(n):
     f2 = interp1d(instants, y2, kind='previous')
 
     properties = OmegaConf.load(f"{src_dir}/config.yaml")
-    theta_w = scale_t(properties.model_properties.Twater)
-    y3 = np.full_like(y2, theta_w)
+    y30 = scale_t(properties.model_properties.Ty30)
+    y3 = np.full_like(y2, y30)
     f3 = interp1d(instants, y3, kind='previous')
 
     Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
@@ -318,8 +310,8 @@ def gen_obs_y1(n):
     f2 = interp1d(instants, y2, kind='previous')
 
     properties = OmegaConf.load(f"{src_dir}/config.yaml")
-    theta_w = scale_t(properties.model_parameters.Twater)
-    y3 = np.full_like(y2, theta_w)
+    theta_y30 = scale_t(properties.model_parameters.Ty30)
+    y3 = np.full_like(y2, theta_y30)
     f3 = interp1d(instants, y3, kind='previous')
 
     Xobs = np.vstack((np.ones_like(instants), f1(instants), f2(instants), f3(instants), instants)).T
@@ -607,7 +599,10 @@ def get_scaled_labels(rescale):
 def get_obs_colors(conf):
     total_obs_colors = conf.plot.colors.observers
     number = conf.model_parameters.n_obs
-    obs_colors = total_obs_colors[:number]
+    if number == 3:
+        obs_colors = [total_obs_colors[0], total_obs_colors[4], total_obs_colors[7]] 
+    if number == 8:
+        obs_colors = total_obs_colors
     return obs_colors
 
 def get_sys_mm_colors(conf):
@@ -618,8 +613,11 @@ def get_sys_mm_colors(conf):
 def get_obs_linestyles(conf):
     total_obs_linestyles = conf.plot.linestyles.observers
     number = conf.model_parameters.n_obs
-    obs_colors = total_obs_linestyles[:number]
-    return obs_colors
+    if number == 3:
+        obs_linestyles = [total_obs_linestyles[0], total_obs_linestyles[4], total_obs_linestyles[7]] 
+    if number == 8:
+        obs_linestyles = total_obs_linestyles
+    return obs_linestyles
 
 def get_sys_mm_linestyle(conf):
     system_linestyle = conf.plot.linestyles.system
@@ -718,3 +716,15 @@ def calculate_l2(e, true, pred):
         l2_el = dde.metrics.l2_relative_error(tot_el[:, 2], tot_el[:, 3])
         l2.append(l2_el)
     return np.array(l2)
+
+def solve_ic_comp(y1_0, y2_0, y3_0, K, a5):
+    # Equation 1: b_4 = y1_0
+    b_4 = y1_0
+    
+    # Equation 2: b_3 = y2_0 - b_4
+    b_3 = y2_0 - b_4
+    
+    # Equation 3: b_2 = b_3 + K*(b_3 + b_4) + a5*(y3_0 - y2_0) + K*y2_0
+    b_2 = b_3 + K * (b_3 + b_4) + a5 * (y3_0 - y2_0) + K * y2_0
+    
+    return b_2, b_3, b_4

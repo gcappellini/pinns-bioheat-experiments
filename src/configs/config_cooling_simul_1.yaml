@@ -4,15 +4,14 @@ model_properties:
   k: 0.6
   rho: 1000.0
   c: 4186.0
-  W: 0.6
+  W: 0.1
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
-  Ty10: 22.84
-  Ty20: 28.6
-  Ty30: 21.5
-  K: 10.0
-  delta: 8.0
+  Ty20: 32.0
+  Twater: 21.5
+  K: 1.0
+  delta: 0.0
   activation: "tanh"
   initial_weights_regularizer: true
   initialization: "Glorot uniform"
@@ -31,36 +30,34 @@ model_properties:
   w_bc0: 1.0
   w_bc1: 1.0
   w_ic: 1.0
-  beta: 1.0
-  SAR_0: 0.0
-  PD: 0.03
-  x0: 0.004
 
 model_parameters:
-  lam: 100.0
-  upsilon: 5.0
-  W0: 0.2
-  W1: 0.3
+  lam: 200.0
+  upsilon: 1.0
+  W0: 0.1
+  W1: 0.2
   W2: 0.4
   W3: 0.5
-  W4: 0.6
-  W5: 0.7
-  W6: 0.8
-  W7: 0.9
+  W4: 0.8
+  W5: 1.0
+  W6: 1.2
+  W7: 1.6
   n_obs: 8
+  # n_obs: 3
   delta_sys: 1.0
 
 experiment:
   type: "simulation"
-  run_matlab: false
+  run_matlab: true
   run_wandb: false
-  name: "cooling_meas_2"
+  # name: "cooling_simulation1"
+  name: "cooling_simulation1_3obs"
 
 output:
-  base_dir: ${hydra:runtime.output_dir}
+  base_dir: "${hydra:runtime.output_dir}"
   save_figures: true
 
-output_dir: ${hydra:run.dir}
+output_dir: "${hydra:run.dir}"
 
 plot:
   rescale: true
@@ -70,25 +67,8 @@ plot:
     mm_obs: "gold"
     measuring_points: ["blue", "aquamarine", "salmon", "rosybrown"]
     losses: ["lightgreen", "khaki", "paleturquoise", "thistle", "darkred", "grey"]
-
   linestyles:
     observers: ["-", "-.", "-", "-.", "--", "-", "--", "-"]
     groundtruths: "--"
     mm_obs: ":"
     system: "-."
-
-cooling_meas_1:
-  date: "20240930_1"
-  start_min: 41
-  y1_0: 22.28
-  y2_0: 26.67
-  y3_0: 21.5
-  delta: 6.0
-
-cooling_meas_2:
-  date: "20240930_3"
-  start_min: 30
-  y1_0: 22.84
-  y2_0: 28.6
-  y3_0: 21.5
-  delta: 8.0

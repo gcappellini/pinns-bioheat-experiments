@@ -520,9 +520,11 @@ def plot_comparison_3d(e, t_true, t_pred, run_figs, gt=False):
     # Column titles for each subplot
     col_titles = ["System", "MultiObserver", "Error"]
 
-    fname = f"{run_figs}/comparison_3d_matlab.png" if gt else f"{run_figs}/comparison_3d_pinns.png"
     conf = OmegaConf.load(f"{run_figs}/config.yaml")
     rescale = conf.plot.rescale
+    n = conf.model_parameters.n_obs
+
+    fname = f"{run_figs}/comparison_3d_matlab_{n}obs.png" if gt else f"{run_figs}/comparison_3d_pinns_{n}obs.png"
 
     theta_true_plot = uu.rescale_t(theta_true) if rescale else theta_true
     theta_pred_plot = uu.rescale_t(theta_pred) if rescale else theta_pred

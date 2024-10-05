@@ -79,22 +79,22 @@ s = [-W*a2*u(1)+a3*exp(-a4*x);
 % --------------------------------------------------------------------------
 
 function theta0 = sys_ic(x)
-global a5 theta_w theta20 delta_sys
-
-cc = theta20;
-bb = a5*(theta_w-cc)+ cc;
-aa = delta_sys;
-theta0 = (1-x)*(aa*x^2 + bb*x + cc);
+global a5 theta30 theta20 theta10 delta_sys
+b1 = delta_sys;
+b4 = theta10;
+b3 = theta20 - b4;
+b2 = b3+K*(b3+b4)+a5*(theta30 - theta20)+K*theta20;
+theta0 = (1-x)*(b1*x^2 + b2*x + b3)+b4;
 
 % --------------------------------------------------------------------------
 
 function thetahat0 = obs_ic(x)
-global a5 theta_w theta20 delta
-
-ff = theta20;
-ee = a5*(theta_w-ff)+ ff;
-dd = delta;
-thetahat0 = (1-x)*(dd*x^2 + ee*x + ff);
+global a5 theta30 theta20 theta10 delta K
+b1 = delta;
+b4 = theta10;
+b3 = theta20 - b4;
+b2 = b3+K*(b3+b4)+a5*(theta30 - theta20)+K*theta20;
+thetahat0 = (1-x)*(b1*x^2 + b2*x + b3)+b4;
     
 % --------------------------------------------------------------------------
 

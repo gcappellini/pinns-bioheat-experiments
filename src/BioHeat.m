@@ -1,7 +1,7 @@
 clear all
 close all
 
-global K lambda delta delta_sys upsilon W W0 W1 W2 W3 W4 W5 W6 W7 theta_w theta1 theta20 om0 om1 om2  om3 om4  om5 om6 om7 a1 a2 a3 a4 a5
+global K lambda delta delta_sys upsilon W W0 W1 W2 W3 W4 W5 W6 W7 theta30 theta10 theta20 om0 om1 om2  om3 om4  om5 om6 om7 a1 a2 a3 a4 a5
 
 addpath('/Users/guglielmocappellini/Desktop/phd/code/readyaml')
 % Default filename for YAML config
@@ -18,15 +18,17 @@ K = config_data.model_properties.K;
 rho = config_data.model_properties.rho;
 cp = config_data.model_properties.c;
 t_room = config_data.model_properties.Troom;
+t_y10 = config_data.model_properties.Ty10;
 t_y20 = config_data.model_properties.Ty20;
+t_y30 = config_data.model_properties.Ty30;
 t_max = config_data.model_properties.Tmax;
-t_w = config_data.model_properties.Twater;
 h = config_data.model_properties.h;
 beta = config_data.model_properties.beta;
 SAR_0 = config_data.model_properties.SAR_0;
 PD = config_data.model_properties.PD;
 x0 = config_data.model_properties.x0;
-dT = t_max - t_room
+
+dT = t_max - t_room;
 
 % Observer weights based on the number of observers (3 or 8)
 if n_obs == 3
@@ -57,9 +59,9 @@ cc = log(2)/(PD - 10^(-2)*x0);
 a3 = rho*L0^2*beta*SAR_0*exp(cc*x0)/k*dT;
 a4 = cc*L0;
 a5 = (h*L0)/k;
-theta_w = (t_w - t_room)/(t_max - t_room);
+theta30 = (t_y30 - t_room)/(t_max - t_room);
 theta20 = (t_y20 - t_room)/(t_max - t_room);
-theta1 = 0;
+theta10 = (t_y10 - t_room)/(t_max - t_room);
 
 % Initialize observer weights and constants
 om0 = 0;

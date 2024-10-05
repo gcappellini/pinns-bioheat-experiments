@@ -24,3 +24,17 @@ p0 50 W
 13.39: RF off, max perfusion
 
 14.27: water level 2.6 L
+
+
+
+
+20240522_1: heating 1 vessel max height, 1 vessel min height, no perfusion, cooling with bolus on top
+20240927_3 from min 103: heating 2 vessels max height
+20240930_1: heating 1 vessel min height, free cooling min height
+20240930_2: ripetere
+20240930_3: antenna charachterization, free cooling
+
+
+cooling_meas_1: 20240930_1 from min 35
+
+
