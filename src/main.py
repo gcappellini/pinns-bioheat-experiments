@@ -17,7 +17,7 @@ def main(cfg: DictConfig):
 
     # Define the mapping between experiment type and script file
     script_mapping = {
-        'network_test': f'{src_dir}/network_test.py',
+        'ground_truth': f'{src_dir}/ground_truth.py',
         'simulation': f'{src_dir}/simulation.py',
         'measurement': f'{src_dir}/measurements.py'
     }
@@ -30,12 +30,6 @@ def main(cfg: DictConfig):
         # Build the full path to the script
         script_path = os.path.join(git_dir, script_to_run)
         
-        # # Serialize the config and pass it as a YAML file to the script
-        # with tempfile.NamedTemporaryFile(delete=False, suffix=".yaml") as temp_config:
-        #     OmegaConf.save(config=cfg, f=temp_config.name)
-        #     temp_config_path = temp_config.name
-        # # Execute the script using subprocess
-        # subprocess.run(["python", script_path, "--config-path", temp_config_path])
         subprocess.run(["python", script_path])
     else:
         print(f"Unknown experiment type: {experiment_type}")
