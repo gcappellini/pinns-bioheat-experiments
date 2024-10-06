@@ -31,10 +31,11 @@ model_properties:
   w_bc0: 1.0
   w_bc1: 1.0
   w_ic: 1.0
-  beta: 1.0
-  SAR_0: 0.0
-  PD: 0.03
-  x0: 0.004
+  beta: 0.9
+  pwr_fact: 0.4
+  SAR_0: 50.0
+  PD: 0.025
+  x0: 0.001
 
 model_parameters:
   lam: 100.0
@@ -80,6 +81,7 @@ experiment:
   name: "cooling_meas_2"
   type: 
     cooling:
+      pwr_fact: 0.0
       threshold: 0.5
       show_y3: false
 
@@ -110,6 +112,7 @@ experiment:
         delta: 8.0
 
     heating:
+      pwr_fact: 0.4
       threshold: 50
       show_y3: true
       
@@ -153,6 +156,7 @@ experiment:
         delta: -2.8 
 
     antenna_characterization:
+      pwr_fact: 1.0
       threshold: 50
       show_y3: false
       title: "Antenna characterization"

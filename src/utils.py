@@ -816,3 +816,16 @@ def scale_df(df):
     for ei in ['y1', 'gt1', 'gt2', 'y2', 'y3']:
         new_df[ei] = scale_t(df[ei])    
     return new_df
+
+def rescale_df(df):
+    time = df['tau']
+    new_df = pd.DataFrame({'t': rescale_time(time)})
+
+    for ei in ['y1', 'gt1', 'gt2', 'y2', 'y3']:
+        new_df[ei] = rescale_t(df[ei])    
+    return new_df
+
+def SAR(x):
+    if not torch.is_tensor(x):
+        x = torch.Tensor(x)
+    return cc.beta*torch.exp(-cc.cc*(x-cc.x0))*cc.SAR_0

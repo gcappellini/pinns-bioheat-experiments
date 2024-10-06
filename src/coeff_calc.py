@@ -19,6 +19,7 @@ beta = cfg.model_properties.beta
 SAR_0 = cfg.model_properties.SAR_0
 PD = cfg.model_properties.PD
 x0 = cfg.model_properties.x0
+pwr_fact = cfg.model_properties.pwr_fact
 
 Tmax = cfg.model_properties.Tmax
 Troom = cfg.model_properties.Troom
@@ -49,7 +50,8 @@ def rescale_t(t):
 a1 = round((L0**2/tauf)*((rho*c)/k), 7)
 a2 = round(L0**2*c/k, 7)
 cc = np.log(2)/(PD - 10**(-2)*x0)
-a3 = round(rho*L0**2*beta*SAR_0*np.exp(cc*x0)/k*dT, 7)
+# cc = 16
+a3 = round(pwr_fact*rho*L0**2*beta*SAR_0*np.exp(cc*x0)/k*dT, 7)
 a4 = round(cc*L0, 7)
 a5 = round(L0*h/k, 7)
 
