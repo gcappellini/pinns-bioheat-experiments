@@ -15,6 +15,6 @@ y1_0 = uu.scale_t(22.28)
 y2_0 = uu.scale_t(26.67)
 y3_0 = uu.scale_t(21.5)
 
-print(uu.solve_ic_comp(y1_0, y2_0, y3_0, cc.K, cc.a5))
+print(y1_0, y2_0, y3_0, cc.a5)
 
 

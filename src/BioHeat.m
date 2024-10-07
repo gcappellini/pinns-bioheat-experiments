@@ -1,7 +1,7 @@
 clear all
 close all
 
-global K lambda delta upsilon W W0 W1 W2 W3 W4 W5 W6 W7 theta10 theta20 theta30 theta_gt10 theta_gt20 X_gt1 X_gt2 om0 om1 om2  om3 om4  om5 om6 om7 a1 a2 a3 a4 a5
+global K lambda delta upsilon W W0 W1 W2 W3 W4 W5 W6 W7 b2 b3 theta10 theta20 theta30 theta_gt10 theta_gt20 X_gt1 X_gt2 om0 om1 om2  om3 om4  om5 om6 om7 a1 a2 a3 a4 a5
 
 addpath('/Users/guglielmocappellini/Desktop/phd/code/readyaml')
 % Default filename for YAML config
@@ -25,6 +25,8 @@ t_max = config_data.model_properties.Tmax;
 t_gt10 = config_data.model_parameters.gt1_0;
 t_gt20 = config_data.model_parameters.gt2_0;
 h = config_data.model_properties.h;
+b2 = config_data.model_properties.b2;
+b3 = config_data.model_properties.b3;
 
 % Observer weights based on the number of observers (3 or 8)
 if n_obs == 3

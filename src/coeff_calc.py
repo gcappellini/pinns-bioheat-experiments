@@ -29,7 +29,8 @@ Ty30 = cfg.model_properties.Ty30
 dT = (Tmax-Troom)
 
 K = cfg.model_properties.K
-delta = cfg.model_properties.delta
+b2 = cfg.model_properties.b2
+b3 = cfg.model_properties.b3
 
 # Accessing model parameters from the config
 W0 = cfg.model_parameters.W0
