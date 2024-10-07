@@ -77,7 +77,7 @@ plot:
     measuring_points: ['-', '-.', '-', '-.', '--']
 
 experiment:
-  name: [cooling, meas_1]
+  name: [heating, meas_1]
   import_data: false
   save_pickle: false
   run_matlab: false
