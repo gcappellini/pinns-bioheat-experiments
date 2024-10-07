@@ -5,14 +5,14 @@ model_properties:
   rho: 1000.0
   c: 4186.0
   W: 0.6
-  h: 238.0
+  h: 10.0
   Troom: 21.5
   Tmax: 32.0
-  Ty10: 21.88
-  Ty20: 26.76
-  Ty30: 25.8
-  K: 10.0
-  delta: 8.0
+  Ty10: 22.28
+  Ty20: 26.67
+  Ty30: 21.5
+  K: 1.0
+  delta: 0.7
   activation: tanh
   initial_weights_regularizer: true
   initialization: Glorot uniform
@@ -32,7 +32,7 @@ model_properties:
   w_bc1: 1.0
   w_ic: 1.0
   beta: 0.9
-  pwr_fact: 0.4
+  pwr_fact: 0.0
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
@@ -47,9 +47,9 @@ model_parameters:
   W5: 0.7
   W6: 0.8
   W7: 0.9
-  n_obs: 8
-  gt1_0: 22.67
-  gt2_0: 26.3
+  n_obs: 1
+  gt1_0: 24.44
+  gt2_0: 29.25
   x_y2: 0
   x_gt2: 0.01
   x_gt1: 0.04

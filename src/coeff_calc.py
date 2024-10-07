@@ -23,6 +23,9 @@ pwr_fact = cfg.model_properties.pwr_fact
 
 Tmax = cfg.model_properties.Tmax
 Troom = cfg.model_properties.Troom
+Ty10 = cfg.model_properties.Ty10
+Ty20 = cfg.model_properties.Ty20
+Ty30 = cfg.model_properties.Ty30
 dT = (Tmax-Troom)
 
 K = cfg.model_properties.K
@@ -55,7 +58,8 @@ a3 = round(pwr_fact*rho*L0**2*beta*SAR_0*np.exp(cc*x0)/k*dT, 7)
 a4 = round(cc*L0, 7)
 a5 = round(L0*h/k, 7)
 
-# print(rescale_t(0.1))
+
+
 
 
 

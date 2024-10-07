@@ -231,13 +231,20 @@ def gen_testdata(n):
     if n==8:
         data = np.loadtxt(f"{src_dir}/output_matlab_{n}Obs.txt")
         x, t, sys, obs, mmobs = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:11], data[:, 11:12].T
+        y_mmobs = mmobs.flatten()[:, None]
     if n==3:
         data = np.loadtxt(f"{src_dir}/output_matlab_{n}Obs.txt")
-        x, t, sys, obs, mmobs = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:6], data[:, 6:7].T       
+        x, t, sys, obs, mmobs = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:6], data[:, 6:7].T  
+        y_mmobs = mmobs.flatten()[:, None]
+    if n==1:
+        data = np.loadtxt(f"{src_dir}/output_matlab_{n}Obs.txt")
+        x, t, sys, y_obs = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:4].T   
+        y_mmobs = None
+        obs = y_obs.flatten()[:, None]
+
     X = np.vstack((x, t)).T
     y_sys = sys.flatten()[:, None]
-    y_mmobs = mmobs.flatten()[:, None]
-
+    
     return X, y_sys, obs, y_mmobs
 
 
@@ -601,6 +608,8 @@ def get_scaled_labels(rescale):
 def get_obs_colors(conf):
     total_obs_colors = conf.plot.colors.observers
     number = conf.model_parameters.n_obs
+    if number == 1:
+        obs_colors = [total_obs_colors[4]] 
     if number == 3:
         obs_colors = [total_obs_colors[0], total_obs_colors[4], total_obs_colors[7]] 
     if number == 8:
@@ -615,6 +624,8 @@ def get_sys_mm_colors(conf):
 def get_obs_linestyles(conf):
     total_obs_linestyles = conf.plot.linestyles.observers
     number = conf.model_parameters.n_obs
+    if number == 1:
+        obs_linestyles = [total_obs_linestyles[4]] 
     if number == 3:
         obs_linestyles = [total_obs_linestyles[0], total_obs_linestyles[4], total_obs_linestyles[7]] 
     if number == 8:
@@ -693,14 +704,20 @@ def run_matlab_ground_truth(src_dir, prj_figs, conf1, run_matlab):
         t = np.unique(X[:, 1])
 
         conf = OmegaConf.load(f"{src_dir}/config.yaml")
-        mu = compute_mu(n_obs)
-        pp.plot_mu(mu, t, prj_figs, conf, gt=True)
+        if n_obs==1:
+            pp.plot_tf_matlab_1obs(X, y_sys, y_observers, conf, prj_figs)
+            pp.plot_l2_matlab_1obs(X, y_sys, y_observers, prj_figs)
+            pp.plot_comparison_3d(X, y_sys, y_observers, prj_figs, gt= True)
 
-        t, weights = load_weights(n_obs)
-        pp.plot_weights(weights, t, prj_figs, conf, gt=True)
-        pp.plot_tf_matlab(X, y_sys, y_observers, y_mmobs, conf, prj_figs)
-        pp.plot_comparison_3d(X, y_sys, y_mmobs, prj_figs, gt= True)
-        pp.plot_l2_matlab(X, y_sys, y_observers, y_mmobs, prj_figs)
+        else:
+            mu = compute_mu(n_obs)
+            pp.plot_mu(mu, t, prj_figs, conf, gt=True)
+
+            t, weights = load_weights(n_obs)
+            pp.plot_weights(weights, t, prj_figs, conf, gt=True)
+            pp.plot_tf_matlab(X, y_sys, y_observers, y_mmobs, conf, prj_figs)
+            pp.plot_comparison_3d(X, y_sys, y_mmobs, prj_figs, gt= True)
+            pp.plot_l2_matlab(X, y_sys, y_observers, y_mmobs, prj_figs)
 
 
         print("MATLAB ground truth completed.")
@@ -861,6 +878,7 @@ def configure_meas_settings(cfg, experiment):
     cfg.model_properties.h=exp_type_settings["h"]
 
     meas_settings = getattr(exp_type_settings, experiment[1])
+    cfg.model_properties.delta=meas_settings["delta"]
     cfg.model_properties.Ty10=meas_settings["y1_0"]
     cfg.model_properties.Ty20=meas_settings["y2_0"]
     cfg.model_properties.Ty30=meas_settings["y3_0"]
@@ -875,6 +893,7 @@ def configure_matlab_settings(cfg, experiment):
     cfg.model_properties.h=exp_type_settings["h"]
 
     meas_settings = getattr(exp_type_settings, experiment[1])
+    cfg.model_properties.delta=meas_settings["delta"]
     cfg.model_properties.Ty10=meas_settings["y1_0"]
     cfg.model_properties.Ty20=meas_settings["y2_0"]
     cfg.model_properties.Ty30=meas_settings["y3_0"]

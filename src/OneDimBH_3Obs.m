@@ -79,12 +79,14 @@ function [sol] = OneDimBH_3Obs
     % --------------------------------------------------------------------------
     
     function theta0 = sys_ic(x)
-    global a5 theta30 theta20
-    
-    cc = theta20;
-    bb = a5*(theta30-cc)+ cc;
-    aa = -2.0;
-    theta0 = (1-x)*(aa*x^2 + bb*x + cc);
+        global theta10 theta_gt10 theta_gt20 theta20 X_gt1 X_gt2
+        
+        % Define the known points
+        x_values = [1, X_gt1, X_gt2, 0];
+        theta_values = [theta10, theta_gt10, theta_gt20, theta20];
+        
+        % Perform interpolation
+        theta0 = interp1(x_values, theta_values, x, 'linear');
     
     % --------------------------------------------------------------------------
     

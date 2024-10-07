@@ -588,3 +588,107 @@ def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, p
         size=(12, 6),
         filename=f"{prj_figs}/timeseries_with_predictions.png"
     )
+
+
+def plot_tf_matlab_1obs(e, theta_true, theta_observer, conf, prj_figs):
+    """
+    Plot true values and predicted values (single or multi-observer model).
+    
+    :param e: 2D array for depth (X) and time (tau).
+    :param theta_true: True theta values.
+    :param model: The model used for predictions.
+    :param number: Identifier for the observation.
+    :param prj_figs: Directory to save the figure.
+    :param MultiObs: If True, plot multiple model predictions and a weighted average.
+    """
+
+    # Reshape inputs
+    e = e.reshape(len(e), 2)
+    theta_true = theta_true.reshape(len(e), 1)
+
+    # Prepare true values for final time (tau = 1)
+    tot = np.hstack((e, theta_true, theta_observer))
+    final = tot[tot[:, 1] == 1]  # Select rows where time equals 1
+    xtr = np.unique(tot[:, 0])   # Depth values for true data
+    true = final[:, 2]          # True values at final time
+    observer = final[:, 3:4]
+
+    true_reshaped = true.reshape(len(xtr), 1)
+    all_preds = np.hstack((observer, true_reshaped))
+    # x values: use xtr for true data, and 'x' for predictions
+    xxtr = xtr.reshape(len(xtr), 1)
+    x_vals = np.full_like(all_preds, xxtr)
+    number = conf.model_parameters.n_obs
+
+    # Generate corresponding legend labels
+    legend_labels = [f'Obs {i}' for i in range(number)] + ['True']
+
+    obs_colors = uu.get_obs_colors(conf)
+    system_color, _ = uu.get_sys_mm_colors(conf)
+    obs_linestyles = uu.get_obs_linestyles(conf)
+    system_linestyle, _ = uu.get_sys_mm_linestyle(conf)
+
+    colors = obs_colors + [system_color]
+    linestyles = obs_linestyles + [system_linestyle]
+    rescale = conf.plot.rescale
+    xlabel, _, ylabel = uu.get_scaled_labels(rescale)
+
+    x_plot = uu.rescale_x(x_vals) if rescale else x_vals
+    y_plot = uu.rescale_t(all_preds) if rescale else all_preds
+
+
+    # Call the generic plotting function
+    plot_generic(
+        x=x_plot.T,  # Different x values for true and predicted
+        y=y_plot.T,  # List of true and predicted lines
+        title="Prediction at final time",
+        xlabel=xlabel,
+        ylabel=ylabel,
+        legend_labels=legend_labels,  # Labels for the legend
+        size=(6, 5),
+        colors=colors,
+        filename=f"{prj_figs}/tf_mmobs_matlab_{number}obs.png",
+        linestyles=linestyles
+    )
+
+
+def plot_l2_matlab_1obs(X, theta_true, y_obs, folder):
+    theta_true = theta_true.reshape(len(X), 1)
+    t = np.unique(X[:, 1:2])
+    # t_filtered = t[t > 0.000] 
+    conf = OmegaConf.load(f"{folder}/config.yaml")
+    n_obs = conf.model_parameters.n_obs
+    obs_colors = uu.get_obs_colors(conf)
+    obs_linestyles = uu.get_obs_linestyles(conf)
+
+    l2 = uu.calculate_l2(X, theta_true, y_obs)
+
+    l2 = l2.reshape(len(l2), 1)
+
+
+    # Generate corresponding legend labels
+    legend_labels = [f'Obs {i}' for i in range(n_obs)]
+    colors = obs_colors 
+    linestyles = obs_linestyles
+
+    rescale = conf.plot.rescale
+    _, xlabel, _ = uu.get_scaled_labels(rescale)
+
+    t = t.reshape(len(t), 1)
+    t_tot = np.full_like(l2, t)
+    t_plot = uu.rescale_time(t_tot) if rescale else t_tot
+
+
+    # Call the generic plotting function
+    plot_generic(
+        x=t_plot.T,   # Provide time values for each line (either one for each model or just one for single prediction)
+        y=l2.T,       # Multiple L2 error lines to plot
+        title="Prediction error norm",
+        xlabel=xlabel,
+        ylabel=r"$L^2$ norm",
+        legend_labels=legend_labels,  # Labels for the legend
+        size=(6, 5),
+        filename=f"{folder}/l2_matlab_{n_obs}obs.png",
+        colors=colors,
+        linestyles=linestyles
+    )
