@@ -51,7 +51,7 @@ model_parameters:
   W5: 0.7
   W6: 0.8
   W7: 0.9
-  n_obs: 3
+  n_obs: 8
   gt1_0: 24.44
   gt2_0: 29.25
   x_y2: 0
@@ -83,10 +83,10 @@ experiment:
   name: [heating, meas_1]
   import_data: false
   save_pickle: false
-  run_matlab: false
+  run_matlab: true
   run_wandb: false
   run_simulation: false
-  run_measurement: true
+  run_measurement: false
   type:
     cooling:
       h: 10.0

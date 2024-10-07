@@ -36,5 +36,12 @@ if __name__ == "__main__":
 
     cfg = uu.configure_meas_settings(config, config.experiment.name)
 
+    cfg_matlab = OmegaConf.create({
+    "model_properties": cfg.model_properties,
+    "model_parameters": cfg.model_parameters
+})
+
+    OmegaConf.save(cfg_matlab,f"{output_dir}/config_matlab.yaml")
     OmegaConf.save(cfg,f"{output_dir}/config.yaml")
-    main(output_dir, config)
+    OmegaConf.save(cfg_matlab,f"{src_dir}/config_matlab.yaml")
+    main(output_dir, cfg_matlab)

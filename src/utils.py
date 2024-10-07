@@ -13,13 +13,13 @@ import plots as pp
 import common as co
 from omegaconf import OmegaConf
 import yaml
-# import matlab.engine
+import matlab.engine
 
 
 dde.config.set_random_seed(200)
 
-# dev = torch.device("cpu")
-dev = torch.device("cuda")
+dev = torch.device("cpu")
+# dev = torch.device("cuda")
 
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
@@ -676,11 +676,11 @@ def solve_ivp_and_plot(multi_obs, fold, conf, x_obs, X, y_sys):
 
 
 
-def run_matlab_ground_truth(src_dir, prj_figs, conf, run_matlab):
+def run_matlab_ground_truth(src_dir, prj_figs, conf1, run_matlab):
     """
     Optionally run MATLAB ground truth.
     """
-    n_obs = conf.model_parameters.n_obs
+    n_obs = conf1.model_parameters.n_obs
     
     if run_matlab:
         print("Running MATLAB ground truth calculation...")
@@ -692,6 +692,7 @@ def run_matlab_ground_truth(src_dir, prj_figs, conf, run_matlab):
         X, y_sys, y_observers, y_mmobs = gen_testdata(n_obs)
         t = np.unique(X[:, 1])
 
+        conf = OmegaConf.load(f"{src_dir}/config.yaml")
         mu = compute_mu(n_obs)
         pp.plot_mu(mu, t, prj_figs, conf, gt=True)
 
