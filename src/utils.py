@@ -122,7 +122,7 @@ def create_nbho(run_figs):
         b4 = a5*(theta_y30-theta_y20)
         b1 = (theta_y10-b4)*np.exp(b3)
 
-        return b1*z**(b2)*torch.exp(-b3*z) + b4*z
+        return b1*z**(b2)*np.exp(-b3*z) + b4*z
 
     def bc1_obs(x, theta, X):
 
@@ -882,7 +882,7 @@ def configure_meas_settings(cfg, experiment):
     cfg.model_properties.h=exp_type_settings["h"]
 
     meas_settings = getattr(exp_type_settings, experiment[1])
-    cfg.model_properties.delta=meas_settings["delta"]
+    # cfg.model_properties.delta=meas_settings["delta"]
     cfg.model_properties.Ty10=meas_settings["y1_0"]
     cfg.model_properties.Ty20=meas_settings["y2_0"]
     cfg.model_properties.Ty30=meas_settings["y3_0"]
