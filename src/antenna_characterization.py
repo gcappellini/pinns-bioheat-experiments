@@ -42,13 +42,14 @@ for el in range(len(x)):
 
 xlabel, _, _ = uu.get_scaled_labels(True)
 
-SAR_formula = uu.SAR(x)
+x_formula = np.linspace(x[0], x[-1], num=100)
+SAR_formula = uu.SAR(x_formula)
 
 
 # Plot
 fig, ax = plt.subplots()
 
-ax.plot(x, SAR_formula, label="Model", color="red", linestyle="--")
+ax.plot(x_formula, SAR_formula, label="Model", color="red", linestyle="--")
 # ax.errorbar(df["x"], df["SAR"], label="measured", yerr=0.4)
 
 
