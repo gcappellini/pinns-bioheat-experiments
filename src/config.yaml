@@ -16,14 +16,17 @@ model_properties:
   activation: tanh
   initial_weights_regularizer: true
   initialization: Glorot uniform
-  iterations: 30000
+  iterations: 10000
   LBFGS: false
   learning_rate: 0.0001
   num_dense_layers: 6
   num_dense_nodes: 92
-  num_domain: 2000
-  num_boundary: 4000
-  num_initial: 1600
+  # num_domain: 2000
+  # num_boundary: 4000
+  # num_initial: 1600
+  num_domain: 1000
+  num_boundary: 400
+  num_initial: 160
   num_test: 10000
   resampling: true
   resampler_period: 100
