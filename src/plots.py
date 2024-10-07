@@ -557,7 +557,8 @@ def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, p
     legend_labels = ['y1 (True)', 'gt1 (True)', 'gt2 (True)', 'y2 (True)', 
                      'y1 (Pred)', 'gt1 (Pred)', 'gt2 (Pred)', 'y2 (Pred)']
     colors_points = conf.plot.colors.measuring_points
-    colors = list(colors_points) * 2
+    colors_list = list(colors_points)
+    colors = colors_list[:-1] * 2
     linestyles=["-", "-", "-", "-", "--", "--", "--", "--"]
     rescale = conf.plot.rescale
     _, _, ylabel = uu.get_scaled_labels(rescale)
