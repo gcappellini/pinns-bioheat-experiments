@@ -12,12 +12,14 @@ import coeff_calc as cc
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-# import matlab.engine
+import yaml
+import matlab.engine
+
 
 dde.config.set_random_seed(200)
 
-# dev = torch.device("cpu")
-dev = torch.device("cuda")
+dev = torch.device("cpu")
+# dev = torch.device("cuda")
 
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
@@ -221,6 +223,7 @@ def train_and_save_model(model, callbacks, run_figs):
     confi_path = os.path.join(models, f"config_{config_hash}.yaml")
     OmegaConf.save(conf, confi_path)
 
+
     return losshistory, train_state
 
 
@@ -345,6 +348,7 @@ def rescale_x(X):
     return np.round(j, 4)
 
 def rescale_time(tau):
+    tau = np.array(tau)
     properties = OmegaConf.load(f"{src_dir}/config.yaml")
     tauf = properties.model_properties.tauf
     j = tau*tauf
@@ -362,14 +366,14 @@ def get_tc_positions():
     daa = OmegaConf.load(f"{src_dir}/config.yaml")
     L0 = daa.model_properties.L0
     x_y2 = 0
-    x_gt2 = 0.01/L0
-    x_gt1 = 0.04/L0
+    x_gt2 = (daa.model_parameters.x_gt2)/L0
+    x_gt1 = (daa.model_parameters.x_gt1)/L0
     x_y1 = 1
 
     return [x_y2, x_gt2, x_gt1, x_y1] 
 
 def import_testdata(name):
-    df = load_from_pickle(f"{src_dir}/{name}.pkl")
+    df = load_from_pickle(f"{src_dir}/data/vessel/{name}.pkl")
 
     positions = get_tc_positions()
     dfs = []
@@ -446,10 +450,10 @@ def mm_observer(config):
 
     return multi_obs
 
-def check_mm_obs(multi_obs, x_obs, X, y_sys, conf, prj_figs):
+def check_mm_obs(multi_obs, x_obs, X, y_sys, conf):
     run_figs = co.set_run(f"mm_obs")
     conf.model_properties.W = None
-    OmegaConf.save(conf, f"{run_figs}/config.yaml") 
+    OmegaConf.save(conf, f"{run_figs}/config.yaml")
     # Solve IVP and plot weights
     solve_ivp_and_plot(multi_obs, run_figs, conf, x_obs, X, y_sys)
 
@@ -829,3 +833,36 @@ def SAR(x):
     if not torch.is_tensor(x):
         x = torch.Tensor(x)
     return cc.beta*torch.exp(-cc.cc*(x-cc.x0))*cc.SAR_0
+
+
+
+def point_predictions(multi_obs, x_obs, prj_figs, lam, rescale=False):
+    """
+    Generates and scales predictions from the multi-observer model.
+    """
+    positions = get_tc_positions()
+    mm_obs_pred = mm_predict(multi_obs, lam, x_obs, prj_figs)
+    preds = np.vstack((x_obs[:, 0], x_obs[:, -1], mm_obs_pred)).T
+    
+    # Extract predictions based on positions
+    y2_pred_sc = preds[preds[:, 0] == positions[0]][:, 2]
+    gt2_pred_sc = preds[preds[:, 0] == positions[1]][:, 2]
+    gt1_pred_sc = preds[preds[:, 0] == positions[2]][:, 2]
+    y1_pred_sc = preds[preds[:, 0] == positions[3]][:, 2]
+
+    return y1_pred_sc, gt1_pred_sc, gt2_pred_sc, y2_pred_sc
+
+
+
+def configure_meas_settings(cfg, experiment):
+    exp_type_settings = getattr(cfg.experiment.type, experiment[0])
+    cfg.model_properties.pwr_fact=exp_type_settings["pwr_fact"]
+    cfg.model_properties.h=exp_type_settings["h"]
+
+    meas_settings = getattr(exp_type_settings, experiment[1])
+    cfg.model_properties.Ty10=meas_settings["y1_0"]
+    cfg.model_properties.Ty20=meas_settings["y2_0"]
+    cfg.model_properties.Ty30=meas_settings["y3_0"]
+    cfg.model_parameters.gt1_0=meas_settings["gt1_0"]
+    cfg.model_parameters.gt2_0=meas_settings["gt2_0"]
+    return cfg

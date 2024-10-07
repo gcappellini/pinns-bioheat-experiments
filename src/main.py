@@ -2,6 +2,8 @@ import subprocess
 import os
 import hydra
 from omegaconf import DictConfig, OmegaConf
+import yaml
+import utils as uu
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -9,30 +11,24 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 
 def main(cfg: DictConfig):
     # Get the experiment type from the config
-    experiment_type = cfg.experiment.type
+    experiment = cfg.experiment.name
 
     # Path to the script directory
     src_dir = os.path.dirname(os.path.abspath(__file__))
-    git_dir = os.path.dirname(src_dir)
 
-    # Define the mapping between experiment type and script file
-    script_mapping = {
-        'ground_truth': f'{src_dir}/ground_truth.py',
-        'simulation': f'{src_dir}/simulation.py',
-        'measurement': f'{src_dir}/measurements.py'
-    }
+    if cfg.experiment.import_data:
+        subprocess.run(["python", f'{src_dir}/import_data.py'])
 
-    # Check if the experiment type is valid
-    if experiment_type in script_mapping:
-        # Get the script filename
-        script_to_run = script_mapping[experiment_type]
-        
-        # Build the full path to the script
-        script_path = os.path.join(git_dir, script_to_run)
-        
-        subprocess.run(["python", script_path])
-    else:
-        print(f"Unknown experiment type: {experiment_type}")
+
+    if cfg.experiment.run_matlab:      
+        subprocess.run(["python", f'{src_dir}/ground_truth.py'])
+
+    if cfg.experiment.run_simulation:      
+        subprocess.run(["python", f'{src_dir}/simulation.py'])
+
+    if cfg.experiment.run_measurement:      
+        subprocess.run(["python", f'{src_dir}/measurements.py'])
+
 
 if __name__ == "__main__":
     main()

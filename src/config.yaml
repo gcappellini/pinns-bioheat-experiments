@@ -8,15 +8,15 @@ model_properties:
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
-  Ty10: 22.84
-  Ty20: 28.6
+  Ty10: 22.28
+  Ty20: 26.67
   Ty30: 21.5
   K: 10.0
   delta: 8.0
-  activation: "tanh"
+  activation: tanh
   initial_weights_regularizer: true
-  initialization: "Glorot uniform"
-  iterations: 100000
+  initialization: Glorot uniform
+  iterations: 30000
   LBFGS: false
   learning_rate: 0.0001
   num_dense_layers: 6
@@ -32,7 +32,7 @@ model_properties:
   w_bc1: 1.0
   w_ic: 1.0
   beta: 0.9
-  pwr_fact: 0.4
+  pwr_fact: 0.0
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
@@ -48,43 +48,48 @@ model_parameters:
   W5: 0.7
   W6: 0.8
   W7: 0.9
-  n_obs: 8
-  delta_sys: 1.0
+  n_obs: 3
+  gt1_0: 24.44
+  gt2_0: 29.25
+  x_y2: 0
+  x_gt2: 0.01
+  x_gt1: 0.04
+  x_y1: 0.07
 
 output:
   base_dir: ${hydra:runtime.output_dir}
   save_figures: true
-
 output_dir: ${hydra:run.dir}
 
 plot:
   rescale: true
   colors:
-    observers: ["C0", "C1", "C2", "C3", "C4", "C5", "C6", "C7"]
-    system: "C9"
-    mm_obs: "gold"
-    measuring_points: ["#F7CAC9", "#6B5B95", "#88B04B", "#FF6F61", "#92A8D1"]
-    losses: ["#D2691E", "#4682B4", "#9ACD32", "#FF6347", "#FFD700", "#FF1493"]
-
+    observers: [C0, C1, C2, C3, C4, C5, C6, C7]
+    system: C9
+    mm_obs: gold
+    measuring_points: ['#F7CAC9', '#6B5B95', '#88B04B', '#FF6F61', '#92A8D1']
+    losses: ['#D2691E', '#4682B4', '#9ACD32', '#FF6347', '#FFD700', '#FF1493']
   linestyles:
-    observers: ["-", "-.", "-", "-.", "--", "-", "--", "-"]
-    groundtruths: "--"
-    mm_obs: ":"
-    system: "-."
-    measuring_points: ["-", "-.", "-", "-.", "--"]
-
+    observers: ['-', '-.', '-', '-.', '--', '-', '--', '-']
+    groundtruths: --
+    mm_obs: ':'
+    system: -.
+    measuring_points: ['-', '-.', '-', '-.', '--']
 
 experiment:
+  name: [cooling, meas_1]
+  import_data: false
   save_pickle: false
   run_matlab: false
   run_wandb: false
-  name: "cooling_meas_2"
-  type: 
+  run_simulation: false
+  run_measurement: true
+  type:
     cooling:
+      h: 10.0
       pwr_fact: 0.0
       threshold: 0.5
       show_y3: false
-
       meas_1:
         title: "Cooling 1"
         date: "20240930_1"
@@ -97,7 +102,6 @@ experiment:
         y2_0: 26.67
         y3_0: 21.5
         delta: 6.0
-
       meas_2:
         title: "Cooling 2"
         date: "20240930_3"
@@ -110,12 +114,11 @@ experiment:
         y2_0: 28.6
         y3_0: 21.5
         delta: 8.0
-
     heating:
+      h: 238.0
       pwr_fact: 0.4
       threshold: 50
       show_y3: true
-      
       meas_1:
         title: "Heating 1"
         date: "20240522_1"
@@ -126,9 +129,8 @@ experiment:
         gt1_0: 22.67
         gt2_0: 26.3
         y2_0: 26.76
-        y3_0: 25.80
-        delta: -12.6 # Attenzione: questo valore comporta ic> 1. prova a partire da un altro istante
-
+        y3_0: 25.8
+        delta: -12.6
       meas_2:
         title: "Heating 2"
         date: "20240927_3"
@@ -140,8 +142,7 @@ experiment:
         gt2_0: 24.24
         y2_0: 24.71
         y3_0: 23.98
-        delta: -8.6 
-
+        delta: -8.6
       meas_3:
         title: "Heating 3"
         date: "20240930_1"
@@ -153,8 +154,7 @@ experiment:
         gt2_0: 21.74
         y2_0: 23.24
         y3_0: 23.82
-        delta: -2.8 
-
+        delta: -2.8
     antenna_characterization:
       pwr_fact: 1.0
       threshold: 50

@@ -90,12 +90,19 @@ s = [-W*a2*u(1)+a3*exp(-a4*x);
 % --------------------------------------------------------------------------
 
 function theta0 = sys_ic(x)
-global a5 theta_w theta20 delta_sys
-
-cc = theta20;
-bb = a5*(theta_w-cc)+ cc;
-aa = delta_sys;
-theta0 = (1-x)*(aa*x^2 + bb*x + cc);
+    global theta20 theta10 gt1_0 gt2_0 X_gt1 X_gt2
+    
+        % Piecewise linear interpolation
+        if x <= X_gt2
+            % Linear interpolation between (0, theta20) and (X_gt2, gt2_0)
+            theta0 = theta20 + (gt2_0 - theta20) * (x / X_gt2);
+        elseif x <= X_gt1
+            % Linear interpolation between (X_gt2, gt2_0) and (X_gt1, gt1_0)
+            theta0 = gt2_0 + (gt1_0 - gt2_0) * ((x - X_gt2) / (X_gt1 - X_gt2));
+        else
+            % Linear interpolation between (X_gt1, gt1_0) and (1, theta10)
+            theta0 = gt1_0 + (theta10 - gt1_0) * ((x - X_gt1) / (1 - X_gt1));
+        end
 
 % --------------------------------------------------------------------------
 

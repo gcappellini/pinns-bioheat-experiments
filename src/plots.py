@@ -363,7 +363,7 @@ def plot_tf(e, theta_true, model, number, prj_figs, MultiObs=False):
 
     # Prepare true values for final time (tau = 1)
     tot = np.hstack((e, theta_true))
-    final = tot[tot[:, 1] == 1]  # Select rows where time equals 1
+    final = tot[tot[:, 1] == tot[:, 1].max()]  # Select rows where time equals 1
     xtr = np.unique(tot[:, 0])   # Depth values for true data
     xtr = xtr.reshape(len(xtr), 1)
     true = final[:, -1]          # True values at final time
@@ -543,9 +543,9 @@ def plot_comparison_3d(e, t_true, t_pred, run_figs, gt=False):
 
 
 def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, prj_figs):
-    conf = OmegaConf.load(f"{prj_figs}/config.yaml")
-    # Prepare x-axis data (time in minutes)
-    time_in_minutes = df['t'] / 60
+    conf = OmegaConf.load(f"{src_dir}/config.yaml")
+
+    time_in_minutes = df['tau']*conf.model_properties.tauf / 60
     
     # Prepare y-axis data (ground truth and predicted values)
     y_data = [
@@ -557,17 +557,30 @@ def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, p
     legend_labels = ['y1 (True)', 'gt1 (True)', 'gt2 (True)', 'y2 (True)', 
                      'y1 (Pred)', 'gt1 (Pred)', 'gt2 (Pred)', 'y2 (Pred)']
     colors_points = conf.plot.colors.measuring_points
-    colors = colors_points * 2
+    colors = list(colors_points) * 2
     linestyles=["-", "-", "-", "-", "--", "--", "--", "--"]
-
+    rescale = conf.plot.rescale
+    _, _, ylabel = uu.get_scaled_labels(rescale)
     times = [time_in_minutes]*len(y_data)
+
+    if rescale:
+        times_plot = uu.rescale_time(times)
+        y_data_plot = uu.rescale_t(y_data)
+    else:
+        times_plot = times
+        y_data_plot = y_data
+    
+    exp_type = conf.experiment.name
+    type_dict = getattr(conf.experiment.type, exp_type[0])
+    meas_dict = getattr(type_dict, exp_type[1])
+    name = meas_dict["title"]
     # Call the generic plotting function
     plot_generic(
-        x=times,        # Time data
-        y=y_data,                 # All y data (ground truth + predictions)
-        title="Cooling Experiment",
+        x=times_plot,        # Time data
+        y=y_data_plot,       # All y data (ground truth + predictions)
+        title=name,
         xlabel="Time (min)",
-        ylabel="Temperature (°C)",
+        ylabel=ylabel,
         legend_labels=legend_labels,
         colors=colors,
         linestyles=linestyles,

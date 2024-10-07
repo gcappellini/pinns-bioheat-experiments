@@ -3,10 +3,8 @@ import os
 import numpy as np
 import common as co
 import wandb
-import plots as pp
-from import_vessel_data import load_measurements, extract_entries
 from omegaconf import OmegaConf
-from datetime import datetime
+import plots as pp
 
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
@@ -15,71 +13,46 @@ tests_dir = os.path.join(git_dir, "tests")
 os.makedirs(tests_dir, exist_ok=True)
 
 
-def scale_predictions(multi_obs, x_obs, prj_figs, lam):
-    """
-    Generates and scales predictions from the multi-observer model.
-    """
-    positions = uu.get_tc_positions()
-    mm_obs_pred = uu.mm_predict(multi_obs, lam, x_obs, prj_figs)
-    preds = np.vstack((x_obs[:, 0], x_obs[:, -1], mm_obs_pred)).T
-    
-    # Extract predictions based on positions
-    y2_pred_sc = preds[preds[:, 0] == positions[0]][:, 2]
-    gt2_pred_sc = preds[preds[:, 0] == positions[1]][:, 2]
-    gt1_pred_sc = preds[preds[:, 0] == positions[2]][:, 2]
-    y1_pred_sc = preds[preds[:, 0] == positions[3]][:, 2]
-    
-    # Rescale predictions
-    y2_pred = uu.rescale_t(y2_pred_sc)
-    gt2_pred = uu.rescale_t(gt2_pred_sc)
-    gt1_pred = uu.rescale_t(gt1_pred_sc)
-    y1_pred = uu.rescale_t(y1_pred_sc)
-    
-    return y1_pred, gt1_pred, gt2_pred, y2_pred
 
-
-def main():
-
-    # Load the configuration from the passed file
-    config = OmegaConf.load(f"{src_dir}/config.yaml")
-
-    # Now you can access your config values
-    experiment_type = config.experiment.type
-    print(f"Running experiment type: {experiment_type}")
-
-    prj_name = config.experiment.name
-    output_dir = co.set_prj(prj_name)
+def main(config, output_dir):
 
     # Generate and check observers if needed
     multi_obs = uu.mm_observer(config)
+    name = config.experiment.name
+    string = f"{name[0]}_{name[1]}"
 
-    # # Import data
-    # a = uu.import_testdata("cooling_1")
-    # X = a[:, 0:2]
-    # meas = a[:, 2:3]
-    # x_obs = uu.import_obsdata("cooling_1")
+    # Import data
+    a = uu.import_testdata(string)
+    X = a[:, 0:2]
+    meas = a[:, 2:3]
+    x_obs = uu.import_obsdata(string)
 
-    # lam = config.model_parameters.lam
+    lam = config.model_parameters.lam
 
+    # Optionally check observers and upload to wandb
+    uu.check_observers_and_wandb_upload(multi_obs, x_obs, X, meas, config, output_dir)
+    uu.check_mm_obs(multi_obs, x_obs, X, meas, config)
+    rescale = config.plot.rescale
+    run_figs = co.set_run(f"mm_obs")
+    y1_pred, gt1_pred, gt2_pred, y2_pred = uu.point_predictions(multi_obs, x_obs, run_figs, lam)
 
-
-    # # Optionally check observers and upload to wandb
-    # uu.check_observers_and_wandb_upload(multi_obs, x_obs, X, meas, config, output_dir)
-    # uu.check_mm_obs(multi_obs, x_obs, X, meas, config, output_dir)
-
-
-    # y1_pred, gt1_pred, gt2_pred, y2_pred = scale_predictions(multi_obs, x_obs, run_figs, lam)
-    # date = "20240930_1"
-    # start_min = 80
-    # end_min = start_min + 30
-    # file_path = f"{src_dir}/data/vessel/{date}.txt"
-
-    # timeseries_data = load_measurements(file_path)
-    # df = extract_entries(timeseries_data, start_min*60, end_min*60)
-    # # Plot time series with predictions
-    # pp.plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, run_figs)
+    df = uu.load_from_pickle(f"{src_dir}/data/vessel/{string}.pkl")
+    pp.plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, run_figs)
 
 
 if __name__ == "__main__":
 
-    main()
+    # Load the configuration from the passed file
+    config = OmegaConf.load(f"{src_dir}/config.yaml")
+    
+    prj_name = config.experiment.name
+    name_str = f"{prj_name[0]}_{prj_name[1]}"
+    
+    n_obs = config.model_parameters.n_obs
+
+    output_dir = co.set_prj(f"{name_str}/measurements_{n_obs}obs")
+    cfg = uu.configure_meas_settings(config, config.experiment.name)
+
+    OmegaConf.save(cfg,f"{output_dir}/config.yaml")
+
+    main(config, output_dir)

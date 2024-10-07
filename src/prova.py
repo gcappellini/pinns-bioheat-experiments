@@ -1,8 +1,15 @@
-import pandas as pd
-data = {
-    'Week': [1, 1, 2, 2, 3, 3],
-    'Data_Usage': [500, 450, 520, 480, 550, 530]
-}
-df = pd.DataFrame(data)
-mean_usage = df.groupby('Week')['Data_Usage'].mean()
-print(mean_usage)
+import utils as uu
+import os
+
+
+current_file = os.path.abspath(__file__)
+src_dir = os.path.dirname(current_file)
+git_dir = os.path.dirname(src_dir)
+tests_dir = os.path.join(git_dir, "tests")
+os.makedirs(tests_dir, exist_ok=True)
+
+df = uu.load_from_pickle(f"{src_dir}/data/vessel/cooling_meas_1.pkl")
+
+print(df)
+
+

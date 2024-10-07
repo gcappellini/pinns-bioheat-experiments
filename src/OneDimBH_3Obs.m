@@ -79,7 +79,8 @@ s = [-W*a2*u(1)+a3*exp(-a4*x);
 % --------------------------------------------------------------------------
 
 function theta0 = sys_ic(x)
-global a5 theta30 theta20 theta10 delta_sys
+global a5 theta30 theta20 theta10 delta K
+delta_sys = 0.9*delta;
 b1 = delta_sys;
 b4 = theta10;
 b3 = theta20 - b4;
