@@ -12,6 +12,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 def main(cfg: DictConfig):
     # Get the experiment type from the config
     experiment = cfg.experiment.name
+    print(f"Running experiment {experiment}...")
 
     # Path to the script directory
     src_dir = os.path.dirname(os.path.abspath(__file__))
