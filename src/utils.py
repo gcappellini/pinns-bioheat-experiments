@@ -888,6 +888,7 @@ def configure_meas_settings(cfg, experiment):
     cfg.model_properties.Ty30=meas_settings["y3_0"]
     cfg.model_parameters.gt1_0=meas_settings["gt1_0"]
     cfg.model_parameters.gt2_0=meas_settings["gt2_0"]
+    cfg.model_properties.K=meas_settings["K"]
     return cfg
 
 
