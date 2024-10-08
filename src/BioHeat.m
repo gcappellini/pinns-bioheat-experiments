@@ -1,7 +1,7 @@
 clear all
 close all
 
-global K lambda delta upsilon W W0 W1 W2 W3 W4 W5 W6 W7 b2 b3 theta10 theta20 theta30 theta_gt10 theta_gt20 X_gt1 X_gt2 om0 om1 om2  om3 om4  om5 om6 om7 a1 a2 a3 a4 a5
+global K lambda upsilon W W0 W1 W2 W3 W4 W5 W6 W7 b2 b3 theta10 theta20 theta30 theta_gt10 theta_gt20 X_gt1 X_gt2 om0 om1 om2  om3 om4  om5 om6 om7 a1 a2 a3 a4 a5
 
 addpath('/Users/guglielmocappellini/Desktop/phd/code/readyaml')
 % Default filename for YAML config
@@ -45,7 +45,7 @@ else
 end
 
 % Other parameters
-delta = config_data.model_properties.delta;
+% delta = config_data.model_properties.delta;
 lambda = config_data.model_parameters.lam;
 upsilon = config_data.model_parameters.upsilon;
 

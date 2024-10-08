@@ -370,10 +370,10 @@ def plot_tf(e, theta_true, model, number, prj_figs, MultiObs=False):
     true = true.reshape(xtr.shape)
 
     # Generate X values for prediction
-    # x = np.linspace(0, 1, 100)  # Depth values for prediction
-    x=np.unique(e[:, 0:1])
+    x = np.linspace(0, 1, 100)  # Depth values for prediction
+    # x=np.unique(e[:, 0:1])
     Xobs = np.vstack((x, uu.f1(np.full_like(x, 0.9944)), uu.f2(np.full_like(x, 0.9944)), uu.f3(np.full_like(x, 0.9944)), np.ones_like(x))).T
-    xpr = Xobs[:, 0:1].reshape(xtr.shape)
+    xpr = Xobs[:, 0:1].reshape(len(x), 1)
 
     conf = OmegaConf.load(f'{prj_figs}/config.yaml')
     lam = conf.model_parameters.lam

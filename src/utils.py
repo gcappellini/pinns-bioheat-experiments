@@ -13,13 +13,13 @@ import plots as pp
 import common as co
 from omegaconf import OmegaConf
 import yaml
-# import matlab.engine
+import matlab.engine
 
 
 dde.config.set_random_seed(200)
 
-# dev = torch.device("cpu")
-dev = torch.device("cuda")
+dev = torch.device("cpu")
+# dev = torch.device("cuda")
 
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
@@ -345,18 +345,28 @@ def rescale_t(theta):
     properties = OmegaConf.load(f"{src_dir}/config.yaml")
     Troom = properties.model_properties.Troom
     Tmax = properties.model_properties.Tmax
-    theta = np.array(theta, dtype=float)
-    j = Troom + (Tmax - Troom)*theta
 
-    return np.round(j, 2)
+    # Iterate through each component in theta and rescale if it is a list-like object
+    rescaled_theta = []
+    for part in theta:
+        part = np.array(part, dtype=float)  # Ensure each part is converted into a numpy array
+        rescaled_part = Troom + (Tmax - Troom) * part  # Apply the rescaling
+        rescaled_theta.append(np.round(rescaled_part, 2))  # Round and append each rescaled part
+
+    return rescaled_theta
 
 def rescale_x(X):
-    X = np.array(X, dtype=float)
     properties = OmegaConf.load(f"{src_dir}/config.yaml")
     L0 = properties.model_properties.L0
-    j = X*L0
 
-    return np.round(j, 4)
+    # Iterate through each component in X and rescale if it is a list-like object
+    rescaled_X = []
+    for part in X:
+        part = np.array(part, dtype=float)  # Ensure each part is converted into a numpy array
+        rescaled_part = part * L0           # Apply the scaling
+        rescaled_X.append(rescaled_part)    # Append rescaled part to the result list
+
+    return rescaled_X
 
 def rescale_time(tau):
     tau = np.array(tau)
@@ -461,12 +471,12 @@ def mm_observer(config):
 
     return multi_obs
 
-def check_mm_obs(multi_obs, x_obs, X, y_sys, conf):
+def check_mm_obs(multi_obs, x_obs, X, y_sys, conf, comparison_3d=True):
     run_figs = co.set_run(f"mm_obs")
     conf.model_properties.W = None
     OmegaConf.save(conf, f"{run_figs}/config.yaml")
     # Solve IVP and plot weights
-    solve_ivp_and_plot(multi_obs, run_figs, conf, x_obs, X, y_sys)
+    solve_ivp_and_plot(multi_obs, run_figs, conf, x_obs, X, y_sys, comparison_3d)
 
 
 def mu(o, tau_in):
@@ -569,7 +579,7 @@ def test_observer(model, run_figs, X, x_obs, y_obs, number):
         return errors
 
 
-def check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, conf, output_dir):
+def check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, conf, output_dir, comparison_3d=True):
     """
     Check observers and optionally upload results to wandb.
     """
@@ -589,7 +599,8 @@ def check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, conf, output_di
         
         pp.plot_l2(x_obs, y_sys, multi_obs[el], el, run_figs)
         pp.plot_tf(X, y_sys, multi_obs[el], el, run_figs)
-        pp.plot_comparison_3d(X, y_sys, pred, run_figs)
+        if comparison_3d:
+            pp.plot_comparison_3d(X, y_sys, pred, run_figs)
         
         if exp_type == "simulation":
             pp.plot_comparison_3d(X[:, 0:2], y_sys, pred, run_figs)
@@ -642,7 +653,7 @@ def get_sys_mm_linestyle(conf):
     return system_linestyle, mm_obs_linestyle
 
 
-def solve_ivp_and_plot(multi_obs, fold, conf, x_obs, X, y_sys):
+def solve_ivp_and_plot(multi_obs, fold, conf, x_obs, X, y_sys, comparison_3d=True):
     """
     Solve the IVP for observer weights and plot the results.
     """
@@ -686,7 +697,8 @@ def solve_ivp_and_plot(multi_obs, fold, conf, x_obs, X, y_sys):
     pp.plot_mu(mus, t, fold, conf)
     pp.plot_l2(x_obs, y_sys, multi_obs, 0, fold, MultiObs=True)
     pp.plot_tf(X, y_sys, multi_obs, 0, fold, MultiObs=True)
-    pp.plot_comparison_3d(X[:, 0:2], y_sys, y_pred, fold)
+    if comparison_3d:
+        pp.plot_comparison_3d(X[:, 0:2], y_sys, y_pred, fold)
 
 
 

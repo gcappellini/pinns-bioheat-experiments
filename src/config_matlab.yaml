@@ -12,18 +12,17 @@ model_properties:
   Ty20: 26.67
   Ty30: 21.5
   K: 250.0
-  delta: 0.7
   activation: tanh
   initial_weights_regularizer: true
   initialization: Glorot uniform
-  iterations: 10000
+  iterations: 30000
   LBFGS: false
   learning_rate: 0.0001
   num_dense_layers: 6
   num_dense_nodes: 92
-  num_domain: 1000
-  num_boundary: 400
-  num_initial: 160
+  num_domain: 2000
+  num_boundary: 4000
+  num_initial: 1600
   num_test: 10000
   resampling: true
   resampler_period: 100
@@ -36,6 +35,8 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
+  b2: 1.6
+  b3: 2.2
 model_parameters:
   lam: 100.0
   upsilon: 5.0
@@ -47,7 +48,7 @@ model_parameters:
   W5: 0.7
   W6: 0.8
   W7: 0.9
-  n_obs: 1
+  n_obs: 3
   gt1_0: 24.44
   gt2_0: 29.25
   x_y2: 0
