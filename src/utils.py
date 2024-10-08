@@ -13,13 +13,13 @@ import plots as pp
 import common as co
 from omegaconf import OmegaConf
 import yaml
-import matlab.engine
+# import matlab.engine
 
 
 dde.config.set_random_seed(200)
 
-dev = torch.device("cpu")
-# dev = torch.device("cuda")
+# dev = torch.device("cpu")
+dev = torch.device("cuda")
 
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
@@ -78,7 +78,7 @@ def output_transform(x, y):
     return x[:, 0:1] * y
 
 
-def ic_obs(x, b2=None, b3=None):
+def ic_obs(x):
 
     if len(x.shape) == 1:
         z = x 
@@ -86,10 +86,10 @@ def ic_obs(x, b2=None, b3=None):
         z = x[:, 0:1] 
 
     conf = OmegaConf.load(f"{src_dir}/config.yaml")
-    if b2==None:
-        b2 = conf.model_properties.b2
-    if b3==None:
-        b3 = conf.model_properties.b3
+# if b2==None:
+    b2 = conf.model_properties.b2
+# if b3==None:
+    b3 = conf.model_properties.b3
 
     theta_y10 = scale_t(conf.model_properties.Ty10)
     theta_y20 = scale_t(conf.model_properties.Ty20)

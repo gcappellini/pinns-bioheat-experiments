@@ -35,21 +35,21 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b2: 1.6
-  b3: 2.2
+  b2: 0.0236
+  b3: 0.3091
 
 model_parameters:
   lam: 50.0
   upsilon: 1.0
   W0: 0.04
-  W1: 0.06
-  W2: 0.08
-  W3: 0.1
-  W4: 0.1
-  W5: 0.5
-  W6: 0.8
-  W7: 0.5
-  n_obs: 3
+  W1: 0.5
+  W2: 0.3029
+  W3: 0.2371
+  W4: 0.1714
+  W5: 0.3686
+  W6: 0.4343
+  W7: 0.1057
+  n_obs: 8
   gt1_0: 24.44
   gt2_0: 29.25
   x_y2: 0
@@ -81,10 +81,10 @@ experiment:
   name: [cooling, meas_1]
   import_data: false
   save_pickle: false
-  run_matlab: true
+  run_matlab: false
   run_wandb: false
   run_simulation: false
-  run_measurement: false
+  run_measurement: true
   type:
     cooling:
       h: 10.0
