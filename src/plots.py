@@ -71,6 +71,8 @@ def plot_generic(x, y, title, xlabel, ylabel, legend_labels=None, log_scale=Fals
 
 
 def plot_generic_3d(XY, Z1, Z2, xlabel, ylabel, zlabel, col_titles,  filename=None):
+    Z1 = np.array(Z1)
+    Z2 = np.array(Z2)
   
     fig = plt.figure(3, figsize=(9, 4))
     surfaces = [
@@ -484,6 +486,8 @@ def plot_tf_matlab(e, theta_true, theta_observers, theta_mmobs, conf, prj_figs):
     x_plot = uu.rescale_x(x_vals) if rescale else x_vals
     y_plot = uu.rescale_t(all_preds) if rescale else all_preds
 
+    x_plot = np.array(x_plot)
+    y_plot = np.array(y_plot)
 
     # Call the generic plotting function
     plot_generic(

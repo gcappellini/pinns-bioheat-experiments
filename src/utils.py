@@ -77,6 +77,30 @@ def boundary_1(x, on_boundary):
 def output_transform(x, y):
     return x[:, 0:1] * y
 
+
+def ic_obs(x, b2=None, b3=None):
+
+    if len(x.shape) == 1:
+        z = x 
+    else:
+        z = x[:, 0:1] 
+
+    conf = OmegaConf.load(f"{src_dir}/config.yaml")
+    if b2==None:
+        b2 = conf.model_properties.b2
+    if b3==None:
+        b3 = conf.model_properties.b3
+
+    theta_y10 = scale_t(conf.model_properties.Ty10)
+    theta_y20 = scale_t(conf.model_properties.Ty20)
+    theta_y30 = scale_t(conf.model_properties.Ty30)
+
+    b4 = cc.a5*(theta_y30-theta_y20)
+    b1 = (theta_y10-b4)*np.exp(b3)
+
+    return b1*(z**(b2))*np.exp(-b3*z) + b4*z
+    
+
 def create_nbho(run_figs):
     config = OmegaConf.load(f'{run_figs}/config.yaml')
 
@@ -108,21 +132,6 @@ def create_nbho(run_figs):
             - dtheta_xx + W * a2 * theta - a3 * torch.exp(-a4*x[:, 0:1])
         )
     
-    def ic_obs(x):
-        z = x[:, 0:1]
-
-        conf = OmegaConf.load(f"{src_dir}/config.yaml")
-        b2 = conf.model_properties.b2
-        b3 = conf.model_properties.b3
-
-        theta_y10 = scale_t(conf.model_properties.Ty10)
-        theta_y20 = scale_t(conf.model_properties.Ty20)
-        theta_y30 = scale_t(conf.model_properties.Ty30)
-
-        b4 = a5*(theta_y30-theta_y20)
-        b1 = (theta_y10-b4)*np.exp(b3)
-
-        return b1*z**(b2)*np.exp(-b3*z) + b4*z
 
     def bc1_obs(x, theta, X):
 
@@ -901,6 +910,8 @@ def configure_meas_settings(cfg, experiment):
     cfg.model_parameters.gt1_0=meas_settings["gt1_0"]
     cfg.model_parameters.gt2_0=meas_settings["gt2_0"]
     cfg.model_properties.K=meas_settings["K"]
+    cfg.model_properties.b2=meas_settings["b2"]
+    cfg.model_properties.b3=meas_settings["b3"]
     return cfg
 
 
