@@ -81,9 +81,9 @@ experiment:
   name: [cooling, meas_1]
   import_data: false
   save_pickle: false
-  run_matlab: false
+  run_matlab: true
   run_wandb: false
-  run_simulation: true
+  run_simulation: false
   run_measurement: false
   type:
     cooling:

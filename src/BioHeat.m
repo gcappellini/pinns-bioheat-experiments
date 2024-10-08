@@ -1,9 +1,10 @@
 clear all
 close all
 
-global K lambda upsilon W W0 W1 W2 W3 W4 W5 W6 W7 b2 b3 theta10 theta20 theta30 theta_gt10 theta_gt20 X_gt1 X_gt2 om0 om1 om2  om3 om4  om5 om6 om7 a1 a2 a3 a4 a5
+global K lambda upsilon W W0 W1 W2 W3 W4 W5 W6 W7 b2 b3 theta10 theta20 theta30 theta_gt10 theta_gt20 X_gt1 X_gt2 om0 om1 om2  om3 om4  om5 om6 om7 a1 a2 a3 a4 a5 str_exp
 
 addpath('/Users/guglielmocappellini/Desktop/phd/code/readyaml')
+
 % Default filename for YAML config
 filename = 'config_matlab.yaml';
 
@@ -27,6 +28,8 @@ t_gt20 = config_data.model_parameters.gt2_0;
 h = config_data.model_properties.h;
 b2 = config_data.model_properties.b2;
 b3 = config_data.model_properties.b3;
+experiment_name = conf.experiment.name; 
+str_exp = sprintf('%s_%s.pkl', experiment_name{1}, experiment_name{2});
 
 % Observer weights based on the number of observers (3 or 8)
 if n_obs == 3

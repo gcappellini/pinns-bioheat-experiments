@@ -32,7 +32,7 @@ def main(config, output_dir):
     # Optionally check observers and upload to wandb
     uu.check_observers_and_wandb_upload(multi_obs, x_obs, X, meas, config, output_dir, comparison_3d=False)
     uu.check_mm_obs(multi_obs, x_obs, X, meas, config, comparison_3d=False)
-    rescale = config.plot.rescale
+
     run_figs = co.set_run(f"mm_obs")
     y1_pred, gt1_pred, gt2_pred, y2_pred = uu.point_predictions(multi_obs, x_obs, run_figs, lam)
 

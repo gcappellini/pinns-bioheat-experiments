@@ -570,10 +570,9 @@ def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, p
 
     if rescale:
         times_plot = uu.rescale_time(times)
-        y_data_plot = uu.rescale_t(y_data)
+
     else:
         times_plot = times
-        y_data_plot = y_data
     
     exp_type = conf.experiment.name
     type_dict = getattr(conf.experiment.type, exp_type[0])
@@ -582,7 +581,7 @@ def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, p
     # Call the generic plotting function
     plot_generic(
         x=times_plot,        # Time data
-        y=y_data_plot,       # All y data (ground truth + predictions)
+        y=y_data,       # All y data (ground truth + predictions)
         title=name,
         xlabel="Time (min)",
         ylabel=ylabel,
