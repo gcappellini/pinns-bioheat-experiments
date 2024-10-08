@@ -37,7 +37,8 @@ if __name__ == "__main__":
 
     cfg_matlab = OmegaConf.create({
     "model_properties": cfg.model_properties,
-    "model_parameters": cfg.model_parameters
+    "model_parameters": cfg.model_parameters,
+    "experiment": cfg.experiment.name
 })
 
     OmegaConf.save(cfg_matlab,f"{output_dir}/config_matlab.yaml")

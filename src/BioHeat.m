@@ -28,8 +28,8 @@ t_gt20 = config_data.model_parameters.gt2_0;
 h = config_data.model_properties.h;
 b2 = config_data.model_properties.b2;
 b3 = config_data.model_properties.b3;
-experiment_name = conf.experiment.name; 
-str_exp = sprintf('%s_%s.pkl', experiment_name{1}, experiment_name{2});
+experiment_name = config_data.experiment; 
+str_exp = sprintf('data/vessel/%s_%s.txt', experiment_name{1}, experiment_name{2});
 
 % Observer weights based on the number of observers (3 or 8)
 if n_obs == 3
@@ -99,3 +99,5 @@ elseif n_obs == 8
 elseif n_obs == 1
     sol = OneDimBH_1Obs;  % Call the default or other number of observers case
 end
+
+

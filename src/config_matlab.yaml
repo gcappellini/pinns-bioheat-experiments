@@ -55,3 +55,6 @@ model_parameters:
   x_gt2: 0.01
   x_gt1: 0.04
   x_y1: 0.07
+experiment:
+- cooling
+- meas_1
