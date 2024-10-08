@@ -37,9 +37,8 @@ if __name__ == "__main__":
 
     n_obs = config.model_parameters.n_obs
     
-    co.set_prj(name_str)
-    output_dir = co.set_run(f"simulation_{n_obs}obs")
+    output_dir = co.set_prj(f"{name_str}/simulation_{n_obs}obs")
     cfg = uu.configure_meas_settings(config, config.experiment.name)
 
     OmegaConf.save(cfg,f"{output_dir}/config.yaml")
-    main(output_dir, config, run_wandb=config.experiment.run_wandb)
+    main(output_dir, config)

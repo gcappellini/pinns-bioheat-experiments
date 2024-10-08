@@ -9,7 +9,7 @@ model_properties:
   Troom: 21.5
   Tmax: 32.0
   Ty10: 22.84
-  Ty20: 28.6
+  Ty20: 26.67
   Ty30: 21.5
   K: 50.0
   activation: tanh
@@ -45,11 +45,11 @@ model_parameters:
   W1: 0.1057
   W2: 0.1714
   W3: 0.2371
-  W4: 0.0829
+  W4: 0.3029
   W5: 0.3686
   W6: 0.4343
   W7: 0.5
-  n_obs: 8
+  n_obs: 3
   gt1_0: 24.44
   gt2_0: 29.25
   x_y2: 0
@@ -83,8 +83,8 @@ experiment:
   save_pickle: false
   run_matlab: false
   run_wandb: false
-  run_simulation: false
-  run_measurement: true
+  run_simulation: true
+  run_measurement: false
   type:
     cooling:
       h: 10.0
