@@ -31,8 +31,7 @@ if __name__ == "__main__":
     
     n_obs = config.model_parameters.n_obs
 
-    co.set_prj(name_str)
-    output_dir = co.set_run(f"matlab_ground_truth_{n_obs}obs")
+    output_dir = co.set_prj(name_str)
 
     cfg = uu.configure_meas_settings(config, config.experiment.name)
 

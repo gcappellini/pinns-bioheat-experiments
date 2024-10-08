@@ -26,7 +26,7 @@ function [sol] = OneDimBH_1Obs
     
     %-----------------
     function [c,f,s] = OneDimBHpde_1Obs(x,t,u,dudx)
-    global lambda om0 om1 om2 W W0 W1 W2 a1 a2 a3 a4
+    global a1 a2 a3 a4
     %la prima equazione è quella del sistema, a seguire gli osservatoris
     t
     c = [a1; a1];
@@ -102,7 +102,7 @@ function [sol] = OneDimBH_1Obs
     
     
     function [pl,ql,pr,qr] = OneDimBHbc_1Obs(xl,ul,xr,ur,t)
-    global K om0 om1 om2 upsilon a5 theta30 theta10
+    global K a5 theta30 theta10
     flusso = a5*(theta30-ul(1));
     
     pl = [flusso;
@@ -114,6 +114,3 @@ function [sol] = OneDimBH_1Obs
         ];
     
     qr = [0;0];
-    % om0=upsilon*((ul(2)-ul(1)))^2;
-    % om1=upsilon*((ul(3)-ul(1)))^2;
-    % om2=upsilon*((ul(4)-ul(1)))^2;

@@ -5,7 +5,7 @@ global K lambda upsilon W W0 W1 W2 W3 W4 W5 W6 W7 b2 b3 theta10 theta20 theta30 
 
 addpath('/Users/guglielmocappellini/Desktop/phd/code/readyaml')
 % Default filename for YAML config
-filename = 'config.yaml';
+filename = 'config_matlab.yaml';
 
 % Read and parse the YAML file into a MATLAB struct
 config_data = readyaml(filename);

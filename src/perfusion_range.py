@@ -4,6 +4,7 @@ import coeff_calc as cc
 import plots as pp
 import numpy as np
 from omegaconf import OmegaConf
+import subprocess
 import common as co
 
 current_file = os.path.abspath(__file__)
@@ -18,27 +19,27 @@ set = conf.experiment.name
 rescale = conf.plot.rescale
 n_obs = conf.model_parameters.n_obs
 
+subprocess.run(["python", f'{src_dir}/ground_truth.py'])
 
 e = uu.import_testdata(f"{set[0]}_{set[1]}")
 measurements_tf = e[e[:, 1]==e[:, 1].max()][:,2]
 x_measurements = np.unique(e[:, 0])
 
 f = np.hstack(uu.gen_testdata(n_obs))
+
 matlab_tf = f[f[:, 1]==f[:, 1].max()][:,2:]
 
 x_matlab = np.unique(f[:, 0])
 x_matlab = x_matlab.reshape(len(x_matlab), 1)
-all_x_matlab = np.full_like(matlab_tf, x_matlab)
 
-
-x = [x_measurements, all_x_matlab]
-y = [measurements_tf, matlab_tf]
+x = [x_measurements] + [x_matlab for _ in range(n_obs + 1)]
+y = [measurements_tf]+ [matlab_tf[:, j] for j in range(n_obs+1)]
 tauf = conf.model_properties.tauf
 title = f"Comparison at t={tauf} s" if rescale else r"Comparison at $\tau=1$"
 
 xlabel, _, ylabel = uu.get_scaled_labels(rescale)
 
-fname = f"{src_dir}/data/vessel/tf_{set[0]}_{set[1]}.png"
+fname = f"{src_dir}/data/vessel/tf_{set[0]}_{set[1]}_{n_obs}obs.png"
 obs_colors = uu.get_obs_colors(conf)
 true_color, mm_obs_color = uu.get_sys_mm_colors(conf)
 obs_linestyles = uu.get_obs_linestyles(conf)

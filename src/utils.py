@@ -13,13 +13,13 @@ import plots as pp
 import common as co
 from omegaconf import OmegaConf
 import yaml
-# import matlab.engine
+import matlab.engine
 
 
 dde.config.set_random_seed(200)
 
-# dev = torch.device("cpu")
-dev = torch.device("cuda")
+dev = torch.device("cpu")
+# dev = torch.device("cuda")
 
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
@@ -903,7 +903,6 @@ def configure_meas_settings(cfg, experiment):
     cfg.model_properties.h=exp_type_settings["h"]
 
     meas_settings = getattr(exp_type_settings, experiment[1])
-    # cfg.model_properties.delta=meas_settings["delta"]
     cfg.model_properties.Ty10=meas_settings["y1_0"]
     cfg.model_properties.Ty20=meas_settings["y2_0"]
     cfg.model_properties.Ty30=meas_settings["y3_0"]
@@ -912,19 +911,4 @@ def configure_meas_settings(cfg, experiment):
     cfg.model_properties.K=meas_settings["K"]
     cfg.model_properties.b2=meas_settings["b2"]
     cfg.model_properties.b3=meas_settings["b3"]
-    return cfg
-
-
-def configure_matlab_settings(cfg, experiment):
-    exp_type_settings = getattr(cfg.experiment.type, experiment[0])
-    cfg.model_properties.pwr_fact=exp_type_settings["pwr_fact"]
-    cfg.model_properties.h=exp_type_settings["h"]
-
-    meas_settings = getattr(exp_type_settings, experiment[1])
-    cfg.model_properties.delta=meas_settings["delta"]
-    cfg.model_properties.Ty10=meas_settings["y1_0"]
-    cfg.model_properties.Ty20=meas_settings["y2_0"]
-    cfg.model_properties.Ty30=meas_settings["y3_0"]
-    cfg.model_parameters.gt1_0=meas_settings["gt1_0"]
-    cfg.model_parameters.gt2_0=meas_settings["gt2_0"]
     return cfg
