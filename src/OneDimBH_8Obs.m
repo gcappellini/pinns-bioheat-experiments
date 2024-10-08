@@ -96,7 +96,7 @@ function [sol] = OneDimBH_8Obs
     
     
     function [pl,ql,pr,qr] = OneDimBHbc(xl,ul,xr,ur,t)
-    global K om0 om1 om2 om3 om4 om5 om6 om7 upsilon a5 theta30 theta10
+    global K om0 om1 om2 om3 om4 om5 om6 om7 upsilon a5 theta30 
     flusso = a5*(theta30-ul(1));
     
     pl = [flusso;
