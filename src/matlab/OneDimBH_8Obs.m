@@ -1,4 +1,9 @@
 function [sol] = OneDimBH_8Obs
+    global str_exp
+
+    src_dir = fileparts(cd);
+    git_dir = fileparts(src_dir);
+    output_path = sprintf('%s/tests/%s/ground_truth', git_dir, str_exp);
 
     m = 0;
     x = linspace(0,1,101);
@@ -32,8 +37,8 @@ function [sol] = OneDimBH_8Obs
     
     
     % Print Solution PDE
-    
-    fileID = fopen('output_matlab_8Obs.txt','w');
+    filename = sprintf('%s/output_matlab_8Obs.txt', output_path);
+    fileID = fopen(filename,'w');
     
     for i = 1:101
        for j = 1:101
@@ -45,8 +50,8 @@ function [sol] = OneDimBH_8Obs
        end
     end
     
-    
-    fileID = fopen('weights_matlab_8Obs.txt','w');
+    filename2 = sprintf('%s/weights_matlab_8Obs.txt', output_path);
+    fileID = fopen(filename2,'w');
     
     for i = 1:101
             
@@ -90,7 +95,7 @@ function [sol] = OneDimBH_8Obs
     % --------------------------------------------------------------------------
     
     function u0 = OneDimBHic(x)
-    [theta0, thetahat0] = ic_bc(x, 0);
+    [theta0, thetahat0, theta_y1, theta_y2, theta_y3] = ic_bc(x, 0);
     
     u0 = [theta0; thetahat0; thetahat0; thetahat0; thetahat0; thetahat0; thetahat0; thetahat0; thetahat0; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8];
     % --------------------------------------------------------------------------
@@ -98,7 +103,7 @@ function [sol] = OneDimBH_8Obs
     
     function [pl,ql,pr,qr] = OneDimBHbc(xl,ul,xr,ur,t)
     global K om0 om1 om2 om3 om4 om5 om6 om7 upsilon a5
-    [theta_y1, theta_y3] = ic_bc(0, t);
+    [theta0, thetahat0, theta_y1, theta_y2, theta_y3] = ic_bc(0, t);
     flusso = a5*(theta_y3-ul(1));
     
     pl = [flusso;

@@ -1,12 +1,13 @@
 clear all
 close all
 
-global K lambda upsilon W W0 W1 W2 W3 W4 W5 W6 W7 b2 b3 theta10 theta20 theta30 theta_gt10 theta_gt20 X_gt1 X_gt2 om0 om1 om2  om3 om4  om5 om6 om7 a1 a2 a3 a4 a5 experiment_name
+global K lambda upsilon W W0 W1 W2 W3 W4 W5 W6 W7 b2 b3 theta10 theta20 theta30 theta_gt10 theta_gt20 X_gt1 X_gt2 om0 om1 om2  om3 om4  om5 om6 om7 a1 a2 a3 a4 a5 str_exp path_exp
 
+% Replace the following with the path to readyaml (find link on the internet)
 addpath('/Users/guglielmocappellini/Desktop/phd/code/readyaml')
 
-% Default filename for YAML config
-filename = 'config_matlab.yaml';
+git_dir = fullfile(pwd, '..', '..');
+filename = sprintf('%s/src/config_matlab.yaml', git_dir);
 
 % Read and parse the YAML file into a MATLAB struct
 config_data = readyaml(filename);
@@ -29,6 +30,8 @@ h = config_data.model_properties.h;
 b2 = config_data.model_properties.b2;
 b3 = config_data.model_properties.b3;
 experiment_name = config_data.experiment; 
+str_exp = sprintf('%s_%s', experiment_name{1}, experiment_name{2});
+path_exp = sprintf('%s/src/data/vessel/%s.txt', git_dir, str_exp);
 
 
 % Observer weights based on the number of observers (3 or 8)

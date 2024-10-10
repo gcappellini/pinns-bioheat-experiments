@@ -159,9 +159,10 @@ def plot_loss_components(losshistory, nam):
     )
 
 
-def plot_weights(weights, t, run_figs, conf, gt=False):
-    lam = conf.model_parameters.lam
-    n_obs = conf.model_parameters.n_obs
+# def plot_weights(weights, t, run_figs, conf, gt=False):
+def plot_weights(weights, t, run_figs, conf1, gt=False):
+    lam = conf1.model_parameters.lam
+    n_obs = conf1.model_parameters.n_obs
 
     # Prepare the labels for each weight line
     legend_labels = [f"Weight $p_{i}$" for i in range(weights.shape[0])]
@@ -171,6 +172,7 @@ def plot_weights(weights, t, run_figs, conf, gt=False):
     a = t.reshape(len(t),)
     times = np.full_like(weights, a)
 
+    conf = OmegaConf.load(f"{src_dir}/config.yaml")
     colors = uu.get_obs_colors(conf)
     linestyles = uu.get_obs_linestyles(conf)
     rescale = conf.plot.rescale
@@ -192,7 +194,8 @@ def plot_weights(weights, t, run_figs, conf, gt=False):
     )
 
 
-def plot_mu(mus, t, run_figs, conf, gt=False):
+def plot_mu(mus, t, run_figs, gt=False):
+    conf = OmegaConf.load(f"{src_dir}/config.yaml")
     n_obs = conf.model_parameters.n_obs
     # Prepare the labels for each line based on the number of columns in `mus`
     legend_labels = [f"$e_{i}$" for i in range(mus.shape[1])]
@@ -437,7 +440,8 @@ def plot_tf(e, theta_true, model, number, prj_figs, MultiObs=False):
     )
 
 
-def plot_tf_matlab(e, theta_true, theta_observers, theta_mmobs, conf, prj_figs):
+# def plot_tf_matlab(e, theta_true, theta_observers, theta_mmobs, conf, prj_figs):
+def plot_tf_matlab(e, theta_true, theta_observers, theta_mmobs, prj_figs):
     """
     Plot true values and predicted values (single or multi-observer model).
     
@@ -468,6 +472,7 @@ def plot_tf_matlab(e, theta_true, theta_observers, theta_mmobs, conf, prj_figs):
     # x values: use xtr for true data, and 'x' for predictions
     xxtr = xtr.reshape(len(xtr), 1)
     x_vals = np.full_like(all_preds, xxtr)
+    conf = OmegaConf.load(f"{src_dir}/config.yaml")
     number = conf.model_parameters.n_obs
 
     # Generate corresponding legend labels
@@ -577,6 +582,7 @@ def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, p
         y_data_plot = y_data
     
     exp_type = conf.experiment.name
+    n_obs = conf.model_parameters.n_obs
     type_dict = getattr(conf.experiment.type, exp_type[0])
     meas_dict = getattr(type_dict, exp_type[1])
     name = meas_dict["title"]
@@ -591,11 +597,12 @@ def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, p
         colors=colors,
         linestyles=linestyles,
         size=(12, 6),
-        filename=f"{prj_figs}/timeseries_vs_matlab.png"
+        filename=f"{prj_figs}/timeseries_vs_matlab_{n_obs}obs.png"
     )
 
 
-def plot_tf_matlab_1obs(e, theta_true, theta_observer, conf, prj_figs):
+def plot_tf_matlab_1obs(e, theta_true, theta_observer, prj_figs):
+    
     """
     Plot true values and predicted values (single or multi-observer model).
     
@@ -623,6 +630,7 @@ def plot_tf_matlab_1obs(e, theta_true, theta_observer, conf, prj_figs):
     # x values: use xtr for true data, and 'x' for predictions
     xxtr = xtr.reshape(len(xtr), 1)
     x_vals = np.full_like(all_preds, xxtr)
+    conf = OmegaConf.load(f"{src_dir}/config.yaml")
     number = conf.model_parameters.n_obs
 
     # Generate corresponding legend labels

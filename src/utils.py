@@ -240,17 +240,20 @@ def train_and_save_model(model, callbacks, run_figs):
     return losshistory, train_state
 
 
-def gen_testdata(n):
+def gen_testdata(conf):
+    n = conf.model_parameters.n_obs
+    name = conf.experiment.name
+    output_folder = f"{tests_dir}/{name[0]}_{name[1]}/ground_truth"
     if n==8:
-        data = np.loadtxt(f"{src_dir}/output_matlab_{n}Obs.txt")
+        data = np.loadtxt(f"{output_folder}/output_matlab_{n}Obs.txt")
         x, t, sys, obs, mmobs = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:11], data[:, 11:12].T
         y_mmobs = mmobs.flatten()[:, None]
     if n==3:
-        data = np.loadtxt(f"{src_dir}/output_matlab_{n}Obs.txt")
+        data = np.loadtxt(f"{output_folder}/output_matlab_{n}Obs.txt")
         x, t, sys, obs, mmobs = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:6], data[:, 6:7].T  
         y_mmobs = mmobs.flatten()[:, None]
     if n==1:
-        data = np.loadtxt(f"{src_dir}/output_matlab_{n}Obs.txt")
+        data = np.loadtxt(f"{output_folder}/output_matlab_{n}Obs.txt")
         x, t, sys, y_obs = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:4].T   
         y_mmobs = None
         obs = y_obs.flatten()[:, None]
@@ -261,19 +264,22 @@ def gen_testdata(n):
     return X, y_sys, obs, y_mmobs
 
 
-def load_weights(n):
+def load_weights(conf):
+    n = conf.model_parameters.n_obs
+    name = conf.experiment.name
+    output_folder = f"{tests_dir}/{name[0]}_{name[1]}/ground_truth"
     if n==8:
-        data = np.loadtxt(f"{src_dir}/weights_matlab_{n}Obs.txt")
+        data = np.loadtxt(f"{output_folder}/weights_matlab_{n}Obs.txt")
         t, weights = data[:, 0:1], data[:, 1:9].T
     if n==3:
-        data = np.loadtxt(f"{src_dir}/weights_matlab_{n}Obs.txt")
+        data = np.loadtxt(f"{output_folder}/weights_matlab_{n}Obs.txt")
         t, weights = data[:, 0:1], data[:, 1:4].T
     return t, np.array(weights)
 
 
-def gen_obsdata(n):
+def gen_obsdata(conf):
     global f1, f2, f3
-    g = np.hstack((gen_testdata(n)))
+    g = np.hstack((gen_testdata(conf)))
     instants = np.unique(g[:, 1])
     
     rows_1 = g[g[:, 0] == 1.0]
@@ -285,58 +291,13 @@ def gen_obsdata(n):
     y2 = rows_0[:, 2].reshape(len(instants),)
     f2 = interp1d(instants, y2, kind='previous')
 
-    properties = OmegaConf.load(f"{src_dir}/config.yaml")
-    y30 = scale_t(properties.model_properties.Ty30)
+    y30 = scale_t(conf.model_properties.Ty30)
     y3 = np.full_like(y2, y30)
     f3 = interp1d(instants, y3, kind='previous')
 
     Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
     return Xobs
 
-def gen_obs_y2(n):
-    global f1, f2, f3
-    g = np.hstack((gen_testdata(n)))
-    instants = np.unique(g[:, 1])
-    
-    rows_1 = g[g[:, 0] == 1.0]
-    rows_0 = g[g[:, 0] == 0.0]
-
-    y1 = rows_1[:, 2].reshape(len(instants),)
-    f1 = interp1d(instants, y1, kind='previous')
-
-    y2 = rows_0[:, 2].reshape(len(instants),)
-    f2 = interp1d(instants, y2, kind='previous')
-
-    properties = OmegaConf.load(f"{src_dir}/config.yaml")
-    theta_w = scale_t(properties.model_parameters.Twater)
-    y3 = np.full_like(y2, theta_w)
-    f3 = interp1d(instants, y3, kind='previous')
-
-    Xobs = np.vstack((np.zeros_like(instants), f1(instants), f2(instants), f3(instants), instants)).T
-    return Xobs, f2(instants)
-
-
-def gen_obs_y1(n):
-    global f1, f2, f3
-    g = np.hstack((gen_testdata(n)))
-    instants = np.unique(g[:, 1])
-    
-    rows_1 = g[g[:, 0] == 1.0]
-    rows_0 = g[g[:, 0] == 0.0]
-
-    y1 = rows_1[:, 2].reshape(len(instants),)
-    f1 = interp1d(instants, y1, kind='previous')
-
-    y2 = rows_0[:, 2].reshape(len(instants),)
-    f2 = interp1d(instants, y2, kind='previous')
-
-    properties = OmegaConf.load(f"{src_dir}/config.yaml")
-    theta_y30 = scale_t(properties.model_parameters.Ty30)
-    y3 = np.full_like(y2, theta_y30)
-    f3 = interp1d(instants, y3, kind='previous')
-
-    Xobs = np.vstack((np.ones_like(instants), f1(instants), f2(instants), f3(instants), instants)).T
-    return Xobs, f1(instants)
 
 def load_from_pickle(file_path):
     with open(file_path, 'rb') as pkl_file:
@@ -511,9 +472,9 @@ def calculate_mu(os, tr):
     return scrt
 
 
-def compute_mu(n_obs):
-
-    g = np.hstack((gen_testdata(n_obs)))
+def compute_mu(conf):
+    n_obs = conf.model_parameters.n_obs
+    g = np.hstack((gen_testdata(conf)))
     rows_0 = g[g[:, 0] == 0.0]
     sys_0 = rows_0[:, 2:3]
     if n_obs==8:
@@ -703,55 +664,52 @@ def solve_ivp_and_plot(multi_obs, fold, conf, x_obs, X, y_sys, comparison_3d=Tru
     #     wandb.log(metrics)
     #     wandb.finish()
 
-    pp.plot_mu(mus, t, fold, conf)
+    pp.plot_mu(mus, t, fold)
     pp.plot_l2(x_obs, y_sys, multi_obs, 0, fold, MultiObs=True)
     pp.plot_tf(X, y_sys, multi_obs, 0, fold, MultiObs=True)
     if comparison_3d:
         pp.plot_comparison_3d(X[:, 0:2], y_sys, y_pred, fold)
  
 
-def run_matlab_ground_truth(prj_figs, conf1, run_matlab):
+def run_matlab_ground_truth(prj_figs, conf1):
     """
     Optionally run MATLAB ground truth.
     """
     n_obs = conf1.model_parameters.n_obs
-    name = conf1.experiment
+    name = conf1.experiment.name
     string = f"{name[0]}_{name[1]}"
-    
-    if run_matlab:
-        print("Running MATLAB ground truth calculation...")
-        eng = matlab.engine.start_matlab()
-        eng.cd(src_dir, nargout=0)
-        eng.BioHeat(nargout=0)
-        eng.quit()
 
-        X, y_sys, y_observers, y_mmobs = gen_testdata(n_obs)
-        t = np.unique(X[:, 1])
+    print("Running MATLAB ground truth calculation...")
+    eng = matlab.engine.start_matlab()
+    eng.cd(f"{src_dir}/matlab", nargout=0)
+    eng.BioHeat(nargout=0)
+    eng.quit()
 
-        conf = OmegaConf.load(f"{src_dir}/config.yaml")
-        if n_obs==1:
-            pp.plot_tf_matlab_1obs(X, y_sys, y_observers, conf, prj_figs)
-            pp.plot_l2_matlab_1obs(X, y_sys, y_observers, prj_figs)
-            pp.plot_comparison_3d(X, y_sys, y_observers, prj_figs, gt= True)
+    X, y_sys, y_observers, y_mmobs = gen_testdata(conf1)
+    t = np.unique(X[:, 1])
 
-        else:
-            mu = compute_mu(n_obs)
-            pp.plot_mu(mu, t, prj_figs, conf, gt=True)
+    if n_obs==1:
+        pp.plot_tf_matlab_1obs(X, y_sys, y_observers, prj_figs)
+        pp.plot_l2_matlab_1obs(X, y_sys, y_observers, prj_figs)
+        pp.plot_comparison_3d(X, y_sys, y_observers, prj_figs, gt= True)
 
-            t, weights = load_weights(n_obs)
-            pp.plot_weights(weights, t, prj_figs, conf, gt=True)
-            pp.plot_tf_matlab(X, y_sys, y_observers, y_mmobs, conf, prj_figs)
-            pp.plot_comparison_3d(X, y_sys, y_mmobs, prj_figs, gt= True)
-            pp.plot_l2_matlab(X, y_sys, y_observers, y_mmobs, prj_figs)
-
-            y1_matlab, gt1_matlab, gt2_matlab, y2_matlab = point_ground_truths(n_obs)
-            df = load_from_pickle(f"{src_dir}/data/vessel/{string}.pkl")
-            pp.plot_timeseries_with_predictions(df, y1_matlab, gt1_matlab, gt2_matlab, y2_matlab, prj_figs)
-
-
-        print("MATLAB ground truth completed.")
     else:
-        print("Skipping MATLAB ground truth calculation.")
+        mu = compute_mu(conf1)
+        pp.plot_mu(mu, t, prj_figs, gt=True)
+
+        t, weights = load_weights(conf1)
+        pp.plot_weights(weights, t, prj_figs, conf1, gt=True)
+        pp.plot_tf_matlab(X, y_sys, y_observers, y_mmobs, prj_figs)
+        pp.plot_comparison_3d(X, y_sys, y_mmobs, prj_figs, gt= True)
+        pp.plot_l2_matlab(X, y_sys, y_observers, y_mmobs, prj_figs)
+
+        y1_matlab, gt1_matlab, gt2_matlab, y2_matlab = point_ground_truths(conf1)
+        df = load_from_pickle(f"{src_dir}/data/vessel/{string}.pkl")
+        pp.plot_timeseries_with_predictions(df, y1_matlab, gt1_matlab, gt2_matlab, y2_matlab, prj_figs)
+
+
+    print("MATLAB ground truth completed.")
+
 
 
 def calculate_l2(e, true, pred):
@@ -899,13 +857,13 @@ def point_predictions(multi_obs, x_obs, prj_figs, lam):
 
     return y1_pred_sc, gt1_pred_sc, gt2_pred_sc, y2_pred_sc
 
-def point_ground_truths(n_obs):
+def point_ground_truths(conf):
     """
     Generates and scales predictions from the multi-observer model.
     """
     
     positions = get_tc_positions()
-    X, _, _, y_mmobs = gen_testdata(n_obs)
+    X, _, _, y_mmobs = gen_testdata(conf)
 
     truths = np.hstack((X, y_mmobs))
     

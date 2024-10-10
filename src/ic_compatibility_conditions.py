@@ -42,28 +42,27 @@ def find_best_params(x_pinns_obs_ic, measurements_ic, initial_guess=(10.0, 10.0)
 # x_pinns_obs_ic = x_measurements_ic
 
 # # Find the best parameters starting from an initial guess
-# b2_opt, b3_opt = find_best_params(x_pinns_obs_ic, measurements_ic, initial_guess=(1.6, 2.2))
+# b2_opt, b3_opt = find_best_params(x_pinns_obs_ic, measurements_ic, initial_guess=(0.0236, 0.3091))
 
-# print(f"Optimized b2: {b2_opt.round(4)}, Optimized b3: {b3_opt.round(4)}")
+# print(f"exp {set} Optimized b2: {b2_opt.round(4)}, Optimized b3: {b3_opt.round(4)}")
 
 def plot_t0(conf):
     rescale = conf.plot.rescale
     set = conf.experiment.name
-    n_obs = conf.model_parameters.n_obs
+
     out_dir = co.set_prj(f"{set[0]}_{set[1]}")
 
     e = uu.import_testdata(f"{set[0]}_{set[1]}")
     measurements_ic = e[e[:, 1]==0][:,2]
 
     x_measurements_ic = uu.get_tc_positions()
-    conf_matlab = OmegaConf.load(f"{src_dir}/config_matlab.yaml")
-
-    uu.run_matlab_ground_truth(out_dir, conf_matlab, True)
-    oo = np.hstack(uu.gen_testdata(n_obs))
+    # conf_matlab = OmegaConf.load(f"{src_dir}/config_matlab.yaml")
+    # uu.run_matlab_ground_truth(out_dir, conf_matlab, True)
+    oo = np.hstack(uu.gen_testdata(conf))
     x_matlab_ic = np.unique(oo[:, 0])
     matlab_ic = oo[oo[:, 1]==0][:,-1]
 
-    x_pinns = uu.gen_obsdata(n_obs)
+    x_pinns = uu.gen_obsdata(conf)
 
     pinns_ic = uu.ic_obs(x_matlab_ic)
 

@@ -21,8 +21,8 @@ def main(prj_figs, conf):
 
     # Generate and check observers if needed
     multi_obs = uu.mm_observer(conf)
-    X, y_sys, _, _ = uu.gen_testdata(n_obs)
-    x_obs = uu.gen_obsdata(n_obs)
+    X, y_sys, _, _ = uu.gen_testdata(conf)
+    x_obs = uu.gen_obsdata(conf)
     uu.check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, conf, prj_figs)
     uu.check_mm_obs(multi_obs, x_obs, X, y_sys, conf)
 
@@ -38,7 +38,6 @@ if __name__ == "__main__":
     n_obs = config.model_parameters.n_obs
     
     output_dir = co.set_prj(f"{name_str}/simulation_{n_obs}obs")
-    cfg = uu.configure_meas_settings(config, config.experiment.name)
 
-    OmegaConf.save(cfg,f"{output_dir}/config.yaml")
+    OmegaConf.save(config,f"{output_dir}/config.yaml")
     main(output_dir, config)

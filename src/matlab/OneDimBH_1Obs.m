@@ -1,4 +1,9 @@
 function [sol] = OneDimBH_1Obs
+    global str_exp
+
+    src_dir = fileparts(cd);
+    git_dir = fileparts(src_dir);
+    output_path = sprintf('%s/tests/%s/ground_truth', git_dir, str_exp);
 
     m = 0;
     x = linspace(0,1,101);
@@ -10,7 +15,8 @@ function [sol] = OneDimBH_1Obs
     u2 = sol(:,:,2); %soluzione dell'osservatore 0
 
     
-    fileID = fopen('output_matlab_1Obs.txt','w');
+    filename = sprintf('%s/output_matlab_1Obs.txt', output_path);
+    fileID = fopen(filename,'w');
     
     for i = 1:101
        for j = 1:101
@@ -22,8 +28,6 @@ function [sol] = OneDimBH_1Obs
        end
     end
 
-    
-    
     %-----------------
     function [c,f,s] = OneDimBHpde_1Obs(x,t,u,dudx)
     global a1 a2 a3 a4 W

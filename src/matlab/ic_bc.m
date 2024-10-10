@@ -22,21 +22,17 @@ function theta0 = sys_ic(x)
     theta0 = interp1(x_values, theta_values, x, 'spline');
 
 function theta_y1 = theta_1(t_vals)
-    global experiment_name
+    global path_exp
 
-    str_exp = sprintf('data/vessel/%s_%s.txt', experiment_name{1}, experiment_name{2});
-
-    data = readmatrix(str_exp);    
+    data = readmatrix(path_exp);    
     tau = data(:, 1);
     y1 = data(:, 2);
-    theta_y1 = interp1(tau, y1, t_vals, 'spline', 'extrap');
+    theta_y1 = interp1(tau, y1, t_vals, 'linear', 'extrap');
     
 function theta_y2 = theta_2(t_vals)
-    global experiment_name
+    global path_exp
 
-    str_exp = sprintf('data/vessel/%s_%s.txt', experiment_name{1}, experiment_name{2});
-
-    data = readmatrix(str_exp);
+    data = readmatrix(path_exp);
     tau = data(:, 1);
     y2 = data(:, 5);
     theta_y2 = interp1(tau, y2, t_vals, 'spline', 'extrap');

@@ -1,4 +1,9 @@
 function [sol] = OneDimBH_3Obs
+    global str_exp
+
+    src_dir = fileparts(cd);
+    git_dir = fileparts(src_dir);
+    output_path = sprintf('%s/tests/%s/ground_truth', git_dir, str_exp);
 
     m = 0;
     x = linspace(0,1,101);
@@ -22,8 +27,8 @@ function [sol] = OneDimBH_3Obs
     
     
     % Print Solution PDE
-    
-    fileID = fopen('output_matlab_3Obs.txt','w');
+    filename = sprintf('%s/output_matlab_3Obs.txt', output_path);
+    fileID = fopen(filename,'w');
     
     for i = 1:101
        for j = 1:101
@@ -36,7 +41,8 @@ function [sol] = OneDimBH_3Obs
     end
     
     
-    fileID = fopen('weights_matlab_3Obs.txt','w');
+    filename2 = sprintf('%s/weights_matlab_3Obs.txt', output_path);
+    fileID = fopen(filename2,'w');
     
     for i = 1:101
             

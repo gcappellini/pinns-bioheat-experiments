@@ -18,7 +18,7 @@ def main(prj_figs, conf):
     Main function to run the testing of the network, MATLAB ground truth, observer checks, and PINNs.
     """
 
-    uu.run_matlab_ground_truth(prj_figs, conf, True)
+    uu.run_matlab_ground_truth(prj_figs, conf)
 
 
 if __name__ == "__main__":
@@ -42,4 +42,4 @@ if __name__ == "__main__":
     OmegaConf.save(cfg_matlab,f"{output_dir}/config_matlab.yaml")
     OmegaConf.save(cfg,f"{output_dir}/config.yaml")
 
-    main(output_dir, cfg_matlab)
+    main(output_dir, cfg)
