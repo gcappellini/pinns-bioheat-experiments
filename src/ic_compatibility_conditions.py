@@ -77,7 +77,7 @@ def plot_t0(conf):
     obs_colors = uu.get_obs_colors(conf)
     sys_linestyle, obs_linestyle = uu.get_sys_mm_linestyle(conf)
     colors = [obs_colors[1], mm_colors, sys_colors]
-    linestyles = [obs_linestyle, obs_linestyle, sys_linestyle]
+    linestyles = ["-", obs_linestyle, sys_linestyle]
     x_plot = uu.rescale_x(x) if rescale else x
     y_plot = uu.rescale_t(y) if rescale else y
 

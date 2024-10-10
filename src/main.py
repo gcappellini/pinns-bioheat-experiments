@@ -9,6 +9,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 src_dir = os.path.dirname(os.path.abspath(__file__))
 git_dir = os.path.dirname(src_dir)
 tests_dir = os.path.join(git_dir, "tests")
+os.makedirs(tests_dir, exist_ok=True)
 
 @hydra.main(version_base=None, config_path=current_dir, config_name="config")
 
@@ -19,6 +20,7 @@ def main(cfg: DictConfig):
 
     cfg1 = uu.configure_settings(cfg, experiment)
     output_dir = os.path.join(tests_dir, f"{experiment[0]}_{experiment[1]}")
+    os.makedirs(output_dir, exist_ok=True)
 
     OmegaConf.save(cfg1,f"{output_dir}/config.yaml")
     OmegaConf.save(cfg1,f"{src_dir}/config.yaml")
