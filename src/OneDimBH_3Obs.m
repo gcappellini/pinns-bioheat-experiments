@@ -11,20 +11,10 @@ function [sol] = OneDimBH_3Obs
     u2 = sol(:,:,2); %soluzione dell'osservatore 0
     u3 = sol(:,:,3); %soluzione dell'osservatore 1
     u4 = sol(:,:,4); %soluzione dell'osservatore 2
-    % u5 = sol(:,:,5); %soluzione dell'osservatore 3
-    % u6 = sol(:,:,6); %soluzione dell'osservatore 4
-    % u7 = sol(:,:,7); %soluzione dell'osservatore 5
-    % u8 = sol(:,:,8); %soluzione dell'osservatore 6
-    % u9 = sol(:,:,9); %soluzione dell'osservatore 7
     
     u10 = sol(:,:,5); %soluzione del peso 0
     u11 = sol(:,:,6); %soluzione del peso 1
     u12 = sol(:,:,7); %soluzione del peso 2
-    % u13 = sol(:,:,13); %soluzione del peso 3
-    % u14 = sol(:,:,14); %soluzione del peso 4
-    % u15 = sol(:,:,15); %soluzione del peso 5
-    % u16 = sol(:,:,16); %soluzione del peso 6
-    % u17 = sol(:,:,17); %soluzione del peso 7
     
     
     %multiple-model temperature estimation
@@ -80,14 +70,16 @@ function [sol] = OneDimBH_3Obs
 
     
     function u0 = OneDimBHic_3Obs(x)
+    [theta0, thetahat0] = ic_bc(x, 0);
     
-    u0 = [sys_ic(x); obs_ic(x);  obs_ic(x); obs_ic(x); 1/3; 1/3; 1/3];
+    u0 = [theta0; thetahat0;  thetahat0; thetahat0; 1/3; 1/3; 1/3];
     % --------------------------------------------------------------------------
     
     
     function [pl,ql,pr,qr] = OneDimBHbc_3Obs(xl,ul,xr,ur,t)
-    global K om0 om1 om2 upsilon a5 theta30 theta10
-    flusso = a5*(theta30-ul(1));
+    global K om0 om1 om2 upsilon a5
+    [theta_y1, theta_y3] = ic_bc(0, t);
+    flusso = a5*(theta_y3-ul(1));
     
     pl = [flusso;
         flusso+K*(ul(1)-ul(2));
@@ -95,10 +87,10 @@ function [sol] = OneDimBH_3Obs
         flusso+K*(ul(1)-ul(4));
         0;0;0];
     ql = [1;1;1;1;1;1;1];
-    pr = [ur(1) - theta10; 
-        ur(2) - theta10; 
-        ur(3) - theta10; 
-        ur(4) - theta10; 
+    pr = [ur(1) - theta_y1; 
+        ur(2) - theta_y1; 
+        ur(3) - theta_y1; 
+        ur(4) - theta_y1; 
         0;0;0];
     
     qr = [0;0;0;0; 1;1;1];

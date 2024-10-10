@@ -26,7 +26,7 @@ function [sol] = OneDimBH_1Obs
     
     %-----------------
     function [c,f,s] = OneDimBHpde_1Obs(x,t,u,dudx)
-    global a1 a2 a3 a4
+    global a1 a2 a3 a4 W
     %la prima equazione è quella del sistema, a seguire gli osservatoris
     t
     c = [a1; a1];
@@ -35,7 +35,7 @@ function [sol] = OneDimBH_1Obs
     % den=u(5)*exp(-om0)+u(6)*exp(-om1)+u(7)*exp(-om2);
     
     s = [-W*a2*u(1)+a3*exp(-a4*x); 
-        -W*a2*u(2)+a3*exp(-a4*x)
+        -W*a2*u(2)+a3*exp(-a4*x);
         ];
     % --------------------------------------------------------------------------
     
@@ -43,21 +43,23 @@ function [sol] = OneDimBH_1Obs
     % --------------------------------------------------------------------------
     
     function u0 = OneDimBHic_1Obs(x)
+    [theta0, thetahat0] = ic_bc(x, 0);
     
-    u0 = [sys_ic(x); obs_ic(x)];
+    u0 = [theta0; thetahat0];
     % --------------------------------------------------------------------------
     
     
     function [pl,ql,pr,qr] = OneDimBHbc_1Obs(xl,ul,xr,ur,t)
-    global K a5 theta30 theta10
-    flusso = a5*(theta30-ul(1));
+    global K a5
+    [theta_y1, theta_y3] = ic_bc(0, t);
+    flusso = a5*(theta_y3-ul(1));
     
     pl = [flusso;
-        flusso+K*(ul(1)-ul(2))
+        flusso+K*(ul(1)-ul(2));
         ];
     ql = [1;1];
-    pr = [ur(1) - theta10; 
-        ur(2) - theta10
+    pr = [ur(1) - theta_y1; 
+        ur(2) - theta_y1;
         ];
     
     qr = [0;0];

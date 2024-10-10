@@ -721,7 +721,7 @@ def run_matlab_ground_truth(src_dir, prj_figs, conf1, run_matlab):
     if run_matlab:
         print("Running MATLAB ground truth calculation...")
         eng = matlab.engine.start_matlab()
-        eng.cd(src_dir, nargout=0)
+        eng.cd(f"{src_dir}/matlab", nargout=0)
         eng.BioHeat(nargout=0)
         eng.quit()
 

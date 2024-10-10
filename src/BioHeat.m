@@ -1,7 +1,7 @@
 clear all
 close all
 
-global K lambda upsilon W W0 W1 W2 W3 W4 W5 W6 W7 b2 b3 theta10 theta20 theta30 theta_gt10 theta_gt20 X_gt1 X_gt2 om0 om1 om2  om3 om4  om5 om6 om7 a1 a2 a3 a4 a5 str_exp
+global K lambda upsilon W W0 W1 W2 W3 W4 W5 W6 W7 b2 b3 theta10 theta20 theta30 theta_gt10 theta_gt20 X_gt1 X_gt2 om0 om1 om2  om3 om4  om5 om6 om7 a1 a2 a3 a4 a5 str_exp experiment_name
 
 addpath('/Users/guglielmocappellini/Desktop/phd/code/readyaml')
 
@@ -91,13 +91,16 @@ om7 = 0;
 
 W = config_data.model_parameters.W4;
 
-% Call the correct solver based on the number of observers
-if n_obs == 3
-    sol = OneDimBH_3Obs;  % Call the 3-observer case
-elseif n_obs == 8
-    sol = OneDimBH_8Obs;  % Call the default or other number of observers case
-elseif n_obs == 1
-    sol = OneDimBH_1Obs;  % Call the default or other number of observers case
-end
+% % Call the correct solver based on the number of observers
+% if n_obs == 3
+%     sol = OneDimBH_3Obs;  % Call the 3-observer case
+% elseif n_obs == 8
+%     sol = OneDimBH_8Obs;  % Call the default or other number of observers case
+% elseif n_obs == 1
+%     sol = OneDimBH_1Obs;  % Call the default or other number of observers case
+% end
 
+t_vals = linspace(0, 1, 101);
+x_vals = linspace(0, 1, 101);
+[theta0, thetahat0, theta_y1, theta_y2, theta_y3] = ic_bc(x_vals, t_vals);
 

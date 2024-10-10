@@ -90,14 +90,16 @@ function [sol] = OneDimBH_8Obs
     % --------------------------------------------------------------------------
     
     function u0 = OneDimBHic(x)
+    [theta0, thetahat0] = ic_bc(x, 0);
     
-    u0 = [sys_ic(x); obs_ic(x);  obs_ic(x); obs_ic(x); obs_ic(x); obs_ic(x); obs_ic(x); obs_ic(x); obs_ic(x); 1/8; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8];
+    u0 = [theta0; thetahat0; thetahat0; thetahat0; thetahat0; thetahat0; thetahat0; thetahat0; thetahat0; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8];
     % --------------------------------------------------------------------------
     
     
     function [pl,ql,pr,qr] = OneDimBHbc(xl,ul,xr,ur,t)
-    global K om0 om1 om2 om3 om4 om5 om6 om7 upsilon a5 theta30 theta10
-    flusso = a5*(theta30-ul(1));
+    global K om0 om1 om2 om3 om4 om5 om6 om7 upsilon a5
+    [theta_y1, theta_y3] = ic_bc(0, t);
+    flusso = a5*(theta_y3-ul(1));
     
     pl = [flusso;
         flusso+K*(ul(1)-ul(2));
@@ -110,15 +112,15 @@ function [sol] = OneDimBH_8Obs
         flusso+K*(ul(1)-ul(9));
         0;0;0;0;0;0;0;0];
     ql = [1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1];
-    pr = [ur(1) - theta10; 
-        ur(2) - theta10; 
-        ur(3) - theta10; 
-        ur(4) - theta10; 
-        ur(5) - theta10; 
-        ur(6) - theta10; 
-        ur(7) - theta10; 
-        ur(8) - theta10;
-        ur(9) - theta10; 0;0;0;0;0;0;0;0];
+    pr = [ur(1) - theta_y1; 
+        ur(2) - theta_y1; 
+        ur(3) - theta_y1; 
+        ur(4) - theta_y1; 
+        ur(5) - theta_y1; 
+        ur(6) - theta_y1; 
+        ur(7) - theta_y1; 
+        ur(8) - theta_y1;
+        ur(9) - theta_y1; 0;0;0;0;0;0;0;0];
     
     qr = [0;0;0;0;0;0;0;0;0;1;1;1;1;1;1;1;1];
     om0=upsilon*((ul(2)-ul(1)))^2;
