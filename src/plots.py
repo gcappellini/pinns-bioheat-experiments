@@ -551,7 +551,7 @@ def plot_comparison_3d(e, t_true, t_pred, run_figs, gt=False):
     )
 
 
-def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, prj_figs):
+def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, prj_figs, gt=False):
     conf = OmegaConf.load(f"{src_dir}/config.yaml")
 
     time_in_minutes = df['tau']*conf.model_properties.tauf / 60
@@ -564,8 +564,13 @@ def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, p
     ]
 
     # Labels for the legend (corresponding to each line in y_data)
-    legend_labels = ['y1 (True)', 'gt1 (True)', 'gt2 (True)', 'y2 (True)', 
-                     'y1 (Matlab)', 'gt1 (Matlab)', 'gt2 (Matlab)', 'y2 (Matlab)']
+    if gt:
+        legend_labels = ['y1 (True)', 'gt1 (True)', 'gt2 (True)', 'y2 (True)', 
+                        'y1 (Matlab)', 'gt1 (Matlab)', 'gt2 (Matlab)', 'y2 (Matlab)']
+    else:
+        legend_labels = ['y1 (True)', 'gt1 (True)', 'gt2 (True)', 'y2 (True)', 
+                        'y1 (Pred)', 'gt1 (Pred)', 'gt2 (Pred)', 'y2 (Pred)']
+
     colors_points = conf.plot.colors.measuring_points
     colors_list = list(colors_points)
     colors = colors_list[:-1] * 2
