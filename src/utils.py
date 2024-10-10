@@ -400,7 +400,7 @@ def get_tc_positions():
     x_gt1 = (daa.model_parameters.x_gt1)/L0
     x_y1 = 1
 
-    return [x_y2, x_gt2, x_gt1, x_y1] 
+    return [x_y2.round(2), x_gt2.round(2), x_gt1.round(2), x_y1.round(2)] 
 
 def import_testdata(name):
     df = load_from_pickle(f"{src_dir}/data/vessel/{name}.pkl")
@@ -717,6 +717,8 @@ def run_matlab_ground_truth(src_dir, prj_figs, conf1, run_matlab):
     Optionally run MATLAB ground truth.
     """
     n_obs = conf1.model_parameters.n_obs
+    name = conf1.experiment.name
+    string = f"{name[0]}_{name[1]}"
     
     if run_matlab:
         print("Running MATLAB ground truth calculation...")
@@ -743,6 +745,10 @@ def run_matlab_ground_truth(src_dir, prj_figs, conf1, run_matlab):
             pp.plot_tf_matlab(X, y_sys, y_observers, y_mmobs, conf, prj_figs)
             pp.plot_comparison_3d(X, y_sys, y_mmobs, prj_figs, gt= True)
             pp.plot_l2_matlab(X, y_sys, y_observers, y_mmobs, prj_figs)
+
+            y1_matlab, gt1_matlab, gt2_matlab, y2_matlab = point_ground_truths(n_obs)
+            df = load_from_pickle(f"{src_dir}/data/vessel/{string}.pkl")
+            pp.plot_timeseries_with_predictions(df, y1_matlab, gt1_matlab, gt2_matlab, y2_matlab, prj_figs)
 
 
         print("MATLAB ground truth completed.")
@@ -879,7 +885,7 @@ def SAR(x):
 
 
 
-def point_predictions(multi_obs, x_obs, prj_figs, lam, rescale=False):
+def point_predictions(multi_obs, x_obs, prj_figs, lam):
     """
     Generates and scales predictions from the multi-observer model.
     """
@@ -894,6 +900,24 @@ def point_predictions(multi_obs, x_obs, prj_figs, lam, rescale=False):
     y1_pred_sc = preds[preds[:, 0] == positions[3]][:, 2]
 
     return y1_pred_sc, gt1_pred_sc, gt2_pred_sc, y2_pred_sc
+
+def point_ground_truths(n_obs):
+    """
+    Generates and scales predictions from the multi-observer model.
+    """
+    
+    positions = get_tc_positions()
+    X, _, _, y_mmobs = gen_testdata(n_obs)
+
+    truths = np.vstack((X, y_mmobs)).T
+    
+    # Extract predictions based on positions
+    y2_truth_sc = truths[truths[:, 0] == positions[0]][:, 2]
+    gt2_truth_sc = truths[truths[:, 0] == positions[1]][:, 2]
+    gt1_truth_sc = truths[truths[:, 0] == positions[2]][:, 2]
+    y1_truth_sc = truths[truths[:, 0] == positions[3]][:, 2]
+
+    return y1_truth_sc, gt1_truth_sc, gt2_truth_sc, y2_truth_sc
 
 
 
