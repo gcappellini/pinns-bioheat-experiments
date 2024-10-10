@@ -195,7 +195,6 @@ pyrightconfig.json
 
 tests/*
 old/
-models/
 src/wandb
 src/outputs
 src/data/vessel/foto&video
