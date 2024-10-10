@@ -86,9 +86,9 @@ def ic_obs(x):
         z = x[:, 0:1] 
 
     conf = OmegaConf.load(f"{src_dir}/config.yaml")
-# if b2==None:
+
     b2 = conf.model_properties.b2
-# if b3==None:
+
     b3 = conf.model_properties.b3
 
     theta_y10 = scale_t(conf.model_properties.Ty10)
@@ -395,12 +395,12 @@ def scale_time(t):
 def get_tc_positions():
     daa = OmegaConf.load(f"{src_dir}/config.yaml")
     L0 = daa.model_properties.L0
-    x_y2 = 0
+    x_y2 = 0.0
     x_gt2 = (daa.model_parameters.x_gt2)/L0
     x_gt1 = (daa.model_parameters.x_gt1)/L0
-    x_y1 = 1
+    x_y1 = 1.0
 
-    return [x_y2.round(2), x_gt2.round(2), x_gt1.round(2), x_y1.round(2)] 
+    return [x_y2, round(x_gt2, 2), round(x_gt1, 2), x_y1] 
 
 def import_testdata(name):
     df = load_from_pickle(f"{src_dir}/data/vessel/{name}.pkl")
@@ -708,22 +708,20 @@ def solve_ivp_and_plot(multi_obs, fold, conf, x_obs, X, y_sys, comparison_3d=Tru
     pp.plot_tf(X, y_sys, multi_obs, 0, fold, MultiObs=True)
     if comparison_3d:
         pp.plot_comparison_3d(X[:, 0:2], y_sys, y_pred, fold)
+ 
 
-
-
-
-def run_matlab_ground_truth(src_dir, prj_figs, conf1, run_matlab):
+def run_matlab_ground_truth(prj_figs, conf1, run_matlab):
     """
     Optionally run MATLAB ground truth.
     """
     n_obs = conf1.model_parameters.n_obs
-    name = conf1.experiment.name
+    name = conf1.experiment
     string = f"{name[0]}_{name[1]}"
     
     if run_matlab:
         print("Running MATLAB ground truth calculation...")
         eng = matlab.engine.start_matlab()
-        eng.cd(f"{src_dir}/matlab", nargout=0)
+        eng.cd(src_dir, nargout=0)
         eng.BioHeat(nargout=0)
         eng.quit()
 
@@ -909,7 +907,7 @@ def point_ground_truths(n_obs):
     positions = get_tc_positions()
     X, _, _, y_mmobs = gen_testdata(n_obs)
 
-    truths = np.vstack((X, y_mmobs)).T
+    truths = np.hstack((X, y_mmobs))
     
     # Extract predictions based on positions
     y2_truth_sc = truths[truths[:, 0] == positions[0]][:, 2]
@@ -921,7 +919,7 @@ def point_ground_truths(n_obs):
 
 
 
-def configure_meas_settings(cfg, experiment):
+def configure_settings(cfg, experiment):
     exp_type_settings = getattr(cfg.experiment.type, experiment[0])
     cfg.model_properties.pwr_fact=exp_type_settings["pwr_fact"]
     cfg.model_properties.h=exp_type_settings["h"]

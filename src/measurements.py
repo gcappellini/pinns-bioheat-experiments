@@ -51,8 +51,7 @@ if __name__ == "__main__":
     n_obs = config.model_parameters.n_obs
 
     output_dir = co.set_prj(f"{name_str}/measurements_{n_obs}obs")
-    cfg = uu.configure_meas_settings(config, config.experiment.name)
 
-    OmegaConf.save(cfg,f"{output_dir}/config.yaml")
+    OmegaConf.save(config,f"{output_dir}/config.yaml")
 
     main(config, output_dir)

@@ -19,7 +19,7 @@ function theta0 = sys_ic(x)
 
     x_values = [1, X_gt1, X_gt2, 0];
     theta_values = [theta10, theta_gt10, theta_gt20, theta20];
-    theta0 = interp1(x_values, theta_values, x, 'linear');
+    theta0 = interp1(x_values, theta_values, x, 'spline');
 
 function theta_y1 = theta_1(t_vals)
     global str_exp
@@ -27,15 +27,15 @@ function theta_y1 = theta_1(t_vals)
     data = readmatrix(str_exp);    
     tau = data(:, 1);
     y1 = data(:, 2);
-    theta_y1 = interp1(tau, y1, t_vals, 'linear', 'extrap');
+    theta_y1 = interp1(tau, y1, t_vals, 'spline', 'extrap');
     
 function theta_y2 = theta_2(t_vals)
     global str_exp
 
-    data = readmatrix(str_exp);    
+    data = readmatrix(str_exp);
     tau = data(:, 1);
     y2 = data(:, 5);
-    theta_y2 = interp1(tau, y2, t_vals, 'linear', 'extrap');
+    theta_y2 = interp1(tau, y2, t_vals, 'spline', 'extrap');
 
 function theta_y3 = theta_3(t_vals)
 

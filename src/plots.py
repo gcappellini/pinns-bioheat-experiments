@@ -550,6 +550,7 @@ def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, p
     conf = OmegaConf.load(f"{src_dir}/config.yaml")
 
     time_in_minutes = df['tau']*conf.model_properties.tauf / 60
+    time_matlab = np.linspace(0, time_in_minutes.max(), len(y1_pred))
     
     # Prepare y-axis data (ground truth and predicted values)
     y_data = [
@@ -559,14 +560,15 @@ def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, p
 
     # Labels for the legend (corresponding to each line in y_data)
     legend_labels = ['y1 (True)', 'gt1 (True)', 'gt2 (True)', 'y2 (True)', 
-                     'y1 (Pred)', 'gt1 (Pred)', 'gt2 (Pred)', 'y2 (Pred)']
+                     'y1 (Matlab)', 'gt1 (Matlab)', 'gt2 (Matlab)', 'y2 (Matlab)']
     colors_points = conf.plot.colors.measuring_points
     colors_list = list(colors_points)
     colors = colors_list[:-1] * 2
     linestyles=["-", "-", "-", "-", "--", "--", "--", "--"]
     rescale = conf.plot.rescale
     _, _, ylabel = uu.get_scaled_labels(rescale)
-    times = [time_in_minutes]*len(y_data)
+
+    times = [time_in_minutes]*4 + [time_matlab]*4 
 
     if rescale:
         y_data_plot = uu.rescale_t(y_data)
@@ -589,7 +591,7 @@ def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, p
         colors=colors,
         linestyles=linestyles,
         size=(12, 6),
-        filename=f"{prj_figs}/timeseries_with_predictions.png"
+        filename=f"{prj_figs}/timeseries_vs_matlab.png"
     )
 
 

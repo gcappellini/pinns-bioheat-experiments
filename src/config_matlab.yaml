@@ -8,8 +8,8 @@ model_properties:
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
-  Ty10: 22.84
-  Ty20: 28.6
+  Ty10: 22.28
+  Ty20: 26.67
   Ty30: 21.5
   K: 50.0
   activation: tanh
@@ -35,26 +35,26 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b2: 0.0033
-  b3: 0.2875
+  b2: 1.0
+  b3: 1.0
 model_parameters:
   lam: 50.0
   upsilon: 5.0
-  W0: 0.04
-  W1: 0.1057
-  W2: 0.1714
-  W3: 0.2371
-  W4: 0.3029
-  W5: 0.3686
-  W6: 0.4343
-  W7: 0.5
+  W0: 0.20675
+  W1: 0.212
+  W2: 0.21725
+  W3: 0.2225
+  W4: 0.22775
+  W5: 0.233
+  W6: 0.23825
+  W7: 0.2435
   n_obs: 8
-  gt1_0: 24.56
-  gt2_0: 29.46
+  gt1_0: 24.44
+  gt2_0: 29.25
   x_y2: 0
   x_gt2: 0.01
   x_gt1: 0.04
   x_y1: 0.07
 experiment:
 - cooling
-- meas_2
+- meas_1

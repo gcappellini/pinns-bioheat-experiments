@@ -18,30 +18,28 @@ def main(prj_figs, conf):
     Main function to run the testing of the network, MATLAB ground truth, observer checks, and PINNs.
     """
 
-    uu.run_matlab_ground_truth(src_dir, prj_figs, conf, True)
+    uu.run_matlab_ground_truth(prj_figs, conf, True)
 
 
 if __name__ == "__main__":
 
     # Load the configuration from the passed file
-    config = OmegaConf.load(f"{src_dir}/config.yaml")
+    cfg = OmegaConf.load(f"{src_dir}/config.yaml")
 
-    prj_name = config.experiment.name
-    name_str = f"{prj_name[0]}_{prj_name[1]}"
+    prj_name = cfg.experiment.name
+    name_str = f"{prj_name[0]}_{prj_name[1]}/ground_truth"
     
-    n_obs = config.model_parameters.n_obs
+    n_obs = cfg.model_parameters.n_obs
 
     output_dir = co.set_prj(name_str)
-
-    cfg = uu.configure_meas_settings(config, config.experiment.name)
 
     cfg_matlab = OmegaConf.create({
     "model_properties": cfg.model_properties,
     "model_parameters": cfg.model_parameters,
     "experiment": cfg.experiment.name
-})
+    })
 
     OmegaConf.save(cfg_matlab,f"{output_dir}/config_matlab.yaml")
     OmegaConf.save(cfg,f"{output_dir}/config.yaml")
-    OmegaConf.save(cfg_matlab,f"{src_dir}/config_matlab.yaml")
+
     main(output_dir, cfg_matlab)
