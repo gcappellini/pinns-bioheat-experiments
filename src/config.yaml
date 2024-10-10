@@ -37,11 +37,10 @@ model_properties:
   x0: 0.001
   b2: 0.0236
   b3: 0.3091
-
 model_parameters:
   lam: 50.0
   upsilon: 5.0
-  W0: 0.20675            
+  W0: 0.20675
   W1: 0.212
   W2: 0.21725
   W3: 0.2225
@@ -56,29 +55,60 @@ model_parameters:
   x_gt2: 0.01
   x_gt1: 0.04
   x_y1: 0.07
-
 output:
   base_dir: ${hydra:runtime.output_dir}
   save_figures: true
 output_dir: ${hydra:run.dir}
-
 plot:
   rescale: true
   colors:
-    observers: [C0, C1, C2, C3, C4, C5, C6, C7]
+    observers:
+    - C0
+    - C1
+    - C2
+    - C3
+    - C4
+    - C5
+    - C6
+    - C7
     system: C9
     mm_obs: gold
-    measuring_points: ['#F7CAC9', '#6B5B95', '#88B04B', '#FF6F61', '#92A8D1']
-    losses: ['#D2691E', '#4682B4', '#9ACD32', '#FF6347', '#FFD700', '#FF1493']
+    measuring_points:
+    - '#F7CAC9'
+    - '#6B5B95'
+    - '#88B04B'
+    - '#FF6F61'
+    - '#92A8D1'
+    losses:
+    - '#D2691E'
+    - '#4682B4'
+    - '#9ACD32'
+    - '#FF6347'
+    - '#FFD700'
+    - '#FF1493'
   linestyles:
-    observers: ['-', '-.', '-', '-.', '--', '-', '--', '-']
+    observers:
+    - '-'
+    - -.
+    - '-'
+    - -.
+    - --
+    - '-'
+    - --
+    - '-'
     groundtruths: --
     mm_obs: ':'
     system: -.
-    measuring_points: ['-', '-.', '-', '-.', '--']
-
+    measuring_points:
+    - '-'
+    - -.
+    - '-'
+    - -.
+    - --
 experiment:
-  name: [cooling, meas_1]
+  name:
+  - cooling
+  - meas_2
   import_data: false
   save_pickle: false
   run_matlab: false
@@ -92,9 +122,9 @@ experiment:
       threshold: 0.5
       show_y3: false
       meas_1:
-        title: "Cooling 1"
-        date: "20240930_1"
-        string: "cooling_meas_1"
+        title: Cooling 1
+        date: '20240930_1'
+        string: cooling_meas_1
         start_min: 41
         end_min: 71
         y1_0: 22.28
@@ -113,11 +143,10 @@ experiment:
         W5: 0.3686
         W6: 0.4343
         W7: 0.5
-        
       meas_2:
-        title: "Cooling 2"
-        date: "20240930_3"
-        string: "cooling_meas_2"
+        title: Cooling 2
+        date: '20240930_3'
+        string: cooling_meas_2
         start_min: 30
         end_min: 60
         y1_0: 22.84
@@ -134,9 +163,9 @@ experiment:
       threshold: 50
       show_y3: true
       meas_1:
-        title: "Heating 1"
-        date: "20240522_1"
-        string: "heating_meas_1"
+        title: Heating 1
+        date: '20240522_1'
+        string: heating_meas_1
         start_min: 4
         end_min: 34
         y1_0: 21.88
@@ -147,9 +176,9 @@ experiment:
         b2: 0.0236
         b3: 0.3091
       meas_2:
-        title: "Heating 2"
-        date: "20240927_3"
-        string: "heating_meas_2"
+        title: Heating 2
+        date: '20240927_3'
+        string: heating_meas_2
         start_min: 105
         end_min: 135
         y1_0: 22.87
@@ -160,9 +189,9 @@ experiment:
         b2: 0.0236
         b3: 0.3091
       meas_3:
-        title: "Heating 3"
-        date: "20240930_1"
-        string: "heating_meas_3"
+        title: Heating 3
+        date: '20240930_1'
+        string: heating_meas_3
         start_min: 5
         end_min: 35
         y1_0: 21.61
@@ -176,9 +205,9 @@ experiment:
       pwr_fact: 1.0
       threshold: 50
       show_y3: false
-      title: "Antenna characterization"
-      date: "20240930_3"
-      string: "antenna_characterization"
+      title: Antenna characterization
+      date: '20240930_3'
+      string: antenna_characterization
       start_min: 0
       end_min: 17
       y1_0: 22.56
