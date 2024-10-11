@@ -13,18 +13,21 @@ tests_dir = os.path.join(git_dir, "tests")
 os.makedirs(tests_dir, exist_ok=True)
 
 
-def main(prj_figs, conf):
+def main(output_dir, conf):
     """
     Main function to run the testing of the network, MATLAB ground truth, observer checks, and PINNs.
     """
-    n_obs = conf.model_parameters.n_obs
 
     # Generate and check observers if needed
     multi_obs = uu.mm_observer(conf)
     X, y_sys, _, _ = uu.gen_testdata(conf)
     x_obs = uu.gen_obsdata(conf)
-    uu.check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, conf, prj_figs)
-    uu.check_mm_obs(multi_obs, x_obs, X, y_sys, conf)
+    tot_true = np.hstack((X, y_sys))
+    tot_pred = uu.get_observers_preds(multi_obs, x_obs, output_dir, config)
+    uu.check_observers_and_wandb_upload(tot_true, tot_pred, config, output_dir)
+
+    run_figs = co.set_run(f"mm_obs")
+    pp.plot_mm_obs(multi_obs, tot_true, tot_pred, config, run_figs)
 
 
 if __name__ == "__main__":

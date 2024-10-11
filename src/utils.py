@@ -389,7 +389,7 @@ def import_testdata(name):
     return np.hstack((vstack_array,boluses_arr))
 
 
-def import_obsdata(nam):
+def import_obsdata(nam, extended = True):
     global f1, f2, f3
     g = import_testdata(nam)
     instants = np.unique(g[:, 1])
@@ -409,7 +409,16 @@ def import_obsdata(nam):
     y3 = np.zeros_like(y2)
     f3 = interp1d(instants, y3, kind='previous')
 
-    Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
+    if extended:
+        x = np.linspace(0, 1, 101)
+        t = np.linspace(0, 1, 101)
+
+        X, T = np.meshgrid(x, t)
+        T_clipped = np.clip(T, None, 0.9956)
+        Xobs = np.vstack((np.ravel(X), f1(np.ravel(T_clipped)), f2(np.ravel(T_clipped)), f3(np.ravel(T_clipped)), np.ravel(T))).T
+    else:
+        Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
+
     return Xobs
 
 
@@ -440,13 +449,6 @@ def mm_observer(config):
 
 
     return multi_obs
-
-def check_mm_obs(multi_obs, x_obs, X, y_sys, conf, comparison_3d=True):
-    run_figs = co.set_run(f"mm_obs")
-    conf.model_properties.W = None
-    OmegaConf.save(conf, f"{run_figs}/config.yaml")
-    # Solve IVP and plot weights
-    solve_ivp_and_plot(multi_obs, run_figs, conf, x_obs, X, y_sys, comparison_3d)
 
 
 def mu(o, tau_in):
@@ -549,38 +551,54 @@ def test_observer(model, run_figs, X, x_obs, y_obs, number):
         return errors
 
 
-def check_observers_and_wandb_upload(multi_obs, x_obs, X, y_sys, conf, output_dir, comparison_3d=True):
+def check_observers_and_wandb_upload(tot_true, tot_pred, conf, output_dir, comparison_3d=True):
     """
     Check observers and optionally upload results to wandb.
     """
     run_wandb = conf.experiment.run_wandb
-    exp_type = conf.experiment.type
     name = conf.experiment.name
-    for el in range(len(multi_obs)):
+    n_obs = conf.model_parameters.n_obs
 
+    for el in range(n_obs):
+
+        # tot_obs_pred = np.vstack((tot_pred[0], tot_pred[1], pred)).T
         run_figs = os.path.join(output_dir, f"obs_{el}")
 
         if run_wandb:
             aa = OmegaConf.load(f"{run_figs}/config.yaml")
             print(f"Initializing wandb for observer {el}...")
             wandb.init(project=name, name=f"obs_{el}", config=aa)
-        
-        pred = multi_obs[el].predict(x_obs)
-        
-        pp.plot_l2(x_obs, y_sys, multi_obs[el], el, run_figs)
-        pp.plot_tf(X, y_sys, multi_obs[el], el, run_figs)
-        if comparison_3d:
-            pp.plot_comparison_3d(X, y_sys, pred, run_figs)
-        
-        if exp_type == "simulation":
-            pp.plot_comparison_3d(X[:, 0:2], y_sys, pred, run_figs)
+                
+        pp.plot_l2(tot_true, tot_pred, el, run_figs)
+        pp.plot_tf(tot_true, tot_pred, el, run_figs)
 
-        metrics = compute_metrics(y_sys, pred)
- 
+        if comparison_3d:
+            matching = extract_matching(tot_true, tot_pred)
+            pp.plot_comparison_3d(tot_true[:, 0:2], tot_true[:, 2], tot_pred[:, -1], run_figs)
+
         if run_wandb:
+            matching = extract_matching(tot_true, tot_pred)
+            metrics = compute_metrics(matching[:, 2], matching[:, 3])
             wandb.log(metrics)
             wandb.finish()
 
+def get_observers_preds(multi_obs, x_obs, output_dir, conf):
+
+    preds = [x_obs[:, 0], x_obs[:, -1]]
+    for el in range(len(multi_obs)):
+        obs_pred = multi_obs[el].predict(x_obs)
+        run_figs = os.path.join(output_dir, f"obs_{el}")
+        obs_pred = obs_pred.reshape(len(obs_pred),)
+        np.savetxt(f'{run_figs}/prediction_obs_{el}.txt', (x_obs[:, 0].round(2), x_obs[:, -1].round(2), obs_pred.round(4))) 
+        preds.append(obs_pred)
+
+    run_figs = co.set_run(f"mm_obs")
+    conf.model_properties.W = None
+    OmegaConf.save(conf, f"{run_figs}/config.yaml")
+    mm_pred = solve_ivp(multi_obs, run_figs, conf, x_obs)
+    preds.append(mm_pred)
+    preds = np.array(preds).reshape(len(multi_obs)+3, len(preds[0])).round(4)
+    return preds.T
 
 def get_scaled_labels(rescale):
     xlabel=r"$x \, (m)$" if rescale else "X"
@@ -623,7 +641,7 @@ def get_sys_mm_linestyle(conf):
     return system_linestyle, mm_obs_linestyle
 
 
-def solve_ivp_and_plot(multi_obs, fold, conf, x_obs, X, y_sys, comparison_3d=True):
+def solve_ivp(multi_obs, fold, conf, x_obs):
     """
     Solve the IVP for observer weights and plot the results.
     """
@@ -648,29 +666,12 @@ def solve_ivp_and_plot(multi_obs, fold, conf, x_obs, X, y_sys, comparison_3d=Tru
     
     np.save(f'{fold}/weights_lam_{lam}.npy', weights)
     pp.plot_weights(weights[1:], weights[0], fold, conf)
-    
-    # Model prediction
     y_pred = mm_predict(multi_obs, lam, x_obs, fold)
-    t = np.unique(X[:, 1:2])
-    mus = mu(multi_obs, t)
+    np.savetxt(f'{fold}/prediction_mm_obs.txt', (x_obs[:, 0], x_obs[:, -1], y_pred))
+    return y_pred
 
-    # if run_wandb:
-    #     print(f"Initializing wandb for multi observer ...")
-    #     wandb.init(project= str, name=f"mm_obs")
 
-    metrics = compute_metrics(y_sys, y_pred)
-    
-    # if run_wandb:
-    #     wandb.log(metrics)
-    #     wandb.finish()
-
-    pp.plot_mu(mus, t, fold)
-    pp.plot_l2(x_obs, y_sys, multi_obs, 0, fold, MultiObs=True)
-    pp.plot_tf(X, y_sys, multi_obs, 0, fold, MultiObs=True)
-    if comparison_3d:
-        pp.plot_comparison_3d(X[:, 0:2], y_sys, y_pred, fold)
  
-
 def run_matlab_ground_truth(prj_figs, conf1):
     """
     Optionally run MATLAB ground truth.
@@ -706,7 +707,6 @@ def run_matlab_ground_truth(prj_figs, conf1):
         y1_matlab, gt1_matlab, gt2_matlab, y2_matlab = point_ground_truths(conf1)
         df = load_from_pickle(f"{src_dir}/data/vessel/{string}.pkl")
         pp.plot_timeseries_with_predictions(df, y1_matlab, gt1_matlab, gt2_matlab, y2_matlab, prj_figs, gt=True)
-
 
     print("MATLAB ground truth completed.")
 
@@ -841,19 +841,17 @@ def SAR(x):
 
 
 
-def point_predictions(multi_obs, x_obs, prj_figs, lam):
+def point_predictions(preds):
     """
     Generates and scales predictions from the multi-observer model.
     """
     positions = get_tc_positions()
-    mm_obs_pred = mm_predict(multi_obs, lam, x_obs, prj_figs)
-    preds = np.vstack((x_obs[:, 0], x_obs[:, -1], mm_obs_pred)).T
     
     # Extract predictions based on positions
-    y2_pred_sc = preds[preds[:, 0] == positions[0]][:, 2]
-    gt2_pred_sc = preds[preds[:, 0] == positions[1]][:, 2]
-    gt1_pred_sc = preds[preds[:, 0] == positions[2]][:, 2]
-    y1_pred_sc = preds[preds[:, 0] == positions[3]][:, 2]
+    y2_pred_sc = preds[preds[:, 0] == positions[0]][:, -1]
+    gt2_pred_sc = preds[preds[:, 0] == positions[1]][:, -1]
+    gt1_pred_sc = preds[preds[:, 0] == positions[2]][:, -1]
+    y1_pred_sc = preds[preds[:, 0] == positions[3]][:, -1]
 
     return y1_pred_sc, gt1_pred_sc, gt2_pred_sc, y2_pred_sc
 
@@ -892,3 +890,29 @@ def configure_settings(cfg, experiment):
     cfg.model_properties.b2=meas_settings["b2"]
     cfg.model_properties.b3=meas_settings["b3"]
     return cfg
+
+
+
+def extract_matching(tot_true, tot_pred):
+    # Extract the columns from tot_true
+    
+    xs = np.unique(tot_true[:, 0])
+    filtered_true=[]
+    tot_true[:, 1] = tot_true[:, 1].round(2)
+    for el in np.unique(tot_true[:, 1]):
+        for i in range(len(xs)):
+            el_pred = tot_true[tot_true[:, 1]==el][i]
+            filtered_true.append(el_pred)
+
+    tot_true = np.array(filtered_true)
+
+    match = []
+    for el in np.unique(tot_true[:, 0]):
+        trues = tot_true[tot_true[:, 0]==el]
+        preds = tot_pred[tot_pred[:, 0]==el][:, 2:]
+        match_el = np.hstack((trues, preds))
+        for tt in range(len(match_el)):
+            match.append(match_el[tt])
+
+    # Convert new_data to a numpy array
+    return np.array(match)

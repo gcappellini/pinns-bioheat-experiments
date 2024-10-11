@@ -22,19 +22,17 @@ def main(config, output_dir):
     string = f"{name[0]}_{name[1]}"
 
     # Import data
-    a = uu.import_testdata(string)
-    X = a[:, 0:2]
-    meas = a[:, 2:3]
+    tot_true = uu.import_testdata(string)
+    tot_true = tot_true[:, :-1]
     x_obs = uu.import_obsdata(string)
 
-    lam = config.model_parameters.lam
-
     # Optionally check observers and upload to wandb
-    uu.check_observers_and_wandb_upload(multi_obs, x_obs, X, meas, config, output_dir, comparison_3d=False)
-    uu.check_mm_obs(multi_obs, x_obs, X, meas, config, comparison_3d=False)
-
+    tot_pred = uu.get_observers_preds(multi_obs, x_obs, output_dir, config)
+    uu.check_observers_and_wandb_upload(tot_true, tot_pred, config, output_dir, comparison_3d=False)
+    
     run_figs = co.set_run(f"mm_obs")
-    y1_pred, gt1_pred, gt2_pred, y2_pred = uu.point_predictions(multi_obs, x_obs, run_figs, lam)
+    pp.plot_mm_obs(multi_obs, tot_true, tot_pred, config, run_figs, comparison_3d=False)
+    y1_pred, gt1_pred, gt2_pred, y2_pred = uu.point_predictions(tot_pred)
 
     df = uu.load_from_pickle(f"{src_dir}/data/vessel/{string}.pkl")
     pp.plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, run_figs)

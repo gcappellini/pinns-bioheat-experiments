@@ -50,7 +50,7 @@ def plot_t0(conf):
     rescale = conf.plot.rescale
     set = conf.experiment.name
 
-    out_dir = co.set_prj(f"{set[0]}_{set[1]}")
+    out_dir = co.set_prj(f"{set[0]}_{set[1]}/comparison")
 
     e = uu.import_testdata(f"{set[0]}_{set[1]}")
     measurements_ic = e[e[:, 1]==0][:,2]

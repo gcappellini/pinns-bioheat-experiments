@@ -2,7 +2,6 @@ import subprocess
 import os
 import hydra
 from omegaconf import DictConfig, OmegaConf
-import yaml
 import utils as uu
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
