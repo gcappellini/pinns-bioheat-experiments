@@ -111,7 +111,7 @@ experiment:
   - simulation
   import_data: false
   save_pickle: false
-  run_matlab: true
+  run_matlab: false
   run_wandb: false
   run_simulation: true
   run_measurement: false

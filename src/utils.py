@@ -279,7 +279,8 @@ def load_weights(conf):
 
 def gen_obsdata(conf):
     global f1, f2, f3
-    g = np.hstack((gen_testdata(conf)))
+    X, y_sys, _, _ = gen_testdata(conf)
+    g = np.hstack((X, y_sys))
     instants = np.unique(g[:, 1])
     
     rows_1 = g[g[:, 0] == 1.0]
@@ -434,7 +435,7 @@ def mm_observer(config):
         obs = np.array([W0, W1, W2])
 
     if n_obs==1:
-        run_figs = co.set_run(f"obs_pinns")    
+        run_figs = co.set_run(f"obs_0")    
         OmegaConf.save(config, f"{run_figs}/config.yaml")   
         return train_model(run_figs)
 
@@ -585,22 +586,33 @@ def check_observers_and_wandb_upload(tot_true, tot_pred, conf, output_dir, compa
             wandb.finish()
 
 def get_observers_preds(multi_obs, x_obs, output_dir, conf):
-
+    n_obs = conf.model_parameters.n_obs
     preds = [x_obs[:, 0], x_obs[:, -1]]
-    for el in range(len(multi_obs)):
-        obs_pred = multi_obs[el].predict(x_obs)
-        run_figs = os.path.join(output_dir, f"obs_{el}")
+    if n_obs==1:
+        obs_pred = multi_obs.predict(x_obs)
         obs_pred = obs_pred.reshape(len(obs_pred),)
-        np.savetxt(f'{run_figs}/prediction_obs_{el}.txt', (x_obs[:, 0].round(2), x_obs[:, -1].round(2), obs_pred.round(4))) 
+        run_figs = os.path.join(output_dir, f"obs_0")
+        np.savetxt(f'{run_figs}/prediction_obs_0.txt', (x_obs[:, 0].round(2), x_obs[:, -1].round(2), obs_pred.round(4))) 
         preds.append(obs_pred)
+        preds = np.array(preds).reshape(3, len(preds[0])).round(4)
+        OmegaConf.save(conf, f"{run_figs}/config.yaml")
+        return preds.T
 
-    run_figs = co.set_run(f"mm_obs")
-    conf.model_properties.W = None
-    OmegaConf.save(conf, f"{run_figs}/config.yaml")
-    mm_pred = solve_ivp(multi_obs, run_figs, conf, x_obs)
-    preds.append(mm_pred)
-    preds = np.array(preds).reshape(len(multi_obs)+3, len(preds[0])).round(4)
-    return preds.T
+    else:
+        for el in range(n_obs):
+            obs_pred = multi_obs[el].predict(x_obs)
+            run_figs = os.path.join(output_dir, f"obs_{el}")
+            obs_pred = obs_pred.reshape(len(obs_pred),)
+            np.savetxt(f'{run_figs}/prediction_obs_{el}.txt', (x_obs[:, 0].round(2), x_obs[:, -1].round(2), obs_pred.round(4))) 
+            preds.append(obs_pred)
+
+        run_figs = co.set_run(f"mm_obs")
+        conf.model_properties.W = None
+        OmegaConf.save(conf, f"{run_figs}/config.yaml")
+        mm_pred = solve_ivp(multi_obs, run_figs, conf, x_obs)
+        preds.append(mm_pred)
+        preds = np.array(preds).reshape(len(multi_obs)+3, len(preds[0])).round(4)
+        return preds.T
 
 def get_scaled_labels(rescale):
     xlabel=r"$x \, (m)$" if rescale else "X"

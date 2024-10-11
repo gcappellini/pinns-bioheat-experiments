@@ -406,8 +406,10 @@ def plot_tf(tot_true, tot_obs_pred, number, prj_figs, MultiObs=False):
         colors = [true_color] + obs_colors + [mm_obs_color]
         linestyles = [true_linestyle] + obs_linestyles + [mm_obs_linestyle]
     else:
-        pred = tot_obs_pred[:, 3+number][-len(x_pred):].reshape(len(x_pred), 1)
-        
+        if n_obs==1:
+            pred = tot_obs_pred[:, 2][-len(x_pred):].reshape(len(x_pred), 1)
+        else:
+            pred = tot_obs_pred[:, 3+number][-len(x_pred):].reshape(len(x_pred), 1)
         # Only two lines to plot: true and single prediction
         all_preds = [true, pred]
         x_vals = [x_true, x_pred]  # xtr for true, x for predicted
@@ -515,6 +517,8 @@ def plot_comparison_3d(e, t_true, t_pred, run_figs, gt=False):
     :param t_pred: Predicted values reshaped for 3D plotting.
     :param run_figs: Directory to save the plot.
     """
+    conf = OmegaConf.load(f"{run_figs}/config.yaml")
+    n_obs = conf.model_parameters.n_obs
     # Determine the unique points in X and Y dimensions
     la = len(np.unique(e[:, 0]))  # Number of unique X points
     le = len(np.unique(e[:, 1]))  # Number of unique Y points
@@ -524,7 +528,7 @@ def plot_comparison_3d(e, t_true, t_pred, run_figs, gt=False):
     theta_pred = t_pred.reshape(le, la)
 
     # Column titles for each subplot
-    col_titles = ["System", "MultiObserver", "Error"]
+    col_titles = ["System", "Observer", "Error"] if n_obs==1 else ["System", "MultiObserver", "Error"]
 
     conf = OmegaConf.load(f"{run_figs}/config.yaml")
     rescale = conf.plot.rescale

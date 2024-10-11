@@ -48,7 +48,7 @@ model_parameters:
   W5: 0.24
   W6: 0.28
   W7: 0.32
-  n_obs: 8
+  n_obs: 1
   gt1_0: 24.44
   gt2_0: 29.25
   x_y2: 0
