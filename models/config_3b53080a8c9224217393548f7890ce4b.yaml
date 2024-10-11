@@ -35,8 +35,6 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  # b2: 0.0038
-  # b3: -0.3927
   b2: 1.0
   b3: 1.0
 model_parameters:

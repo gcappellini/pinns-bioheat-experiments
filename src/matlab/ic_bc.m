@@ -15,27 +15,33 @@ function thetahat0 = obs_ic(x)
 
     
 function theta0 = sys_ic(x)
-    global theta10 theta_gt10 theta_gt20 theta20 X_gt1 X_gt2
+    % global theta10 theta_gt10 theta_gt20 theta20 X_gt1 X_gt2
 
-    x_values = [1, X_gt1, X_gt2, 0];
-    theta_values = [theta10, theta_gt10, theta_gt20, theta20];
-    theta0 = interp1(x_values, theta_values, x, 'spline');
+    % x_values = [1, X_gt1, X_gt2, 0];
+    % theta_values = [theta10, theta_gt10, theta_gt20, theta20];
+    % theta0 = interp1(x_values, theta_values, x, 'spline');
+    aa = 0.1167;
+    bb = -0.8167;
+    cc = 0.7;
+    theta0 = aa*x^2 + bb*x + cc;
 
 function theta_y1 = theta_1(t_vals)
-    global path_exp
+    % global path_exp
 
-    data = readmatrix(path_exp);    
-    tau = data(:, 1);
-    y1 = data(:, 2);
-    theta_y1 = interp1(tau, y1, t_vals, 'linear', 'extrap');
+    % data = readmatrix(path_exp);    
+    % tau = data(:, 1);
+    % y1 = data(:, 2);
+    % theta_y1 = interp1(tau, y1, t_vals, 'linear', 'extrap');
+    theta_y1=zeros(size(t_vals));
     
 function theta_y2 = theta_2(t_vals)
-    global path_exp
+    % global path_exp
 
-    data = readmatrix(path_exp);
-    tau = data(:, 1);
-    y2 = data(:, 5);
-    theta_y2 = interp1(tau, y2, t_vals, 'spline', 'extrap');
+    % data = readmatrix(path_exp);
+    % tau = data(:, 1);
+    % y2 = data(:, 5);
+    % theta_y2 = interp1(tau, y2, t_vals, 'spline', 'extrap');
+    theta_y2 = 0.7*ones(size(t_vals));
 
 function theta_y3 = theta_3(t_vals)
 

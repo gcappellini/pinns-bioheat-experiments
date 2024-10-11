@@ -431,10 +431,12 @@ def mm_observer(config):
         obs = np.array([W0, W1, W2, W3, W4, W5, W6, W7])
     if n_obs==3:
         W0, W1, W2 = config.model_parameters.W0, config.model_parameters.W4, config.model_parameters.W7
-        obs = np.array([W0, W1, W2])        
+        obs = np.array([W0, W1, W2])
 
-
-
+    if n_obs==1:
+        run_figs = co.set_run(f"obs_pinns")    
+        OmegaConf.save(config, f"{run_figs}/config.yaml")   
+        return train_model(run_figs)
 
     multi_obs = []
     

@@ -4,27 +4,27 @@ model_properties:
   k: 0.6
   rho: 1000.0
   c: 4186.0
-  W: 0.2
+  W: 0.6
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
-  Ty10: 21.5
-  Ty20: 28.85
+  Ty10: 22.84
+  Ty20: 28.6
   Ty30: 21.5
   K: 50.0
   activation: tanh
-  initial_weights_regularizer: false
-  initialization: Glorot normal
-  iterations: 20000
+  initial_weights_regularizer: true
+  initialization: Glorot uniform
+  iterations: 30000
   LBFGS: false
-  learning_rate: 0.001
-  num_dense_layers: 4
-  num_dense_nodes: 50
-  num_domain: 2540
-  num_boundary: 80
-  num_initial: 160
+  learning_rate: 0.0001
+  num_dense_layers: 6
+  num_dense_nodes: 92
+  num_domain: 2000
+  num_boundary: 4000
+  num_initial: 1600
   num_test: 10000
-  resampling: false
+  resampling: true
   resampler_period: 100
   w_res: 1.0
   w_bc0: 1.0
@@ -35,13 +35,11 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  # b2: 0.0038
-  # b3: -0.3927
-  b2: 1.0
-  b3: 1.0
+  b2: 0.0079
+  b3: -0.0491
 model_parameters:
-  lam: 50.0
-  upsilon: 5.0
+  lam: 250.0
+  upsilon: 50.0
   W0: 0.20675
   W1: 0.212
   W2: 0.21725
@@ -109,8 +107,8 @@ plot:
     - --
 experiment:
   name:
-  - compare
-  - single_obs
+  - cooling
+  - meas_2
   import_data: false
   save_pickle: false
   run_matlab: true
