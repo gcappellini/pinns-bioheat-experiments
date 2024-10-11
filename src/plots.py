@@ -650,6 +650,8 @@ def plot_tf_matlab_1obs(e, theta_true, theta_observer, prj_figs):
 
     x_plot = uu.rescale_x(x_vals) if rescale else x_vals
     y_plot = uu.rescale_t(all_preds) if rescale else all_preds
+    x_plot = np.array(x_plot)
+    y_plot = np.array(y_plot)
 
 
     # Call the generic plotting function

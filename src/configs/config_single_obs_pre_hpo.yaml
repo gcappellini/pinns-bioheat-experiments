@@ -37,7 +37,6 @@ model_properties:
   x0: 0.001
   b2: 0.0038
   b3: -0.3927
-
 model_parameters:
   lam: 50.0
   upsilon: 5.0
