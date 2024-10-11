@@ -1,9 +1,5 @@
 function [sol] = OneDimBH_3Obs
-    global str_exp
-
-    src_dir = fileparts(cd);
-    git_dir = fileparts(src_dir);
-    output_path = sprintf('%s/tests/%s/ground_truth', git_dir, str_exp);
+    global output_path
 
     m = 0;
     x = linspace(0,1,101);
@@ -83,9 +79,9 @@ function [sol] = OneDimBH_3Obs
     
     
     function [pl,ql,pr,qr] = OneDimBHbc_3Obs(xl,ul,xr,ur,t)
-    global K om0 om1 om2 upsilon a5
-    [theta_y1, theta_y3] = ic_bc(0, t);
-    flusso = a5*(theta_y3-ul(1));
+    global K om0 om1 om2 upsilon a5 theta30 theta10
+    % [theta_y1, theta_y3] = ic_bc(0, t);
+    flusso = a5*(theta30-ul(1));
     
     pl = [flusso;
         flusso+K*(ul(1)-ul(2));
@@ -93,10 +89,10 @@ function [sol] = OneDimBH_3Obs
         flusso+K*(ul(1)-ul(4));
         0;0;0];
     ql = [1;1;1;1;1;1;1];
-    pr = [ur(1) - theta_y1; 
-        ur(2) - theta_y1; 
-        ur(3) - theta_y1; 
-        ur(4) - theta_y1; 
+    pr = [ur(1) - theta10; 
+        ur(2) - theta10; 
+        ur(3) - theta10; 
+        ur(4) - theta10; 
         0;0;0];
     
     qr = [0;0;0;0; 1;1;1];

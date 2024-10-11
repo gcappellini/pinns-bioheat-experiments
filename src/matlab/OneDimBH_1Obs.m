@@ -1,9 +1,6 @@
 function [sol] = OneDimBH_1Obs
-    global str_exp
+    global output_path
 
-    src_dir = fileparts(cd);
-    git_dir = fileparts(src_dir);
-    output_path = sprintf('%s/tests/%s/ground_truth', git_dir, str_exp);
 
     m = 0;
     x = linspace(0,1,101);
@@ -54,16 +51,16 @@ function [sol] = OneDimBH_1Obs
     
     
     function [pl,ql,pr,qr] = OneDimBHbc_1Obs(xl,ul,xr,ur,t)
-    global K a5
-    [theta_y1, theta_y3] = ic_bc(0, t);
-    flusso = a5*(theta_y3-ul(1));
+    global K a5 theta30 theta10
+    % [theta_y1, theta_y3] = ic_bc(0, t);
+    flusso = a5*(theta30-ul(1));
     
     pl = [flusso;
         flusso+K*(ul(1)-ul(2));
         ];
     ql = [1;1];
-    pr = [ur(1) - theta_y1; 
-        ur(2) - theta_y1;
+    pr = [ur(1) - theta10; 
+        ur(2) - theta10;
         ];
     
     qr = [0;0];

@@ -1,9 +1,5 @@
 function [sol] = OneDimBH_8Obs
-    global str_exp
-
-    src_dir = fileparts(cd);
-    git_dir = fileparts(src_dir);
-    output_path = sprintf('%s/tests/%s/ground_truth', git_dir, str_exp);
+    global output_path
 
     m = 0;
     x = linspace(0,1,101);

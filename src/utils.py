@@ -706,9 +706,9 @@ def run_matlab_ground_truth(prj_figs, conf1):
         pp.plot_comparison_3d(X, y_sys, y_mmobs, prj_figs, gt= True)
         pp.plot_l2_matlab(X, y_sys, y_observers, y_mmobs, prj_figs)
 
-        y1_matlab, gt1_matlab, gt2_matlab, y2_matlab = point_ground_truths(conf1)
-        df = load_from_pickle(f"{src_dir}/data/vessel/{string}.pkl")
-        pp.plot_timeseries_with_predictions(df, y1_matlab, gt1_matlab, gt2_matlab, y2_matlab, prj_figs, gt=True)
+        # y1_matlab, gt1_matlab, gt2_matlab, y2_matlab = point_ground_truths(conf1)
+        # df = load_from_pickle(f"{src_dir}/data/vessel/{string}.pkl")
+        # pp.plot_timeseries_with_predictions(df, y1_matlab, gt1_matlab, gt2_matlab, y2_matlab, prj_figs, gt=True)
 
     print("MATLAB ground truth completed.")
 
