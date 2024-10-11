@@ -282,14 +282,12 @@ def plot_l2(tot_true, tot_pred, number, folder, MultiObs=False):
         l2_individual = uu.calculate_l2(e, theta_true, pred)
         ll2 = l2_individual.reshape(len(l2_individual), 1)
 
-    # Prepare labels for the legend
+    
     legend_labels = ['MultiObs'] + [f'Obs {i}' for i in range(n_obs)] if MultiObs else [f'Obs {number}']
-    # legend_labels = ['MultiObs'] if MultiObs else [f'Obs {number}']
     colors = [mm_obs_color] + obs_colors if MultiObs else [obs_colors[number]]
-    # colors = [mm_obs_color] if MultiObs else [obs_colors[number]]
     linestyles = [mm_obs_linestyle] + obs_linestyles if MultiObs else [obs_linestyles[number]]
-    # linestyles = [mm_obs_linestyle] if MultiObs else [obs_linestyles[number]]
-
+    alphas = [0.6] * len(linestyles)
+    alphas[0] = 1.0
 
     rescale = conf.plot.rescale
     _, xlabel, _ = uu.get_scaled_labels(rescale)
@@ -308,7 +306,8 @@ def plot_l2(tot_true, tot_pred, number, folder, MultiObs=False):
         size=(6, 5),
         filename=f"{folder}/l2_{f'mm_{n_obs}obs' if MultiObs else f'obs{number}'}.png",
         colors=colors,
-        linestyles=linestyles
+        linestyles=linestyles,
+        alphas=alphas
     )
 
 
@@ -388,6 +387,7 @@ def plot_tf(tot_true, tot_obs_pred, number, prj_figs, MultiObs=False):
     obs_linestyles = uu.get_obs_linestyles(conf)
     true_linestyle, mm_obs_linestyle = uu.get_sys_mm_linestyle(conf)
 
+
     if MultiObs:
         multi_pred = tot_obs_pred[:, -1][-len(x_pred):].reshape(len(x_pred), 1)
 
@@ -405,6 +405,11 @@ def plot_tf(tot_true, tot_obs_pred, number, prj_figs, MultiObs=False):
 
         colors = [true_color] + obs_colors + [mm_obs_color]
         linestyles = [true_linestyle] + obs_linestyles + [mm_obs_linestyle]
+        linestyles[0] = None
+        markers = [None] * len(linestyles)
+        markers[0] = "x"
+        alphas = [0.6] * len(linestyles)
+        alphas[0] = 1.0
     else:
         if n_obs==1:
             pred = tot_obs_pred[:, 2][-len(x_pred):].reshape(len(x_pred), 1)
@@ -416,6 +421,8 @@ def plot_tf(tot_true, tot_obs_pred, number, prj_figs, MultiObs=False):
         legend_labels = ['True', f'Obs {number}']
         colors = [true_color] + [obs_colors[number]]
         linestyles = [true_linestyle] + [obs_linestyles[number]]
+        markers = [None] * len(linestyles)
+        alphas = [1.0] * len(linestyles)
 
     rescale = conf.plot.rescale
     xlabel, _, ylabel = uu.get_scaled_labels(rescale)
@@ -435,7 +442,9 @@ def plot_tf(tot_true, tot_obs_pred, number, prj_figs, MultiObs=False):
         size=(6, 5),
         filename=f"{prj_figs}/tf_{f'mm_{n_obs}obs' if MultiObs else f'obs{number}'}.png",
         colors = colors,
-        linestyles=linestyles
+        linestyles=linestyles,
+        markers=markers,
+        alphas = alphas
     )
 
 
