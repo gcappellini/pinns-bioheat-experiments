@@ -5,25 +5,21 @@ function [theta0, thetahat0, theta_y1, theta_y2, theta_y3] = ic_bc(x, t)
     theta_y2 = theta_2(t);
     theta_y3 = theta_3(t);
 
+function theta0 = sys_ic(x)
+    global a5 theta30 theta20 theta10 b2 K
+
+    b = a5 * (theta30-theta20);
+    c = theta20;
+    a = -b -c;
+    theta0 = a*x^2 + b*x + c;
+
+    
 function thetahat0 = obs_ic(x)
     global a5 theta30 theta20 theta10 b2 b3
-
     b4 = a5 * (theta30 - theta20);
     b1 = (theta10 - b4) * exp(b3);
 
     thetahat0 = b1 .* (x.^b2) .* exp(-b3 .* x) + b4 .* x;
-
-    
-function theta0 = sys_ic(x)
-    % global theta10 theta_gt10 theta_gt20 theta20 X_gt1 X_gt2
-
-    % x_values = [1, X_gt1, X_gt2, 0];
-    % theta_values = [theta10, theta_gt10, theta_gt20, theta20];
-    % theta0 = interp1(x_values, theta_values, x, 'spline');
-    aa = 0.1167;
-    bb = -0.8167;
-    cc = 0.7;
-    theta0 = aa*x^2 + bb*x + cc;
 
 function theta_y1 = theta_1(t_vals)
     % global path_exp

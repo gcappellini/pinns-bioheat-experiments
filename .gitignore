@@ -194,6 +194,7 @@ pyrightconfig.json
 
 
 tests/*
+!tests/cooling_simulation
 old/
 src/wandb
 src/outputs

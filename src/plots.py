@@ -288,6 +288,9 @@ def plot_l2(tot_true, tot_pred, number, folder, MultiObs=False):
     linestyles = [mm_obs_linestyle] + obs_linestyles if MultiObs else [obs_linestyles[number]]
     alphas = [0.6] * len(linestyles)
     alphas[0] = 1.0
+    linewidths = [1.2] * len(linestyles)
+    if MultiObs:
+        linewidths[0] = 2.2
 
     rescale = conf.plot.rescale
     _, xlabel, _ = uu.get_scaled_labels(rescale)
@@ -307,7 +310,8 @@ def plot_l2(tot_true, tot_pred, number, folder, MultiObs=False):
         filename=f"{folder}/l2_{f'mm_{n_obs}obs' if MultiObs else f'obs{number}'}.png",
         colors=colors,
         linestyles=linestyles,
-        alphas=alphas
+        alphas=alphas,
+        linewidths = linewidths
     )
 
 
@@ -335,6 +339,11 @@ def plot_l2_matlab(X, theta_true, y_obs, y_mm_obs, folder):
     legend_labels = ['MultiObs'] + [f'Obs {i}' for i in range(n_obs)]
     colors = [mm_obs_color] + obs_colors 
     linestyles = [mm_obs_linestyle] + obs_linestyles
+    alphas = [0.6] * len(linestyles)
+    alphas[0] = 1.0
+    linewidths = [1.2] * len(linestyles)
+    linewidths[0] = 2.2
+    markers = [None] * len(linestyles)
 
     rescale = conf.plot.rescale
     _, xlabel, _ = uu.get_scaled_labels(rescale)
@@ -355,7 +364,10 @@ def plot_l2_matlab(X, theta_true, y_obs, y_mm_obs, folder):
         size=(6, 5),
         filename=f"{folder}/l2_matlab_{n_obs}obs.png",
         colors=colors,
-        linestyles=linestyles
+        linestyles=linestyles,
+        alphas=alphas,
+        linewidths=linewidths,
+        markers=markers
     )
 
 
@@ -409,7 +421,9 @@ def plot_tf(tot_true, tot_obs_pred, number, prj_figs, MultiObs=False):
         markers = [None] * len(linestyles)
         markers[0] = "x"
         alphas = [0.6] * len(linestyles)
-        alphas[0] = 1.0
+        alphas[-1] = 1.0
+        linewidths = [1.2] * len(linestyles)
+        linewidths[-1] = 2.2
     else:
         if n_obs==1:
             pred = tot_obs_pred[:, 2][-len(x_pred):].reshape(len(x_pred), 1)
@@ -423,6 +437,7 @@ def plot_tf(tot_true, tot_obs_pred, number, prj_figs, MultiObs=False):
         linestyles = [true_linestyle] + [obs_linestyles[number]]
         markers = [None] * len(linestyles)
         alphas = [1.0] * len(linestyles)
+        linewidths = [1.2] * len(linestyles)
 
     rescale = conf.plot.rescale
     xlabel, _, ylabel = uu.get_scaled_labels(rescale)
@@ -444,7 +459,8 @@ def plot_tf(tot_true, tot_obs_pred, number, prj_figs, MultiObs=False):
         colors = colors,
         linestyles=linestyles,
         markers=markers,
-        alphas = alphas
+        alphas = alphas,
+        linewidths=linewidths
     )
 
 
@@ -493,6 +509,13 @@ def plot_tf_matlab(e, theta_true, theta_observers, theta_mmobs, prj_figs):
 
     colors = obs_colors + [system_color] + [mm_obs_color]
     linestyles = obs_linestyles + [system_linestyle] + [mm_obs_linestyle]
+    linestyles[-2] = None
+    markers = [None] * len(linestyles)
+    markers[-2] = "x"
+    alphas = [0.6] * len(linestyles)
+    alphas[-1] = 1.0
+    linewidths = [1.2] * len(linestyles)
+    linewidths[-1] = 2.2
     rescale = conf.plot.rescale
     xlabel, _, ylabel = uu.get_scaled_labels(rescale)
 
@@ -513,7 +536,10 @@ def plot_tf_matlab(e, theta_true, theta_observers, theta_mmobs, prj_figs):
         size=(6, 5),
         colors=colors,
         filename=f"{prj_figs}/tf_mmobs_matlab_{number}obs.png",
-        linestyles=linestyles
+        linestyles=linestyles,
+        linewidths=linewidths,
+        alphas=alphas,
+        markers=markers
     )
 
 
@@ -787,7 +813,7 @@ def plot_mm_obs(multi_obs, tot_true, tot_pred, config, output_dir, comparison_3d
     plot_mu(mus, t, output_dir)
     plot_l2(tot_true, tot_pred, 0, output_dir, MultiObs=True)
     plot_tf(tot_true, tot_pred, 0, output_dir, MultiObs=True)
-    plot_t0(tot_pred, config, output_dir)
+    # plot_t0(tot_pred, config, output_dir)
     if comparison_3d:
         matching = uu.extract_matching(tot_true, tot_pred)
         plot_comparison_3d(matching[:, 0:2], matching[:, 3], matching[:, 4], output_dir)

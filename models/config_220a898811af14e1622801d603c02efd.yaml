@@ -4,12 +4,12 @@ model_properties:
   k: 0.6
   rho: 1000.0
   c: 4186.0
-  W: 0.2
+  W: 0.24
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
-  Ty10: 21.5
-  Ty20: 28.85
+  Ty10: 22.84
+  Ty20: 28.6
   Ty30: 21.5
   K: 50.0
   activation: tanh
@@ -35,22 +35,22 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b2: 0.25
-  b3: 0.19
+  b2: 0.5
+  b3: 0.5
 model_parameters:
-  lam: 150.0
+  lam: 50.0
   upsilon: 5.0
   W0: 0.04
-  W1: 0.14
-  W2: 0.24
-  W3: 0.34
-  W4: 0.44
-  W5: 0.54
-  W6: 0.64
-  W7: 0.74
+  W1: 0.08
+  W2: 0.12
+  W3: 0.16
+  W4: 0.2
+  W5: 0.24
+  W6: 0.28
+  W7: 0.32
   n_obs: 8
-  gt1_0: 24.44
-  gt2_0: 29.25
+  gt1_0: 24.56
+  gt2_0: 29.46
   x_y2: 0
   x_gt2: 0.01
   x_gt1: 0.04
@@ -108,13 +108,13 @@ plot:
 experiment:
   name:
   - cooling
-  - simulation
+  - meas_2
   import_data: false
   save_pickle: false
-  run_matlab: true
+  run_matlab: false
   run_wandb: false
   run_simulation: false
-  run_measurement: false
+  run_measurement: true
   type:
     cooling:
       h: 10.0
@@ -128,8 +128,8 @@ experiment:
         y2_0: 28.85
         y3_0: 21.5
         K: 50.0
-        b2: 0.25
-        b3: 0.19
+        b2: 0.5
+        b3: 0.5
       meas_1:
         title: Cooling 1
         date: '20240930_1'
@@ -156,8 +156,8 @@ experiment:
         y2_0: 28.6
         y3_0: 21.5
         K: 50.0
-        b2: 0.0079
-        b3: -0.0491
+        b2: 0.5
+        b3: 0.5
     heating:
       h: 238.0
       pwr_fact: 0.4
