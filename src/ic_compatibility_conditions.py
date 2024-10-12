@@ -13,29 +13,29 @@ git_dir = os.path.dirname(src_dir)
 tests_dir = os.path.join(git_dir, "tests")
 os.makedirs(tests_dir, exist_ok=True)
 
-def error_function(params, x_pinns_obs_ic, measurements_ic):
-    b2, b3 = params  # The two parameters to optimize
-    # Generate the predicted values using the function `uu.ic_obs`
-    pinns_obs_ic = uu.ic_obs(x_pinns_obs_ic, b2=b2, b3=b3)
+# def error_function(params, x_pinns_obs_ic, measurements_ic):
+#     b2, b3 = params  # The two parameters to optimize
+#     # Generate the predicted values using the function `uu.ic_obs`
+#     pinns_obs_ic = uu.ic_obs(x_pinns_obs_ic, b2=b2, b3=b3)
     
-    # Compute the error (e.g., mean squared error)
-    error = np.mean((pinns_obs_ic - measurements_ic) ** 2)
+#     # Compute the error (e.g., mean squared error)
+#     error = np.mean((pinns_obs_ic - measurements_ic) ** 2)
     
-    return error
+#     return error
 
-def find_best_params(x_pinns_obs_ic, measurements_ic, initial_guess=(10.0, 10.0)):
-    # Use scipy.optimize.minimize to minimize the error
-    result = minimize(error_function, initial_guess, args=(x_pinns_obs_ic, measurements_ic))
+# def find_best_params(x_pinns_obs_ic, measurements_ic, initial_guess=(10.0, 10.0)):
+#     # Use scipy.optimize.minimize to minimize the error
+#     result = minimize(error_function, initial_guess, args=(x_pinns_obs_ic, measurements_ic))
     
-    # Extract the optimized parameters
-    b2_opt, b3_opt = result.x
-    return b2_opt, b3_opt
+#     # Extract the optimized parameters
+#     b2_opt, b3_opt = result.x
+#     return b2_opt, b3_opt
 
-def new_ic(x):
-    a = 0.1167
-    b = -0.8167
-    c = 0.7
-    return a*x**2 + b*x + c
+# def new_ic(x):
+#     a = 0.1167
+#     b = -0.8167
+#     c = 0.7
+#     return a*x**2 + b*x + c
 
 # conf = OmegaConf.load(f"{src_dir}/config.yaml")
 # set = conf.experiment.name
@@ -46,18 +46,20 @@ def new_ic(x):
 # x_measurements_ic = np.unique(e[:, 0])
 # x_pinns_obs_ic = x_measurements_ic
 
-x_measurements_ic = np.linspace(0,1, num=10)
-measurements_ic = new_ic(x_measurements_ic)
+# x_measurements_ic = np.linspace(0,1, num=10)
+# measurements_ic = new_ic(x_measurements_ic)
 
 
-# Find the best parameters starting from an initial guess
-b2_opt, b3_opt = find_best_params(x_measurements_ic, measurements_ic, initial_guess=(1, 1))
+# # Find the best parameters starting from an initial guess
+# b2_opt, b3_opt = find_best_params(x_measurements_ic, measurements_ic, initial_guess=(1, 1))
 
-print(f"exp {set} Optimized b2: {b2_opt.round(4)}, Optimized b3: {b3_opt.round(4)}")
+# print(f"exp {set} Optimized b2: {b2_opt.round(4)}, Optimized b3: {b3_opt.round(4)}")
 
 def plot_t0(conf):
     rescale = conf.plot.rescale
     set = conf.experiment.name
+    conf = uu.configure_settings(conf, set)
+    OmegaConf.save(conf, f"{src_dir}/config.yaml")
 
     out_dir = co.set_prj(f"{set[0]}_{set[1]}/comparison")
 
@@ -99,5 +101,5 @@ def plot_t0(conf):
                     colors=colors,
                     linestyles=linestyles)
 
-# conf = OmegaConf.load(f"{src_dir}/config.yaml")
-# plot_t0(conf)
+conf = OmegaConf.load(f"{src_dir}/config.yaml")
+plot_t0(conf)

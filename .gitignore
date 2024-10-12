@@ -195,9 +195,13 @@ pyrightconfig.json
 
 tests/*
 !tests/cooling_simulation
+!tests/cooling_meas_1
+!tests/cooling_meas_2
+
 old/
 src/wandb
 src/outputs
 src/data/vessel/foto&video
+outputs
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,python

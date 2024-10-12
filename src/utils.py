@@ -435,6 +435,8 @@ def mm_observer(config):
         obs = np.array([W0, W1, W2])
 
     if n_obs==1:
+        W = config.model_parameters.W4
+        config.model_properties.W = float(W)
         run_figs = co.set_run(f"obs_0")    
         OmegaConf.save(config, f"{run_figs}/config.yaml")   
         return train_model(run_figs)
@@ -497,8 +499,11 @@ def compute_mu(conf):
 
 
 
-def mm_predict(multi_obs, lam, obs_grid, prj_figs):
-    a = np.load(f'{prj_figs}/weights_lam_{lam}.npy', allow_pickle=True)
+def mm_predict(multi_obs, obs_grid, prj_figs):
+    conf = OmegaConf.load(f"{prj_figs}/config.yaml")
+    ups = conf.model_parameters.upsilon
+    lam = conf.model_parameters.lam
+    a = np.load(f'{prj_figs}/weights_l_{lam}_u_{ups}.npy', allow_pickle=True)
     weights = a[1:]
 
     num_time_steps = weights.shape[1]
@@ -592,7 +597,8 @@ def get_observers_preds(multi_obs, x_obs, output_dir, conf):
         obs_pred = multi_obs.predict(x_obs)
         obs_pred = obs_pred.reshape(len(obs_pred),)
         run_figs = os.path.join(output_dir, f"obs_0")
-        np.savetxt(f'{run_figs}/prediction_obs_0.txt', (x_obs[:, 0].round(2), x_obs[:, -1].round(2), obs_pred.round(4))) 
+        data_to_save = np.column_stack((x_obs[:, 0].round(2), x_obs[:, -1].round(2), obs_pred.round(4)))
+        np.savetxt(f'{run_figs}/prediction_obs_0.txt', data_to_save, fmt='%.2f %.2f %.4f', delimiter=' ') 
         preds.append(obs_pred)
         preds = np.array(preds).reshape(3, len(preds[0])).round(4)
         OmegaConf.save(conf, f"{run_figs}/config.yaml")
@@ -603,7 +609,8 @@ def get_observers_preds(multi_obs, x_obs, output_dir, conf):
             obs_pred = multi_obs[el].predict(x_obs)
             run_figs = os.path.join(output_dir, f"obs_{el}")
             obs_pred = obs_pred.reshape(len(obs_pred),)
-            np.savetxt(f'{run_figs}/prediction_obs_{el}.txt', (x_obs[:, 0].round(2), x_obs[:, -1].round(2), obs_pred.round(4))) 
+            data_to_save = np.column_stack((x_obs[:, 0].round(2), x_obs[:, -1].round(2), obs_pred.round(4)))
+            np.savetxt(f'{run_figs}/prediction_obs_{el}.txt', data_to_save, fmt='%.2f %.2f %.4f', delimiter=' ')
             preds.append(obs_pred)
 
         run_figs = co.set_run(f"mm_obs")
@@ -661,6 +668,7 @@ def solve_ivp(multi_obs, fold, conf, x_obs):
     """
     n_obs = conf.model_parameters.n_obs
     lam = conf.model_parameters.lam
+    ups = conf.model_parameters.upsilon
     p0 = np.full((n_obs,), 1/n_obs)
 
     def f(t, p):
@@ -678,10 +686,11 @@ def solve_ivp(multi_obs, fold, conf, x_obs):
     weights[0] = sol.t
     weights[1:] = sol.y
     
-    np.save(f'{fold}/weights_lam_{lam}.npy', weights)
+    np.save(f'{fold}/weights_l_{lam}_u_{ups}.npy', weights)
     pp.plot_weights(weights[1:], weights[0], fold, conf)
-    y_pred = mm_predict(multi_obs, lam, x_obs, fold)
-    np.savetxt(f'{fold}/prediction_mm_obs.txt', (x_obs[:, 0], x_obs[:, -1], y_pred))
+    y_pred = mm_predict(multi_obs, x_obs, fold)
+    data_to_save = np.column_stack((x_obs[:, 0].round(2), x_obs[:, -1].round(2), y_pred.round(4)))
+    np.savetxt(f'{fold}/prediction_mm_obs.txt', data_to_save, fmt='%.2f %.2f %.4f', delimiter=' ')
     return y_pred
 
 
@@ -903,6 +912,7 @@ def configure_settings(cfg, experiment):
     cfg.model_properties.K=meas_settings["K"]
     cfg.model_properties.b2=meas_settings["b2"]
     cfg.model_properties.b3=meas_settings["b3"]
+    cfg.model_properties.iterations=meas_settings["iterations"]
     return cfg
 
 

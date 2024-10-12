@@ -1,0 +1,17 @@
+setuptools
+matplotlib
+sympy
+torch 
+tqdm
+matplotlib
+numpy
+scikit-learn
+scikit-optimize 
+scipy
+wandb
+seaborn
+deepxde
+uncertainties
+simpy
+hydra-core
+matlabengine

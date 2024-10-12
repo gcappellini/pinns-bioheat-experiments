@@ -15,7 +15,7 @@ model_properties:
   activation: tanh
   initial_weights_regularizer: true
   initialization: Glorot uniform
-  iterations: 30000
+  iterations: 50000
   LBFGS: false
   learning_rate: 0.0001
   num_dense_layers: 6
@@ -38,8 +38,8 @@ model_properties:
   b2: 0.25
   b3: 0.19
 model_parameters:
-  lam: 150.0
-  upsilon: 5.0
+  lam: 150
+  upsilon: 5
   W0: 0.04
   W1: 0.14
   W2: 0.24
@@ -48,7 +48,7 @@ model_parameters:
   W5: 0.54
   W6: 0.64
   W7: 0.74
-  n_obs: 8
+  n_obs: 1
   gt1_0: 24.44
   gt2_0: 29.25
   x_y2: 0

@@ -52,7 +52,7 @@ def plot_generic(x, y, title, xlabel, ylabel, legend_labels=None, log_scale=Fals
         linestyle = linestyles[i] if linestyles else '-'  # Default to solid line
         marker = markers[i] if markers else None
         linewidth = linewidths[i] if linewidths else 1.2
-        markersize = markersizes[i] if markersizes else 4
+        markersize = markersizes[i] if markersizes else 12
         alpha=alphas[i] if alphas else 1
 
         ax.plot(xi, yi, label=label, color=color, linestyle=linestyle, marker=marker, linewidth=linewidth, markersize=markersize, alpha=alpha)
@@ -167,13 +167,14 @@ def plot_loss_components(losshistory, nam):
 # def plot_weights(weights, t, run_figs, conf, gt=False):
 def plot_weights(weights, t, run_figs, conf1, gt=False):
     lam = conf1.model_parameters.lam
+    ups = conf1.model_parameters.upsilon
     n_obs = conf1.model_parameters.n_obs
 
     # Prepare the labels for each weight line
     legend_labels = [f"Weight $p_{i}$" for i in range(weights.shape[0])]
 
     # Define the title with the lambda value
-    title = f"Dynamic weights, λ={lam}"
+    title = fr"Dynamic weights,$\lambda={lam}$, $\upsilon={ups}$"
     a = t.reshape(len(t),)
     times = np.full_like(weights, a)
 
@@ -195,7 +196,7 @@ def plot_weights(weights, t, run_figs, conf1, gt=False):
         size=(6, 5),               # Figure size
         colors=colors,
         linestyles=linestyles,
-        filename=f"{run_figs}/weights_lam_{lam}_{'matlab' if gt else 'pinns'}_{n_obs}obs.png"  # Filename to save the plot
+        filename=f"{run_figs}/weights_l_{lam}_u_{ups}_{'matlab' if gt else 'pinns'}_{n_obs}obs.png"  # Filename to save the plot
     )
 
 
@@ -262,7 +263,7 @@ def plot_l2(tot_true, tot_pred, number, folder, MultiObs=False):
     if MultiObs:
         pred = matching[:, -1].reshape(len(matching[:, -1]), 1)
 
-        # combined_pred = uu.mm_predict(model, lam, xobs, folder)
+        # combined_pred = uu.mm_predict(model, xobs, folder)
         l2 = uu.calculate_l2(e, theta_true, pred)
         # ll2 = l2.reshape(len(l2), 1)
 
@@ -394,6 +395,7 @@ def plot_tf(tot_true, tot_obs_pred, number, prj_figs, MultiObs=False):
 
     conf = OmegaConf.load(f'{prj_figs}/config.yaml')
     n_obs = conf.model_parameters.n_obs
+    exp_name = conf.experiment.name
     obs_colors = uu.get_obs_colors(conf)
     true_color, mm_obs_color = uu.get_sys_mm_colors(conf)
     obs_linestyles = uu.get_obs_linestyles(conf)
@@ -404,7 +406,7 @@ def plot_tf(tot_true, tot_obs_pred, number, prj_figs, MultiObs=False):
         multi_pred = tot_obs_pred[:, -1][-len(x_pred):].reshape(len(x_pred), 1)
 
         # Generate individual predictions from each model in the ensemble
-        individual_preds = [tot_obs_pred[:, 3+m][-len(x_pred):].reshape(len(x_pred), 1) for m in range(n_obs)]  # Assuming model.models holds individual models
+        individual_preds = [tot_obs_pred[:, 2+m][-len(x_pred):].reshape(len(x_pred), 1) for m in range(n_obs)]  # Assuming model.models holds individual models
         
         # Stack all predictions (true values + individual predictions + combined prediction)
         all_preds = [true] + individual_preds + [multi_pred]
@@ -417,9 +419,10 @@ def plot_tf(tot_true, tot_obs_pred, number, prj_figs, MultiObs=False):
 
         colors = [true_color] + obs_colors + [mm_obs_color]
         linestyles = [true_linestyle] + obs_linestyles + [mm_obs_linestyle]
-        linestyles[0] = None
         markers = [None] * len(linestyles)
-        markers[0] = "x"
+        if exp_name[1].startswith("meas_"):
+            linestyles[0] = ''
+            markers[0] = "*"
         alphas = [0.6] * len(linestyles)
         alphas[-1] = 1.0
         linewidths = [1.2] * len(linestyles)
@@ -428,7 +431,7 @@ def plot_tf(tot_true, tot_obs_pred, number, prj_figs, MultiObs=False):
         if n_obs==1:
             pred = tot_obs_pred[:, 2][-len(x_pred):].reshape(len(x_pred), 1)
         else:
-            pred = tot_obs_pred[:, 3+number][-len(x_pred):].reshape(len(x_pred), 1)
+            pred = tot_obs_pred[:, 2+number][-len(x_pred):].reshape(len(x_pred), 1)
         # Only two lines to plot: true and single prediction
         all_preds = [true, pred]
         x_vals = [x_true, x_pred]  # xtr for true, x for predicted
@@ -509,9 +512,7 @@ def plot_tf_matlab(e, theta_true, theta_observers, theta_mmobs, prj_figs):
 
     colors = obs_colors + [system_color] + [mm_obs_color]
     linestyles = obs_linestyles + [system_linestyle] + [mm_obs_linestyle]
-    linestyles[-2] = None
     markers = [None] * len(linestyles)
-    markers[-2] = "x"
     alphas = [0.6] * len(linestyles)
     alphas[-1] = 1.0
     linewidths = [1.2] * len(linestyles)
@@ -586,6 +587,50 @@ def plot_comparison_3d(e, t_true, t_pred, run_figs, gt=False):
         fname
     )
 
+
+def plot_validation_3d(e, t_true, t_pred, run_figs):
+    """
+    Refactor the plot_comparison function to use plot_generic_3d for 3D comparisons.
+    
+    :param e: 2D array for X and Y data.
+    :param t_true: True values reshaped for 3D plotting.
+    :param t_pred: Predicted values reshaped for 3D plotting.
+    :param run_figs: Directory to save the plot.
+    """
+    conf = OmegaConf.load(f"{run_figs}/config.yaml")
+
+    # Determine the unique points in X and Y dimensions
+    la = len(np.unique(e[:, 0]))  # Number of unique X points
+    le = len(np.unique(e[:, 1]))  # Number of unique Y points
+    
+    # Reshape the true and predicted theta values to match the 2D grid
+    theta_true = t_true.reshape(le, la)
+    theta_pred = t_pred.reshape(le, la)
+
+    # Column titles for each subplot
+    col_titles = ["MATLAB", "PINNs", "Error"] 
+
+    conf = OmegaConf.load(f"{run_figs}/config.yaml")
+    rescale = conf.plot.rescale
+    n = conf.model_parameters.n_obs
+
+    fname = f"{run_figs}/validation_3d_{n}obs.png"
+
+    theta_true_plot = uu.rescale_t(theta_true) if rescale else theta_true
+    theta_pred_plot = uu.rescale_t(theta_pred) if rescale else theta_pred
+    e_plot = np.hstack((uu.rescale_x(e[:, 0:1]), uu.rescale_time(e[:, 1:2]))) if rescale else e
+    
+    xlabel, ylabel, zlabel = uu.get_scaled_labels(rescale)
+    # Call plot_generic_3d with the data
+    plot_generic_3d(
+        e_plot,                       # 2D array containing X and Y coordinates
+        theta_true_plot,              # Surface 1: true values (Z1)
+        theta_pred_plot,              # Surface 2: predicted values (Z2)
+        xlabel, ylabel, zlabel,
+        col_titles,      # Titles for each subplot
+        fname
+    )
+    
 
 def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, prj_figs, gt=False):
     conf = OmegaConf.load(f"{src_dir}/config.yaml")
@@ -816,4 +861,4 @@ def plot_mm_obs(multi_obs, tot_true, tot_pred, config, output_dir, comparison_3d
     # plot_t0(tot_pred, config, output_dir)
     if comparison_3d:
         matching = uu.extract_matching(tot_true, tot_pred)
-        plot_comparison_3d(matching[:, 0:2], matching[:, 3], matching[:, 4], output_dir)
+        plot_comparison_3d(matching[:, 0:2], matching[:, 2], matching[:, -1], output_dir)
