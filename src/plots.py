@@ -174,7 +174,7 @@ def plot_weights(weights, t, run_figs, conf1, gt=False):
     legend_labels = [f"Weight $p_{i}$" for i in range(weights.shape[0])]
 
     # Define the title with the lambda value
-    title = fr"Dynamic weights,$\lambda={lam}$, $\upsilon={ups}$"
+    title = fr"Dynamic weights, $\lambda={lam}$, $\upsilon={ups}$"
     a = t.reshape(len(t),)
     times = np.full_like(weights, a)
 
@@ -459,6 +459,103 @@ def plot_tf(tot_true, tot_obs_pred, number, prj_figs, MultiObs=False):
         legend_labels=legend_labels,  # Labels for the legend
         size=(6, 5),
         filename=f"{prj_figs}/tf_{f'mm_{n_obs}obs' if MultiObs else f'obs{number}'}.png",
+        colors = colors,
+        linestyles=linestyles,
+        markers=markers,
+        alphas = alphas,
+        linewidths=linewidths
+    )
+
+def plot_tx(tx, tot_true, tot_obs_pred, number, prj_figs, MultiObs=False):
+    """
+    Plot true values and predicted values (single or multi-observer model).
+    
+    :param e: 2D array for depth (X) and time (tau).
+    :param theta_true: True theta values.
+    :param model: The model used for predictions.
+    :param number: Identifier for the observation.
+    :param prj_figs: Directory to save the figure.
+    :param MultiObs: If True, plot multiple model predictions and a weighted average.
+    """
+    # Reshape inputs
+    match = uu.extract_matching(tot_true, tot_obs_pred)
+
+    closest_value = np.abs(match[:, 1] - tx).min()  # Minimum absolute difference
+    true_tx = match[np.abs(match[:, 1] - tx) == closest_value][:, 2]
+    preds_tx = tot_obs_pred[np.abs(tot_obs_pred[:, 1] - tx) == closest_value][:, 2:]
+
+    true = true_tx.reshape(len(true_tx), 1)
+
+    x_true = np.unique(tot_true[:, 0])
+    x_pred = np.unique(tot_obs_pred[:, 0])
+
+    conf = OmegaConf.load(f'{prj_figs}/config.yaml')
+    n_obs = conf.model_parameters.n_obs
+    exp_name = conf.experiment.name
+    obs_colors = uu.get_obs_colors(conf)
+    true_color, mm_obs_color = uu.get_sys_mm_colors(conf)
+    obs_linestyles = uu.get_obs_linestyles(conf)
+    true_linestyle, mm_obs_linestyle = uu.get_sys_mm_linestyle(conf)
+
+
+    if MultiObs:
+        multi_pred = preds_tx[:, -1].reshape(len(x_pred), 1)
+
+        # Generate individual predictions from each model in the ensemble
+        individual_preds = [preds_tx[:, m].reshape(len(x_pred), 1) for m in range(n_obs)]  # Assuming model.models holds individual models
+        
+        # Stack all predictions (true values + individual predictions + combined prediction)
+        all_preds = [true] + individual_preds + [multi_pred]
+        
+        # x values: use xtr for true data, and 'x' for predictions
+        x_vals = [x_true] + [x_pred for _ in range(n_obs + 1)]
+
+        # Generate corresponding legend labels
+        legend_labels = ['True'] + [f'Obs {i}' for i in range(len(individual_preds))] + ['MultiObs Pred']
+
+        colors = [true_color] + obs_colors + [mm_obs_color]
+        linestyles = [true_linestyle] + obs_linestyles + [mm_obs_linestyle]
+        markers = [None] * len(linestyles)
+        if exp_name[1].startswith("meas_"):
+            linestyles[0] = ''
+            markers[0] = "*"
+        alphas = [0.6] * len(linestyles)
+        alphas[-1] = 1.0
+        linewidths = [1.2] * len(linestyles)
+        linewidths[-1] = 2.2
+    else:
+        if n_obs==1:
+            pred = preds_tx[:, -1].reshape(len(x_pred), 1)
+        else:
+            pred = preds_tx[:, number].reshape(len(x_pred), 1)
+        # Only two lines to plot: true and single prediction
+        all_preds = [true, pred]
+        x_vals = [x_true, x_pred]  # xtr for true, x for predicted
+        legend_labels = ['True', f'Obs {number}']
+        colors = [true_color] + [obs_colors[number]]
+        linestyles = [true_linestyle] + [obs_linestyles[number]]
+        markers = [None] * len(linestyles)
+        alphas = [1.0] * len(linestyles)
+        linewidths = [1.2] * len(linestyles)
+
+    rescale = conf.plot.rescale
+    xlabel, _, ylabel = uu.get_scaled_labels(rescale)
+    time = uu.rescale_time(tx)
+    # x_vals = np.array(x_vals, dtype=float)
+    x_vals_plot = uu.rescale_x(x_vals) if rescale else x_vals
+    all_preds_plot = uu.rescale_t(all_preds) if rescale else all_preds
+    title = f"Prediction at t={time} s" if rescale else fr"Prediction at $\tau$={tx}"
+
+    # Call the generic plotting function
+    plot_generic(
+        x=x_vals_plot,  # Different x values for true and predicted
+        y=all_preds_plot,  # List of true and predicted lines
+        title=title,
+        xlabel=xlabel,
+        ylabel=ylabel,
+        legend_labels=legend_labels,  # Labels for the legend
+        size=(6, 5),
+        filename=f"{prj_figs}/t{tx}_{f'mm_{n_obs}obs' if MultiObs else f'obs{number}'}.png",
         colors = colors,
         linestyles=linestyles,
         markers=markers,
@@ -858,6 +955,9 @@ def plot_mm_obs(multi_obs, tot_true, tot_pred, config, output_dir, comparison_3d
     plot_mu(mus, t, output_dir)
     plot_l2(tot_true, tot_pred, 0, output_dir, MultiObs=True)
     plot_tf(tot_true, tot_pred, 0, output_dir, MultiObs=True)
+    instants = [0, 0.25, 0.5, 0.75]
+    for t in instants:
+        plot_tx(t, tot_true, tot_pred, 0, output_dir, MultiObs=True)
     # plot_t0(tot_pred, config, output_dir)
     if comparison_3d:
         matching = uu.extract_matching(tot_true, tot_pred)

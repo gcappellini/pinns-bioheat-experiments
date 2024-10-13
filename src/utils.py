@@ -319,11 +319,16 @@ def rescale_t(theta):
 
     # Iterate through each component in theta and rescale if it is a list-like object
     rescaled_theta = []
-    for part in theta:
-        part = np.array(part, dtype=float)  # Ensure each part is converted into a numpy array
+    if isinstance(theta, (int, float)):
+        part = np.array(theta, dtype=float)  # Ensure each part is converted into a numpy array
         rescaled_part = Troom + (Tmax - Troom) * part  # Apply the rescaling
-        rescaled_theta.append(np.round(rescaled_part, 2))  # Round and append each rescaled part
+        rescaled_theta.append(np.round(rescaled_part, 2)) 
 
+    else:
+        for part in theta:
+            part = np.array(part, dtype=float)  # Ensure each part is converted into a numpy array
+            rescaled_part = Troom + (Tmax - Troom) * part  # Apply the rescaling
+            rescaled_theta.append(np.round(rescaled_part, 2))  # Round and append each rescaled part
     return rescaled_theta
 
 def rescale_x(X):
