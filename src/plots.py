@@ -401,12 +401,11 @@ def plot_tf(tot_true, tot_obs_pred, number, prj_figs, MultiObs=False):
     obs_linestyles = uu.get_obs_linestyles(conf)
     true_linestyle, mm_obs_linestyle = uu.get_sys_mm_linestyle(conf)
 
-
     if MultiObs:
         multi_pred = tot_obs_pred[:, -1][-len(x_pred):].reshape(len(x_pred), 1)
 
         # Generate individual predictions from each model in the ensemble
-        individual_preds = [tot_obs_pred[:, 2+m][-len(x_pred):].reshape(len(x_pred), 1) for m in range(n_obs)]  # Assuming model.models holds individual models
+        individual_preds = [tot_obs_pred[:, -(1+n_obs)+m][-len(x_pred):].reshape(len(x_pred), 1) for m in range(n_obs)]  # Assuming model.models holds individual models
         
         # Stack all predictions (true values + individual predictions + combined prediction)
         all_preds = [true] + individual_preds + [multi_pred]
@@ -502,7 +501,7 @@ def plot_tx(tx, tot_true, tot_obs_pred, number, prj_figs, MultiObs=False):
         multi_pred = preds_tx[:, -1].reshape(len(x_pred), 1)
 
         # Generate individual predictions from each model in the ensemble
-        individual_preds = [preds_tx[:, m].reshape(len(x_pred), 1) for m in range(n_obs)]  # Assuming model.models holds individual models
+        individual_preds = [preds_tx[:, -(1+n_obs)+m].reshape(len(x_pred), 1) for m in range(n_obs)]  # Assuming model.models holds individual models
         
         # Stack all predictions (true values + individual predictions + combined prediction)
         all_preds = [true] + individual_preds + [multi_pred]
@@ -780,7 +779,7 @@ def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, p
         colors=colors,
         linestyles=linestyles,
         size=(12, 6),
-        filename=f"{prj_figs}/timeseries_vs_matlab_{n_obs}obs.png"
+        filename=f"{prj_figs}/timeseries_vs_pinns_{n_obs}obs.png"
     )
 
 

@@ -38,8 +38,8 @@ model_properties:
   b2: 0.25
   b3: 0.19
 model_parameters:
-  lam: 150
-  upsilon: 5
+  lam: 750
+  upsilon: 50
   W0: 0.04
   W1: 0.14
   W2: 0.24
@@ -48,7 +48,7 @@ model_parameters:
   W5: 0.54
   W6: 0.64
   W7: 0.74
-  n_obs: 1
+  n_obs: 8
   gt1_0: 24.44
   gt2_0: 29.25
   x_y2: 0
@@ -111,7 +111,7 @@ experiment:
   - simulation
   import_data: false
   save_pickle: false
-  run_matlab: true
+  run_matlab: false
   run_wandb: false
   type:
     cooling:
