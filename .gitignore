@@ -197,6 +197,7 @@ tests/*
 !tests/cooling_simulation
 !tests/cooling_meas_1
 !tests/cooling_meas_2
+!tests/inverse_problem*
 
 old/
 src/wandb
