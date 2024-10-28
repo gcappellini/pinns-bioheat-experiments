@@ -234,7 +234,7 @@ def plot_mu(mus, t, run_figs, gt=False):
     )
 
 
-def plot_l2(tot_true, tot_pred, number, folder, MultiObs=False):
+def plot_l2(tot_true, tot_pred, number, folder, MultiObs=False, system = False):
     """
     Plot L2 norm of prediction errors for true and predicted values.
     
@@ -277,6 +277,13 @@ def plot_l2(tot_true, tot_pred, number, folder, MultiObs=False):
         l2 = l2.reshape(len(l2), 1)
         ll2 = np.hstack((l2, l2_individual_obs))
 
+    elif system:
+        pred = matching[:, -1].reshape(len(matching[:, -1]), 1)
+
+        # combined_pred = uu.mm_predict(model, xobs, folder)
+        ll2 = uu.calculate_l2(e, theta_true, pred)
+        # ll2 = l2.reshape(len(l2), 1)
+
     else:
 
         pred = matching[:, 3+number].reshape(len(matching), 1)
@@ -308,7 +315,7 @@ def plot_l2(tot_true, tot_pred, number, folder, MultiObs=False):
         ylabel=r"$L^2$ norm",
         legend_labels=legend_labels,  # Labels for the legend
         size=(6, 5),
-        filename=f"{folder}/l2_{f'mm_{n_obs}obs' if MultiObs else f'obs{number}'}.png",
+        filename=f"{folder}/l2_{f'mm_{n_obs}obs' if MultiObs else 'sys' if system else f'obs{number}'}.png",
         colors=colors,
         linestyles=linestyles,
         alphas=alphas,
@@ -373,7 +380,7 @@ def plot_l2_matlab(X, theta_true, y_obs, y_mm_obs, folder):
 
 
 
-def plot_tf(tot_true, tot_obs_pred, number, prj_figs, MultiObs=False):
+def plot_tf(tot_true, tot_obs_pred, number, prj_figs, MultiObs=False, system=False):
     """
     Plot true values and predicted values (single or multi-observer model).
     
@@ -426,6 +433,29 @@ def plot_tf(tot_true, tot_obs_pred, number, prj_figs, MultiObs=False):
         alphas[-1] = 1.0
         linewidths = [1.2] * len(linestyles)
         linewidths[-1] = 2.2
+    elif system:
+        sys_pred = tot_obs_pred[:, -1][-len(x_pred):].reshape(len(x_pred), 1)
+
+        # Stack all predictions (true values + individual predictions + combined prediction)
+        all_preds = [true] + [sys_pred]
+        
+        # x values: use xtr for true data, and 'x' for predictions
+        x_vals = [x_true] + [x_pred]
+
+        # Generate corresponding legend labels
+        legend_labels = ['True'] + ['System Pred']
+
+        colors = [true_color] + [true_color]
+        linestyles = [true_linestyle] + [mm_obs_linestyle]
+        markers = [None] * len(linestyles)
+        if exp_name[1].startswith("meas_"):
+            linestyles[0] = ''
+            markers[0] = "*"
+        alphas = [0.6] * len(linestyles)
+        alphas[-1] = 1.0
+        linewidths = [1.2] * len(linestyles)
+        linewidths[-1] = 2.2
+
     else:
         if n_obs==1:
             pred = tot_obs_pred[:, 2][-len(x_pred):].reshape(len(x_pred), 1)
@@ -457,7 +487,7 @@ def plot_tf(tot_true, tot_obs_pred, number, prj_figs, MultiObs=False):
         ylabel=ylabel,
         legend_labels=legend_labels,  # Labels for the legend
         size=(6, 5),
-        filename=f"{prj_figs}/tf_{f'mm_{n_obs}obs' if MultiObs else f'obs{number}'}.png",
+        filename=f"{prj_figs}/tf_{f'mm_{n_obs}obs' if MultiObs else f'sys' if system else f'obs{number}'}.png",
         colors = colors,
         linestyles=linestyles,
         markers=markers,
@@ -640,7 +670,7 @@ def plot_tf_matlab(e, theta_true, theta_observers, theta_mmobs, prj_figs):
     )
 
 
-def plot_comparison_3d(e, t_true, t_pred, run_figs, gt=False):
+def plot_comparison_3d(e, t_true, t_pred, run_figs, gt=False, system=False):
     """
     Refactor the plot_comparison function to use plot_generic_3d for 3D comparisons.
     
@@ -660,13 +690,13 @@ def plot_comparison_3d(e, t_true, t_pred, run_figs, gt=False):
     theta_pred = t_pred.reshape(le, la)
 
     # Column titles for each subplot
-    col_titles = ["System", "Observer", "Error"] if n_obs==1 else ["System", "MultiObserver", "Error"]
+    col_titles = ["System", "Observer", "Error"] if n_obs==1 else ["MATLAB", "PINNs", "Error"] if system else ["System", "MultiObserver", "Error"]
 
     conf = OmegaConf.load(f"{run_figs}/config.yaml")
     rescale = conf.plot.rescale
     n = conf.model_parameters.n_obs
 
-    fname = f"{run_figs}/comparison_3d_matlab_{n}obs.png" if gt else f"{run_figs}/comparison_3d_pinns_{n}obs.png"
+    fname = f"{run_figs}/comparison_3d_matlab_{n}obs.png" if gt else f"{run_figs}/comparison_3d_system.png" if system else f"{run_figs}/comparison_3d_pinns_{n}obs.png"
 
     theta_true_plot = uu.rescale_t(theta_true) if rescale else theta_true
     theta_pred_plot = uu.rescale_t(theta_pred) if rescale else theta_pred

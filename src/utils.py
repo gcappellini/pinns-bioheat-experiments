@@ -101,6 +101,25 @@ def ic_obs(x):
     return b1*(z**(b2))*np.exp(-b3*z) + b4*z
     
 
+def ic_sys(x):
+
+    if len(x.shape) == 1:
+        z = x 
+    else:
+        z = x[:, 0:1] 
+
+    conf = OmegaConf.load(f"{src_dir}/config.yaml")
+
+    theta20 = scale_t(conf.model_properties.Ty20)
+    theta30 = scale_t(conf.model_properties.Ty30)
+
+    b = cc.a5 * (theta30-theta20)
+    c = theta20
+    a = -b -c
+
+    return a*z**2 + b*z + c
+
+
 def create_nbho(run_figs):
     config = OmegaConf.load(f'{run_figs}/config.yaml')
 
@@ -138,10 +157,12 @@ def create_nbho(run_figs):
         return theta - x[:, 1:2]
 
     def bc0_obs(x, theta, X):
+
+
         dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0)
 
         return - dtheta_x - a5 * (x[:, 3:4] - x[:, 2:3]) - K * (x[:, 2:3] - theta)
-
+    
     xmin = [0, 0, 0, 0]
     xmax = [1, 0.2, 1, 1]
     geom = dde.geometry.Hypercube(xmin, xmax)
@@ -180,15 +201,94 @@ def create_nbho(run_figs):
 
     return model
 
+def create_sys(run_figs):
+    config = OmegaConf.load(f'{run_figs}/config.yaml')
 
-def train_model(run_figs):
+    activation = config.model_properties.activation
+    initial_weights_regularizer = config.model_properties.initial_weights_regularizer
+    initialization = config.model_properties.initialization
+    learning_rate = config.model_properties.learning_rate
+    num_dense_layers = config.model_properties.num_dense_layers
+    num_dense_nodes = config.model_properties.num_dense_nodes
+    w_res, w_bc0, w_bc1, w_ic = config.model_properties.w_res, config.model_properties.w_bc0, config.model_properties.w_bc1, config.model_properties.w_ic
+    num_domain, num_boundary, num_initial, num_test = config.model_properties.num_domain, config.model_properties.num_boundary, config.model_properties.num_initial, config.model_properties.num_test
+
+    a1 = cc.a1
+    a2 = cc.a2
+    a3 = cc.a3
+    a4 = cc.a4
+    a5 = cc.a5
+    K = config.model_properties.K
+    W = config.model_properties.W
+
+
+
+    def pde(x, theta):
+        dtheta_tau = dde.grad.jacobian(theta, x, i=0, j=1)
+        dtheta_xx = dde.grad.hessian(theta, x, i=0, j=0)
+
+        return (
+            a1 * dtheta_tau
+            - dtheta_xx + W * a2 * theta - a3 * torch.exp(-a4*x[:, 0:1])
+        )
+    
+
+    def bc1_sys(x, theta, X):
+        theta10 = scale_t(config.model_properties.Ty20)
+
+        return theta - theta10
+
+    def bc0_sys(x, theta, X):
+        theta30 = scale_t(config.model_properties.Ty30)
+        dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0)
+
+        return - dtheta_x - a5 * (theta30 - theta)
+
+    xmin = 0
+    xmax = 1
+    geom = dde.geometry.Interval(xmin, xmax)
+    timedomain = dde.geometry.TimeDomain(0, 2)
+    geomtime = dde.geometry.GeometryXTime(geom, timedomain)
+
+    bc_0 = dde.icbc.OperatorBC(geomtime, bc0_sys, boundary_0)
+    bc_1 = dde.icbc.OperatorBC(geomtime, bc1_sys, boundary_1)
+
+    ic = dde.icbc.IC(geomtime, ic_sys, lambda _, on_initial: on_initial)
+
+    data = dde.data.TimePDE(
+        geomtime,
+        lambda x, theta: pde(x, theta),
+        [bc_0, bc_1, ic],
+        num_domain=num_domain,
+        num_boundary=num_boundary,
+        num_initial=num_initial,
+        num_test=num_test,
+    )
+
+    layer_size = [2] + [num_dense_nodes] * num_dense_layers + [1]
+    net = dde.nn.FNN(layer_size, activation, initialization)
+
+
+    model = dde.Model(data, net)
+
+    if initial_weights_regularizer:
+        initial_losses = get_initial_loss(model)
+        loss_weights = len(initial_losses)/ initial_losses
+        model.compile("adam", lr=learning_rate, loss_weights=loss_weights)
+    else:
+        loss_weights = [w_res, w_bc0, w_bc1, w_ic]
+        model.compile("adam", lr=learning_rate, loss_weights=loss_weights)
+
+    return model
+
+def train_model(run_figs, system=False):
     global models
     config = OmegaConf.load(f'{run_figs}/config.yaml')
     config_hash = co.generate_config_hash(config.model_properties)
     n = config.model_properties.iterations
     model_path = os.path.join(models, f"model_{config_hash}.pt-{n}.pt")
 
-    mm = create_nbho(run_figs)
+    mm = create_sys(run_figs) if system else create_nbho(run_figs)
 
     if os.path.exists(model_path):
         # Model exists, load it
@@ -594,6 +694,43 @@ def check_observers_and_wandb_upload(tot_true, tot_pred, conf, output_dir, compa
             metrics = compute_metrics(matching[:, 2], matching[:, 3])
             wandb.log(metrics)
             wandb.finish()
+
+def check_system_and_wandb_upload(tot_true, tot_pred, conf, run_figs, comparison_3d=True):
+    """
+    Check observers and optionally upload results to wandb.
+    """
+    run_wandb = conf.experiment.run_wandb
+    name = conf.experiment.name
+
+
+    if run_wandb:
+        aa = OmegaConf.load(f"{run_figs}/config.yaml")
+        print(f"Initializing wandb for system...")
+        wandb.init(project=name, name=f"system", config=aa)
+            
+    pp.plot_l2(tot_true, tot_pred, 0, run_figs, system=True)
+    pp.plot_tf(tot_true, tot_pred, 0, run_figs, system=True)
+
+    if comparison_3d:
+        matching = extract_matching(tot_true, tot_pred)
+        pp.plot_comparison_3d(tot_true[:, 0:2], tot_true[:, 2], tot_pred[:, -1], run_figs, system=True)
+
+    if run_wandb:
+        matching = extract_matching(tot_true, tot_pred)
+        metrics = compute_metrics(matching[:, 2], matching[:, 3])
+        wandb.log(metrics)
+        wandb.finish()
+
+
+def get_system_pred(model, X, output_dir):
+    preds = [X[:, 0], X[:, -1]]
+    y_sys_pinns = model.predict(X)
+    data_to_save = np.column_stack((X[:, 0].round(2), X[:, -1].round(2), y_sys_pinns.round(4)))
+    np.savetxt(f'{output_dir}/prediction_system.txt', data_to_save, fmt='%.2f %.2f %.4f', delimiter=' ') 
+    preds.append(y_sys_pinns)
+    preds = np.array(y_sys_pinns).reshape(3, len(preds[0])).round(4)
+    return preds
+
 
 def get_observers_preds(multi_obs, x_obs, output_dir, conf):
     n_obs = conf.model_parameters.n_obs
