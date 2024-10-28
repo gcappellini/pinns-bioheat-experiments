@@ -17,6 +17,7 @@ def main():
     """
     Main function to run the testing of the network, MATLAB ground truth, observer checks, and PINNs.
     """
+    config = OmegaConf.load(f"{src_dir}/config.yaml")
     X, y_sys, y_obs, _ = uu.gen_testdata(config)
     x_obs = uu.gen_obsdata(config)
     tot_true = np.hstack((X, y_sys, y_obs))

@@ -218,8 +218,9 @@ def create_sys(run_figs):
     a3 = cc.a3
     a4 = cc.a4
     a5 = cc.a5
-    K = config.model_properties.K
     W = config.model_properties.W
+
+    theta10 = scale_t(config.model_properties.Ty20)
 
 
 
@@ -233,22 +234,22 @@ def create_sys(run_figs):
         )
     
 
-    def bc1_sys(x, theta, X):
-        theta10 = scale_t(config.model_properties.Ty20)
-
-        return theta - theta10
-
     def bc0_sys(x, theta, X):
         theta30 = scale_t(config.model_properties.Ty30)
         dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0)
 
         return - dtheta_x - a5 * (theta30 - theta)
+    
+    def bc1_sys(x, theta, X):
+
+        return theta - theta10
 
     xmin = 0
     xmax = 1
     geom = dde.geometry.Interval(xmin, xmax)
     timedomain = dde.geometry.TimeDomain(0, 2)
     geomtime = dde.geometry.GeometryXTime(geom, timedomain)
+
 
     bc_0 = dde.icbc.OperatorBC(geomtime, bc0_sys, boundary_0)
     bc_1 = dde.icbc.OperatorBC(geomtime, bc1_sys, boundary_1)
@@ -727,8 +728,8 @@ def get_system_pred(model, X, output_dir):
     y_sys_pinns = model.predict(X)
     data_to_save = np.column_stack((X[:, 0].round(2), X[:, -1].round(2), y_sys_pinns.round(4)))
     np.savetxt(f'{output_dir}/prediction_system.txt', data_to_save, fmt='%.2f %.2f %.4f', delimiter=' ') 
-    preds.append(y_sys_pinns)
-    preds = np.array(y_sys_pinns).reshape(3, len(preds[0])).round(4)
+
+    preds = np.array(data_to_save).reshape(len(preds[0]), 3).round(4)
     return preds
 
 

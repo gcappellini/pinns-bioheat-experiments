@@ -282,6 +282,7 @@ def plot_l2(tot_true, tot_pred, number, folder, MultiObs=False, system = False):
 
         # combined_pred = uu.mm_predict(model, xobs, folder)
         ll2 = uu.calculate_l2(e, theta_true, pred)
+        ll2 = np.array(ll2).reshape(len(ll2), 1)
         # ll2 = l2.reshape(len(l2), 1)
 
     else:
@@ -291,7 +292,7 @@ def plot_l2(tot_true, tot_pred, number, folder, MultiObs=False, system = False):
         ll2 = l2_individual.reshape(len(l2_individual), 1)
 
     
-    legend_labels = ['MultiObs'] + [f'Obs {i}' for i in range(n_obs)] if MultiObs else [f'Obs {number}']
+    legend_labels = ['MultiObs'] + [f'Obs {i}' for i in range(n_obs)] if MultiObs else ['System prediction'] if system else [f'Obs {number}']
     colors = [mm_obs_color] + obs_colors if MultiObs else [obs_colors[number]]
     linestyles = [mm_obs_linestyle] + obs_linestyles if MultiObs else [obs_linestyles[number]]
     alphas = [0.6] * len(linestyles)
