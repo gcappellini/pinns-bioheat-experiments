@@ -218,9 +218,9 @@ def create_sys(run_figs):
     a3 = cc.a3
     a4 = cc.a4
     a5 = cc.a5
-    W = config.model_properties.W
+    W = config.model_parameters.W4
 
-    theta10 = scale_t(config.model_properties.Ty20)
+    theta10 = scale_t(config.model_properties.Ty10)
 
 
 
@@ -630,39 +630,6 @@ def mm_predict(multi_obs, obs_grid, prj_figs):
 
     return np.array(predictions)
 
-
-def test_observer(model, run_figs, X, x_obs, y_obs, number):
-        obs = f"Obs {number}"
-
-        conf = OmegaConf.load(f'{run_figs}/config.yaml')
-        n_obs = conf.model_parameters.n_obs
-
-        
-        # Model prediction
-        y_pred = model.predict(x_obs)
-        la = len(np.unique(X[:, 0]))
-        le = len(np.unique(X[:, 1]))
-
-        true = y_obs[:, number].reshape(le, la)
-        pred = y_pred.reshape(le, la)
-        y2_true = true[:, 0]
-        y1_true = true[:, -1]
-
-        Xob_y2, _ = gen_obs_y2(n_obs)
-        Xob_y1, _ = gen_obs_y1(n_obs)
-        y2_pred, y1_pred = model.predict(Xob_y2), model.predict(Xob_y1)
-
-        t = np.unique(Xob_y2[:, -1])
-
-        y = np.vstack([y2_true, y2_pred.reshape(y2_true.shape), y1_true, y1_pred.reshape(y2_true.shape)])
-        legend_labels = [r'$\hat{\theta}_{true}(0, \tau)$', r'$\hat{\theta}_{pred}(0, \tau)$', r'$\hat{\theta}_{true}(1, \tau)$', r'$\hat{\theta}_{pred}(1, \tau)$']
-
-        # Check Model prediction
-        pp.plot_generic_3d(X[:, 0:2], pred, true, ["PINNs", "Matlab", "Error"], filename=f"{run_figs}/comparison_3d_{obs}")
-        pp.plot_generic(t, y, "Comparison at the boundary", r"Time ($\tau$)", r"Theta ($\theta$)", legend_labels, filename=f"{run_figs}/comparison_outputs_{obs}")
-        # Compute and log errors
-        errors = compute_metrics(y_obs[:, number], y_pred)
-        return errors
 
 
 def check_observers_and_wandb_upload(tot_true, tot_pred, conf, output_dir, comparison_3d=True):

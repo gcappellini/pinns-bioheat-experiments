@@ -29,6 +29,7 @@ def main():
     name_str = f"{prj_name[0]}_{prj_name[1]}"
 
     output_dir = co.set_prj(f"{name_str}/simulation_system")
+    config.model_properties.W = config.model_parameters.W4
     OmegaConf.save(config,f"{output_dir}/config.yaml")
 
     pinns_sys = uu.train_model(output_dir, system=True)
