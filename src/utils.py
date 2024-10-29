@@ -144,7 +144,8 @@ def create_nbho(run_figs):
 
     def pde(x, theta):
         # dtheta_tau = dde.grad.jacobian(theta, x, i=0, j=4)
-        dtheta_tau = dde.grad.jacobian(theta, x, i=0, j=3)
+        # dtheta_tau = dde.grad.jacobian(theta, x, i=0, j=3)
+        dtheta_tau = dde.grad.jacobian(theta, x, i=0, j=2)
         dtheta_xx = dde.grad.hessian(theta, x, i=0, j=0)
 
         return (
@@ -155,19 +156,24 @@ def create_nbho(run_figs):
 
     def bc1_obs(x, theta, X):
 
-        return theta - x[:, 1:2]
+        # return theta - x[:, 1:2]
+        return theta - 0
 
     def bc0_obs(x, theta, X):
         dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0)
-        return - dtheta_x + a5 * x[:, 2:3] - K * (x[:, 2:3] - theta)
+        
         # return - dtheta_x - a5 * (x[:, 3:4] - x[:, 2:3]) - K * (x[:, 2:3] - theta)
+        # return - dtheta_x + a5 * x[:, 2:3] - K * (x[:, 2:3] - theta)
+        return - dtheta_x + a5 * x[:, 1:2] - K * (x[:, 1:2] - theta)
     
     # xmin = [0, 0, 0, 0]
     # xmax = [1, 0.2, 1, 1]
     # geom = dde.geometry.Hypercube(xmin, xmax)
-    xmin = [0, 0, 0]
-    xmax = [1, 0.2, 1]
-    geom = dde.geometry.Cuboid(xmin, xmax)
+    # xmin = [0, 0, 0]
+    # xmax = [1, 0.2, 1]
+    xmin = [0, 0]
+    xmax = [1, 1]
+    geom = dde.geometry.Rectangle(xmin, xmax)
     timedomain = dde.geometry.TimeDomain(0, 2)
     geomtime = dde.geometry.GeometryXTime(geom, timedomain)
 
@@ -187,7 +193,8 @@ def create_nbho(run_figs):
     )
 
     # layer_size = [5] + [num_dense_nodes] * num_dense_layers + [1]
-    layer_size = [4] + [num_dense_nodes] * num_dense_layers + [1]
+    # layer_size = [4] + [num_dense_nodes] * num_dense_layers + [1]
+    layer_size = [3] + [num_dense_nodes] * num_dense_layers + [1]
     net = dde.nn.FNN(layer_size, activation, initialization)
 
     # net.apply_output_transform(output_transform)
@@ -390,8 +397,8 @@ def gen_obsdata(conf):
     rows_1 = g[g[:, 0] == 1.0]
     rows_0 = g[g[:, 0] == 0.0]
 
-    y1 = rows_1[:, 2].reshape(len(instants),)
-    f1 = interp1d(instants, y1, kind='previous')
+    # y1 = rows_1[:, 2].reshape(len(instants),)
+    # f1 = interp1d(instants, y1, kind='previous')
 
     y2 = rows_0[:, 2].reshape(len(instants),)
     f2 = interp1d(instants, y2, kind='previous')
@@ -401,7 +408,8 @@ def gen_obsdata(conf):
     # f3 = interp1d(instants, y3, kind='previous')
 
     # Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
-    Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), g[:, 1])).T
+    # Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), g[:, 1])).T
+    Xobs = np.vstack((g[:, 0], f2(g[:, 1]), g[:, 1])).T
     return Xobs
 
 
@@ -510,8 +518,8 @@ def import_obsdata(nam, extended = True):
     rows_1 = g[g[:, 0] == positions[-1]]
     rows_0 = g[g[:, 0] == positions[0]]
 
-    y1 = rows_1[:, -2].reshape(len(instants),)
-    f1 = interp1d(instants, y1, kind='previous')
+    # y1 = rows_1[:, -2].reshape(len(instants),)
+    # f1 = interp1d(instants, y1, kind='previous')
 
     y2 = rows_0[:, -2].reshape(len(instants),)
     f2 = interp1d(instants, y2, kind='previous')
@@ -527,10 +535,12 @@ def import_obsdata(nam, extended = True):
         X, T = np.meshgrid(x, t)
         T_clipped = np.clip(T, None, 0.9956)
         # Xobs = np.vstack((np.ravel(X), f1(np.ravel(T_clipped)), f2(np.ravel(T_clipped)), f3(np.ravel(T_clipped)), np.ravel(T))).T
-        Xobs = np.vstack((np.ravel(X), f1(np.ravel(T_clipped)), f2(np.ravel(T_clipped)), np.ravel(T))).T
+        # Xobs = np.vstack((np.ravel(X), f1(np.ravel(T_clipped)), f2(np.ravel(T_clipped)), np.ravel(T))).T
+        Xobs = np.vstack((np.ravel(X), f2(np.ravel(T_clipped)), np.ravel(T))).T
     else:
         # Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
-        Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), g[:, 1])).T
+        # Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), g[:, 1])).T
+        Xobs = np.vstack((g[:, 0], f2(g[:, 1]), g[:, 1])).T
 
     return Xobs
 
