@@ -279,7 +279,6 @@ def create_sys(run_figs):
     layer_size = [2] + [num_dense_nodes] * num_dense_layers + [1]
     net = dde.nn.FNN(layer_size, activation, initialization)
 
-
     model = dde.Model(data, net)
 
     if initial_weights_regularizer:
@@ -656,29 +655,31 @@ def check_observers_and_wandb_upload(tot_true, tot_pred, conf, output_dir, compa
     name = conf.experiment.name
     n_obs = conf.model_parameters.n_obs
 
+    obs_metrics = {}
     for el in range(n_obs):
+        label = f"obs_{el}"
 
         # tot_obs_pred = np.vstack((tot_pred[0], tot_pred[1], pred)).T
-        run_figs = os.path.join(output_dir, f"obs_{el}")
+        run_figs = os.path.join(output_dir, label)
 
         if run_wandb:
             aa = OmegaConf.load(f"{run_figs}/config.yaml")
             print(f"Initializing wandb for observer {el}...")
-            wandb.init(project=name, name=f"obs_{el}", config=aa)
+            wandb.init(project=name, name=label, config=aa)
                 
         pp.plot_l2(tot_true, tot_pred, el, run_figs)
         pp.plot_tf(tot_true, tot_pred, el, run_figs)
 
+        matching = extract_matching(tot_true, tot_pred)
+        metrics = compute_metrics(matching[:, 2], matching[:, 3])
+        obs_metrics[label] = metrics
         if comparison_3d:
-            matching = extract_matching(tot_true, tot_pred)
             pp.plot_comparison_3d(tot_true[:, 0:2], tot_true[:, 2], tot_pred[:, -1], run_figs)
 
         if run_wandb:
-            matching = extract_matching(tot_true, tot_pred)
-            metrics = compute_metrics(matching[:, 2], matching[:, 3])
             wandb.log(metrics)
             wandb.finish()
-
+    return obs_metrics 
 
 def check_system_and_wandb_upload(tot_true, tot_pred, conf, run_figs, comparison_3d=True):
     """
@@ -1032,6 +1033,8 @@ def point_ground_truths(conf):
 
 
 def configure_settings(cfg, experiment):
+    cfg.model_properties.direct = False
+    cfg.model_properties.W = cfg.model_parameters.W4
     exp_type_settings = getattr(cfg.experiment.type, experiment[0])
     cfg.model_properties.pwr_fact=exp_type_settings["pwr_fact"]
     cfg.model_properties.h=exp_type_settings["h"]

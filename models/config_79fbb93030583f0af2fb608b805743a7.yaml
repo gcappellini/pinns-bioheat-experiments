@@ -4,7 +4,7 @@ model_properties:
   k: 0.6
   rho: 1000.0
   c: 4186.0
-  W: 0.44
+  W: 2.44
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
@@ -20,7 +20,7 @@ model_properties:
   learning_rate: 0.0001
   num_dense_layers: 6
   num_dense_nodes: 92
-  num_domain: 2000
+  num_domain: 20000
   num_boundary: 2000
   num_initial: 1600
   num_test: 10000
@@ -37,7 +37,6 @@ model_properties:
   x0: 0.001
   b2: 0.25
   b3: 0.19
-  direct: false
 model_parameters:
   lam: 750
   upsilon: 50
@@ -45,7 +44,7 @@ model_parameters:
   W1: 0.14
   W2: 0.24
   W3: 0.34
-  W4: 0.44
+  W4: 2.44
   W5: 0.54
   W6: 0.64
   W7: 0.74
@@ -114,7 +113,7 @@ experiment:
   save_pickle: false
   run_matlab: true
   run_wandb: false
-  check_system: true
+  check_system: false
   type:
     cooling:
       h: 10.0

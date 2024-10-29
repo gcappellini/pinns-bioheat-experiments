@@ -11,6 +11,7 @@ import os
 import deepxde as dde
 import wandb
 import plots as pp
+from omegaconf import OmegaConf
 
 # Function 'gp_minimize' of package 'skopt(scikit-optimize)' is used in this example.
 # However 'np.int' used in skopt 0.9.0(the latest version) was deprecated since NumPy 1.20.
@@ -31,14 +32,14 @@ dde.config.set_random_seed(200)
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
 
-prj = "hpo_160924_obs5"
+prj = "hpo_291024_obs0"
 prj_figs = co.set_prj(prj)
 
 # HPO setting
 n_calls = 50
-dim_learning_rate = Real(low=1e-4, high=5e-2, name="learning_rate", prior="log-uniform")
-dim_num_dense_layers = Integer(low=1, high=6, name="num_dense_layers")
-dim_num_dense_nodes = Integer(low=5, high=100, name="num_dense_nodes")
+dim_learning_rate = Real(low=1e-5, high=5e-2, name="learning_rate", prior="log-uniform")
+dim_num_dense_layers = Integer(low=3, high=8, name="num_dense_layers")
+dim_num_dense_nodes = Integer(low=5, high=250, name="num_dense_nodes")
 dim_activation = Categorical(categories=["elu", "silu", "sigmoid", "swish", "tanh"], name="activation")
 dim_initialization = Categorical(categories=["Glorot normal", "Glorot uniform", "He normal", "He uniform"], name="initialization")
 # dim_w_bc0 = Integer(low=1, high=1e+2, name="w_bc0", prior="log-uniform")
@@ -52,20 +53,25 @@ dimensions = [
     # dim_w_bc0
 ]
 
-default_parameters = [0.001, 4, 50, "swish", "Glorot normal"]
+default_parameters = [0.0001, 6, 92, "tanh", "Glorot normal"]
 
+conf = OmegaConf.load(f"{src_dir}/config.yaml")
+uu.run_matlab_ground_truth(prj_figs, conf)
+X, y_sys, y_obs, _ = uu.gen_testdata(conf)
+x_obs = uu.gen_obsdata(conf)
+tot_true = np.hstack((X, y_sys, y_obs))
 
 @use_named_args(dimensions=dimensions)
 def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation, initialization):
     global ITERATION
     run_figs = co.set_run(f"{ITERATION}")
 
-    config = uu.read_json(f"{src_dir}/properties.json")
-    config["activation"] = activation
-    config["learning_rate"] = learning_rate
-    config["num_dense_layers"] = num_dense_layers
-    config["num_dense_nodes"] = num_dense_nodes
-    config["initialization"] = initialization
+    conf.model_parameters.n_obs = 1
+    conf.model_properties.direct = False
+    conf.model_properties.W = conf.model_parameters.W4
+    conf.model_properties.activation, conf.model_properties.learning_rate, conf.model_properties.num_dense_layers = activation, learning_rate, num_dense_layers
+    conf.model_properties.num_dense_layers, conf.model_properties.initialization = num_dense_nodes, initialization
+    OmegaConf.save(conf, f"{run_figs}/config.yaml")
 
     aa = {"activation": activation,
           "learning_rate": learning_rate,
@@ -89,22 +95,15 @@ def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation, initia
     # print("w_bc0:", w_bc0)
     print()
 
-    data =  uu.read_json(f"{src_dir}/parameters.json")
-    config["W"] = data["W5"]
-    uu.write_json(config, f"{src_dir}/properties.json")
-    uu.write_json(config, f"{run_figs}/properties.json")
 
-    # Create the neural network with these hyper-parameters.
-    model = uu.train_model(run_figs)
-    xobs = uu.gen_obsdata()
-    X, _, obs_true, _ =uu.gen_testdata()
-    obs_pred = model.predict(xobs)
-    pp.check_obs(X, obs_true[:, 5], obs_pred, 0, run_figs)
+    # Generate and check observers if needed
+    multi_obs = uu.mm_observer(conf)
 
-    errors = uu.compute_metrics(obs_true[:, 5], obs_pred)
-    error = errors["L2RE"]
+    tot_pred = uu.get_observers_preds(multi_obs, x_obs, run_figs, conf)
+    metrics = uu.check_observers_and_wandb_upload(tot_true, tot_pred, conf, run_figs)
+    error = metrics["L2RE"]
 
-    wandb.log(errors)
+    wandb.log(metrics)
     wandb.finish()
 
     if np.isnan(error):

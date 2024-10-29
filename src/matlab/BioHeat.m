@@ -41,7 +41,7 @@ if n_obs == 3
     W0 = config_data.model_parameters.W0;
     W1 = config_data.model_parameters.W4;
     W2 = config_data.model_parameters.W7;
-else 
+elseif n_obs == 8 
     W0 = config_data.model_parameters.W0;
     W1 = config_data.model_parameters.W1;
     W2 = config_data.model_parameters.W2;

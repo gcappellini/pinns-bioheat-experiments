@@ -13,7 +13,7 @@ tests_dir = os.path.join(git_dir, "tests")
 os.makedirs(tests_dir, exist_ok=True)
 
 
-def main(check_system=False):
+def main():
     """
     Main function to run the testing of the network, MATLAB ground truth, observer checks, and PINNs.
     """
@@ -26,11 +26,13 @@ def main(check_system=False):
     config = OmegaConf.load(f"{src_dir}/config.yaml")
     
     prj_name = config.experiment.name
+    check_system = config.experiment.check_system
     name_str = f"{prj_name[0]}_{prj_name[1]}"
 
     if check_system:
         output_dir = co.set_prj(f"{name_str}/simulation_system")
         config.model_properties.W = config.model_parameters.W4
+        config.model_properties.direct = True
         OmegaConf.save(config,f"{output_dir}/config.yaml")
 
         pinns_sys = uu.train_model(output_dir, system=True)
@@ -39,6 +41,7 @@ def main(check_system=False):
         uu.check_system_and_wandb_upload(tot_true[:, :-1], y_sys_pinns, config, output_dir)
 
     n_obs = config.model_parameters.n_obs
+    config.model_properties.direct = False
     output_dir = co.set_prj(f"{name_str}/simulation_{n_obs}obs")
     OmegaConf.save(config,f"{output_dir}/config.yaml")
 
@@ -46,7 +49,8 @@ def main(check_system=False):
     multi_obs = uu.mm_observer(config)
 
     tot_pred = uu.get_observers_preds(multi_obs, x_obs, output_dir, config)
-    uu.check_observers_and_wandb_upload(tot_true, tot_pred, config, output_dir)
+    metrics = uu.check_observers_and_wandb_upload(tot_true, tot_pred, config, output_dir)
+    print(metrics)
     if n_obs==1:
         pp.plot_validation_3d(tot_true[:, 0:2], tot_true[:, -1], tot_pred[:, -1], output_dir)
         instants = [0, 0.25, 0.5, 0.75]
@@ -58,6 +62,5 @@ def main(check_system=False):
 
 
 if __name__ == "__main__":
-
 
     main()

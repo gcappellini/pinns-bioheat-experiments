@@ -30,6 +30,7 @@ if __name__ == "__main__":
     name_str = f"{prj_name[0]}_{prj_name[1]}/ground_truth"
     
     n_obs = cfg.model_parameters.n_obs
+    cfg.model_properties.W = cfg.model_parameters.W4
 
     output_dir = co.set_prj(name_str)
 

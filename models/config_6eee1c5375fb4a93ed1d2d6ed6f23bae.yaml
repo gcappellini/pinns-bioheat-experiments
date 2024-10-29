@@ -20,7 +20,7 @@ model_properties:
   learning_rate: 0.0001
   num_dense_layers: 6
   num_dense_nodes: 92
-  num_domain: 2000
+  num_domain: 20000
   num_boundary: 2000
   num_initial: 1600
   num_test: 10000
@@ -37,7 +37,6 @@ model_properties:
   x0: 0.001
   b2: 0.25
   b3: 0.19
-  direct: false
 model_parameters:
   lam: 750
   upsilon: 50
@@ -114,7 +113,6 @@ experiment:
   save_pickle: false
   run_matlab: true
   run_wandb: false
-  check_system: true
   type:
     cooling:
       h: 10.0
