@@ -143,7 +143,8 @@ def create_nbho(run_figs):
 
 
     def pde(x, theta):
-        dtheta_tau = dde.grad.jacobian(theta, x, i=0, j=4)
+        # dtheta_tau = dde.grad.jacobian(theta, x, i=0, j=4)
+        dtheta_tau = dde.grad.jacobian(theta, x, i=0, j=3)
         dtheta_xx = dde.grad.hessian(theta, x, i=0, j=0)
 
         return (
@@ -157,15 +158,16 @@ def create_nbho(run_figs):
         return theta - x[:, 1:2]
 
     def bc0_obs(x, theta, X):
-
-
         dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0)
-
-        return - dtheta_x - a5 * (x[:, 3:4] - x[:, 2:3]) - K * (x[:, 2:3] - theta)
+        return - dtheta_x + a5 * x[:, 2:3] - K * (x[:, 2:3] - theta)
+        # return - dtheta_x - a5 * (x[:, 3:4] - x[:, 2:3]) - K * (x[:, 2:3] - theta)
     
-    xmin = [0, 0, 0, 0]
-    xmax = [1, 0.2, 1, 1]
-    geom = dde.geometry.Hypercube(xmin, xmax)
+    # xmin = [0, 0, 0, 0]
+    # xmax = [1, 0.2, 1, 1]
+    # geom = dde.geometry.Hypercube(xmin, xmax)
+    xmin = [0, 0, 0]
+    xmax = [1, 0.2, 1]
+    geom = dde.geometry.Cuboid(xmin, xmax)
     timedomain = dde.geometry.TimeDomain(0, 2)
     geomtime = dde.geometry.GeometryXTime(geom, timedomain)
 
@@ -184,7 +186,8 @@ def create_nbho(run_figs):
         num_test=num_test,
     )
 
-    layer_size = [5] + [num_dense_nodes] * num_dense_layers + [1]
+    # layer_size = [5] + [num_dense_nodes] * num_dense_layers + [1]
+    layer_size = [4] + [num_dense_nodes] * num_dense_layers + [1]
     net = dde.nn.FNN(layer_size, activation, initialization)
 
     # net.apply_output_transform(output_transform)
@@ -393,11 +396,12 @@ def gen_obsdata(conf):
     y2 = rows_0[:, 2].reshape(len(instants),)
     f2 = interp1d(instants, y2, kind='previous')
 
-    y30 = scale_t(conf.model_properties.Ty30)
-    y3 = np.full_like(y2, y30)
-    f3 = interp1d(instants, y3, kind='previous')
+    # y30 = scale_t(conf.model_properties.Ty30)
+    # y3 = np.full_like(y2, y30)
+    # f3 = interp1d(instants, y3, kind='previous')
 
-    Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
+    # Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
+    Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), g[:, 1])).T
     return Xobs
 
 
@@ -513,8 +517,8 @@ def import_obsdata(nam, extended = True):
     f2 = interp1d(instants, y2, kind='previous')
 
     # y3 = rows_0[:, -1].reshape(len(instants),)
-    y3 = np.zeros_like(y2)
-    f3 = interp1d(instants, y3, kind='previous')
+    # y3 = np.zeros_like(y2)
+    # f3 = interp1d(instants, y3, kind='previous')
 
     if extended:
         x = np.linspace(0, 1, 101)
@@ -522,9 +526,11 @@ def import_obsdata(nam, extended = True):
 
         X, T = np.meshgrid(x, t)
         T_clipped = np.clip(T, None, 0.9956)
-        Xobs = np.vstack((np.ravel(X), f1(np.ravel(T_clipped)), f2(np.ravel(T_clipped)), f3(np.ravel(T_clipped)), np.ravel(T))).T
+        # Xobs = np.vstack((np.ravel(X), f1(np.ravel(T_clipped)), f2(np.ravel(T_clipped)), f3(np.ravel(T_clipped)), np.ravel(T))).T
+        Xobs = np.vstack((np.ravel(X), f1(np.ravel(T_clipped)), f2(np.ravel(T_clipped)), np.ravel(T))).T
     else:
-        Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
+        # Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
+        Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), g[:, 1])).T
 
     return Xobs
 
@@ -576,6 +582,7 @@ def mu(o, tau_in):
         muu.append(scrt)
     muu = np.column_stack(muu)#.reshape(len(muu),)
     return muu
+
 
 def calculate_mu(os, tr):
     tr = tr.reshape(os.shape)
@@ -631,7 +638,6 @@ def mm_predict(multi_obs, obs_grid, prj_figs):
     return np.array(predictions)
 
 
-
 def check_observers_and_wandb_upload(tot_true, tot_pred, conf, output_dir, comparison_3d=True):
     """
     Check observers and optionally upload results to wandb.
@@ -662,6 +668,7 @@ def check_observers_and_wandb_upload(tot_true, tot_pred, conf, output_dir, compa
             metrics = compute_metrics(matching[:, 2], matching[:, 3])
             wandb.log(metrics)
             wandb.finish()
+
 
 def check_system_and_wandb_upload(tot_true, tot_pred, conf, run_figs, comparison_3d=True):
     """
@@ -731,12 +738,12 @@ def get_observers_preds(multi_obs, x_obs, output_dir, conf):
         preds = np.array(preds).reshape(len(multi_obs)+3, len(preds[0])).round(4)
         return preds.T
 
+
 def get_scaled_labels(rescale):
     xlabel=r"$x \, (m)$" if rescale else "X"
     ylabel=r"$t \, (s)$" if rescale else r"$\tau$"
     zlabel=r"$T \, (^{\circ}C)$" if rescale else r"$\theta$"
     return xlabel, ylabel, zlabel
-
 
 
 def get_obs_colors(conf):
@@ -750,10 +757,12 @@ def get_obs_colors(conf):
         obs_colors = total_obs_colors
     return obs_colors
 
+
 def get_sys_mm_colors(conf):
     system_color = conf.plot.colors.system
     mm_obs_color = conf.plot.colors.mm_obs
     return system_color, mm_obs_color
+
 
 def get_obs_linestyles(conf):
     total_obs_linestyles = conf.plot.linestyles.observers
@@ -765,6 +774,7 @@ def get_obs_linestyles(conf):
     if number == 8:
         obs_linestyles = total_obs_linestyles
     return obs_linestyles
+
 
 def get_sys_mm_linestyle(conf):
     system_linestyle = conf.plot.linestyles.system
@@ -802,7 +812,6 @@ def solve_ivp(multi_obs, fold, conf, x_obs):
     data_to_save = np.column_stack((x_obs[:, 0].round(2), x_obs[:, -1].round(2), y_pred.round(4)))
     np.savetxt(f'{fold}/prediction_mm_obs.txt', data_to_save, fmt='%.2f %.2f %.4f', delimiter=' ')
     return y_pred
-
 
  
 def run_matlab_ground_truth(prj_figs, conf1):
@@ -844,7 +853,6 @@ def run_matlab_ground_truth(prj_figs, conf1):
     print("MATLAB ground truth completed.")
 
 
-
 def calculate_l2(e, true, pred):
     l2 = []
     true = true.reshape(len(e), 1)
@@ -856,6 +864,7 @@ def calculate_l2(e, true, pred):
         l2_el = dde.metrics.l2_relative_error(tot_el[:, 2], tot_el[:, 3])
         l2.append(l2_el)
     return np.array(l2)
+
 
 def solve_ic_comp(y1_0, y2_0, y3_0, K, a5):
     # Equation 1: b_4 = y1_0
@@ -884,6 +893,7 @@ def parse_line(line):
         data[point].append((time, temperature))
     return data
 
+
 def load_measurements(file_path):
     timeseries_data = {}
     with open(file_path, 'r') as file:
@@ -899,6 +909,7 @@ def load_measurements(file_path):
 def save_to_pickle(data, file_path):
     with open(file_path, 'wb') as pkl_file:
         pickle.dump(data, pkl_file)
+
 
 def load_from_pickle(file_path):
     with open(file_path, 'rb') as pkl_file:
@@ -951,6 +962,7 @@ def extract_entries(timeseries_data, tmin, tmax, threshold):
 
     return df_short
 
+
 def scale_df(df):
     time = df['t']-df['t'][0]
     new_df = pd.DataFrame({'tau': scale_time(time)})
@@ -958,6 +970,7 @@ def scale_df(df):
     for ei in ['y1', 'gt1', 'gt2', 'y2', 'y3']:
         new_df[ei] = scale_t(df[ei])    
     return new_df
+
 
 def rescale_df(df):
     time = df['tau']
@@ -967,11 +980,11 @@ def rescale_df(df):
         new_df[ei] = rescale_t(df[ei])    
     return new_df
 
+
 def SAR(x):
     if not torch.is_tensor(x):
         x = torch.Tensor(x)
     return cc.beta*torch.exp(-cc.cc*(x-cc.x0))*cc.SAR_0
-
 
 
 def point_predictions(preds):
@@ -987,6 +1000,7 @@ def point_predictions(preds):
     y1_pred_sc = preds[preds[:, 0] == positions[3]][:, -1]
 
     return y1_pred_sc, gt1_pred_sc, gt2_pred_sc, y2_pred_sc
+
 
 def point_ground_truths(conf):
     """
@@ -1007,7 +1021,6 @@ def point_ground_truths(conf):
     return y1_truth_sc, gt1_truth_sc, gt2_truth_sc, y2_truth_sc
 
 
-
 def configure_settings(cfg, experiment):
     exp_type_settings = getattr(cfg.experiment.type, experiment[0])
     cfg.model_properties.pwr_fact=exp_type_settings["pwr_fact"]
@@ -1024,7 +1037,6 @@ def configure_settings(cfg, experiment):
     cfg.model_properties.b3=meas_settings["b3"]
     cfg.model_properties.iterations=meas_settings["iterations"]
     return cfg
-
 
 
 def extract_matching(tot_true, tot_pred):
