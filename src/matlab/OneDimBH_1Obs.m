@@ -53,10 +53,11 @@ function [sol] = OneDimBH_1Obs
     function [pl,ql,pr,qr] = OneDimBHbc_1Obs(xl,ul,xr,ur,t)
     global K a5 theta30 theta10
     % [theta_y1, theta_y3] = ic_bc(0, t);
-    flusso = a5*(theta30-ul(1));
+    % flusso = a5*(theta30-ul(1));
+    flusso = a5*(ul(1) - theta30);
     
-    pl = [flusso;
-        flusso+K*(ul(1)-ul(2));
+    pl = [ -flusso;
+        -flusso-K*(ul(2)-ul(1));
         ];
     ql = [1;1];
     pr = [ur(1) - theta10; 

@@ -15,14 +15,14 @@ model_properties:
   activation: tanh
   initial_weights_regularizer: true
   initialization: Glorot uniform
-  iterations: 50000
+  iterations: 10000
   LBFGS: false
   learning_rate: 0.0001
   num_dense_layers: 6
   num_dense_nodes: 92
-  num_domain: 4000
-  num_boundary: 2000
-  num_initial: 1600
+  num_domain: 400
+  num_boundary: 200
+  num_initial: 160
   num_test: 10000
   resampling: true
   resampler_period: 100
@@ -130,7 +130,7 @@ experiment:
         K: 50.0
         b2: 0.25
         b3: 0.19
-        iterations: 50000
+        iterations: 10000
       meas_1:
         title: Cooling 1
         date: '20240930_1'

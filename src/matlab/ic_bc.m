@@ -12,6 +12,7 @@ function theta0 = sys_ic(x)
     c = theta20;
     a = -b -c;
     theta0 = a*x^2 + b*x + c;
+    % theta0 = 0;
 
     
 function thetahat0 = obs_ic(x)

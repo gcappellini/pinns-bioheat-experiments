@@ -4,7 +4,7 @@ model_properties:
   k: 0.6
   rho: 1000.0
   c: 4186.0
-  W: 0.0006
+  W: 1.6
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
@@ -15,14 +15,14 @@ model_properties:
   activation: tanh
   initial_weights_regularizer: true
   initialization: Glorot uniform
-  iterations: 50000
+  iterations: 10000
   LBFGS: false
   learning_rate: 0.0001
   num_dense_layers: 6
   num_dense_nodes: 92
-  num_domain: 4000
-  num_boundary: 2000
-  num_initial: 1600
+  num_domain: 400
+  num_boundary: 200
+  num_initial: 160
   num_test: 10000
   resampling: true
   resampler_period: 100
@@ -37,7 +37,7 @@ model_properties:
   x0: 0.001
   b2: 0.25
   b3: 0.19
-  direct: true
+  direct: false
 model_parameters:
   lam: 750
   upsilon: 50
@@ -45,7 +45,7 @@ model_parameters:
   W1: 0.02
   W2: 0.04
   W3: 0.06
-  W4: 0.0006
+  W4: 1.6
   W5: 0.1
   W6: 0.12
   W7: 0.14
@@ -130,7 +130,7 @@ experiment:
         K: 50.0
         b2: 0.25
         b3: 0.19
-        iterations: 50000
+        iterations: 10000
       meas_1:
         title: Cooling 1
         date: '20240930_1'

@@ -118,6 +118,7 @@ def ic_sys(x):
     a = -b -c
 
     return a*z**2 + b*z + c
+    # return np.zeros_like(z)
 
 
 def create_nbho(run_figs):
@@ -159,12 +160,15 @@ def create_nbho(run_figs):
         # return theta - x[:, 1:2]
         return theta - 0
 
-    def bc0_obs(x, theta, X):
-        dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0)
+    def bc0_obs(x, theta_hat, X):
+        dtheta_hat_x = dde.grad.jacobian(theta_hat, x, i=0, j=0)
+        y3 = 0
+        y2 = x[:, 1:2]
+        flusso = a5 * (y2 - y3)
         
         # return - dtheta_x - a5 * (x[:, 3:4] - x[:, 2:3]) - K * (x[:, 2:3] - theta)
         # return - dtheta_x + a5 * x[:, 2:3] - K * (x[:, 2:3] - theta)
-        return - dtheta_x + a5 * x[:, 1:2] - K * (x[:, 1:2] - theta)
+        return dtheta_hat_x - (flusso + K * (theta_hat - y2))
     
     # xmin = [0, 0, 0, 0]
     # xmax = [1, 0.2, 1, 1]
@@ -245,10 +249,10 @@ def create_sys(run_figs):
     
 
     def bc0_sys(x, theta, X):
-        theta30 = scale_t(config.model_properties.Ty30)
+        y3 = scale_t(config.model_properties.Ty30)
         dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0)
 
-        return - dtheta_x - a5 * (theta30 - theta)
+        return dtheta_x - a5 * (theta - y3)
     
     def bc1_sys(x, theta, X):
 
