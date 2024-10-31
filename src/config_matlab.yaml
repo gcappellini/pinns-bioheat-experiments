@@ -1,28 +1,28 @@
 model_properties:
   L0: 0.07
-  tauf: 1800.0
+  tauf: 3600.0
   k: 0.6
   rho: 1000.0
   c: 4186.0
-  W: 0.0006
+  W: 0.001651
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
   Ty10: 21.5
   Ty20: 28.85
   Ty30: 21.5
-  K: 50.0
+  K: 50
   activation: tanh
   initial_weights_regularizer: true
   initialization: Glorot uniform
-  iterations: 50000
-  LBFGS: false
+  iterations: 5000
+  LBFGS: true
   learning_rate: 0.0001
   num_dense_layers: 6
   num_dense_nodes: 92
-  num_domain: 4000
-  num_boundary: 2000
-  num_initial: 1600
+  num_domain: 400
+  num_boundary: 200
+  num_initial: 160
   num_test: 10000
   resampling: true
   resampler_period: 100
@@ -39,16 +39,16 @@ model_properties:
   b3: 0.19
   direct: false
 model_parameters:
-  lam: 750
+  lam: 50
   upsilon: 50
-  W0: 0.0
-  W1: 0.02
-  W2: 0.04
-  W3: 0.06
-  W4: 0.0006
-  W5: 0.1
-  W6: 0.12
-  W7: 0.14
+  W0: 6.3e-05
+  W1: 0.0006
+  W2: 0.001207
+  W3: 0.0014
+  W4: 0.001651
+  W5: 0.0021
+  W6: 0.0026
+  W7: 0.003303
   n_obs: 1
   gt1_0: 24.44
   gt2_0: 29.25
@@ -56,6 +56,7 @@ model_parameters:
   x_gt2: 0.01
   x_gt1: 0.04
   x_y1: 0.07
+  K: 10
 experiment:
 - cooling
 - simulation

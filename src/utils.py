@@ -12,7 +12,6 @@ import coeff_calc as cc
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-import yaml
 import matlab.engine
 
 
@@ -168,7 +167,7 @@ def create_nbho(run_figs):
         
         # return - dtheta_x - a5 * (x[:, 3:4] - x[:, 2:3]) - K * (x[:, 2:3] - theta)
         # return - dtheta_x + a5 * x[:, 2:3] - K * (x[:, 2:3] - theta)
-        return dtheta_hat_x - (flusso + K * (theta_hat - y2))
+        return dtheta_hat_x/K - (flusso/K + (theta_hat - y2))
     
     # xmin = [0, 0, 0, 0]
     # xmax = [1, 0.2, 1, 1]
@@ -178,7 +177,7 @@ def create_nbho(run_figs):
     xmin = [0, 0]
     xmax = [1, 1]
     geom = dde.geometry.Rectangle(xmin, xmax)
-    timedomain = dde.geometry.TimeDomain(0, 2)
+    timedomain = dde.geometry.TimeDomain(0, 1.1)
     geomtime = dde.geometry.GeometryXTime(geom, timedomain)
 
     bc_0 = dde.icbc.OperatorBC(geomtime, bc0_obs, boundary_0)
@@ -261,7 +260,7 @@ def create_sys(run_figs):
     xmin = 0
     xmax = 1
     geom = dde.geometry.Interval(xmin, xmax)
-    timedomain = dde.geometry.TimeDomain(0, 2)
+    timedomain = dde.geometry.TimeDomain(0, 1.1)
     geomtime = dde.geometry.GeometryXTime(geom, timedomain)
 
 
@@ -317,18 +316,17 @@ def train_model(run_figs, system=False):
 
     callbacks = [dde.callbacks.PDEPointResampler(period=resampler_period)] if resampler else []
 
-    if LBFGS:
-        if ini_w:
-            initial_losses = get_initial_loss(mm)
-            loss_weights = len(initial_losses) / initial_losses
-            mm.compile("L-BFGS", loss_weights=loss_weights)
-        else:
-            mm.compile("L-BFGS")
-        
-        losshistory, _ = train_and_save_model(mm, callbacks, run_figs)
-    else:
-        losshistory, _ = train_and_save_model(mm, callbacks, run_figs)
+    losshistory, mm = train_and_save_model(mm, callbacks, run_figs)
 
+    if LBFGS:
+        # if ini_w:
+        #     initial_losses = get_initial_loss(mm)
+        #     loss_weights = len(initial_losses) / initial_losses
+        #     mm.compile("L-BFGS", loss_weights=loss_weights)
+        # else:
+        mm.compile("L-BFGS")
+        losshistory, mm = train_and_save_model(mm, callbacks, run_figs)
+        
     pp.plot_loss_components(losshistory, config_hash)
     return mm
 
@@ -351,7 +349,7 @@ def train_and_save_model(model, callbacks, run_figs):
     OmegaConf.save(conf, confi_path)
 
 
-    return losshistory, train_state
+    return losshistory, model
 
 
 def gen_testdata(conf):
@@ -874,10 +872,17 @@ def calculate_l2(e, true, pred):
     pred = pred.reshape(len(e), 1)
     tot = np.hstack((e, true, pred))
     t = np.unique(tot[:, 1])
+    x = np.unique(tot[:, 0])
+    delta_x = x[1]- x[0]
     for el in t:
         tot_el = tot[tot[:, 1] == el]
-        l2_el = dde.metrics.l2_relative_error(tot_el[:, 2], tot_el[:, 3])
-        l2.append(l2_el)
+        el_true = tot_el[:, 2]
+        el_pred = tot_el[:, 3]
+        el_err = el_true - el_pred
+        l2_el = np.sum(el_err**2)*delta_x
+        # l2_el = dde.metrics.l2_relative_error(tot_el[:, 2], tot_el[:, 3])
+        
+        l2.append(np.sqrt(l2_el))
     return np.array(l2)
 
 
@@ -1043,7 +1048,12 @@ def configure_settings(cfg, experiment):
     cfg.model_properties.pwr_fact=exp_type_settings["pwr_fact"]
     cfg.model_properties.h=exp_type_settings["h"]
 
-    meas_settings = getattr(exp_type_settings, experiment[1])
+    if experiment[1].startswith("simulation"):
+        name_exp = "simulation"
+    else:
+        name_exp = experiment[1]
+        
+    meas_settings = getattr(exp_type_settings, name_exp)
     cfg.model_properties.Ty10=meas_settings["y1_0"]
     cfg.model_properties.Ty20=meas_settings["y2_0"]
     cfg.model_properties.Ty30=meas_settings["y3_0"]

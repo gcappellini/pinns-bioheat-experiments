@@ -58,7 +58,7 @@ def main():
             pp.plot_tx(t, tot_true, tot_pred, 0, output_dir, MultiObs=False)
     if n_obs>1:
         run_figs = co.set_run(f"mm_obs")
-        pp.plot_mm_obs(multi_obs, tot_true, tot_pred, config, run_figs)
+        pp.plot_mm_obs(multi_obs, tot_true, tot_pred, run_figs)
 
 
 if __name__ == "__main__":

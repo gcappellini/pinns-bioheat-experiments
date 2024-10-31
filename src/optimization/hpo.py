@@ -32,13 +32,13 @@ dde.config.set_random_seed(200)
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
 
-prj = "hpo_291024_obs0"
+prj = "hpo_301024_obs0"
 prj_figs = co.set_prj(prj)
 
 # HPO setting
 n_calls = 50
 dim_learning_rate = Real(low=1e-5, high=5e-2, name="learning_rate", prior="log-uniform")
-dim_num_dense_layers = Integer(low=3, high=8, name="num_dense_layers")
+dim_num_dense_layers = Integer(low=3, high=10, name="num_dense_layers")
 dim_num_dense_nodes = Integer(low=5, high=250, name="num_dense_nodes")
 dim_activation = Categorical(categories=["elu", "silu", "sigmoid", "swish", "tanh"], name="activation")
 dim_initialization = Categorical(categories=["Glorot normal", "Glorot uniform", "He normal", "He uniform"], name="initialization")
@@ -56,9 +56,9 @@ dimensions = [
 default_parameters = [0.0001, 6, 92, "tanh", "Glorot normal"]
 
 conf = OmegaConf.load(f"{src_dir}/config.yaml")
-uu.run_matlab_ground_truth(prj_figs, conf)
-X, y_sys, y_obs, _ = uu.gen_testdata(conf)
-x_obs = uu.gen_obsdata(conf)
+
+X, y_sys, y_obs, _ = uu.gen_testdata(conf, hpo=True)
+x_obs = uu.gen_obsdata(conf, hpo=True)
 tot_true = np.hstack((X, y_sys, y_obs))
 
 @use_named_args(dimensions=dimensions)
@@ -69,8 +69,8 @@ def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation, initia
     conf.model_parameters.n_obs = 1
     conf.model_properties.direct = False
     conf.model_properties.W = conf.model_parameters.W4
-    conf.model_properties.activation, conf.model_properties.learning_rate, conf.model_properties.num_dense_layers = activation, learning_rate, num_dense_layers
-    conf.model_properties.num_dense_layers, conf.model_properties.initialization = num_dense_nodes, initialization
+    conf.model_properties.activation, conf.model_properties.learning_rate, conf.model_properties.num_dense_layers = activation, learning_rate, int(num_dense_layers)
+    conf.model_properties.num_dense_layers, conf.model_properties.initialization = int(num_dense_nodes), initialization
     OmegaConf.save(conf, f"{run_figs}/config.yaml")
 
     aa = {"activation": activation,
@@ -99,9 +99,13 @@ def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation, initia
     # Generate and check observers if needed
     multi_obs = uu.mm_observer(conf)
 
-    tot_pred = uu.get_observers_preds(multi_obs, x_obs, run_figs, conf)
-    metrics = uu.check_observers_and_wandb_upload(tot_true, tot_pred, conf, run_figs)
-    error = metrics["L2RE"]
+    pred = multi_obs.predict(x_obs)
+    data = np.column_stack((x_obs[:, 0].round(2), x_obs[:, -1].round(2), pred.round(4)))
+    tot_pred = np.array(data)
+    conf.experiment.plot_figures=False
+    # metrics = uu.check_observers_and_wandb_upload(tot_true, tot_pred, conf, run_figs)
+    metrics = uu.compute_metrics(tot_true[:, -1], tot_pred[:, -1])
+    error = dde.metrics.l2_relative_error(tot_true[:, -1], tot_pred[:, -1])
 
     wandb.log(metrics)
     wandb.finish()
@@ -120,7 +124,7 @@ search_result = gp_minimize(
     acq_func="EI",  # Expected Improvement.
     n_calls=n_calls,
     x0=default_parameters,
-    random_state=1164,
+    random_state=1444,
 )
 
 print(search_result.x)

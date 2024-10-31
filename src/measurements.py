@@ -31,7 +31,7 @@ def main(config, output_dir):
     uu.check_observers_and_wandb_upload(tot_true, tot_pred, config, output_dir, comparison_3d=False)
     
     run_figs = co.set_run(f"mm_obs")
-    pp.plot_mm_obs(multi_obs, tot_true, tot_pred, config, run_figs, comparison_3d=False)
+    pp.plot_mm_obs(multi_obs, tot_true, tot_pred, run_figs, comparison_3d=False)
     y1_pred, gt1_pred, gt2_pred, y2_pred = uu.point_predictions(tot_pred)
 
     df = uu.load_from_pickle(f"{src_dir}/data/vessel/{string}.pkl")

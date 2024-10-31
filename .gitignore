@@ -204,6 +204,7 @@ src/wandb
 src/outputs
 src/data/vessel/foto&video
 outputs/2024-10-07
+models/*
 
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,python

@@ -36,7 +36,7 @@ def main(cfg: DictConfig):
     if cfg.experiment.import_data:
         subprocess.run(["python", f'{src_dir}/import_data.py'])
 
-    if experiment[1]=="simulation": 
+    if experiment[1].startswith("simulation"): 
         if cfg.experiment.run_matlab:     
             subprocess.run(["python", f'{src_dir}/ground_truth.py'])    
         subprocess.run(["python", f'{src_dir}/simulation.py'])

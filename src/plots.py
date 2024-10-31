@@ -965,7 +965,7 @@ def plot_t0(tot_pred, conf, out_dir):
     
 
 
-def plot_mm_obs(multi_obs, tot_true, tot_pred, config, output_dir, comparison_3d=True):
+def plot_mm_obs(multi_obs, tot_true, tot_pred, output_dir, comparison_3d=True):
     
     t = np.unique(tot_pred[:, 1:2])
     mus = uu.mu(multi_obs, t)
