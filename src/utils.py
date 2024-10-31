@@ -12,7 +12,7 @@ import coeff_calc as cc
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-import matlab.engine
+# import matlab.engine
 
 
 dde.config.set_random_seed(200)
@@ -51,7 +51,7 @@ def compute_metrics(true, pred):
     pred = np.ravel(pred)
     true_nonzero = np.where(true != 0, true, small_number)
     
-    L2RE = dde.metrics.l2_relative_error(true, pred)
+    L2RE = calculate_l2(true, pred)
     MSE = dde.metrics.mean_squared_error(true, pred)
     max_err = np.max(np.abs((true_nonzero - pred)))
     mean_err = np.mean(np.abs((true_nonzero - pred)))
@@ -352,10 +352,13 @@ def train_and_save_model(model, callbacks, run_figs):
     return losshistory, model
 
 
-def gen_testdata(conf):
+def gen_testdata(conf, hpo=False):
     n = conf.model_parameters.n_obs
     name = conf.experiment.name
-    output_folder = f"{tests_dir}/{name[0]}_{name[1]}/ground_truth"
+    if hpo:
+        output_folder = f"{tests_dir}/cooling_simulation/ground_truth"
+    else:
+        output_folder = f"{tests_dir}/{name[0]}_{name[1]}/ground_truth"
     if n==8:
         data = np.loadtxt(f"{output_folder}/output_matlab_{n}Obs.txt")
         x, t, sys, obs, mmobs = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:11], data[:, 11:12].T
