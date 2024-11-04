@@ -667,7 +667,6 @@ def check_observers_and_wandb_upload(tot_true, tot_pred, conf, output_dir, compa
     run_wandb = conf.experiment.run_wandb
     name = conf.experiment.name
     n_obs = conf.model_parameters.n_obs
-    instants = [0, 0.25, 0.51, 0.75, 1]
 
     for el in range(n_obs):
         label = f"obs_{el}"
@@ -682,8 +681,7 @@ def check_observers_and_wandb_upload(tot_true, tot_pred, conf, output_dir, compa
                 
         pp.plot_l2(tot_true, tot_pred, el, run_figs, gt=True)
         pp.plot_validation_3d(tot_true[:, 0:2], tot_true[:, -1], tot_pred[:, -1], run_figs)
-        for t in instants:
-            pp.plot_tx(t, tot_true, tot_pred, 0, run_figs, gt=True, MultiObs=False)
+        pp.plot_generic_5_figs(tot_true, tot_pred, 0, run_figs, gt=True, MultiObs=False)
 
         matching = extract_matching(tot_true, tot_pred)
         metrics = compute_metrics(matching[:, 0:2], matching[:, 3], matching[:, 4], run_figs)

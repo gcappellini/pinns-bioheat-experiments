@@ -250,6 +250,7 @@ def plot_l2(tot_true, tot_pred, number, folder, gt=False, MultiObs=False, system
     e = matching[:, :2].reshape(len(matching), 2)
 
     theta_system = matching[:, 2].reshape(len(matching), 1)
+    theta_obs = matching[:, 3].reshape(len(matching), 1)
 
     conf = OmegaConf.load(f'{folder}/config.yaml')
 
@@ -260,8 +261,8 @@ def plot_l2(tot_true, tot_pred, number, folder, gt=False, MultiObs=False, system
     _, mm_obs_linestyle, gt_linestyle = uu.get_sys_mm_gt_linestyle(conf)
 
     if gt:
-        matlab_X, _, matlab_sol, matlab_mm_obs = uu.gen_testdata(conf)
-        x_matlab = np.unique(matlab_X[:, 0:1])
+        matlab_sol = uu.gen_testdata(conf)
+        x_matlab = np.unique(matlab_sol[:, 0:1])
 
     if MultiObs:
         pred = matching[:, -1].reshape(len(matching[:, -1]), 1)
@@ -273,7 +274,7 @@ def plot_l2(tot_true, tot_pred, number, folder, gt=False, MultiObs=False, system
         l2_individual = []
         for i in range(n_obs):  # Assuming `model.models` holds individual models
             theta_pred = matching[:, 3+i].reshape(len(matching), 1)
-            l2_individual.append(uu.calculate_l2(e, theta_system, theta_pred))
+            l2_individual.append(uu.calculate_l2(e, theta_obs, theta_pred))
 
         l2_individual_obs = np.array(l2_individual).T
         l2 = l2.reshape(len(l2), 1)
@@ -289,12 +290,12 @@ def plot_l2(tot_true, tot_pred, number, folder, gt=False, MultiObs=False, system
 
     else:
         pred = matching[:, 4+number].reshape(len(matching), 1)
-        l2_individual = uu.calculate_l2(e, theta_system, pred)
+        l2_individual = uu.calculate_l2(e, theta_obs, pred)
         ll2 = l2_individual.reshape(len(l2_individual), 1)
 
         if gt:
-            truth = matlab_sol[:, number].reshape(len(matching), 1)
-            l2_matlab = uu.calculate_l2(e, truth, theta_system)
+            truth = matlab_sol[:, 3+number].reshape(len(matching), 1)
+            l2_matlab = uu.calculate_l2(e, truth, theta_obs)
             l2_matlab = np.array(l2_matlab).reshape(len(l2_matlab), 1)
             ll2 = np.hstack((ll2, l2_matlab))
 
@@ -571,15 +572,15 @@ def plot_tx(tx, tot_true, tot_obs_pred, number, prj_figs, system=False, gt=False
     true_linestyle, mm_obs_linestyle, gt_linestyle = uu.get_sys_mm_gt_linestyle(conf)
 
     if gt:
-        matlab_X, _, matlab_sol, matlab_mm_obs = uu.gen_testdata(conf)
-        x_matlab = np.unique(matlab_X[:, 0:1])
+        matlab_sol = uu.gen_testdata(conf)
+        x_matlab = np.unique(matlab_sol[:, 0:1])
 
     if MultiObs:
         multi_pred = preds_tx[:, -1].reshape(len(x_pred), 1)
         individual_preds = [preds_tx[:, -(1+n_obs)+m].reshape(len(x_pred), 1) for m in range(n_obs)]  # Assuming model.models holds individual models
         
         if gt:
-            multi_sol = matlab_mm_obs[:, -1][-len(x_matlab):].reshape(len(x_matlab), 1)
+            multi_sol = matlab_sol[:, -1][-len(x_matlab):].reshape(len(x_matlab), 1)
             individual_sol = [matlab_sol[:, -(1+n_obs)+m][-len(x_matlab):].reshape(len(x_matlab), 1) for m in range(n_obs)]
             # Stack all predictions (true values + individual predictions + combined prediction)
             all_preds = [true] + individual_preds + [multi_pred] + individual_sol + [multi_sol]
@@ -642,11 +643,11 @@ def plot_tx(tx, tot_true, tot_obs_pred, number, prj_figs, system=False, gt=False
         if n_obs==1:
             pred = preds_tx[:, -1].reshape(len(x_pred), 1)
             if gt:
-                matlab_obs = matlab_sol[:, 0][-len(x_matlab):].reshape(len(x_matlab), 1)
+                matlab_obs = matlab_sol[:, 3][-len(x_matlab):].reshape(len(x_matlab), 1)
         else:
-            pred = preds_tx[:, number].reshape(len(x_pred), 1)
+            pred = preds_tx[:, 3+number].reshape(len(x_pred), 1)
             if gt:
-                matlab_obs = matlab_sol[:, number][-len(x_matlab):].reshape(len(x_matlab), 1)
+                matlab_obs = matlab_sol[:, 3+number][-len(x_matlab):].reshape(len(x_matlab), 1)
         if gt:
             all_preds = [true, pred, matlab_obs]
             x_vals = [x_true, x_pred, x_matlab]  # xtr for true, x for predicted
@@ -1118,8 +1119,8 @@ def plot_generic_5_figs(tot_true, tot_pred, number, prj_figs, system=False, Mult
     true_linestyle, mm_obs_linestyle, gt_linestyle = uu.get_sys_mm_gt_linestyle(conf)
 
     if gt:
-        matlab_X, _, matlab_sol, matlab_mm_obs = uu.gen_testdata(conf)
-        x_matlab = np.unique(matlab_X[:, 0:1])
+        matlab_sol = uu.gen_testdata(conf)
+        x_matlab = np.unique(matlab_sol[:, 0:1])
     
     # Loop through each time instant and create individual subplots
     for i, tx in enumerate(t_vals):
@@ -1171,11 +1172,11 @@ def plot_generic_5_figs(tot_true, tot_pred, number, prj_figs, system=False, Mult
             if n_obs==1:
                 pred = preds_tx[:, -1].reshape(len(x_pred), 1)
                 if gt:
-                    matlab_obs = matlab_sol[:, 0][-len(x_matlab):].reshape(len(x_matlab), 1)
+                    matlab_obs = matlab_sol[:, 3][-len(x_matlab):].reshape(len(x_matlab), 1)
             else:
                 pred = preds_tx[:, number].reshape(len(x_pred), 1)
                 if gt:
-                    matlab_obs = matlab_sol[:, number][-len(x_matlab):].reshape(len(x_matlab), 1)
+                    matlab_obs = matlab_sol[:, 3+number][-len(x_matlab):].reshape(len(x_matlab), 1)
             if gt:
                 all_preds = [true, pred, matlab_obs]
                 x_vals = [x_true, x_pred, x_matlab]  # xtr for true, x for predicted

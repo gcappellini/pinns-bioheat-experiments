@@ -15,8 +15,8 @@ model_properties:
   activation: tanh
   initial_weights_regularizer: true
   initialization: Glorot uniform
-  iterations: 4999
-  LBFGS: true
+  iterations: 5000
+  LBFGS: false
   learning_rate: 0.0001
   num_dense_layers: 13
   num_dense_nodes: 92
@@ -115,7 +115,7 @@ experiment:
   save_pickle: false
   run_matlab: true
   run_wandb: false
-  check_system: true
+  check_system: false
   type:
     cooling:
       h: 10.0
