@@ -49,13 +49,8 @@ def main():
     multi_obs = uu.mm_observer(config)
 
     tot_pred = uu.get_observers_preds(multi_obs, x_obs, output_dir, config)
-    metrics = uu.check_observers_and_wandb_upload(tot_true, tot_pred, config, output_dir)
-    print(metrics)
-    if n_obs==1:
-        pp.plot_validation_3d(tot_true[:, 0:2], tot_true[:, -1], tot_pred[:, -1], output_dir)
-        instants = [0, 0.25, 0.5, 0.75]
-        for t in instants:
-            pp.plot_tx(t, tot_true, tot_pred, 0, output_dir, MultiObs=False)
+    uu.check_observers_and_wandb_upload(tot_true, tot_pred, config, output_dir)
+
     if n_obs>1:
         run_figs = co.set_run(f"mm_obs")
         pp.plot_mm_obs(multi_obs, tot_true, tot_pred, run_figs)

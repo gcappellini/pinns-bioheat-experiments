@@ -12,7 +12,7 @@ import coeff_calc as cc
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-# import matlab.engine
+import matlab.engine
 
 
 dde.config.set_random_seed(200)
@@ -44,14 +44,14 @@ def load_from_pickle(file_path):
         return pickle.load(pkl_file)
     
 
-def compute_metrics(true, pred):
+def compute_metrics(grid, true, pred, run_figs):
     small_number = 1e-3
     
     true = np.ravel(true)
     pred = np.ravel(pred)
     true_nonzero = np.where(true != 0, true, small_number)
     
-    L2RE = calculate_l2(true, pred)
+    L2RE = np.sum(calculate_l2(grid, true, pred))
     MSE = dde.metrics.mean_squared_error(true, pred)
     max_err = np.max(np.abs((true_nonzero - pred)))
     mean_err = np.mean(np.abs((true_nonzero - pred)))
@@ -62,6 +62,10 @@ def compute_metrics(true, pred):
         "max": max_err,
         "mean": mean_err,
     }
+
+    with open(f"{run_figs}/metrics.txt", "w") as file:
+        for key, value in metrics.items():
+            file.write(f"{key}: {value}\n")
     return metrics
 
 
@@ -659,8 +663,8 @@ def check_observers_and_wandb_upload(tot_true, tot_pred, conf, output_dir, compa
     run_wandb = conf.experiment.run_wandb
     name = conf.experiment.name
     n_obs = conf.model_parameters.n_obs
+    instants = [0, 0.25, 0.51, 0.75, 1]
 
-    obs_metrics = {}
     for el in range(n_obs):
         label = f"obs_{el}"
 
@@ -672,19 +676,21 @@ def check_observers_and_wandb_upload(tot_true, tot_pred, conf, output_dir, compa
             print(f"Initializing wandb for observer {el}...")
             wandb.init(project=name, name=label, config=aa)
                 
-        pp.plot_l2(tot_true, tot_pred, el, run_figs)
-        pp.plot_tf(tot_true, tot_pred, el, run_figs)
+        pp.plot_l2(tot_true, tot_pred, el, run_figs, gt=True)
+        pp.plot_validation_3d(tot_true[:, 0:2], tot_true[:, -1], tot_pred[:, -1], run_figs)
+        for t in instants:
+            pp.plot_tx(t, tot_true, tot_pred, 0, run_figs, gt=True, MultiObs=False)
 
         matching = extract_matching(tot_true, tot_pred)
-        metrics = compute_metrics(matching[:, 2], matching[:, 3])
-        obs_metrics[label] = metrics
+        metrics = compute_metrics(matching[:, 0:2], matching[:, 2], matching[:, 3], run_figs)
         if comparison_3d:
             pp.plot_comparison_3d(tot_true[:, 0:2], tot_true[:, 2], tot_pred[:, -1], run_figs)
 
         if run_wandb:
             wandb.log(metrics)
             wandb.finish()
-    return obs_metrics 
+
+
 
 def check_system_and_wandb_upload(tot_true, tot_pred, conf, run_figs, comparison_3d=True):
     """
@@ -708,7 +714,7 @@ def check_system_and_wandb_upload(tot_true, tot_pred, conf, run_figs, comparison
 
     if run_wandb:
         matching = extract_matching(tot_true, tot_pred)
-        metrics = compute_metrics(matching[:, 2], matching[:, 3])
+        metrics = compute_metrics(matching[:, 2], matching[:, 3], run_figs)
         wandb.log(metrics)
         wandb.finish()
 
@@ -792,10 +798,11 @@ def get_obs_linestyles(conf):
     return obs_linestyles
 
 
-def get_sys_mm_linestyle(conf):
+def get_sys_mm_gt_linestyle(conf):
     system_linestyle = conf.plot.linestyles.system
     mm_obs_linestyle = conf.plot.linestyles.mm_obs
-    return system_linestyle, mm_obs_linestyle
+    gt_linestyle = conf.plot.linestyles.gt
+    return system_linestyle, mm_obs_linestyle, gt_linestyle
 
 
 def solve_ivp(multi_obs, fold, conf, x_obs):

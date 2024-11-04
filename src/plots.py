@@ -234,7 +234,7 @@ def plot_mu(mus, t, run_figs, gt=False):
     )
 
 
-def plot_l2(tot_true, tot_pred, number, folder, MultiObs=False, system = False):
+def plot_l2(tot_true, tot_pred, number, folder, gt=False, MultiObs=False, system = False):
     """
     Plot L2 norm of prediction errors for true and predicted values.
     
@@ -257,15 +257,17 @@ def plot_l2(tot_true, tot_pred, number, folder, MultiObs=False, system = False):
     obs_colors = uu.get_obs_colors(conf)
     obs_linestyles = uu.get_obs_linestyles(conf)
     _, mm_obs_color = uu.get_sys_mm_colors(conf)
-    _, mm_obs_linestyle = uu.get_sys_mm_linestyle(conf)
+    _, mm_obs_linestyle, gt_linestyle = uu.get_sys_mm_gt_linestyle(conf)
 
+    if gt:
+        matlab_X, _, matlab_sol, matlab_mm_obs = uu.gen_testdata(conf)
+        x_matlab = np.unique(matlab_X[:, 0:1])
 
     if MultiObs:
         pred = matching[:, -1].reshape(len(matching[:, -1]), 1)
 
         # combined_pred = uu.mm_predict(model, xobs, folder)
         l2 = uu.calculate_l2(e, theta_true, pred)
-        # ll2 = l2.reshape(len(l2), 1)
 
         # Calculate L2 error for each individual model
         l2_individual = []
@@ -286,15 +288,20 @@ def plot_l2(tot_true, tot_pred, number, folder, MultiObs=False, system = False):
         # ll2 = l2.reshape(len(l2), 1)
 
     else:
-
         pred = matching[:, 3+number].reshape(len(matching), 1)
         l2_individual = uu.calculate_l2(e, theta_true, pred)
         ll2 = l2_individual.reshape(len(l2_individual), 1)
 
+        if gt:
+            truth = matlab_sol[:, number].reshape(len(matching), 1)
+            l2_matlab = uu.calculate_l2(e, theta_true, truth)
+            l2_matlab = np.array(l2_matlab).reshape(len(l2_matlab), 1)
+            ll2 = np.hstack((l2_matlab, ll2))
+
     
-    legend_labels = ['MultiObs'] + [f'Obs {i}' for i in range(n_obs)] if MultiObs else ['System prediction'] if system else [f'Obs {number}']
-    colors = [mm_obs_color] + obs_colors if MultiObs else [obs_colors[number]]
-    linestyles = [mm_obs_linestyle] + obs_linestyles if MultiObs else [obs_linestyles[number]]
+    legend_labels = ['MultiObs'] + [f'Obs {i}' for i in range(n_obs)] if MultiObs else ['System prediction'] if system else [f'Obs {number} PINNs',  f'Obs {number} MATLAB'] if gt else [f'Obs {number}']
+    colors = [mm_obs_color] + obs_colors if MultiObs else [obs_colors[number]]*2 if gt else [obs_colors[number]]
+    linestyles = [mm_obs_linestyle] + obs_linestyles if MultiObs else ["-"] + [gt_linestyle] if gt else [obs_linestyles[number]]
     alphas = [0.6] * len(linestyles)
     alphas[0] = 1.0
     linewidths = [1.2] * len(linestyles)
@@ -313,7 +320,7 @@ def plot_l2(tot_true, tot_pred, number, folder, MultiObs=False, system = False):
         y=ll2.T,       # Multiple L2 error lines to plot
         title="Prediction error norm",
         xlabel=xlabel,
-        ylabel=r"$L^2$ norm",
+        ylabel=r"$L2$ norm",
         legend_labels=legend_labels,  # Labels for the legend
         size=(6, 5),
         filename=f"{folder}/l2_{f'mm_{n_obs}obs' if MultiObs else 'sys' if system else f'obs{number}'}.png",
@@ -333,7 +340,7 @@ def plot_l2_matlab(X, theta_true, y_obs, y_mm_obs, folder):
     obs_colors = uu.get_obs_colors(conf)
     obs_linestyles = uu.get_obs_linestyles(conf)
     _, mm_obs_color = uu.get_sys_mm_colors(conf)
-    _, mm_obs_linestyle = uu.get_sys_mm_linestyle(conf)
+    _, mm_obs_linestyle, _ = uu.get_sys_mm_gt_linestyle(conf)
 
     l2 = uu.calculate_l2(X, theta_true, y_mm_obs)
     l2_individual = []
@@ -368,7 +375,7 @@ def plot_l2_matlab(X, theta_true, y_obs, y_mm_obs, folder):
         y=ll2.T,       # Multiple L2 error lines to plot
         title="Prediction error norm",
         xlabel=xlabel,
-        ylabel=r"$L^2$ norm",
+        ylabel=r"$L2$ norm",
         legend_labels=legend_labels,  # Labels for the legend
         size=(6, 5),
         filename=f"{folder}/l2_matlab_{n_obs}obs.png",
@@ -381,16 +388,15 @@ def plot_l2_matlab(X, theta_true, y_obs, y_mm_obs, folder):
 
 
 
-def plot_tf(tot_true, tot_obs_pred, number, prj_figs, MultiObs=False, system=False):
+def plot_tf(tot_true, tot_obs_pred, number, prj_figs, gt=False, MultiObs=False, system=False):
     """
     Plot true values and predicted values (single or multi-observer model).
     
     :param e: 2D array for depth (X) and time (tau).
     :param theta_true: True theta values.
-    :param model: The model used for predictions.
-    :param number: Identifier for the observation.
+    :param number: Identifier for the observer.
     :param prj_figs: Directory to save the figure.
-    :param MultiObs: If True, plot multiple model predictions and a weighted average.
+    :param MultiObs: If True, plot multiple model predictions and the weighted average.
     """
     # Reshape inputs
     match = uu.extract_matching(tot_true, tot_obs_pred)
@@ -407,25 +413,44 @@ def plot_tf(tot_true, tot_obs_pred, number, prj_figs, MultiObs=False, system=Fal
     obs_colors = uu.get_obs_colors(conf)
     true_color, mm_obs_color = uu.get_sys_mm_colors(conf)
     obs_linestyles = uu.get_obs_linestyles(conf)
-    true_linestyle, mm_obs_linestyle = uu.get_sys_mm_linestyle(conf)
+    true_linestyle, mm_obs_linestyle, gt_linestyle = uu.get_sys_mm_gt_linestyle(conf)
+
+    if gt:
+        matlab_X, _, matlab_sol, matlab_mm_obs = uu.gen_testdata(conf)
+        x_matlab = np.unique(matlab_X[:, 0:1])
 
     if MultiObs:
         multi_pred = tot_obs_pred[:, -1][-len(x_pred):].reshape(len(x_pred), 1)
-
-        # Generate individual predictions from each model in the ensemble
         individual_preds = [tot_obs_pred[:, -(1+n_obs)+m][-len(x_pred):].reshape(len(x_pred), 1) for m in range(n_obs)]  # Assuming model.models holds individual models
         
-        # Stack all predictions (true values + individual predictions + combined prediction)
-        all_preds = [true] + individual_preds + [multi_pred]
-        
-        # x values: use xtr for true data, and 'x' for predictions
-        x_vals = [x_true] + [x_pred for _ in range(n_obs + 1)]
+        if gt:
+            multi_sol = matlab_mm_obs[:, -1][-len(x_matlab):].reshape(len(x_matlab), 1)
+            individual_sol = [matlab_sol[:, -(1+n_obs)+m][-len(x_matlab):].reshape(len(x_matlab), 1) for m in range(n_obs)]
+            # Stack all predictions (true values + individual predictions + combined prediction)
+            all_preds = [true] + individual_preds + [multi_pred] + individual_sol + [multi_sol]
+            
+            # x values: use xtr for true data, and 'x' for predictions
+            x_vals = [x_true] + [x_pred for _ in range(n_obs + 1)] + [x_matlab for _ in range(n_obs + 1)]
 
-        # Generate corresponding legend labels
-        legend_labels = ['True'] + [f'Obs {i}' for i in range(len(individual_preds))] + ['MultiObs Pred']
+            # Generate corresponding legend labels
+            legend_labels = ['True'] + [f'Obs {i}' for i in range(len(individual_preds))] + ['MultiObs Pred']
 
-        colors = [true_color] + obs_colors + [mm_obs_color]
-        linestyles = [true_linestyle] + obs_linestyles + [mm_obs_linestyle]
+            colors = [true_color] + obs_colors + [mm_obs_color] + obs_colors + [mm_obs_color]
+            linestyles = [true_linestyle] + obs_linestyles + [mm_obs_linestyle] + [gt_linestyle for _ in range(n_obs + 1)]
+
+        else:
+            # Stack all predictions (true values + individual predictions + combined prediction)
+            all_preds = [true] + individual_preds + [multi_pred]
+            
+            # x values: use xtr for true data, and 'x' for predictions
+            x_vals = [x_true] + [x_pred for _ in range(n_obs + 1)]
+
+            # Generate corresponding legend labels
+            legend_labels = ['True'] + [f'Obs {i}' for i in range(len(individual_preds))] + ['MultiObs Pred']
+
+            colors = [true_color] + obs_colors + [mm_obs_color]
+            linestyles = [true_linestyle] + obs_linestyles + [mm_obs_linestyle]
+
         markers = [None] * len(linestyles)
         if exp_name[1].startswith("meas_"):
             linestyles[0] = ''
@@ -434,6 +459,7 @@ def plot_tf(tot_true, tot_obs_pred, number, prj_figs, MultiObs=False, system=Fal
         alphas[-1] = 1.0
         linewidths = [1.2] * len(linestyles)
         linewidths[-1] = 2.2
+
     elif system:
         sys_pred = tot_obs_pred[:, -1][-len(x_pred):].reshape(len(x_pred), 1)
 
@@ -460,17 +486,32 @@ def plot_tf(tot_true, tot_obs_pred, number, prj_figs, MultiObs=False, system=Fal
     else:
         if n_obs==1:
             pred = tot_obs_pred[:, 2][-len(x_pred):].reshape(len(x_pred), 1)
+            if gt:
+                matlab_obs = matlab_sol[:, 0][-len(x_matlab):].reshape(len(x_matlab), 1)
         else:
             pred = tot_obs_pred[:, 2+number][-len(x_pred):].reshape(len(x_pred), 1)
-        # Only two lines to plot: true and single prediction
-        all_preds = [true, pred]
-        x_vals = [x_true, x_pred]  # xtr for true, x for predicted
-        legend_labels = ['True', f'Obs {number}']
-        colors = [true_color] + [obs_colors[number]]
-        linestyles = [true_linestyle] + [obs_linestyles[number]]
+            if gt:
+                matlab_obs = matlab_sol[:, number][-len(x_matlab):].reshape(len(x_matlab), 1)
+        if gt:
+            all_preds = [true, pred, matlab_obs]
+            x_vals = [x_true, x_pred, x_matlab]  # xtr for true, x for predicted
+            legend_labels = ['True', f'Obs {number} PINNs',  f'Obs {number} MATLAB']
+            colors = [true_color] + [obs_colors[number]]*2
+            # linestyles = [true_linestyle] + [obs_linestyles[number]] + [gt_linestyle]
+            linestyles = [true_linestyle] + ["-"] + [gt_linestyle]
+
+        else:
+            # Only two lines to plot: true and single prediction
+            all_preds = [true, pred]
+            x_vals = [x_true, x_pred]  # xtr for true, x for predicted
+            legend_labels = ['True', f'Obs {number}']
+            colors = [true_color] + [obs_colors[number]]
+            linestyles = [true_linestyle] + [obs_linestyles[number]]
+
         markers = [None] * len(linestyles)
         alphas = [1.0] * len(linestyles)
         linewidths = [1.2] * len(linestyles)
+
 
     rescale = conf.plot.rescale
     xlabel, _, ylabel = uu.get_scaled_labels(rescale)
@@ -496,7 +537,8 @@ def plot_tf(tot_true, tot_obs_pred, number, prj_figs, MultiObs=False, system=Fal
         linewidths=linewidths
     )
 
-def plot_tx(tx, tot_true, tot_obs_pred, number, prj_figs, MultiObs=False):
+
+def plot_tx(tx, tot_true, tot_obs_pred, number, prj_figs, gt=False, MultiObs=False):
     """
     Plot true values and predicted values (single or multi-observer model).
     
@@ -525,26 +567,44 @@ def plot_tx(tx, tot_true, tot_obs_pred, number, prj_figs, MultiObs=False):
     obs_colors = uu.get_obs_colors(conf)
     true_color, mm_obs_color = uu.get_sys_mm_colors(conf)
     obs_linestyles = uu.get_obs_linestyles(conf)
-    true_linestyle, mm_obs_linestyle = uu.get_sys_mm_linestyle(conf)
+    true_linestyle, mm_obs_linestyle, gt_linestyle = uu.get_sys_mm_gt_linestyle(conf)
 
+    if gt:
+        matlab_X, _, matlab_sol, matlab_mm_obs = uu.gen_testdata(conf)
+        x_matlab = np.unique(matlab_X[:, 0:1])
 
     if MultiObs:
         multi_pred = preds_tx[:, -1].reshape(len(x_pred), 1)
-
-        # Generate individual predictions from each model in the ensemble
         individual_preds = [preds_tx[:, -(1+n_obs)+m].reshape(len(x_pred), 1) for m in range(n_obs)]  # Assuming model.models holds individual models
         
-        # Stack all predictions (true values + individual predictions + combined prediction)
-        all_preds = [true] + individual_preds + [multi_pred]
-        
-        # x values: use xtr for true data, and 'x' for predictions
-        x_vals = [x_true] + [x_pred for _ in range(n_obs + 1)]
+        if gt:
+            multi_sol = matlab_mm_obs[:, -1][-len(x_matlab):].reshape(len(x_matlab), 1)
+            individual_sol = [matlab_sol[:, -(1+n_obs)+m][-len(x_matlab):].reshape(len(x_matlab), 1) for m in range(n_obs)]
+            # Stack all predictions (true values + individual predictions + combined prediction)
+            all_preds = [true] + individual_preds + [multi_pred] + individual_sol + [multi_sol]
+            
+            # x values: use xtr for true data, and 'x' for predictions
+            x_vals = [x_true] + [x_pred for _ in range(n_obs + 1)] + [x_matlab for _ in range(n_obs + 1)]
 
-        # Generate corresponding legend labels
-        legend_labels = ['True'] + [f'Obs {i}' for i in range(len(individual_preds))] + ['MultiObs Pred']
+            # Generate corresponding legend labels
+            legend_labels = ['True'] + [f'Obs {i}' for i in range(len(individual_preds))] + ['MultiObs Pred']
 
-        colors = [true_color] + obs_colors + [mm_obs_color]
-        linestyles = [true_linestyle] + obs_linestyles + [mm_obs_linestyle]
+            colors = [true_color] + obs_colors + [mm_obs_color] + obs_colors + [mm_obs_color]
+            linestyles = [true_linestyle] + obs_linestyles + [mm_obs_linestyle] + [gt_linestyle for _ in range(n_obs + 1)]
+
+        else:
+            # Stack all predictions (true values + individual predictions + combined prediction)
+            all_preds = [true] + individual_preds + [multi_pred]
+            
+            # x values: use xtr for true data, and 'x' for predictions
+            x_vals = [x_true] + [x_pred for _ in range(n_obs + 1)]
+
+            # Generate corresponding legend labels
+            legend_labels = ['True'] + [f'Obs {i}' for i in range(len(individual_preds))] + ['MultiObs Pred']
+
+            colors = [true_color] + obs_colors + [mm_obs_color]
+            linestyles = [true_linestyle] + obs_linestyles + [mm_obs_linestyle]
+
         markers = [None] * len(linestyles)
         if exp_name[1].startswith("meas_"):
             linestyles[0] = ''
@@ -556,14 +616,28 @@ def plot_tx(tx, tot_true, tot_obs_pred, number, prj_figs, MultiObs=False):
     else:
         if n_obs==1:
             pred = preds_tx[:, -1].reshape(len(x_pred), 1)
+            if gt:
+                matlab_obs = matlab_sol[:, 0][-len(x_matlab):].reshape(len(x_matlab), 1)
         else:
             pred = preds_tx[:, number].reshape(len(x_pred), 1)
-        # Only two lines to plot: true and single prediction
-        all_preds = [true, pred]
-        x_vals = [x_true, x_pred]  # xtr for true, x for predicted
-        legend_labels = ['True', f'Obs {number}']
-        colors = [true_color] + [obs_colors[number]]
-        linestyles = [true_linestyle] + [obs_linestyles[number]]
+            if gt:
+                matlab_obs = matlab_sol[:, number][-len(x_matlab):].reshape(len(x_matlab), 1)
+        if gt:
+            all_preds = [true, pred, matlab_obs]
+            x_vals = [x_true, x_pred, x_matlab]  # xtr for true, x for predicted
+            legend_labels = ['True', f'Obs {number} PINNs',  f'Obs {number} MATLAB']
+            colors = [true_color] + [obs_colors[number]]*2
+            # linestyles = [true_linestyle] + [obs_linestyles[number]] + [gt_linestyle]
+            linestyles = [true_linestyle] + ["-"] + [gt_linestyle]
+
+        else:
+            # Only two lines to plot: true and single prediction
+            all_preds = [true, pred]
+            x_vals = [x_true, x_pred]  # xtr for true, x for predicted
+            legend_labels = ['True', f'Obs {number}']
+            colors = [true_color] + [obs_colors[number]]
+            linestyles = [true_linestyle] + [obs_linestyles[number]]
+            
         markers = [None] * len(linestyles)
         alphas = [1.0] * len(linestyles)
         linewidths = [1.2] * len(linestyles)
@@ -594,7 +668,6 @@ def plot_tx(tx, tot_true, tot_obs_pred, number, prj_figs, MultiObs=False):
     )
 
 
-# def plot_tf_matlab(e, theta_true, theta_observers, theta_mmobs, conf, prj_figs):
 def plot_tf_matlab(e, theta_true, theta_observers, theta_mmobs, prj_figs):
     """
     Plot true values and predicted values (single or multi-observer model).
@@ -635,7 +708,7 @@ def plot_tf_matlab(e, theta_true, theta_observers, theta_mmobs, prj_figs):
     obs_colors = uu.get_obs_colors(conf)
     system_color, mm_obs_color = uu.get_sys_mm_colors(conf)
     obs_linestyles = uu.get_obs_linestyles(conf)
-    system_linestyle, mm_obs_linestyle = uu.get_sys_mm_linestyle(conf)
+    system_linestyle, mm_obs_linestyle, _ = uu.get_sys_mm_gt_linestyle(conf)
 
     colors = obs_colors + [system_color] + [mm_obs_color]
     linestyles = obs_linestyles + [system_linestyle] + [mm_obs_linestyle]
@@ -852,7 +925,7 @@ def plot_tf_matlab_1obs(e, theta_true, theta_observer, prj_figs):
     obs_colors = uu.get_obs_colors(conf)
     system_color, _ = uu.get_sys_mm_colors(conf)
     obs_linestyles = uu.get_obs_linestyles(conf)
-    system_linestyle, _ = uu.get_sys_mm_linestyle(conf)
+    system_linestyle, _, _ = uu.get_sys_mm_gt_linestyle(conf)
 
     colors = obs_colors + [system_color]
     linestyles = obs_linestyles + [system_linestyle]
@@ -913,7 +986,7 @@ def plot_l2_matlab_1obs(X, theta_true, y_obs, folder):
         y=l2.T,       # Multiple L2 error lines to plot
         title="Prediction error norm",
         xlabel=xlabel,
-        ylabel=r"$L^2$ norm",
+        ylabel=r"$L2$ norm",
         legend_labels=legend_labels,  # Labels for the legend
         size=(6, 5),
         filename=f"{folder}/l2_matlab_{n_obs}obs.png",
@@ -946,7 +1019,7 @@ def plot_t0(tot_pred, conf, out_dir):
     fname = f"{out_dir}/t0_{set[0]}_{set[1]}.png"
     sys_colors, mm_colors = uu.get_sys_mm_colors(conf)
     obs_colors = uu.get_obs_colors(conf)
-    sys_linestyle, obs_linestyle = uu.get_sys_mm_linestyle(conf)
+    sys_linestyle, obs_linestyle, _ = uu.get_sys_mm_gt_linestyle(conf)
     colors = [obs_colors[1], mm_colors, sys_colors]
     linestyles = ["-", obs_linestyle, sys_linestyle]
 
@@ -976,7 +1049,7 @@ def plot_mm_obs(multi_obs, tot_true, tot_pred, output_dir, comparison_3d=True):
     #     wandb.init(project= str, name=f"mm_obs")
 
     matching = uu.extract_matching(tot_true, tot_pred)
-    metrics = uu.compute_metrics(matching[:, 2], matching[:, 3])
+    uu.compute_metrics(matching[:, 2], matching[:, 3], output_dir)
     
     # if run_wandb:
     #     wandb.log(metrics)

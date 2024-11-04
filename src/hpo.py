@@ -104,7 +104,7 @@ def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation, initia
     tot_pred = np.array(data)
     conf.experiment.plot_figures=False
     # metrics = uu.check_observers_and_wandb_upload(tot_true, tot_pred, conf, run_figs)
-    # metrics = uu.compute_metrics(tot_true[:, -1], tot_pred[:, -1])
+    # metrics = uu.compute_metrics(tot_true[:, -1], tot_pred[:, -1], run_figs)
 
     error = np.sum(uu.calculate_l2(tot_pred[:, 0:2], tot_true[:, -1], tot_pred[:, -1]))
     metrics = {"l2_error": error}

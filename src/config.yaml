@@ -15,8 +15,8 @@ model_properties:
   activation: tanh
   initial_weights_regularizer: true
   initialization: Glorot uniform
-  iterations: 10000
-  LBFGS: true
+  iterations: 10
+  LBFGS: false
   learning_rate: 0.0001
   num_dense_layers: 6
   num_dense_nodes: 92
@@ -97,7 +97,7 @@ plot:
     - '-'
     - --
     - '-'
-    groundtruths: --
+    gt: --
     mm_obs: ':'
     system: -.
     measuring_points:
@@ -109,7 +109,7 @@ plot:
 experiment:
   name:
   - cooling
-  - simulation
+  - simulation_prova_tf
   import_data: false
   save_pickle: false
   run_matlab: false
@@ -130,7 +130,7 @@ experiment:
         K: 50
         b2: 0.25
         b3: 0.19
-        iterations: 10000
+        iterations: 10
       meas_1:
         title: Cooling 1
         date: '20240930_1'
