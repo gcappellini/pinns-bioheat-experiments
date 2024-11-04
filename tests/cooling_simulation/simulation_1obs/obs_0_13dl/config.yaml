@@ -11,12 +11,12 @@ model_properties:
   Ty10: 21.5
   Ty20: 28.85
   Ty30: 21.5
-  K: 50.0
+  K: 2.0
   activation: tanh
   initial_weights_regularizer: true
   initialization: Glorot uniform
-  iterations: 4999
-  LBFGS: true
+  iterations: 30000
+  LBFGS: false
   learning_rate: 0.0001
   num_dense_layers: 13
   num_dense_nodes: 92
@@ -72,7 +72,6 @@ plot:
     - C5
     - C6
     - C7
-    gt: pink
     system: C3
     mm_obs: gold
     measuring_points:
@@ -110,12 +109,12 @@ plot:
 experiment:
   name:
   - cooling
-  - simulation_debug
+  - simulation
   import_data: false
   save_pickle: false
   run_matlab: true
   run_wandb: false
-  check_system: true
+  check_system: false
   type:
     cooling:
       h: 10.0

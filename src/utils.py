@@ -366,22 +366,22 @@ def gen_testdata(conf, hpo=False):
         output_folder = f"{tests_dir}/{name[0]}_{name[1]}/ground_truth"
     if n==8:
         data = np.loadtxt(f"{output_folder}/output_matlab_{n}Obs.txt")
-        x, t, sys, obs, mmobs = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:11], data[:, 11:12].T
-        y_mmobs = mmobs.flatten()[:, None]
+        x, t, sys, y_obs, mmobs = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:11], data[:, 11:12].T
+        y_mm_obs = mmobs.flatten()[:, None]
     if n==3:
         data = np.loadtxt(f"{output_folder}/output_matlab_{n}Obs.txt")
-        x, t, sys, obs, mmobs = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:6], data[:, 6:7].T  
-        y_mmobs = mmobs.flatten()[:, None]
+        x, t, sys, y_obs, mmobs = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:6], data[:, 6:7].T  
+        y_mm_obs = mmobs.flatten()[:, None]
     if n==1:
         data = np.loadtxt(f"{output_folder}/output_matlab_{n}Obs.txt")
         x, t, sys, y_obs = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:4].T   
-        y_mmobs = None
-        obs = y_obs.flatten()[:, None]
+        y_obs = y_obs.flatten()[:, None]
+        y_mm_obs = y_obs
 
     X = np.vstack((x, t)).T
     y_sys = sys.flatten()[:, None]
     
-    return X, y_sys, obs, y_mmobs
+    return np.hstack((X, y_sys, y_obs, y_mm_obs))
 
 
 def load_weights(conf):
@@ -399,8 +399,11 @@ def load_weights(conf):
 
 def gen_obsdata(conf, hpo=False):
     global f1, f2, f3
-    X, y_sys, _, _ = gen_testdata(conf, hpo)
-    g = np.hstack((X, y_sys))
+
+    solution = gen_testdata(conf, hpo)
+    g = solution[:, 0:3]
+
+    # g = np.hstack((X, y_sys))
     instants = np.unique(g[:, 1])
     
     rows_1 = g[g[:, 0] == 1.0]
@@ -699,7 +702,7 @@ def check_system_and_wandb_upload(tot_true, tot_pred, conf, run_figs, comparison
     """
     run_wandb = conf.experiment.run_wandb
     name = conf.experiment.name
-
+    
 
     if run_wandb:
         aa = OmegaConf.load(f"{run_figs}/config.yaml")
@@ -707,13 +710,18 @@ def check_system_and_wandb_upload(tot_true, tot_pred, conf, run_figs, comparison
         wandb.init(project=name, name=f"system", config=aa)
             
     pp.plot_l2(tot_true, tot_pred, 0, run_figs, system=True)
-    pp.plot_tf(tot_true, tot_pred, 0, run_figs, system=True)
+    # pp.plot_tf(tot_true, tot_pred, 0, run_figs, system=True)
+
+    
+    # for t in instants:
+    #     pp.plot_tx(t, tot_true, tot_pred, 0, run_figs, system=True)
+    pp.plot_generic_5_figs(tot_true, tot_pred, 0, run_figs, system=True)
 
     if comparison_3d:
         matching = extract_matching(tot_true, tot_pred)
-        pp.plot_comparison_3d(tot_true[:, 0:2], tot_true[:, 2], tot_pred[:, -1], run_figs, system=True)
+        pp.plot_validation_3d(tot_true[:, 0:2], tot_true[:, 2], tot_pred[:, -1], run_figs, system=True)
 
-    metrics = compute_metrics(matching[:, 2], matching[:, 3], run_figs)
+    metrics = compute_metrics(matching[:, 0:2], matching[:, 2], matching[:, 3], run_figs)
     if run_wandb:
         matching = extract_matching(tot_true, tot_pred)
         wandb.log(metrics)
@@ -783,10 +791,11 @@ def get_obs_colors(conf):
     return obs_colors
 
 
-def get_sys_mm_colors(conf):
+def get_sys_mm_gt_colors(conf):
     system_color = conf.plot.colors.system
     mm_obs_color = conf.plot.colors.mm_obs
-    return system_color, mm_obs_color
+    gt_color = conf.plot.colors.gt
+    return system_color, mm_obs_color, gt_color
 
 
 def get_obs_linestyles(conf):
@@ -845,8 +854,6 @@ def run_matlab_ground_truth(prj_figs, conf1):
     Optionally run MATLAB ground truth.
     """
     n_obs = conf1.model_parameters.n_obs
-    name = conf1.experiment.name
-    string = f"{name[0]}_{name[1]}"
 
     print("Running MATLAB ground truth calculation...")
     eng = matlab.engine.start_matlab()
@@ -854,7 +861,9 @@ def run_matlab_ground_truth(prj_figs, conf1):
     eng.BioHeat(nargout=0)
     eng.quit()
 
-    X, y_sys, y_observers, y_mmobs = gen_testdata(conf1)
+    # X, y_sys, y_observers, y_mmobs = gen_testdata(conf1)
+    solution = gen_testdata(conf1)
+    X, y_sys, y_observers, y_mmobs = solution[:, 0:2], solution[:, 2], solution[:, 3:3+n_obs], solution[:, -1]
     t = np.unique(X[:, 1])
 
     if n_obs==1:
@@ -1072,7 +1081,6 @@ def configure_settings(cfg, experiment):
     cfg.model_properties.Ty30=meas_settings["y3_0"]
     cfg.model_parameters.gt1_0=meas_settings["gt1_0"]
     cfg.model_parameters.gt2_0=meas_settings["gt2_0"]
-    cfg.model_properties.K=meas_settings["K"]
     cfg.model_properties.b2=meas_settings["b2"]
     cfg.model_properties.b3=meas_settings["b3"]
 

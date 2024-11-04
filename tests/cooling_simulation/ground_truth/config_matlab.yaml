@@ -11,12 +11,12 @@ model_properties:
   Ty10: 21.5
   Ty20: 28.85
   Ty30: 21.5
-  K: 50
+  K: 50.0
   activation: tanh
   initial_weights_regularizer: true
   initialization: Glorot uniform
   iterations: 5000
-  LBFGS: true
+  LBFGS: false
   learning_rate: 0.0001
   num_dense_layers: 13
   num_dense_nodes: 92
@@ -35,8 +35,8 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b2: 0.5
-  b3: 0.5
+  b2: 0.25
+  b3: 0.19
   direct: false
 model_parameters:
   lam: 50
@@ -56,7 +56,6 @@ model_parameters:
   x_gt2: 0.01
   x_gt1: 0.04
   x_y1: 0.07
-  K: 10
 experiment:
 - cooling
 - simulation
