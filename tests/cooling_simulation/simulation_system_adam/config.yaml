@@ -11,12 +11,12 @@ model_properties:
   Ty10: 21.5
   Ty20: 28.85
   Ty30: 21.5
-  K: 50
+  K: 50.0
   activation: tanh
   initial_weights_regularizer: true
   initialization: Glorot uniform
   iterations: 5000
-  LBFGS: true
+  LBFGS: false
   learning_rate: 0.0001
   num_dense_layers: 13
   num_dense_nodes: 92
@@ -35,8 +35,8 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b2: 0.5
-  b3: 0.5
+  b2: 0.25
+  b3: 0.19
   direct: true
 model_parameters:
   lam: 50
@@ -56,7 +56,6 @@ model_parameters:
   x_gt2: 0.01
   x_gt1: 0.04
   x_y1: 0.07
-  K: 10
 output:
   base_dir: ${hydra:runtime.output_dir}
   save_figures: true
@@ -73,6 +72,7 @@ plot:
     - C5
     - C6
     - C7
+    gt: pink
     system: C3
     mm_obs: gold
     measuring_points:
@@ -98,7 +98,7 @@ plot:
     - '-'
     - --
     - '-'
-    groundtruths: --
+    gt: --
     mm_obs: ':'
     system: -.
     measuring_points:
@@ -110,7 +110,7 @@ plot:
 experiment:
   name:
   - cooling
-  - simulation
+  - simulation_debug
   import_data: false
   save_pickle: false
   run_matlab: true
@@ -128,10 +128,8 @@ experiment:
         gt2_0: 29.25
         y2_0: 28.85
         y3_0: 21.5
-        K: 50
-        b2: 0.5
-        b3: 0.5
-        iterations: 5000
+        b2: 0.25
+        b3: 0.19
       meas_1:
         title: Cooling 1
         date: '20240930_1'
@@ -146,7 +144,6 @@ experiment:
         K: 50.0
         b2: 0.0236
         b3: 0.3091
-        iterations: 30000
       meas_2:
         title: Cooling 2
         date: '20240930_3'
@@ -161,7 +158,6 @@ experiment:
         K: 50.0
         b2: 0.0079
         b3: -0.0491
-        iterations: 30000
     heating:
       h: 238.0
       pwr_fact: 0.4
