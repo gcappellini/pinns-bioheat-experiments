@@ -32,7 +32,7 @@ dde.config.set_random_seed(200)
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
 
-prj = "hpo_301024_obs0"
+prj = "hpo_311024_obs0"
 prj_figs = co.set_prj(prj)
 
 # HPO setting
@@ -69,8 +69,8 @@ def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation, initia
     conf.model_parameters.n_obs = 1
     conf.model_properties.direct = False
     conf.model_properties.W = conf.model_parameters.W4
-    conf.model_properties.activation, conf.model_properties.learning_rate, conf.model_properties.num_dense_layers = activation, learning_rate, int(num_dense_layers)
-    conf.model_properties.num_dense_layers, conf.model_properties.initialization = int(num_dense_nodes), initialization
+    conf.model_properties.activation, conf.model_properties.learning_rate, conf.model_properties.num_dense_layers = str(activation), learning_rate, int(num_dense_layers)
+    conf.model_properties.num_dense_layers, conf.model_properties.initialization = int(num_dense_nodes), str(initialization)
     OmegaConf.save(conf, f"{run_figs}/config.yaml")
 
     aa = {"activation": activation,
@@ -106,7 +106,7 @@ def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation, initia
     # metrics = uu.check_observers_and_wandb_upload(tot_true, tot_pred, conf, run_figs)
     # metrics = uu.compute_metrics(tot_true[:, -1], tot_pred[:, -1])
 
-    error = uu.calculate_l2(tot_true[:, -1], tot_pred[:, -1])
+    error = np.sum(uu.calculate_l2(tot_pred[:, 0:2], tot_true[:, -1], tot_pred[:, -1]))
     metrics = {"l2_error": error}
 
     wandb.log(metrics)

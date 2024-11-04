@@ -392,9 +392,9 @@ def load_weights(conf):
     return t, np.array(weights)
 
 
-def gen_obsdata(conf):
+def gen_obsdata(conf, hpo=False):
     global f1, f2, f3
-    X, y_sys, _, _ = gen_testdata(conf)
+    X, y_sys, _, _ = gen_testdata(conf, hpo)
     g = np.hstack((X, y_sys))
     instants = np.unique(g[:, 1])
     
