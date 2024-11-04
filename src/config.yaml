@@ -12,14 +12,14 @@ model_properties:
   Ty20: 28.85
   Ty30: 21.5
   K: 50
-  activation: tanh
+  activation: swish
   initial_weights_regularizer: true
-  initialization: Glorot uniform
-  iterations: 10
-  LBFGS: false
-  learning_rate: 0.0001
-  num_dense_layers: 6
-  num_dense_nodes: 92
+  initialization: He uniform
+  iterations: 20001
+  LBFGS: true
+  learning_rate: 7.6282e-05
+  num_dense_layers: 8
+  num_dense_nodes: 18
   num_domain: 400
   num_boundary: 200
   num_initial: 160
@@ -109,10 +109,10 @@ plot:
 experiment:
   name:
   - cooling
-  - simulation_prova_tf
+  - simulation
   import_data: false
   save_pickle: false
-  run_matlab: false
+  run_matlab: true
   run_wandb: false
   check_system: false
   type:
@@ -130,7 +130,6 @@ experiment:
         K: 50
         b2: 0.25
         b3: 0.19
-        iterations: 10
       meas_1:
         title: Cooling 1
         date: '20240930_1'
@@ -145,7 +144,6 @@ experiment:
         K: 50.0
         b2: 0.0236
         b3: 0.3091
-        iterations: 30000
       meas_2:
         title: Cooling 2
         date: '20240930_3'
@@ -160,7 +158,6 @@ experiment:
         K: 50.0
         b2: 0.0079
         b3: -0.0491
-        iterations: 30000
     heating:
       h: 238.0
       pwr_fact: 0.4

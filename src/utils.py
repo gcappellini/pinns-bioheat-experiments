@@ -66,6 +66,7 @@ def compute_metrics(grid, true, pred, run_figs):
     with open(f"{run_figs}/metrics.txt", "w") as file:
         for key, value in metrics.items():
             file.write(f"{key}: {value}\n")
+            
     return metrics
 
 
@@ -682,7 +683,7 @@ def check_observers_and_wandb_upload(tot_true, tot_pred, conf, output_dir, compa
             pp.plot_tx(t, tot_true, tot_pred, 0, run_figs, gt=True, MultiObs=False)
 
         matching = extract_matching(tot_true, tot_pred)
-        metrics = compute_metrics(matching[:, 0:2], matching[:, 2], matching[:, 3], run_figs)
+        metrics = compute_metrics(matching[:, 0:2], matching[:, 3], matching[:, 4], run_figs)
         if comparison_3d:
             pp.plot_comparison_3d(tot_true[:, 0:2], tot_true[:, 2], tot_pred[:, -1], run_figs)
 
@@ -712,11 +713,13 @@ def check_system_and_wandb_upload(tot_true, tot_pred, conf, run_figs, comparison
         matching = extract_matching(tot_true, tot_pred)
         pp.plot_comparison_3d(tot_true[:, 0:2], tot_true[:, 2], tot_pred[:, -1], run_figs, system=True)
 
+    metrics = compute_metrics(matching[:, 2], matching[:, 3], run_figs)
     if run_wandb:
         matching = extract_matching(tot_true, tot_pred)
-        metrics = compute_metrics(matching[:, 2], matching[:, 3], run_figs)
         wandb.log(metrics)
         wandb.finish()
+
+    return metrics
 
 
 def get_system_pred(model, X, output_dir):
@@ -1072,7 +1075,7 @@ def configure_settings(cfg, experiment):
     cfg.model_properties.K=meas_settings["K"]
     cfg.model_properties.b2=meas_settings["b2"]
     cfg.model_properties.b3=meas_settings["b3"]
-    cfg.model_properties.iterations=meas_settings["iterations"]
+
     return cfg
 
 
