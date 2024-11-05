@@ -13,6 +13,7 @@ import plots as pp
 import common as co
 from omegaconf import OmegaConf
 import matlab.engine
+import subprocess
 
 
 dde.config.set_random_seed(200)
@@ -136,6 +137,7 @@ def create_nbho(run_figs):
     num_dense_nodes = config.model_properties.num_dense_nodes
     w_res, w_bc0, w_bc1, w_ic = config.model_properties.w_res, config.model_properties.w_bc0, config.model_properties.w_bc1, config.model_properties.w_ic
     num_domain, num_boundary, num_initial, num_test = config.model_properties.num_domain, config.model_properties.num_boundary, config.model_properties.num_initial, config.model_properties.num_test
+    condition_bc0 = config.model_properties.condition_bc0
 
     a1 = cc.a1
     a2 = cc.a2
@@ -172,7 +174,15 @@ def create_nbho(run_figs):
         
         # return - dtheta_x - a5 * (x[:, 3:4] - x[:, 2:3]) - K * (x[:, 2:3] - theta)
         # return - dtheta_x + a5 * x[:, 2:3] - K * (x[:, 2:3] - theta)
-        return dtheta_hat_x/K - (flusso/K + (theta_hat - y2))
+        if condition_bc0=="dirichlet":
+            return theta_hat - y2
+
+        if condition_bc0=="neumann":
+            return dtheta_hat_x - flusso
+        
+        if condition_bc0=="robin":
+            return dtheta_hat_x/K - (flusso/K + (theta_hat - y2))
+
     
     # xmin = [0, 0, 0, 0]
     # xmax = [1, 0.2, 1, 1]
@@ -364,19 +374,28 @@ def gen_testdata(conf, hpo=False):
         output_folder = f"{tests_dir}/cooling_simulation/ground_truth"
     else:
         output_folder = f"{tests_dir}/{name[0]}_{name[1]}/ground_truth"
-    if n==8:
-        data = np.loadtxt(f"{output_folder}/output_matlab_{n}Obs.txt")
-        x, t, sys, y_obs, mmobs = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:11], data[:, 11:12].T
-        y_mm_obs = mmobs.flatten()[:, None]
-    if n==3:
-        data = np.loadtxt(f"{output_folder}/output_matlab_{n}Obs.txt")
-        x, t, sys, y_obs, mmobs = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:6], data[:, 6:7].T  
-        y_mm_obs = mmobs.flatten()[:, None]
-    if n==1:
-        data = np.loadtxt(f"{output_folder}/output_matlab_{n}Obs.txt")
-        x, t, sys, y_obs = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:4].T   
-        y_obs = y_obs.flatten()[:, None]
-        y_mm_obs = y_obs
+
+    file_path = f"{output_folder}/output_matlab_{n}Obs.txt"
+
+    try:
+        data = np.loadtxt(file_path)
+
+        if n == 8:
+            x, t, sys, y_obs, mmobs = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:11], data[:, 11:12].T
+            y_mm_obs = mmobs.flatten()[:, None]
+        elif n == 3:
+            x, t, sys, y_obs, mmobs = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:6], data[:, 6:7].T
+            y_mm_obs = mmobs.flatten()[:, None]
+        elif n == 1:
+            x, t, sys, y_obs = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:4].T
+            y_obs = y_obs.flatten()[:, None]
+            y_mm_obs = y_obs
+
+    except FileNotFoundError:
+        print(f"File not found: {file_path}. Setting conf.experiment.run_matlab to True.")
+        conf.experiment.run_matlab = True
+        OmegaConf.save(conf, f"{src_dir}/config.yaml")
+        subprocess.run(["python", f"{src_dir}/main.py"], check=True)
 
     X = np.vstack((x, t)).T
     y_sys = sys.flatten()[:, None]
@@ -684,7 +703,8 @@ def check_observers_and_wandb_upload(tot_true, tot_pred, conf, output_dir, compa
         pp.plot_generic_5_figs(tot_true, tot_pred, 0, run_figs, gt=True, MultiObs=False)
 
         matching = extract_matching(tot_true, tot_pred)
-        metrics = compute_metrics(matching[:, 0:2], matching[:, 3], matching[:, 4], run_figs)
+        metrics = compute_metrics(matching[:, 0:2], matching[:, 3+el], matching[:, 3+n_obs+1+el], run_figs)
+        # struttura di matching: x, t, sys_matlab, obs_matlab, mm_obs_matlab, obs_pinns, mm_obs_pinns
         if comparison_3d:
             pp.plot_comparison_3d(tot_true[:, 0:2], tot_true[:, 2], tot_pred[:, -1], run_figs)
 
@@ -775,66 +795,6 @@ def get_scaled_labels(rescale):
     ylabel=r"$t \, (s)$" if rescale else r"$\tau$"
     zlabel=r"$T \, (^{\circ}C)$" if rescale else r"$\theta$"
     return xlabel, ylabel, zlabel
-
-
-def _get_plot_params(conf):
-    """
-    Load colors and linestyles based on configuration and observer count, 
-    and set plot parameters according to experiment name.
-    
-    :param conf: Configuration object loaded from YAML.
-    :param exp_name: Name of the experiment (used for style adjustments).
-    :return: Dictionary containing plot parameters (colors, linestyles, markers, alphas, linewidths).
-    """
-    exp_name = conf.experiment.name
-    # Load colors and linestyles from the configuration
-    total_obs_colors = conf.plot.colors.observers
-    total_obs_linestyles = conf.plot.linestyles.observers
-    system_color = conf.plot.colors.system
-    mm_obs_color = conf.plot.colors.mm_obs
-    gt_color = conf.plot.colors.gt
-    system_linestyle = conf.plot.linestyles.system
-    mm_obs_linestyle = conf.plot.linestyles.mm_obs
-    gt_linestyle = conf.plot.linestyles.gt
-    
-    # Determine observer colors and linestyles based on n_obs
-    n_obs = conf.model_parameters.n_obs
-    if n_obs == 1:
-        obs_colors = [total_obs_colors[4]]
-        obs_linestyles = [total_obs_linestyles[4]]
-    elif n_obs == 3:
-        obs_colors = [total_obs_colors[0], total_obs_colors[4], total_obs_colors[7]]
-        obs_linestyles = [total_obs_linestyles[0], total_obs_linestyles[4], total_obs_linestyles[7]]
-    elif n_obs == 8:
-        obs_colors = total_obs_colors
-        obs_linestyles = total_obs_linestyles
-    else:
-        raise ValueError("Unsupported number of observers")
-    
-    # Combine colors and linestyles with system, multi-observer, and ground truth
-    colors = [system_color] + obs_colors + [mm_obs_color, gt_color]
-    linestyles = [system_linestyle] + obs_linestyles + [mm_obs_linestyle, gt_linestyle]
-    
-    # Set default alphas and linewidths
-    alphas = [1.0] * len(colors)
-    alphas[-1] = 1.0  # Ground truth has full opacity
-    linewidths = [1.2] * len(colors)
-    linewidths[-1] = 2.2  # Ground truth has a thicker line
-    
-    # Adjust markers and linestyles if experiment name starts with "meas_"
-    markers = [None] * len(linestyles)
-    if exp_name[1].startswith("meas_"):
-        linestyles[0] = ''  # Use marker instead of linestyle for the first plot element
-        markers[0] = "*"
-    
-    # Return parameters as a dictionary for use in plot functions
-    return {
-        "colors": colors,
-        "linestyles": linestyles,
-        "markers": markers,
-        "alphas": alphas,
-        "linewidths": linewidths
-    }
 
 
 def get_plot_params(conf):

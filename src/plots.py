@@ -249,6 +249,7 @@ def plot_l2(tot_true, tot_pred, number, folder, gt=False, MultiObs=False, system
     e = matching[:, :2].reshape(len(matching), 2)
     theta_system = matching[:, 2].reshape(len(matching), 1)
     t_pred = np.unique(matching[:, 1])
+    t_pred = t_pred.reshape(len(t_pred), 1)
 
     conf = OmegaConf.load(f'{folder}/config.yaml')
     n_obs = conf.model_parameters.n_obs
@@ -318,12 +319,14 @@ def plot_l2(tot_true, tot_pred, number, folder, gt=False, MultiObs=False, system
         # combined_pred = uu.mm_predict(model, xobs, folder)
         ll2 = uu.calculate_l2(e, theta_system, pred)
         ll2 = np.array(ll2).reshape(len(ll2), 1)
-        t_vals = [t_pred]
+        t_vals = t_pred
         legend_labels = [system_label]
         colors=[system_color]
         linestyles=[system_linestyle]
         alphas=[system_alpha]
         linewidths=[system_linewidth]
+        ll2 = ll2.T
+        t_vals = t_vals.T
 
     else:
         pred = matching[:, -1 if n_obs == 1 else 3 + number].reshape(len(matching[:, -1]), 1)
@@ -970,9 +973,6 @@ def plot_generic_5_figs(tot_true, tot_pred, number, prj_figs, system=False, Mult
         true_tx = match[np.abs(match[:, 1] - tx) == closest_value][:, 2]
         preds_tx = tot_pred[np.abs(tot_pred[:, 1] - tx) == closest_value][:, 2:]
         
-        closest_value2 = np.abs(matlab_sol[:, 1] - tx).min()
-        matlab_sol_tx = matlab_sol[np.abs(matlab_sol[:, 1] - tx) == closest_value2]
-        
         # Reshape true values and retrieve unique depth coordinates
         true = true_tx.reshape(len(true_tx), 1)
         x_true = np.unique(tot_true[:, 0])
@@ -981,8 +981,8 @@ def plot_generic_5_figs(tot_true, tot_pred, number, prj_figs, system=False, Mult
         # Select plotting data based on system or observer model
         if system:
             sys_pred = preds_tx[:, -1].reshape(len(x_pred), 1)
-            all_preds = [true, sys_pred]
-            x_vals = [x_true, x_pred]
+            all_preds = [sys_pred, true]
+            x_vals = [x_pred, x_true]
             legend_labels = [system_label, system_gt_label]
             colors = [system_color, system_gt_color]
             linestyles = [system_linestyle, system_gt_linestyle]
@@ -1002,6 +1002,8 @@ def plot_generic_5_figs(tot_true, tot_pred, number, prj_figs, system=False, Mult
         else:
             pred = preds_tx[:, number].reshape(len(x_pred), 1)
             if gt:
+                closest_value2 = np.abs(matlab_sol[:, 1] - tx).min()
+                matlab_sol_tx = matlab_sol[np.abs(matlab_sol[:, 1] - tx) == closest_value2]
                 matlab_obs = matlab_sol_tx[:, 3 + number].reshape(len(x_matlab), 1)
                 all_preds = [true, pred, matlab_obs]
                 x_vals = [x_true, x_pred, x_matlab]
