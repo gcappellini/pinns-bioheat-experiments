@@ -63,18 +63,6 @@ output_dir: ${hydra:run.dir}
 plot:
   rescale: true
   colors:
-    observers:
-    - C0
-    - C1
-    - C2
-    - C9
-    - C4
-    - C5
-    - C6
-    - C7
-    gt: pink
-    system: C3
-    mm_obs: gold
     measuring_points:
     - '#F7CAC9'
     - '#6B5B95'
@@ -89,24 +77,129 @@ plot:
     - '#FFD700'
     - '#FF1493'
   linestyles:
-    observers:
-    - '-'
-    - -.
-    - '-'
-    - -.
-    - --
-    - '-'
-    - --
-    - '-'
-    gt: --
-    mm_obs: ':'
-    system: -.
     measuring_points:
     - '-'
     - -.
     - '-'
     - -.
     - --
+  entities:
+    system:
+      color: C3
+      label: System PINNs
+      linestyle: '-'
+      linewidth: 1.2
+      alpha: 1.0
+    multi_observer:
+      color: gold
+      label: MultiObs PINNs
+      linestyle: ':'
+      linewidth: 1.2
+      alpha: 1.0
+    observers:
+      colors:
+      - C0
+      - C1
+      - C2
+      - C9
+      - C4
+      - C5
+      - C6
+      - C7
+      labels:
+      - Obs 0 PINNs
+      - Obs 1 PINNs
+      - Obs 2 PINNs
+      - Obs 3 PINNs
+      - Obs 4 PINNs
+      - Obs 5 PINNs
+      - Obs 6 PINNs
+      - Obs 7 PINNs
+      linestyles:
+      - '-'
+      - -.
+      - '-'
+      - -.
+      - --
+      - '-'
+      - --
+      - '-'
+      linewidths:
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      alphas:
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+    system_gt:
+      color: C3
+      label: System MATLAB
+      linestyle: --
+      linewidth: 1.0
+      alpha: 0.8
+    multi_observer_gt:
+      color: gold
+      label: MultiObs MATLAB
+      linestyle: --
+      linewidth: 1.0
+      alpha: 0.8
+    observers_gt:
+      colors:
+      - C0
+      - C1
+      - C2
+      - C9
+      - C4
+      - C5
+      - C6
+      - C7
+      labels:
+      - Obs 0 MATLAB
+      - Obs 1 MATLAB
+      - Obs 2 MATLAB
+      - Obs 3 MATLAB
+      - Obs 4 MATLAB
+      - Obs 5 MATLAB
+      - Obs 6 MATLAB
+      - Obs 7 MATLAB
+      linestyles:
+      - ':'
+      - ':'
+      - ':'
+      - ':'
+      - ':'
+      - ':'
+      - ':'
+      - ':'
+      linewidths:
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      alphas:
+      - 0.7
+      - 0.7
+      - 0.7
+      - 0.7
+      - 0.7
+      - 0.7
+      - 0.7
+      - 0.7
 experiment:
   name:
   - cooling

@@ -777,7 +777,7 @@ def get_scaled_labels(rescale):
     return xlabel, ylabel, zlabel
 
 
-def get_plot_params(conf):
+def _get_plot_params(conf):
     """
     Load colors and linestyles based on configuration and observer count, 
     and set plot parameters according to experiment name.
@@ -834,6 +834,88 @@ def get_plot_params(conf):
         "markers": markers,
         "alphas": alphas,
         "linewidths": linewidths
+    }
+
+
+def get_plot_params(conf):
+    """
+    Load plot parameters based on configuration for each entity (system, observers, etc.),
+    and set up characteristics such as colors, linestyles, linewidths, and alphas.
+    
+    :param conf: Configuration object loaded from YAML.
+    :return: Dictionary containing plot parameters for each entity.
+    """
+    exp_name = conf.experiment.name
+
+    # Load entity-specific configurations from the config
+    entities = conf.plot.entities
+
+    # System parameters
+    system_params = {
+        "color": entities.system.color,
+        "label": entities.system.label,
+        "linestyle": entities.system.linestyle,
+        "linewidth": entities.system.linewidth,
+        "alpha": entities.system.alpha
+    }
+
+    # Multi-observer parameters
+    multi_observer_params = {
+        "color": entities.multi_observer.color,
+        "label": entities.multi_observer.label,
+        "linestyle": entities.multi_observer.linestyle,
+        "linewidth": entities.multi_observer.linewidth,
+        "alpha": entities.multi_observer.alpha
+    }
+
+    # Observers parameters (dynamically adjust for number of observers)
+    n_obs = conf.model_parameters.n_obs
+    observer_params = {
+        "colors": entities.observers.colors[:n_obs],
+        "labels": entities.observers.labels[:n_obs],
+        "linestyles": entities.observers.linestyles[:n_obs],
+        "linewidths": entities.observers.linewidths[:n_obs],
+        "alphas": entities.observers.alphas[:n_obs]
+    }
+
+    # Ground truth parameters
+    system_gt_params = {
+        "color": entities.system_gt.color,
+        "label": entities.system_gt.label,
+        "linestyle": entities.system_gt.linestyle,
+        "linewidth": entities.system_gt.linewidth,
+        "alpha": entities.system_gt.alpha
+    }
+
+    multi_observer_gt_params = {
+        "color": entities.multi_observer_gt.color,
+        "label": entities.multi_observer_gt.label,
+        "linestyle": entities.multi_observer_gt.linestyle,
+        "linewidth": entities.multi_observer_gt.linewidth,
+        "alpha": entities.multi_observer_gt.alpha
+    }
+
+    observer_gt_params = {
+        "colors": entities.observers_gt.colors[:n_obs],
+        "labels": entities.observers_gt.labels[:n_obs],
+        "linestyles": entities.observers_gt.linestyles[:n_obs],
+        "linewidths": entities.observers_gt.linewidths[:n_obs],
+        "alphas": entities.observers_gt.alphas[:n_obs]
+    }
+
+    # Adjust markers if experiment name starts with "meas_"
+    markers = [None] * n_obs
+    if exp_name[1].startswith("meas_"):
+        markers[0] = "*"
+
+    return {
+        "system": system_params,
+        "multi_observer": multi_observer_params,
+        "observers": observer_params,
+        "system_gt": system_gt_params,
+        "multi_observer_gt": multi_observer_gt_params,
+        "observers_gt": observer_gt_params,
+        "markers": markers
     }
 
 def solve_ivp(multi_obs, fold, conf, x_obs):

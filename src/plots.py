@@ -254,6 +254,41 @@ def plot_l2(tot_true, tot_pred, number, folder, gt=False, MultiObs=False, system
     n_obs = conf.model_parameters.n_obs
     plot_params = uu.get_plot_params(conf)
 
+    # For a system plot
+    system_color = plot_params["system"]["color"]
+    system_linestyle = plot_params["system"]["linestyle"]
+    system_label = plot_params["system"]["label"]
+    system_linewidth = plot_params["system"]["linewidth"]
+    system_alpha = plot_params["system"]["alpha"]
+
+    # For a multi-observer plot
+    multi_obs_color = plot_params["multi_observer"]["color"]
+    multi_obs_linestyle = plot_params["multi_observer"]["linestyle"]
+    multi_obs_label = plot_params["multi_observer"]["label"]
+    multi_obs_linewidth = plot_params["multi_observer"]["linewidth"]
+    multi_obs_alpha = plot_params["multi_observer"]["alpha"]
+
+    # For observers (e.g., in a loop for each observer)
+    observer_colors = plot_params["observers"]["colors"]
+    observer_linestyles = plot_params["observers"]["linestyles"]
+    observer_labels = plot_params["observers"]["labels"]
+    observer_linewidths = plot_params["observers"]["linewidths"]
+    observer_alphas = plot_params["observers"]["alphas"]
+
+    # Ground truth for observers, if gt is True
+    observer_gt_colors = plot_params["observers_gt"]["colors"]
+    observer_gt_linestyles = plot_params["observers_gt"]["linestyles"]
+    observer_gt_labels = plot_params["observers_gt"]["labels"]
+    observer_gt_linewidths = plot_params["observers_gt"]["linewidths"]
+    observer_gt_alphas = plot_params["observers_gt"]["alphas"]
+
+    # For a multi-observer plot
+    multi_obs_gt_color = plot_params["multi_observer_gt"]["color"]
+    multi_obs_gt_linestyle = plot_params["multi_observer_gt"]["linestyle"]
+    multi_obs_gt_label = plot_params["multi_observer_gt"]["label"]
+    multi_obs_gt_linewidth = plot_params["multi_observer_gt"]["linewidth"]
+    multi_obs_gt_alpha = plot_params["multi_observer_gt"]["alpha"]
+
     if MultiObs:
         pred = matching[:, -1].reshape(len(t_pred), 1)
 
@@ -270,7 +305,12 @@ def plot_l2(tot_true, tot_pred, number, folder, gt=False, MultiObs=False, system
         l2_individual_obs = np.array(l2_individual).T
         ll2 = np.hstack((l2, l2_individual_obs))
         t_vals = [t_pred for _ in range(n_obs + 1)]
-        legend_labels = [f'Obs {i}' for i in range(n_obs)] + ['MultiObs Pred']
+
+        legend_labels = observer_labels + [multi_obs_label]
+        colors=observer_colors + [multi_obs_color]
+        linestyles=observer_linestyles + [multi_obs_linestyle]
+        alphas=observer_alphas + [multi_obs_alpha]
+        linewidths=observer_linewidths + [multi_obs_linewidth]
 
     elif system:
         pred = matching[:, -1].reshape(len(matching[:, -1]), 1)
@@ -279,14 +319,22 @@ def plot_l2(tot_true, tot_pred, number, folder, gt=False, MultiObs=False, system
         ll2 = uu.calculate_l2(e, theta_system, pred)
         ll2 = np.array(ll2).reshape(len(ll2), 1)
         t_vals = [t_pred]
-        legend_labels = ['System Pred']
+        legend_labels = [system_label]
+        colors=[system_color]
+        linestyles=[system_linestyle]
+        alphas=[system_alpha]
+        linewidths=[system_linewidth]
 
     else:
         pred = matching[:, -1 if n_obs == 1 else 3 + number].reshape(len(matching[:, -1]), 1)
         l2_individual = uu.calculate_l2(e, theta_system, pred)
         ll2 = [l2_individual.reshape(len(l2_individual), 1)]
         t_vals = [t_pred]
-        legend_labels = [f'Obs {number}']
+        legend_labels = [observer_labels[number]]
+        colors=[observer_colors[number]]
+        linestyles=[observer_linestyles[number]]
+        alphas=[observer_alphas[number]]
+        linewidths=[observer_linewidths[number]]
 
     if gt:
         matlab_sol = matching[:, :n_obs+4]
@@ -303,7 +351,11 @@ def plot_l2(tot_true, tot_pred, number, folder, gt=False, MultiObs=False, system
 
             ll2 += l2_ind_mat + l2_mm_mat
             t_vals += [t_pred for _ in range(n_obs + 1)]
-            legend_labels += [f'MATLAB Obs {i}' for i in range(n_obs)] + ['MATLAB MultiObs']
+            legend_labels += observer_gt_labels + [multi_obs_gt_label]
+            colors += observer_gt_colors + [multi_obs_gt_color]
+            linestyles += observer_gt_linestyles + [multi_obs_gt_linestyle]
+            alphas += observer_gt_alphas + [multi_obs_gt_alpha]
+            linewidths += observer_gt_linewidths + [multi_obs_gt_linewidth]
         elif system:
             pass
         else:
@@ -311,7 +363,11 @@ def plot_l2(tot_true, tot_pred, number, folder, gt=False, MultiObs=False, system
             l2_matlab_obs = uu.calculate_l2(grid, theta_system, matlab_obs)
             ll2.append(l2_matlab_obs)
             t_vals.append(t_pred)
-            legend_labels.append(f'MATLAB Obs {number}')    
+            legend_labels.append(observer_gt_labels[number])
+            colors.append(observer_gt_colors[number])
+            linestyles.append(observer_gt_linestyles[number])
+            alphas.append(observer_gt_alphas[number])
+            linewidths.append(observer_gt_linewidths[number])
 
     rescale = conf.plot.rescale
     _, xlabel, _ = uu.get_scaled_labels(rescale)
@@ -327,106 +383,10 @@ def plot_l2(tot_true, tot_pred, number, folder, gt=False, MultiObs=False, system
         legend_labels=legend_labels,  # Labels for the legend
         size=(6, 5),
         filename=f"{folder}/l2_{f'mm_{n_obs}obs' if MultiObs else 'sys' if system else f'obs{number}'}.png",
-        **plot_params  # Pass colors, linestyles, markers, alphas, and linewidths
-    )
-
-
-def _plot_l2(tot_true, tot_pred, number, folder, gt=False, MultiObs=False, system = False):
-    """
-    Plot L2 norm of prediction errors for true and predicted values.
-    
-    :param xobs: Input observations (depth and time).
-    :param theta_true: True theta values.
-    :param model: A single model or a list of models if MultiObs is True.
-    :param number: Identifier for the observation.
-    :param folder: Directory to save the figure.
-    :param MultiObs: If True, use multiple models for predictions.
-    """
-
-    matching = uu.extract_matching(tot_true, tot_pred)
-    e = matching[:, :2].reshape(len(matching), 2)
-
-    theta_system = matching[:, 2].reshape(len(matching), 1)
-    theta_obs = matching[:, 3].reshape(len(matching), 1)
-
-    conf = OmegaConf.load(f'{folder}/config.yaml')
-
-    n_obs = conf.model_parameters.n_obs
-    obs_colors = uu.get_obs_colors(conf)
-    obs_linestyles = uu.get_obs_linestyles(conf)
-    _, mm_obs_color, _ = uu.get_sys_mm_gt_colors(conf)
-    _, mm_obs_linestyle, gt_linestyle = uu.get_sys_mm_gt_linestyle(conf)
-
-    if gt:
-        matlab_sol = uu.gen_testdata(conf)
-        x_matlab = np.unique(matlab_sol[:, 0:1])
-
-    if MultiObs:
-        pred = matching[:, -1].reshape(len(matching[:, -1]), 1)
-
-        # combined_pred = uu.mm_predict(model, xobs, folder)
-        l2 = uu.calculate_l2(e, theta_system, pred)
-
-        # Calculate L2 error for each individual model
-        l2_individual = []
-        for i in range(n_obs):  # Assuming `model.models` holds individual models
-            theta_pred = matching[:, 3+i].reshape(len(matching), 1)
-            l2_individual.append(uu.calculate_l2(e, theta_obs, theta_pred))
-
-        l2_individual_obs = np.array(l2_individual).T
-        l2 = l2.reshape(len(l2), 1)
-        ll2 = np.hstack((l2, l2_individual_obs))
-
-    elif system:
-        pred = matching[:, -1].reshape(len(matching[:, -1]), 1)
-
-        # combined_pred = uu.mm_predict(model, xobs, folder)
-        ll2 = uu.calculate_l2(e, theta_system, pred)
-        ll2 = np.array(ll2).reshape(len(ll2), 1)
-        # ll2 = l2.reshape(len(l2), 1)
-
-    else:
-        pred = matching[:, 4+number].reshape(len(matching), 1)
-        l2_individual = uu.calculate_l2(e, theta_obs, pred)
-        ll2 = l2_individual.reshape(len(l2_individual), 1)
-
-        if gt:
-            truth = matlab_sol[:, 3+number].reshape(len(matching), 1)
-            l2_matlab = uu.calculate_l2(e, truth, theta_obs)
-            l2_matlab = np.array(l2_matlab).reshape(len(l2_matlab), 1)
-            ll2 = np.hstack((ll2, l2_matlab))
-
-    
-    legend_labels = ['MultiObs'] + [f'Obs {i}' for i in range(n_obs)] if MultiObs else ['System prediction'] if system else [f'Obs {number} PINNs',  f'Obs {number} MATLAB'] if gt else [f'Obs {number}']
-    colors = [mm_obs_color] + obs_colors if MultiObs else [obs_colors[number]]*2 if gt else [obs_colors[number]]
-    linestyles = [mm_obs_linestyle] + obs_linestyles if MultiObs else ["-"] + [gt_linestyle] if gt else [obs_linestyles[number]]
-    alphas = [0.6] * len(linestyles)
-    alphas[0] = 1.0
-    linewidths = [1.2] * len(linestyles)
-    
-    if MultiObs:
-        linewidths[0] = 2.2
-
-    rescale = conf.plot.rescale
-    _, xlabel, _ = uu.get_scaled_labels(rescale)
-    t = np.unique(matching[:, 1]).reshape(len(np.unique(matching[:, 1])), 1)
-    t_tot = np.full_like(ll2, t)
-    t_plot = uu.rescale_time(t_tot) if rescale else t_tot
-
-    # Call the generic plotting function
-    plot_generic(
-        x=t_plot.T,   # Provide time values for each line (either one for each model or just one for single prediction)
-        y=ll2.T,       # Multiple L2 error lines to plot
-        title="Prediction error norm",
-        xlabel=xlabel,
-        ylabel=r"$L2$ norm",
-        legend_labels=legend_labels,  # Labels for the legend
-        size=(6, 5),
-        filename=f"{folder}/l2_{f'mm_{n_obs}obs' if MultiObs else 'sys' if system else f'obs{number}'}.png",
         colors=colors,
         linestyles=linestyles,
         alphas=alphas,
-        linewidths = linewidths
+        linewidths=linewidths
     )
 
 
@@ -956,6 +916,47 @@ def plot_generic_5_figs(tot_true, tot_pred, number, prj_figs, system=False, Mult
     
     # Retrieve plot parameters from the configuration
     plot_params = uu.get_plot_params(conf)
+
+    # For a system plot
+    system_color = plot_params["system"]["color"]
+    system_linestyle = plot_params["system"]["linestyle"]
+    system_label = plot_params["system"]["label"]
+    system_linewidth = plot_params["system"]["linewidth"]
+    system_alpha = plot_params["system"]["alpha"]
+
+    # For a multi-observer plot
+    multi_obs_color = plot_params["multi_observer"]["color"]
+    multi_obs_linestyle = plot_params["multi_observer"]["linestyle"]
+    multi_obs_label = plot_params["multi_observer"]["label"]
+    multi_obs_linewidth = plot_params["multi_observer"]["linewidth"]
+    multi_obs_alpha = plot_params["multi_observer"]["alpha"]
+
+    # For observers (e.g., in a loop for each observer)
+    observer_colors = plot_params["observers"]["colors"]
+    observer_linestyles = plot_params["observers"]["linestyles"]
+    observer_labels = plot_params["observers"]["labels"]
+    observer_linewidths = plot_params["observers"]["linewidths"]
+    observer_alphas = plot_params["observers"]["alphas"]
+
+    system_gt_color = plot_params["system_gt"]["color"]
+    system_gt_linestyle = plot_params["system_gt"]["linestyle"]
+    system_gt_label = plot_params["system_gt"]["label"]
+    system_gt_linewidth = plot_params["system_gt"]["linewidth"]
+    system_gt_alpha = plot_params["system_gt"]["alpha"]
+
+    # Ground truth for observers, if gt is True
+    observer_gt_colors = plot_params["observers_gt"]["colors"]
+    observer_gt_linestyles = plot_params["observers_gt"]["linestyles"]
+    observer_gt_labels = plot_params["observers_gt"]["labels"]
+    observer_gt_linewidths = plot_params["observers_gt"]["linewidths"]
+    observer_gt_alphas = plot_params["observers_gt"]["alphas"]
+
+    # For a multi-observer plot
+    multi_obs_gt_color = plot_params["multi_observer_gt"]["color"]
+    multi_obs_gt_linestyle = plot_params["multi_observer_gt"]["linestyle"]
+    multi_obs_gt_label = plot_params["multi_observer_gt"]["label"]
+    multi_obs_gt_linewidth = plot_params["multi_observer_gt"]["linewidth"]
+    multi_obs_gt_alpha = plot_params["multi_observer_gt"]["alpha"]
     
     # Generate MATLAB ground truth if needed
     if gt:
@@ -982,43 +983,42 @@ def plot_generic_5_figs(tot_true, tot_pred, number, prj_figs, system=False, Mult
             sys_pred = preds_tx[:, -1].reshape(len(x_pred), 1)
             all_preds = [true, sys_pred]
             x_vals = [x_true, x_pred]
-            legend_labels = ['True', 'System Pred']
-            colors = plot_params["colors"][:2]
-            linestyles = plot_params["linestyles"][:2]
-            markers = plot_params["markers"][:2]
-            alphas = plot_params["alphas"][:2]
-            linewidths = plot_params["linewidths"][:2]
+            legend_labels = [system_label, system_gt_label]
+            colors = [system_color, system_gt_color]
+            linestyles = [system_linestyle, system_gt_linestyle]
+            alphas = [system_alpha, system_gt_alpha]
+            linewidths = [system_linewidth, system_gt_linewidth]
 
         elif MultiObs:
             multi_pred = preds_tx[:, -1].reshape(len(x_pred), 1)
             individual_preds = [preds_tx[:, -(1 + n_obs) + m].reshape(len(x_pred), 1) for m in range(n_obs)]
             all_preds = [true] + individual_preds + [multi_pred]
             x_vals = [x_true] + [x_pred] * (n_obs + 1)
-            legend_labels = ['True'] + [f'Obs {i}' for i in range(n_obs)] + ['MultiObs Pred']
-            colors = plot_params["colors"][: n_obs + 2]
-            linestyles = plot_params["linestyles"][: n_obs + 2]
-            markers = plot_params["markers"][: n_obs + 2]
-            alphas = plot_params["alphas"][: n_obs + 2]
-            linewidths = plot_params["linewidths"][: n_obs + 2]
+            legend_labels = [system_label] + observer_labels + multi_obs_label
+            colors = [system_color] + observer_colors + multi_obs_color
+            linestyles = [system_linestyle] + observer_linestyles + multi_obs_linestyle
+            alphas = [system_alpha] + observer_alphas + multi_obs_alpha
+            linewidths = [system_linewidth] + observer_linewidths + multi_obs_linewidth
         else:
             pred = preds_tx[:, number].reshape(len(x_pred), 1)
             if gt:
                 matlab_obs = matlab_sol_tx[:, 3 + number].reshape(len(x_matlab), 1)
                 all_preds = [true, pred, matlab_obs]
                 x_vals = [x_true, x_pred, x_matlab]
-                legend_labels = ['True', f'Obs {number} PINNs', f'Obs {number} MATLAB']
-                colors = plot_params["colors"][1:3] + [plot_params["colors"][-1]]
-                linestyles = plot_params["linestyles"][1:3] + [plot_params["linestyles"][-1]]
+                legend_labels = [system_label, observer_labels[number], observer_gt_labels[number]]
+                colors = system_color, observer_colors[number], observer_gt_colors[number]
+                linestyles = system_linestyle, observer_linestyles[number], observer_gt_linestyles[number]
+                alphas = system_alpha, observer_alphas[number], observer_gt_alphas[number]
+                linewidths = system_linewidth, observer_linewidths[number], observer_gt_linewidths[number]
             else:
                 all_preds = [true, pred]
                 x_vals = [x_true, x_pred]
-                legend_labels = ['True', f'Obs {number}']
-                colors = plot_params["colors"][1:3]
-                linestyles = plot_params["linestyles"][1:3]
-            
-            markers = plot_params["markers"][: len(linestyles)]
-            alphas = plot_params["alphas"][: len(linestyles)]
-            linewidths = plot_params["linewidths"][: len(linestyles)]
+                legend_labels = [system_label, observer_labels[number]]
+                colors = system_color, observer_colors[number]
+                linestyles = system_linestyle, observer_linestyles[number]
+                alphas = system_alpha, observer_alphas[number]
+                linewidths = system_linewidth, observer_linewidths[number]
+
         
         # Rescale values if required
         x_vals_plot = uu.rescale_x(x_vals) if rescale else x_vals
@@ -1027,7 +1027,7 @@ def plot_generic_5_figs(tot_true, tot_pred, number, prj_figs, system=False, Mult
         # Plot each line in the current subplot
         for j, (x, y) in enumerate(zip(x_vals_plot, all_preds_plot)):
             axes[i].plot(x, y, label=legend_labels[j], color=colors[j],
-                         linestyle=linestyles[j], marker=markers[j],
+                         linestyle=linestyles[j],
                          linewidth=linewidths[j], alpha=alphas[j])
         
         # Set time, labels, and title for each subplot

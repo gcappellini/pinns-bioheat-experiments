@@ -9,15 +9,6 @@ git_dir = os.path.dirname(src_dir)
 tests_dir = os.path.join(git_dir, "tests")
 os.makedirs(tests_dir, exist_ok=True)
 
-
-models = os.path.join(git_dir, "models")
-os.makedirs(models, exist_ok=True)
-
-a = OmegaConf.load(f"{src_dir}/config.yaml")
-x, truths, _, mm_truths = uu.gen_testdata(a) 
-g = np.hstack((x, truths))
-grid = uu.gen_obsdata(a)
-
-y2 = grid[:, 1]
-sys_y2 = g[g[:, 0]==0][:, -1]
-print(y2 - sys_y2)
+conf = OmegaConf.load(f"{src_dir}/config.yaml")
+s = uu.get_plot_params(conf)
+print(s)
