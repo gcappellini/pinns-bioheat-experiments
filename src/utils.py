@@ -777,43 +777,64 @@ def get_scaled_labels(rescale):
     return xlabel, ylabel, zlabel
 
 
-def get_obs_colors(conf):
+def get_plot_params(conf):
+    """
+    Load colors and linestyles based on configuration and observer count, 
+    and set plot parameters according to experiment name.
+    
+    :param conf: Configuration object loaded from YAML.
+    :param exp_name: Name of the experiment (used for style adjustments).
+    :return: Dictionary containing plot parameters (colors, linestyles, markers, alphas, linewidths).
+    """
+    exp_name = conf.experiment.name
+    # Load colors and linestyles from the configuration
     total_obs_colors = conf.plot.colors.observers
-    number = conf.model_parameters.n_obs
-    if number == 1:
-        obs_colors = [total_obs_colors[4]] 
-    if number == 3:
-        obs_colors = [total_obs_colors[0], total_obs_colors[4], total_obs_colors[7]] 
-    if number == 8:
-        obs_colors = total_obs_colors
-    return obs_colors
-
-
-def get_sys_mm_gt_colors(conf):
+    total_obs_linestyles = conf.plot.linestyles.observers
     system_color = conf.plot.colors.system
     mm_obs_color = conf.plot.colors.mm_obs
     gt_color = conf.plot.colors.gt
-    return system_color, mm_obs_color, gt_color
-
-
-def get_obs_linestyles(conf):
-    total_obs_linestyles = conf.plot.linestyles.observers
-    number = conf.model_parameters.n_obs
-    if number == 1:
-        obs_linestyles = [total_obs_linestyles[4]] 
-    if number == 3:
-        obs_linestyles = [total_obs_linestyles[0], total_obs_linestyles[4], total_obs_linestyles[7]] 
-    if number == 8:
-        obs_linestyles = total_obs_linestyles
-    return obs_linestyles
-
-
-def get_sys_mm_gt_linestyle(conf):
     system_linestyle = conf.plot.linestyles.system
     mm_obs_linestyle = conf.plot.linestyles.mm_obs
     gt_linestyle = conf.plot.linestyles.gt
-    return system_linestyle, mm_obs_linestyle, gt_linestyle
-
+    
+    # Determine observer colors and linestyles based on n_obs
+    n_obs = conf.model_parameters.n_obs
+    if n_obs == 1:
+        obs_colors = [total_obs_colors[4]]
+        obs_linestyles = [total_obs_linestyles[4]]
+    elif n_obs == 3:
+        obs_colors = [total_obs_colors[0], total_obs_colors[4], total_obs_colors[7]]
+        obs_linestyles = [total_obs_linestyles[0], total_obs_linestyles[4], total_obs_linestyles[7]]
+    elif n_obs == 8:
+        obs_colors = total_obs_colors
+        obs_linestyles = total_obs_linestyles
+    else:
+        raise ValueError("Unsupported number of observers")
+    
+    # Combine colors and linestyles with system, multi-observer, and ground truth
+    colors = [system_color] + obs_colors + [mm_obs_color, gt_color]
+    linestyles = [system_linestyle] + obs_linestyles + [mm_obs_linestyle, gt_linestyle]
+    
+    # Set default alphas and linewidths
+    alphas = [1.0] * len(colors)
+    alphas[-1] = 1.0  # Ground truth has full opacity
+    linewidths = [1.2] * len(colors)
+    linewidths[-1] = 2.2  # Ground truth has a thicker line
+    
+    # Adjust markers and linestyles if experiment name starts with "meas_"
+    markers = [None] * len(linestyles)
+    if exp_name[1].startswith("meas_"):
+        linestyles[0] = ''  # Use marker instead of linestyle for the first plot element
+        markers[0] = "*"
+    
+    # Return parameters as a dictionary for use in plot functions
+    return {
+        "colors": colors,
+        "linestyles": linestyles,
+        "markers": markers,
+        "alphas": alphas,
+        "linewidths": linewidths
+    }
 
 def solve_ivp(multi_obs, fold, conf, x_obs):
     """
@@ -864,20 +885,20 @@ def run_matlab_ground_truth(prj_figs, conf1):
     X, y_sys, y_observers, y_mmobs = solution[:, 0:2], solution[:, 2], solution[:, 3:3+n_obs], solution[:, -1]
     t = np.unique(X[:, 1])
 
-    if n_obs==1:
-        pp.plot_tf_matlab_1obs(X, y_sys, y_observers, prj_figs)
-        pp.plot_l2_matlab_1obs(X, y_sys, y_observers, prj_figs)
-        pp.plot_comparison_3d(X, y_sys, y_observers, prj_figs, gt= True)
+    # if n_obs==1:
+    #     pp.plot_tf_matlab_1obs(X, y_sys, y_observers, prj_figs)
+    #     pp.plot_l2_matlab_1obs(X, y_sys, y_observers, prj_figs)
+    #     pp.plot_comparison_3d(X, y_sys, y_observers, prj_figs, gt= True)
 
-    else:
-        mu = compute_mu(conf1)
-        pp.plot_mu(mu, t, prj_figs, gt=True)
+    # else:
+    #     mu = compute_mu(conf1)
+    #     pp.plot_mu(mu, t, prj_figs, gt=True)
 
-        t, weights = load_weights(conf1)
-        pp.plot_weights(weights, t, prj_figs, conf1, gt=True)
-        pp.plot_tf_matlab(X, y_sys, y_observers, y_mmobs, prj_figs)
-        pp.plot_comparison_3d(X, y_sys, y_mmobs, prj_figs, gt= True)
-        pp.plot_l2_matlab(X, y_sys, y_observers, y_mmobs, prj_figs)
+    #     t, weights = load_weights(conf1)
+    #     pp.plot_weights(weights, t, prj_figs, conf1, gt=True)
+    #     pp.plot_tf_matlab(X, y_sys, y_observers, y_mmobs, prj_figs)
+    #     pp.plot_comparison_3d(X, y_sys, y_mmobs, prj_figs, gt= True)
+    #     pp.plot_l2_matlab(X, y_sys, y_observers, y_mmobs, prj_figs)
 
         # y1_matlab, gt1_matlab, gt2_matlab, y2_matlab = point_ground_truths(conf1)
         # df = load_from_pickle(f"{src_dir}/data/vessel/{string}.pkl")

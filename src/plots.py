@@ -233,8 +233,105 @@ def plot_mu(mus, t, run_figs, gt=False):
         filename=f"{run_figs}/obs_error_{'matlab' if gt else 'pinns'}_{n_obs}obs.png"  # Filename to save the plot
     )
 
-
 def plot_l2(tot_true, tot_pred, number, folder, gt=False, MultiObs=False, system = False):
+    """
+    Plot L2 norm of prediction errors for true and predicted values.
+    
+    :param xobs: Input observations (depth and time).
+    :param theta_true: True theta values.
+    :param model: A single model or a list of models if MultiObs is True.
+    :param number: Identifier for the observation.
+    :param folder: Directory to save the figure.
+    :param MultiObs: If True, use multiple models for predictions.
+    """
+
+    matching = uu.extract_matching(tot_true, tot_pred)
+    e = matching[:, :2].reshape(len(matching), 2)
+    theta_system = matching[:, 2].reshape(len(matching), 1)
+    t_pred = np.unique(matching[:, 1])
+
+    conf = OmegaConf.load(f'{folder}/config.yaml')
+    n_obs = conf.model_parameters.n_obs
+    plot_params = uu.get_plot_params(conf)
+
+    if MultiObs:
+        pred = matching[:, -1].reshape(len(t_pred), 1)
+
+        # combined_pred = uu.mm_predict(model, xobs, folder)
+        l2 = uu.calculate_l2(e, theta_system, pred)
+        l2 = l2.reshape(len(l2), 1)
+        
+        # Calculate L2 error for each individual model
+        l2_individual = []
+        for i in range(n_obs):  # Assuming `model.models` holds individual models
+            individual_pred = matching[:, -(1 + n_obs) + i].reshape(len(t_pred), 1)
+            l2_individual.append(uu.calculate_l2(e, theta_system, individual_pred))
+
+        l2_individual_obs = np.array(l2_individual).T
+        ll2 = np.hstack((l2, l2_individual_obs))
+        t_vals = [t_pred for _ in range(n_obs + 1)]
+        legend_labels = [f'Obs {i}' for i in range(n_obs)] + ['MultiObs Pred']
+
+    elif system:
+        pred = matching[:, -1].reshape(len(matching[:, -1]), 1)
+
+        # combined_pred = uu.mm_predict(model, xobs, folder)
+        ll2 = uu.calculate_l2(e, theta_system, pred)
+        ll2 = np.array(ll2).reshape(len(ll2), 1)
+        t_vals = [t_pred]
+        legend_labels = ['System Pred']
+
+    else:
+        pred = matching[:, -1 if n_obs == 1 else 3 + number].reshape(len(matching[:, -1]), 1)
+        l2_individual = uu.calculate_l2(e, theta_system, pred)
+        ll2 = [l2_individual.reshape(len(l2_individual), 1)]
+        t_vals = [t_pred]
+        legend_labels = [f'Obs {number}']
+
+    if gt:
+        matlab_sol = matching[:, :n_obs+4]
+        grid = matlab_sol[:, :2]
+        t_matlab = np.unique(matlab_sol[:, 1:2])
+
+        if MultiObs:
+            mm_sol = [matlab_sol[:, -1].reshape(len(t_matlab), 1)]
+            l2_mm_mat = uu.calculate_l2(grid, theta_system, mm_sol)
+            l2_ind_mat = []
+            for i in range(n_obs):  # Assuming `model.models` holds individual models
+                individual_sol = matlab_sol[:, -(1 + n_obs) + i].reshape(len(t_pred), 1)
+                l2_ind_mat.append(uu.calculate_l2(matching[:, :2], theta_system, individual_sol))
+
+            ll2 += l2_ind_mat + l2_mm_mat
+            t_vals += [t_pred for _ in range(n_obs + 1)]
+            legend_labels += [f'MATLAB Obs {i}' for i in range(n_obs)] + ['MATLAB MultiObs']
+        elif system:
+            pass
+        else:
+            matlab_obs = matlab_sol[:, 3 + number].reshape(len(matching[:, 1]), 1)
+            l2_matlab_obs = uu.calculate_l2(grid, theta_system, matlab_obs)
+            ll2.append(l2_matlab_obs)
+            t_vals.append(t_pred)
+            legend_labels.append(f'MATLAB Obs {number}')    
+
+    rescale = conf.plot.rescale
+    _, xlabel, _ = uu.get_scaled_labels(rescale)
+    t_vals_plot = uu.rescale_time(t_vals) if rescale else t_vals
+
+    # Call the generic plotting function
+    plot_generic(
+        x=t_vals_plot,   # Provide time values for each line (either one for each model or just one for single prediction)
+        y=ll2,       # Multiple L2 error lines to plot
+        title="Prediction error norm",
+        xlabel=xlabel,
+        ylabel=r"$L2$ norm",
+        legend_labels=legend_labels,  # Labels for the legend
+        size=(6, 5),
+        filename=f"{folder}/l2_{f'mm_{n_obs}obs' if MultiObs else 'sys' if system else f'obs{number}'}.png",
+        **plot_params  # Pass colors, linestyles, markers, alphas, and linewidths
+    )
+
+
+def _plot_l2(tot_true, tot_pred, number, folder, gt=False, MultiObs=False, system = False):
     """
     Plot L2 norm of prediction errors for true and predicted values.
     
@@ -333,6 +430,8 @@ def plot_l2(tot_true, tot_pred, number, folder, gt=False, MultiObs=False, system
     )
 
 
+
+
 def plot_l2_matlab(X, theta_true, y_obs, y_mm_obs, folder):
     theta_true = theta_true.reshape(len(X), 1)
     t = np.unique(X[:, 1:2])
@@ -390,307 +489,95 @@ def plot_l2_matlab(X, theta_true, y_obs, y_mm_obs, folder):
 
 
 
-def plot_tf(tot_true, tot_obs_pred, number, prj_figs, gt=False, MultiObs=False, system=False):
-    """
-    Plot true values and predicted values (single or multi-observer model).
-    
-    :param e: 2D array for depth (X) and time (tau).
-    :param theta_true: True theta values.
-    :param number: Identifier for the observer.
-    :param prj_figs: Directory to save the figure.
-    :param MultiObs: If True, plot multiple model predictions and the weighted average.
-    """
-    # Reshape inputs
-    match = uu.extract_matching(tot_true, tot_obs_pred)
-
-    true = match[match[:, 1] == match[:, 1].max()][:, 2]
-    true = true.reshape(len(true), 1)
-
-    x_true = np.unique(tot_true[:, 0])
-    x_pred = np.unique(tot_obs_pred[:, 0])
-
-    conf = OmegaConf.load(f'{prj_figs}/config.yaml')
-    n_obs = conf.model_parameters.n_obs
-    exp_name = conf.experiment.name
-    obs_colors = uu.get_obs_colors(conf)
-    true_color, mm_obs_color, _ = uu.get_sys_mm_gt_colors(conf)
-    obs_linestyles = uu.get_obs_linestyles(conf)
-    true_linestyle, mm_obs_linestyle, gt_linestyle = uu.get_sys_mm_gt_linestyle(conf)
-
-    if gt:
-        matlab_X, _, matlab_sol, matlab_mm_obs = uu.gen_testdata(conf)
-        x_matlab = np.unique(matlab_X[:, 0:1])
-
-    if MultiObs:
-        multi_pred = tot_obs_pred[:, -1][-len(x_pred):].reshape(len(x_pred), 1)
-        individual_preds = [tot_obs_pred[:, -(1+n_obs)+m][-len(x_pred):].reshape(len(x_pred), 1) for m in range(n_obs)]  # Assuming model.models holds individual models
-        
-        if gt:
-            multi_sol = matlab_mm_obs[:, -1][-len(x_matlab):].reshape(len(x_matlab), 1)
-            individual_sol = [matlab_sol[:, -(1+n_obs)+m][-len(x_matlab):].reshape(len(x_matlab), 1) for m in range(n_obs)]
-            # Stack all predictions (true values + individual predictions + combined prediction)
-            all_preds = [true] + individual_preds + [multi_pred] + individual_sol + [multi_sol]
-            
-            # x values: use xtr for true data, and 'x' for predictions
-            x_vals = [x_true] + [x_pred for _ in range(n_obs + 1)] + [x_matlab for _ in range(n_obs + 1)]
-
-            # Generate corresponding legend labels
-            legend_labels = ['True'] + [f'Obs {i}' for i in range(len(individual_preds))] + ['MultiObs Pred']
-
-            colors = [true_color] + obs_colors + [mm_obs_color] + obs_colors + [mm_obs_color]
-            linestyles = [true_linestyle] + obs_linestyles + [mm_obs_linestyle] + [gt_linestyle for _ in range(n_obs + 1)]
-
-        else:
-            # Stack all predictions (true values + individual predictions + combined prediction)
-            all_preds = [true] + individual_preds + [multi_pred]
-            
-            # x values: use xtr for true data, and 'x' for predictions
-            x_vals = [x_true] + [x_pred for _ in range(n_obs + 1)]
-
-            # Generate corresponding legend labels
-            legend_labels = ['True'] + [f'Obs {i}' for i in range(len(individual_preds))] + ['MultiObs Pred']
-
-            colors = [true_color] + obs_colors + [mm_obs_color]
-            linestyles = [true_linestyle] + obs_linestyles + [mm_obs_linestyle]
-
-        markers = [None] * len(linestyles)
-        if exp_name[1].startswith("meas_"):
-            linestyles[0] = ''
-            markers[0] = "*"
-        alphas = [0.6] * len(linestyles)
-        alphas[-1] = 1.0
-        linewidths = [1.2] * len(linestyles)
-        linewidths[-1] = 2.2
-
-    elif system:
-        sys_pred = tot_obs_pred[:, -1][-len(x_pred):].reshape(len(x_pred), 1)
-
-        # Stack all predictions (true values + individual predictions + combined prediction)
-        all_preds = [true] + [sys_pred]
-        
-        # x values: use xtr for true data, and 'x' for predictions
-        x_vals = [x_true] + [x_pred]
-
-        # Generate corresponding legend labels
-        legend_labels = ['True'] + ['System Pred']
-
-        colors = [true_color] + [true_color]
-        linestyles = [true_linestyle] + [mm_obs_linestyle]
-        markers = [None] * len(linestyles)
-        if exp_name[1].startswith("meas_"):
-            linestyles[0] = ''
-            markers[0] = "*"
-        alphas = [0.6] * len(linestyles)
-        alphas[-1] = 1.0
-        linewidths = [1.2] * len(linestyles)
-        linewidths[-1] = 2.2
-
-    else:
-        if n_obs==1:
-            pred = tot_obs_pred[:, 2][-len(x_pred):].reshape(len(x_pred), 1)
-            if gt:
-                matlab_obs = matlab_sol[:, 0][-len(x_matlab):].reshape(len(x_matlab), 1)
-        else:
-            pred = tot_obs_pred[:, 2+number][-len(x_pred):].reshape(len(x_pred), 1)
-            if gt:
-                matlab_obs = matlab_sol[:, number][-len(x_matlab):].reshape(len(x_matlab), 1)
-        if gt:
-            all_preds = [true, pred, matlab_obs]
-            x_vals = [x_true, x_pred, x_matlab]  # xtr for true, x for predicted
-            legend_labels = ['True', f'Obs {number} PINNs',  f'Obs {number} MATLAB']
-            colors = [true_color] + [obs_colors[number]]*2
-            # linestyles = [true_linestyle] + [obs_linestyles[number]] + [gt_linestyle]
-            linestyles = [true_linestyle] + ["-"] + [gt_linestyle]
-
-        else:
-            # Only two lines to plot: true and single prediction
-            all_preds = [true, pred]
-            x_vals = [x_true, x_pred]  # xtr for true, x for predicted
-            legend_labels = ['True', f'Obs {number}']
-            colors = [true_color] + [obs_colors[number]]
-            linestyles = [true_linestyle] + [obs_linestyles[number]]
-
-        markers = [None] * len(linestyles)
-        alphas = [1.0] * len(linestyles)
-        linewidths = [1.2] * len(linestyles)
-
-
-    rescale = conf.plot.rescale
-    xlabel, _, ylabel = uu.get_scaled_labels(rescale)
-
-    # x_vals = np.array(x_vals, dtype=float)
-    x_vals_plot = uu.rescale_x(x_vals) if rescale else x_vals
-    all_preds_plot = uu.rescale_t(all_preds) if rescale else all_preds
-
-    # Call the generic plotting function
-    plot_generic(
-        x=x_vals_plot,  # Different x values for true and predicted
-        y=all_preds_plot,  # List of true and predicted lines
-        title="Prediction at final time",
-        xlabel=xlabel,
-        ylabel=ylabel,
-        legend_labels=legend_labels,  # Labels for the legend
-        size=(6, 5),
-        filename=f"{prj_figs}/tf_{f'mm_{n_obs}obs' if MultiObs else f'sys' if system else f'obs{number}'}.png",
-        colors = colors,
-        linestyles=linestyles,
-        markers=markers,
-        alphas = alphas,
-        linewidths=linewidths
-    )
-
-
 def plot_tx(tx, tot_true, tot_obs_pred, number, prj_figs, system=False, gt=False, MultiObs=False):
     """
-    Plot true values and predicted values (single or multi-observer model).
+    Plot true and predicted values (single or multi-observer model) for a given time step.
     
-    :param e: 2D array for depth (X) and time (tau).
-    :param theta_true: True theta values.
-    :param model: The model used for predictions.
-    :param number: Identifier for the observation.
-    :param prj_figs: Directory to save the figure.
-    :param MultiObs: If True, plot multiple model predictions and a weighted average.
+    :param tx: Time step to plot.
+    :param tot_true: True data array (2D).
+    :param tot_obs_pred: Predicted data array (2D).
+    :param number: Observer identifier for plotting.
+    :param prj_figs: Directory to save the plot figure.
+    :param system: If True, plot system prediction.
+    :param gt: If True, plot ground truth comparison.
+    :param MultiObs: If True, plot multiple observer model predictions with a combined weighted average.
     """
-    # Reshape inputs
+    # Reshape inputs and match time steps
     match = uu.extract_matching(tot_true, tot_obs_pred)
-
-    closest_value = np.abs(match[:, 1] - tx).min()  # Minimum absolute difference
+    closest_value = np.abs(match[:, 1] - tx).min()
     true_tx = match[np.abs(match[:, 1] - tx) == closest_value][:, 2]
     preds_tx = tot_obs_pred[np.abs(tot_obs_pred[:, 1] - tx) == closest_value][:, 2:]
-
     true = true_tx.reshape(len(true_tx), 1)
 
+    # x-axis values
     x_true = np.unique(tot_true[:, 0])
     x_pred = np.unique(tot_obs_pred[:, 0])
 
+    # Load configuration and plot parameters
     conf = OmegaConf.load(f'{prj_figs}/config.yaml')
+    plot_params = uu.get_plot_params(conf)
     n_obs = conf.model_parameters.n_obs
-    exp_name = conf.experiment.name
-    obs_colors = uu.get_obs_colors(conf)
-    true_color, mm_obs_color, _ = uu.get_sys_mm_gt_colors(conf)
-    obs_linestyles = uu.get_obs_linestyles(conf)
-    true_linestyle, mm_obs_linestyle, gt_linestyle = uu.get_sys_mm_gt_linestyle(conf)
 
+    # Generate prediction data for different scenarios
+    if MultiObs:
+        multi_pred = preds_tx[:, -1].reshape(len(x_pred), 1)
+        individual_preds = [preds_tx[:, -(1 + n_obs) + m].reshape(len(x_pred), 1)
+                            for m in range(n_obs)]
+        all_preds = [true] + individual_preds + [multi_pred]
+        x_vals = [x_true] + [x_pred for _ in range(n_obs + 1)]
+        legend_labels = ['True'] + [f'Obs {i}' for i in range(len(individual_preds))] + ['MultiObs Pred']
+    
+    elif system:
+        sys_pred = preds_tx[:, -1].reshape(len(x_pred), 1)
+        all_preds = [true, sys_pred]
+        x_vals = [x_true, x_pred]
+        legend_labels = ['True', 'System Pred']
+
+    else:
+        pred = preds_tx[:, -1 if n_obs == 1 else 3 + number].reshape(len(x_pred), 1)
+        all_preds = [true, pred]
+        x_vals = [x_true, x_pred]
+        legend_labels = ['True', f'Obs {number}']
+
+    # Handle ground truth if applicable
     if gt:
         matlab_sol = uu.gen_testdata(conf)
         x_matlab = np.unique(matlab_sol[:, 0:1])
-
-    if MultiObs:
-        multi_pred = preds_tx[:, -1].reshape(len(x_pred), 1)
-        individual_preds = [preds_tx[:, -(1+n_obs)+m].reshape(len(x_pred), 1) for m in range(n_obs)]  # Assuming model.models holds individual models
-        
-        if gt:
-            multi_sol = matlab_sol[:, -1][-len(x_matlab):].reshape(len(x_matlab), 1)
-            individual_sol = [matlab_sol[:, -(1+n_obs)+m][-len(x_matlab):].reshape(len(x_matlab), 1) for m in range(n_obs)]
-            # Stack all predictions (true values + individual predictions + combined prediction)
-            all_preds = [true] + individual_preds + [multi_pred] + individual_sol + [multi_sol]
-            
-            # x values: use xtr for true data, and 'x' for predictions
-            x_vals = [x_true] + [x_pred for _ in range(n_obs + 1)] + [x_matlab for _ in range(n_obs + 1)]
-
-            # Generate corresponding legend labels
-            legend_labels = ['True'] + [f'Obs {i}' for i in range(len(individual_preds))] + ['MultiObs Pred']
-
-            colors = [true_color] + obs_colors + [mm_obs_color] + obs_colors + [mm_obs_color]
-            linestyles = [true_linestyle] + obs_linestyles + [mm_obs_linestyle] + [gt_linestyle for _ in range(n_obs + 1)]
-
+        if MultiObs:
+            individual_sol = [matlab_sol[:, -(1 + n_obs) + m][-len(x_matlab):].reshape(len(x_matlab), 1)
+                              for m in range(n_obs)]
+            all_preds += individual_sol + [matlab_sol[:, -1][-len(x_matlab):].reshape(len(x_matlab), 1)]
+            x_vals += [x_matlab for _ in range(n_obs + 1)]
+            legend_labels += [f'MATLAB Obs {i}' for i in range(n_obs)] + ['MATLAB MultiObs']
+        elif system:
+            all_preds.append(matlab_sol[:, -1][-len(x_matlab):].reshape(len(x_matlab), 1))
+            x_vals.append(x_matlab)
+            legend_labels.append('MATLAB System Pred')
         else:
-            # Stack all predictions (true values + individual predictions + combined prediction)
-            all_preds = [true] + individual_preds + [multi_pred]
-            
-            # x values: use xtr for true data, and 'x' for predictions
-            x_vals = [x_true] + [x_pred for _ in range(n_obs + 1)]
+            matlab_obs = matlab_sol[:, 3 + number][-len(x_matlab):].reshape(len(x_matlab), 1)
+            all_preds.append(matlab_obs)
+            x_vals.append(x_matlab)
+            legend_labels.append(f'MATLAB Obs {number}')
 
-            # Generate corresponding legend labels
-            legend_labels = ['True'] + [f'Obs {i}' for i in range(len(individual_preds))] + ['MultiObs Pred']
-
-            colors = [true_color] + obs_colors + [mm_obs_color]
-            linestyles = [true_linestyle] + obs_linestyles + [mm_obs_linestyle]
-
-        markers = [None] * len(linestyles)
-        if exp_name[1].startswith("meas_"):
-            linestyles[0] = ''
-            markers[0] = "*"
-        alphas = [0.6] * len(linestyles)
-        alphas[-1] = 1.0
-        linewidths = [1.2] * len(linestyles)
-        linewidths[-1] = 2.2
-
-    elif system:
-        sys_pred = preds_tx[:, -1][-len(x_pred):].reshape(len(x_pred), 1)
-
-        # Stack all predictions (true values + individual predictions + combined prediction)
-        all_preds = [true] + [sys_pred]
-        
-        # x values: use xtr for true data, and 'x' for predictions
-        x_vals = [x_true] + [x_pred]
-
-        # Generate corresponding legend labels
-        legend_labels = ['True'] + ['System Pred']
-
-        colors = [true_color] + [true_color]
-        linestyles = [true_linestyle] + [mm_obs_linestyle]
-        markers = [None] * len(linestyles)
-        if exp_name[1].startswith("meas_"):
-            linestyles[0] = ''
-            markers[0] = "*"
-        alphas = [0.6] * len(linestyles)
-        alphas[-1] = 1.0
-        linewidths = [1.2] * len(linestyles)
-        linewidths[-1] = 2.2
-
-    else:
-        if n_obs==1:
-            pred = preds_tx[:, -1].reshape(len(x_pred), 1)
-            if gt:
-                matlab_obs = matlab_sol[:, 3][-len(x_matlab):].reshape(len(x_matlab), 1)
-        else:
-            pred = preds_tx[:, 3+number].reshape(len(x_pred), 1)
-            if gt:
-                matlab_obs = matlab_sol[:, 3+number][-len(x_matlab):].reshape(len(x_matlab), 1)
-        if gt:
-            all_preds = [true, pred, matlab_obs]
-            x_vals = [x_true, x_pred, x_matlab]  # xtr for true, x for predicted
-            legend_labels = ['True', f'Obs {number} PINNs',  f'Obs {number} MATLAB']
-            colors = [true_color] + [obs_colors[number]]*2
-            # linestyles = [true_linestyle] + [obs_linestyles[number]] + [gt_linestyle]
-            linestyles = [true_linestyle] + ["-"] + [gt_linestyle]
-
-        else:
-            # Only two lines to plot: true and single prediction
-            all_preds = [true, pred]
-            x_vals = [x_true, x_pred]  # xtr for true, x for predicted
-            legend_labels = ['True', f'Obs {number}']
-            colors = [true_color] + [obs_colors[number]]
-            linestyles = [true_linestyle] + [obs_linestyles[number]]
-            
-        markers = [None] * len(linestyles)
-        alphas = [1.0] * len(linestyles)
-        linewidths = [1.2] * len(linestyles)
-
+    # Rescale if needed
     rescale = conf.plot.rescale
     xlabel, _, ylabel = uu.get_scaled_labels(rescale)
-    time = uu.rescale_time(tx)
-    # x_vals = np.array(x_vals, dtype=float)
     x_vals_plot = uu.rescale_x(x_vals) if rescale else x_vals
     all_preds_plot = uu.rescale_t(all_preds) if rescale else all_preds
+    time = uu.rescale_time(tx)
     title = f"Prediction at t={time} s" if rescale else fr"Prediction at $\tau$={tx}"
 
     # Call the generic plotting function
     plot_generic(
-        x=x_vals_plot,  # Different x values for true and predicted
-        y=all_preds_plot,  # List of true and predicted lines
+        x=x_vals_plot,
+        y=all_preds_plot,
         title=title,
         xlabel=xlabel,
         ylabel=ylabel,
-        legend_labels=legend_labels,  # Labels for the legend
+        legend_labels=legend_labels,
         size=(6, 5),
-        filename=f"{prj_figs}/t{tx}_{f'mm_{n_obs}obs' if MultiObs else f'system' if system else f'obs{number}'}.png",
-        colors = colors,
-        linestyles=linestyles,
-        markers=markers,
-        alphas = alphas,
-        linewidths=linewidths
+        filename=f"{prj_figs}/t{tx}_{'multi_obs' if MultiObs else 'system' if system else f'obs{number}'}.png",
+        **plot_params  # Pass colors, linestyles, markers, alphas, and linewidths
     )
 
 
@@ -1020,48 +907,6 @@ def plot_l2_matlab_1obs(X, theta_true, y_obs, folder):
         linestyles=linestyles
     )
 
-def plot_t0(tot_pred, conf, out_dir):
-    rescale = conf.plot.rescale
-    set = conf.experiment.name
-
-    e = uu.import_testdata(f"{set[0]}_{set[1]}")
-    measurements_ic = e[e[:, 1]==0][:,2]
-
-    x_measurements_ic = uu.get_tc_positions()
-
-    oo = np.hstack(uu.gen_testdata(conf))
-    x_matlab_ic = np.unique(oo[:, 0])
-    matlab_ic = oo[oo[:, 1]==0][:,-1]
-
-    x_pinns = np.unique(tot_pred[:, 0])
-    pinns_ic = tot_pred[:, -1][:len(x_pinns)]
-
-    x = [x_pinns, x_matlab_ic, x_measurements_ic]
-    y = [pinns_ic, matlab_ic, measurements_ic]
-
-    title = "Comparison at t=0" if rescale else r"Comparison at $\tau=0$"
-    xlabel, _, ylabel = uu.get_scaled_labels(rescale)
-    legend_labels = ["Obs PINNs", "Obs MATLAB", "Measurements"]
-    fname = f"{out_dir}/t0_{set[0]}_{set[1]}.png"
-    sys_colors, mm_colors = uu.get_sys_mm_colors(conf)
-    obs_colors = uu.get_obs_colors(conf)
-    sys_linestyle, obs_linestyle, _ = uu.get_sys_mm_gt_linestyle(conf)
-    colors = [obs_colors[1], mm_colors, sys_colors]
-    linestyles = ["-", obs_linestyle, sys_linestyle]
-
-    x_plot = uu.rescale_x(x) if rescale else x
-    y_plot = uu.rescale_t(y) if rescale else y
-
-    plot_generic(x=x_plot,
-                    y=y_plot,
-                    title=title,
-                    xlabel = xlabel,
-                    ylabel=ylabel,
-                    legend_labels=legend_labels,
-                    filename=fname,
-                    colors=colors,
-                    linestyles=linestyles)
-    
 
 
 def plot_mm_obs(multi_obs, tot_true, tot_pred, output_dir, comparison_3d=True):
@@ -1083,11 +928,8 @@ def plot_mm_obs(multi_obs, tot_true, tot_pred, output_dir, comparison_3d=True):
 
     plot_mu(mus, t, output_dir)
     plot_l2(tot_true, tot_pred, 0, output_dir, MultiObs=True)
-    plot_tf(tot_true, tot_pred, 0, output_dir, MultiObs=True)
-    instants = [0, 0.25, 0.5, 0.75]
-    for t in instants:
-        plot_tx(t, tot_true, tot_pred, 0, output_dir, MultiObs=True)
-    # plot_t0(tot_pred, config, output_dir)
+    plot_generic_5_figs(tot_true, tot_pred, 0, output_dir, MultiObs=True)
+
     if comparison_3d:
         matching = uu.extract_matching(tot_true, tot_pred)
         plot_comparison_3d(matching[:, 0:2], matching[:, 2], matching[:, -1], output_dir)
@@ -1097,116 +939,103 @@ def plot_generic_5_figs(tot_true, tot_pred, number, prj_figs, system=False, Mult
     """
     Plot true values and predicted values at five time instants in a single row.
 
-    :param t_vals: List of time instants to plot.
     :param tot_true: True values for comparison.
     :param tot_pred: Predicted values.
+    :param number: Observation number identifier.
     :param prj_figs: Directory to save the figure.
-    :param system: If True, plots are for the system-level predictions.
+    :param system: If True, plots are for system-level predictions.
     :param MultiObs: If True, plot for multiple observer model.
+    :param gt: If True, include ground truth data (MATLAB output) in the plot.
     """
     t_vals = [0, 0.25, 0.51, 0.75, 1]
-    # Create a figure with 5 subplots in a row
     fig, axes = plt.subplots(1, len(t_vals), figsize=(15, 5))
     match = uu.extract_matching(tot_true, tot_pred)
     conf = OmegaConf.load(f'{prj_figs}/config.yaml')
-    n_obs = conf.model_parameters.n_obs
-    exp_name = conf.experiment.name
     rescale = conf.plot.rescale
-    # Define configurations and labels based on system and MultiObs flags
-    obs_colors = uu.get_obs_colors(conf)
-    true_color, mm_obs_color, gt_color = uu.get_sys_mm_gt_colors(conf)
-    obs_linestyles = uu.get_obs_linestyles(conf)
-    true_linestyle, mm_obs_linestyle, gt_linestyle = uu.get_sys_mm_gt_linestyle(conf)
-
+    n_obs = conf.model_parameters.n_obs
+    
+    # Retrieve plot parameters from the configuration
+    plot_params = uu.get_plot_params(conf)
+    
+    # Generate MATLAB ground truth if needed
     if gt:
         matlab_sol = uu.gen_testdata(conf)
         x_matlab = np.unique(matlab_sol[:, 0:1])
     
     # Loop through each time instant and create individual subplots
     for i, tx in enumerate(t_vals):
-        # Extract matching data for the current time instant
-        
+        # Extract true and predicted values at the closest match to current time instant
         closest_value = np.abs(match[:, 1] - tx).min()
         true_tx = match[np.abs(match[:, 1] - tx) == closest_value][:, 2]
         preds_tx = tot_pred[np.abs(tot_pred[:, 1] - tx) == closest_value][:, 2:]
-
+        
+        closest_value2 = np.abs(matlab_sol[:, 1] - tx).min()
+        matlab_sol_tx = matlab_sol[np.abs(matlab_sol[:, 1] - tx) == closest_value2]
+        
+        # Reshape true values and retrieve unique depth coordinates
         true = true_tx.reshape(len(true_tx), 1)
         x_true = np.unique(tot_true[:, 0])
         x_pred = np.unique(tot_pred[:, 0])
 
-        # Prepare data for plotting in the same structure as plot_tx
+        # Select plotting data based on system or observer model
         if system:
-            sys_pred = preds_tx[:, -1][-len(x_pred):].reshape(len(x_pred), 1)
-            all_preds = [true] + [sys_pred]
-            x_vals = [x_true] + [x_pred]
+            sys_pred = preds_tx[:, -1].reshape(len(x_pred), 1)
+            all_preds = [true, sys_pred]
+            x_vals = [x_true, x_pred]
             legend_labels = ['True', 'System Pred']
-            colors = [gt_color, true_color]
-            linestyles = [gt_linestyle, true_linestyle]
-            markers = [None] * len(linestyles)
-            if exp_name[1].startswith("meas_"):
-                linestyles[0] = ''
-                markers[0] = "*"
-            alphas = [0.6] * len(linestyles)
-            alphas[-1] = 1.0
-            linewidths = [1.2] * len(linestyles)
-            linewidths[-1] = 2.2
+            colors = plot_params["colors"][:2]
+            linestyles = plot_params["linestyles"][:2]
+            markers = plot_params["markers"][:2]
+            alphas = plot_params["alphas"][:2]
+            linewidths = plot_params["linewidths"][:2]
 
         elif MultiObs:
-            
             multi_pred = preds_tx[:, -1].reshape(len(x_pred), 1)
             individual_preds = [preds_tx[:, -(1 + n_obs) + m].reshape(len(x_pred), 1) for m in range(n_obs)]
             all_preds = [true] + individual_preds + [multi_pred]
             x_vals = [x_true] + [x_pred] * (n_obs + 1)
             legend_labels = ['True'] + [f'Obs {i}' for i in range(n_obs)] + ['MultiObs Pred']
-            colors = [true_color] + obs_colors + [mm_obs_color]
-            linestyles = [true_linestyle] + obs_linestyles + [mm_obs_linestyle]
-            markers = [None] * len(linestyles)
-            if exp_name[1].startswith("meas_"):
-                linestyles[0] = ''
-                markers[0] = "*"
-            alphas = [0.6] * len(linestyles)
-            alphas[-1] = 1.0
-            linewidths = [1.2] * len(linestyles)
-            linewidths[-1] = 2.2
+            colors = plot_params["colors"][: n_obs + 2]
+            linestyles = plot_params["linestyles"][: n_obs + 2]
+            markers = plot_params["markers"][: n_obs + 2]
+            alphas = plot_params["alphas"][: n_obs + 2]
+            linewidths = plot_params["linewidths"][: n_obs + 2]
         else:
-            if n_obs==1:
-                pred = preds_tx[:, -1].reshape(len(x_pred), 1)
-                if gt:
-                    matlab_obs = matlab_sol[:, 3][-len(x_matlab):].reshape(len(x_matlab), 1)
-            else:
-                pred = preds_tx[:, number].reshape(len(x_pred), 1)
-                if gt:
-                    matlab_obs = matlab_sol[:, 3+number][-len(x_matlab):].reshape(len(x_matlab), 1)
+            pred = preds_tx[:, number].reshape(len(x_pred), 1)
             if gt:
+                matlab_obs = matlab_sol_tx[:, 3 + number].reshape(len(x_matlab), 1)
                 all_preds = [true, pred, matlab_obs]
-                x_vals = [x_true, x_pred, x_matlab]  # xtr for true, x for predicted
-                legend_labels = ['True', f'Obs {number} PINNs',  f'Obs {number} MATLAB']
-                colors = [true_color] + [obs_colors[number]]*2
-                # linestyles = [true_linestyle] + [obs_linestyles[number]] + [gt_linestyle]
-                linestyles = [true_linestyle] + ["-"] + [gt_linestyle]
-
+                x_vals = [x_true, x_pred, x_matlab]
+                legend_labels = ['True', f'Obs {number} PINNs', f'Obs {number} MATLAB']
+                colors = plot_params["colors"][1:3] + [plot_params["colors"][-1]]
+                linestyles = plot_params["linestyles"][1:3] + [plot_params["linestyles"][-1]]
             else:
-                # Only two lines to plot: true and single prediction
                 all_preds = [true, pred]
-                x_vals = [x_true, x_pred]  # xtr for true, x for predicted
+                x_vals = [x_true, x_pred]
                 legend_labels = ['True', f'Obs {number}']
-                colors = [true_color] + [obs_colors[number]]
-                linestyles = [true_linestyle] + [obs_linestyles[number]]
-
-            markers = [None] * len(linestyles)
-            alphas = [1.0] * len(linestyles)
-            linewidths = [1.2] * len(linestyles)
+                colors = plot_params["colors"][1:3]
+                linestyles = plot_params["linestyles"][1:3]
+            
+            markers = plot_params["markers"][: len(linestyles)]
+            alphas = plot_params["alphas"][: len(linestyles)]
+            linewidths = plot_params["linewidths"][: len(linestyles)]
         
+        # Rescale values if required
         x_vals_plot = uu.rescale_x(x_vals) if rescale else x_vals
         all_preds_plot = uu.rescale_t(all_preds) if rescale else all_preds
+
         # Plot each line in the current subplot
         for j, (x, y) in enumerate(zip(x_vals_plot, all_preds_plot)):
-            axes[i].plot(x, y, label=legend_labels[j], color=colors[j], linestyle=linestyles[j], marker=markers[j], linewidth=1.2)
+            axes[i].plot(x, y, label=legend_labels[j], color=colors[j],
+                         linestyle=linestyles[j], marker=markers[j],
+                         linewidth=linewidths[j], alpha=alphas[j])
         
-        time = uu.rescale_time(tx)
+        # Set time, labels, and title for each subplot
+        time = uu.rescale_time(tx) if rescale else tx
         title = f"Time t={time} s" if rescale else fr"Time $\tau$={tx}"
         xlabel, _, ylabel = uu.get_scaled_labels(rescale)
-        # Set labels and title for each subplot
+
+        # Configure subplot labels and title
         axes[i].set_xlabel(xlabel)
         if i == 0:
             axes[i].set_ylabel(ylabel)
@@ -1214,5 +1043,6 @@ def plot_generic_5_figs(tot_true, tot_pred, number, prj_figs, system=False, Mult
         axes[i].set_title(title, fontweight='bold')
         axes[i].grid(True)
 
-    filename= f"{prj_figs}/combined_plot.png"
+    # Save and close figure
+    filename = f"{prj_figs}/combined_plot.png"
     save_and_close(fig, filename)

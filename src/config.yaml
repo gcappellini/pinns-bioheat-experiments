@@ -113,7 +113,7 @@ experiment:
   - simulation_debug
   import_data: false
   save_pickle: false
-  run_matlab: true
+  run_matlab: false
   run_wandb: false
   check_system: false
   type:
@@ -216,22 +216,3 @@ experiment:
       gt2_0: 23.73
       y2_0: 24.0
       y3_0: 23.26
-  perfusion_ranges:
-    range_1:
-      W0: 0.04
-      W1: 0.08
-      W2: 0.12
-      W3: 0.16
-      W4: 0.2
-      W5: 0.24
-      W6: 0.28
-      W7: 0.32
-    range_2:
-      W0: 0.20675
-      W1: 0.212
-      W2: 0.21725
-      W3: 0.2225
-      W4: 0.22775
-      W5: 0.233
-      W6: 0.23825
-      W7: 0.2435
