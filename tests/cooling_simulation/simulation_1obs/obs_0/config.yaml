@@ -17,9 +17,9 @@ model_properties:
   initialization: Glorot uniform
   iterations: 5000
   LBFGS: false
-  learning_rate: 0.0001
-  num_dense_layers: 13
-  num_dense_nodes: 92
+  learning_rate: 0.001
+  num_dense_layers: 4
+  num_dense_nodes: 50
   num_domain: 400
   num_boundary: 200
   num_initial: 160
@@ -38,6 +38,7 @@ model_properties:
   b2: 0.25
   b3: 0.19
   direct: false
+  condition_bc0: robin
 model_parameters:
   lam: 50
   upsilon: 50
@@ -63,17 +64,6 @@ output_dir: ${hydra:run.dir}
 plot:
   rescale: true
   colors:
-    observers:
-    - C0
-    - C1
-    - C2
-    - C9
-    - C4
-    - C5
-    - C6
-    - C7
-    system: C3
-    mm_obs: gold
     measuring_points:
     - '#F7CAC9'
     - '#6B5B95'
@@ -88,33 +78,138 @@ plot:
     - '#FFD700'
     - '#FF1493'
   linestyles:
-    observers:
-    - '-'
-    - -.
-    - '-'
-    - -.
-    - --
-    - '-'
-    - --
-    - '-'
-    gt: --
-    mm_obs: ':'
-    system: -.
     measuring_points:
     - '-'
     - -.
     - '-'
     - -.
     - --
+  entities:
+    system:
+      color: C3
+      label: System PINNs
+      linestyle: '-'
+      linewidth: 1.2
+      alpha: 1.0
+    multi_observer:
+      color: gold
+      label: MultiObs PINNs
+      linestyle: ':'
+      linewidth: 1.2
+      alpha: 1.0
+    observers:
+      colors:
+      - C0
+      - C1
+      - C2
+      - C9
+      - C4
+      - C5
+      - C6
+      - C7
+      labels:
+      - Obs 0 PINNs
+      - Obs 1 PINNs
+      - Obs 2 PINNs
+      - Obs 3 PINNs
+      - Obs 4 PINNs
+      - Obs 5 PINNs
+      - Obs 6 PINNs
+      - Obs 7 PINNs
+      linestyles:
+      - '-'
+      - -.
+      - '-'
+      - -.
+      - --
+      - '-'
+      - --
+      - '-'
+      linewidths:
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      alphas:
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+    system_gt:
+      color: C3
+      label: System MATLAB
+      linestyle: --
+      linewidth: 1.0
+      alpha: 0.8
+    multi_observer_gt:
+      color: gold
+      label: MultiObs MATLAB
+      linestyle: --
+      linewidth: 1.0
+      alpha: 0.8
+    observers_gt:
+      colors:
+      - C0
+      - C1
+      - C2
+      - C9
+      - C4
+      - C5
+      - C6
+      - C7
+      labels:
+      - Obs 0 MATLAB
+      - Obs 1 MATLAB
+      - Obs 2 MATLAB
+      - Obs 3 MATLAB
+      - Obs 4 MATLAB
+      - Obs 5 MATLAB
+      - Obs 6 MATLAB
+      - Obs 7 MATLAB
+      linestyles:
+      - ':'
+      - ':'
+      - ':'
+      - ':'
+      - ':'
+      - ':'
+      - ':'
+      - ':'
+      linewidths:
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      alphas:
+      - 0.7
+      - 0.7
+      - 0.7
+      - 0.7
+      - 0.7
+      - 0.7
+      - 0.7
+      - 0.7
 experiment:
   name:
   - cooling
-  - simulation
+  - simulation_std_arch_adam
   import_data: false
   save_pickle: false
   run_matlab: true
   run_wandb: false
-  check_system: false
+  check_system: true
   type:
     cooling:
       h: 10.0
@@ -215,22 +310,3 @@ experiment:
       gt2_0: 23.73
       y2_0: 24.0
       y3_0: 23.26
-  perfusion_ranges:
-    range_1:
-      W0: 0.04
-      W1: 0.08
-      W2: 0.12
-      W3: 0.16
-      W4: 0.2
-      W5: 0.24
-      W6: 0.28
-      W7: 0.32
-    range_2:
-      W0: 0.20675
-      W1: 0.212
-      W2: 0.21725
-      W3: 0.2225
-      W4: 0.22775
-      W5: 0.233
-      W6: 0.23825
-      W7: 0.2435
