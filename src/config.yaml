@@ -12,24 +12,24 @@ model_properties:
   Ty20: 32.0
   Ty30: 21.5
   K: 50.0
-  activation: tanh
+  activation: sin
   initial_weights_regularizer: true
-  initialization: Glorot uniform
-  iterations: 10001
+  initialization: Glorot normal
+  iterations: 10000
   LBFGS: false
-  learning_rate: 0.001
-  num_dense_layers: 4
-  num_dense_nodes: 50
+  learning_rate: 7.177590850362512e-06
+  num_dense_layers: 11
+  num_dense_nodes: 63
   num_domain: 400
   num_boundary: 200
   num_initial: 160
   num_test: 10000
   resampling: true
   resampler_period: 100
-  w_res: 1.0
-  w_bc0: 1.0
-  w_bc1: 1.0
-  w_ic: 1.0
+  w_res: 21
+  w_bc0: 37
+  w_bc1: 1
+  w_ic: 43
   beta: 0.9
   pwr_fact: 0.0
   SAR_0: 50.0
@@ -57,10 +57,10 @@ model_parameters:
   x_gt1: 0.04
   x_y1: 0.07
   loss_weights:
-  - 0.7795875072479248
-  - 3.6519906520843506
-  - 14.719714164733887
-  - 6.45284366607666
+  - 42.74296259880066
+  - 422.0493869781494
+  - 556.9475708007812
+  - 841.9846134185791
 output:
   base_dir: ${hydra:runtime.output_dir}
   save_figures: true
@@ -212,9 +212,9 @@ experiment:
   - simulation
   import_data: false
   save_pickle: false
-  run_matlab: true
+  run_matlab: false
   run_wandb: false
-  check_system: true
+  check_system: false
   type:
     cooling:
       h: 10.0

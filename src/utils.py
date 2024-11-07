@@ -57,7 +57,7 @@ def compute_metrics(grid, true, pred, run_figs, system=None):
     
     # Part 1: General metrics for pred (Observer PINNs vs Observer MATLAB)
     L2RE = np.sum(calculate_l2(grid, true, pred))
-    MSE = dde.metrics.mean_squared_error(true, pred)
+    MSE = calculate_mse(true, pred)
     max_err = np.max(np.abs(true_nonzero - pred))
     mean_err = np.mean(np.abs(true_nonzero - pred))
     
@@ -74,7 +74,7 @@ def compute_metrics(grid, true, pred, run_figs, system=None):
         system_nonzero = np.where(system != 0, system, small_number)
         
         L2RE_sys = np.sum(calculate_l2(grid, true, system))
-        MSE_sys = dde.metrics.mean_squared_error(true, system)
+        MSE_sys = calculate_mse(true, system)
         max_err_sys = np.max(np.abs(true_nonzero - system))
         mean_err_sys = np.mean(np.abs(true_nonzero - system))
         
@@ -104,7 +104,7 @@ def compute_metrics(grid, true, pred, run_figs, system=None):
         
         # Calculate metrics for pred under this specific condition
         L2RE_cond = np.sum(calculate_l2(grid[condition], true_cond, pred_cond))
-        MSE_cond = dde.metrics.mean_squared_error(true_cond, pred_cond)
+        MSE_cond = calculate_mse(true_cond, pred_cond)
         max_err_cond = np.max(np.abs(true_nonzero_cond - pred_cond))
         mean_err_cond = np.mean(np.abs(true_nonzero_cond - pred_cond))
         
@@ -123,7 +123,7 @@ def compute_metrics(grid, true, pred, run_figs, system=None):
             
             # Calculate metrics for system under this specific condition
             L2RE_sys_cond = np.sum(calculate_l2(grid[condition], true_cond, system_cond))
-            MSE_sys_cond = dde.metrics.mean_squared_error(true_cond, system_cond)
+            MSE_sys_cond = calculate_mse(true_cond, system_cond)
             max_err_sys_cond = np.max(np.abs(true_nonzero_cond - system_cond))
             mean_err_sys_cond = np.mean(np.abs(true_nonzero_cond - system_cond))
             
