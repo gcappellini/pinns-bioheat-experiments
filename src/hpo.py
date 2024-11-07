@@ -40,7 +40,7 @@ n_calls = 50
 dim_learning_rate = Real(low=1e-5, high=5e-2, name="learning_rate", prior="log-uniform")
 dim_num_dense_layers = Integer(low=3, high=10, name="num_dense_layers")
 dim_num_dense_nodes = Integer(low=5, high=250, name="num_dense_nodes")
-dim_activation = Categorical(categories=["elu", "silu", "sigmoid", "swish", "tanh"], name="activation")
+dim_activation = Categorical(categories=["elu", "silu", "sigmoid", "swish", "tanh"], name="activation") # ELU, GELU, ReLU, SELU, Sigmoid, SiLU, sin, Swish, tanh
 dim_initialization = Categorical(categories=["Glorot normal", "Glorot uniform", "He normal", "He uniform"], name="initialization")
 # dim_w_bc0 = Integer(low=1, high=1e+2, name="w_bc0", prior="log-uniform")
 
@@ -102,7 +102,7 @@ def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation, initia
     pred = multi_obs.predict(x_obs)
     data = np.column_stack((x_obs[:, 0].round(2), x_obs[:, -1].round(2), pred.round(4)))
     tot_pred = np.array(data)
-    conf.experiment.plot_figures=False
+    conf.output.save_figures=False
     # metrics = uu.check_observers_and_wandb_upload(tot_true, tot_pred, conf, run_figs)
     # metrics = uu.compute_metrics(tot_true[:, -1], tot_pred[:, -1], run_figs)
 

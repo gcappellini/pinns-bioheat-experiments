@@ -12,13 +12,13 @@ model_properties:
   Ty20: 28.85
   Ty30: 21.5
   K: 50.0
-  activation: tanh
+  activation: elu
   initial_weights_regularizer: true
-  initialization: Glorot uniform
-  iterations: 5000
+  initialization: Glorot normal
+  iterations: 10000
   LBFGS: false
-  learning_rate: 0.001
-  num_dense_layers: 4
+  learning_rate: 6.662090562596794e-06
+  num_dense_layers: 9
   num_dense_nodes: 50
   num_domain: 400
   num_boundary: 200
@@ -63,6 +63,7 @@ output:
 output_dir: ${hydra:run.dir}
 plot:
   rescale: true
+  display_every: 500
   colors:
     measuring_points:
     - '#F7CAC9'
@@ -204,12 +205,12 @@ plot:
 experiment:
   name:
   - cooling
-  - simulation_std_arch_adam
+  - simulation_run_51
   import_data: false
   save_pickle: false
-  run_matlab: true
+  run_matlab: false
   run_wandb: false
-  check_system: true
+  check_system: false
   type:
     cooling:
       h: 10.0

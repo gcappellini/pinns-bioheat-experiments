@@ -45,29 +45,115 @@ def load_from_pickle(file_path):
         return pickle.load(pkl_file)
     
 
-def compute_metrics(grid, true, pred, run_figs):
-    small_number = 1e-3
+def compute_metrics(grid, true, pred, run_figs, system=None):
+    small_number = 1e-10
     
     true = np.ravel(true)
     pred = np.ravel(pred)
     true_nonzero = np.where(true != 0, true, small_number)
     
+    # Part 1: General metrics for pred (Observer PINNs vs Observer MATLAB)
     L2RE = np.sum(calculate_l2(grid, true, pred))
-    MSE = dde.metrics.mean_squared_error(true, pred)
-    max_err = np.max(np.abs((true_nonzero - pred)))
-    mean_err = np.mean(np.abs((true_nonzero - pred)))
+    MSE = calculate_mse(true, pred)
+    max_err = np.max(np.abs(true_nonzero - pred))
+    mean_err = np.mean(np.abs(true_nonzero - pred))
     
     metrics = {
-        "L2RE": L2RE,
-        "MSE": MSE,
-        "max": max_err,
-        "mean": mean_err,
+        "total_L2RE": L2RE,
+        "total_MSE": MSE,
+        "total_max": max_err,
+        "total_mean": mean_err,
     }
+    
+    # If system predictions are provided, calculate metrics for system (Observer PINNs vs System MATLAB)
+    if system is not None:
+        system = np.ravel(system)
+        
+        L2RE_sys = np.sum(calculate_l2(grid, pred, system))
+        MSE_sys = calculate_mse(pred, system)
+        max_err_sys = np.max(np.abs(pred - system))
+        mean_err_sys = np.mean(np.abs(pred - system))
+        
+        # Store total metrics for system
+        metrics.update({
+            "total_L2RE_sys": L2RE_sys,
+            "total_MSE_sys": MSE_sys,
+            "total_max_sys": max_err_sys,
+            "total_mean_sys": mean_err_sys,
+        })
 
-    with open(f"{run_figs}/metrics.txt", "w") as file:
-        for key, value in metrics.items():
-            file.write(f"{key}: {value}\n")
+    # Define conditions for initial, left boundary, right boundary, and domain
+    conditions = {
+        "initial_condition": grid[:, 1] == 0,  # Time t = 0
+        "bc0": grid[:, 0] == 0,                # Left boundary x = 0
+        "bc1": grid[:, 0] == 1,                # Right boundary x = 1
+    }
+    domain_condition = ~(conditions["initial_condition"] | conditions["bc0"] | conditions["bc1"])
+    conditions["domain"] = domain_condition
+
+    # Compute metrics for each condition and add to metrics dictionary
+    for cond_name, condition in conditions.items():
+        # Metrics for pred
+        true_cond = true[condition]
+        pred_cond = pred[condition]
+        true_nonzero_cond = np.where(true_cond != 0, true_cond, small_number)
+        
+        # Calculate metrics for pred under this specific condition
+        L2RE_cond = np.sum(calculate_l2(grid[condition], true_cond, pred_cond))
+        MSE_cond = calculate_mse(true_cond, pred_cond)
+        max_err_cond = np.max(np.abs(true_nonzero_cond - pred_cond))
+        mean_err_cond = np.mean(np.abs(true_nonzero_cond - pred_cond))
+        
+        # Store these metrics in the dictionary
+        metrics.update({
+            f"{cond_name}_L2RE": L2RE_cond,
+            f"{cond_name}_MSE": MSE_cond,
+            f"{cond_name}_max": max_err_cond,
+            f"{cond_name}_mean": mean_err_cond,
+        })
+        
+        # Metrics for system, if provided
+        if system is not None:
+            system_cond = system[condition]
+            pred_nonzero_cond = np.where(pred[condition] != 0, pred[condition], small_number)
             
+            # Calculate metrics for system under this specific condition
+            L2RE_sys_cond = np.sum(calculate_l2(grid[condition], pred_nonzero_cond, system_cond))
+            MSE_sys_cond = calculate_mse(system_cond, pred_nonzero_cond)
+            max_err_sys_cond = np.max(np.abs(pred_nonzero_cond - system_cond))
+            mean_err_sys_cond = np.mean(np.abs(pred_nonzero_cond - system_cond))
+            
+            # Store these system metrics in the dictionary
+            metrics.update({
+                f"{cond_name}_L2RE_sys": L2RE_sys_cond,
+                f"{cond_name}_MSE_sys": MSE_sys_cond,
+                f"{cond_name}_max_sys": max_err_sys_cond,
+                f"{cond_name}_mean_sys": mean_err_sys_cond,
+            })
+
+    # Write all metrics to file with improved formatting
+    with open(f"{run_figs}/metrics.txt", "w") as file:
+        file.write("=== METRICS REPORT ===\n\n")
+        
+        # Part 1: Observer PINNs vs Observer MATLAB
+        file.write("Part 1: Observer PINNs vs Observer MATLAB\n\n")
+        for metric_name in ["L2RE", "MSE", "max", "mean"]:
+            file.write(f"{metric_name.upper()}:\n")
+            file.write(f"  Total: {metrics[f'total_{metric_name}']}\n")
+            for cond_name in conditions.keys():
+                file.write(f"  {cond_name.capitalize()}: {metrics[f'{cond_name}_{metric_name}']}\n")
+            file.write("\n")  # Blank line between sections
+            
+        # Part 2: Observer PINNs vs System MATLAB, if system is provided
+        if system is not None:
+            file.write("Part 2: Observer PINNs vs System MATLAB\n\n")
+            for metric_name in ["L2RE_sys", "MSE_sys", "max_sys", "mean_sys"]:
+                file.write(f"{metric_name.split('_')[0].upper()}:\n")
+                file.write(f"  Total: {metrics[f'total_{metric_name}']}\n")
+                for cond_name in conditions.keys():
+                    file.write(f"  {cond_name.capitalize()}: {metrics[f'{cond_name}_{metric_name}']}\n")
+                file.write("\n")  # Blank line between sections for readability
+
     return metrics
 
 
@@ -137,7 +223,8 @@ def create_nbho(run_figs):
     num_dense_nodes = config.model_properties.num_dense_nodes
     w_res, w_bc0, w_bc1, w_ic = config.model_properties.w_res, config.model_properties.w_bc0, config.model_properties.w_bc1, config.model_properties.w_ic
     num_domain, num_boundary, num_initial, num_test = config.model_properties.num_domain, config.model_properties.num_boundary, config.model_properties.num_initial, config.model_properties.num_test
-    condition_bc0 = config.model_properties.condition_bc0
+    # condition_bc0, tau_max = config.model_properties.condition_bc0, config.model_properties.tau_max
+    # loss_function = config.model_properties.loss_function
 
     a1 = cc.a1
     a2 = cc.a2
@@ -174,14 +261,14 @@ def create_nbho(run_figs):
         
         # return - dtheta_x - a5 * (x[:, 3:4] - x[:, 2:3]) - K * (x[:, 2:3] - theta)
         # return - dtheta_x + a5 * x[:, 2:3] - K * (x[:, 2:3] - theta)
-        if condition_bc0=="dirichlet":
-            return theta_hat - y2
+        # if condition_bc0=="dirichlet":
+        #     return theta_hat - y2
 
-        if condition_bc0=="neumann":
-            return dtheta_hat_x - flusso
+        # if condition_bc0=="neumann":
+        #     return dtheta_hat_x - flusso
         
-        if condition_bc0=="robin":
-            return dtheta_hat_x/K - (flusso/K + (theta_hat - y2))
+        # if condition_bc0=="robin":
+        return dtheta_hat_x/K - (flusso/K + (theta_hat - y2))
 
     
     # xmin = [0, 0, 0, 0]
@@ -192,6 +279,7 @@ def create_nbho(run_figs):
     xmin = [0, 0]
     xmax = [1, 1]
     geom = dde.geometry.Rectangle(xmin, xmax)
+    # timedomain = dde.geometry.TimeDomain(0, tau_max)
     timedomain = dde.geometry.TimeDomain(0, 1.1)
     geomtime = dde.geometry.GeometryXTime(geom, timedomain)
 
@@ -221,10 +309,12 @@ def create_nbho(run_figs):
 
     if initial_weights_regularizer:
         initial_losses = get_initial_loss(model)
-        loss_weights = len(initial_losses)/ initial_losses
+        loss_weights = [w_res, w_bc0, w_bc1, w_ic]*(len(initial_losses)/ initial_losses)
+        # model.compile("adam", lr=learning_rate, loss_weights=loss_weights, loss=loss_function)
         model.compile("adam", lr=learning_rate, loss_weights=loss_weights)
     else:
         loss_weights = [w_res, w_bc0, w_bc1, w_ic]
+        # model.compile("adam", lr=learning_rate, loss_weights=loss_weights, loss=loss_function)
         model.compile("adam", lr=learning_rate, loss_weights=loss_weights)
 
     return model
@@ -240,7 +330,7 @@ def create_sys(run_figs):
     num_dense_nodes = config.model_properties.num_dense_nodes
     w_res, w_bc0, w_bc1, w_ic = config.model_properties.w_res, config.model_properties.w_bc0, config.model_properties.w_bc1, config.model_properties.w_ic
     num_domain, num_boundary, num_initial, num_test = config.model_properties.num_domain, config.model_properties.num_boundary, config.model_properties.num_initial, config.model_properties.num_test
-
+    loss_function = config.model_properties.loss_function
     a1 = cc.a1
     a2 = cc.a2
     a3 = cc.a3
@@ -301,8 +391,8 @@ def create_sys(run_figs):
 
     if initial_weights_regularizer:
         initial_losses = get_initial_loss(model)
-        loss_weights = len(initial_losses)/ initial_losses
-        model.compile("adam", lr=learning_rate, loss_weights=loss_weights)
+        loss_weights = [w_res, w_bc0, w_bc1, w_ic]*(len(initial_losses)/ initial_losses)
+        model.compile("adam", lr=learning_rate, loss_weights=loss_weights, loss=loss_function)
     else:
         loss_weights = [w_res, w_bc0, w_bc1, w_ic]
         model.compile("adam", lr=learning_rate, loss_weights=loss_weights)
@@ -353,12 +443,11 @@ def train_and_save_model(model, callbacks, run_figs):
     config_hash = co.generate_config_hash(conf.model_properties)
     model_path = os.path.join(models, f"model_{config_hash}.pt")
 
-    display_every = 1000
-    losshistory, train_state = model.train(
+    losshistory, _ = model.train(
         iterations=conf.model_properties.iterations,
         callbacks=callbacks,
         model_save_path=model_path,
-        display_every=display_every
+        display_every=conf.plot.display_every
     )
     confi_path = os.path.join(models, f"config_{config_hash}.yaml")
     OmegaConf.save(conf, confi_path)
@@ -395,7 +484,7 @@ def gen_testdata(conf, hpo=False):
         print(f"File not found: {file_path}. Setting conf.experiment.run_matlab to True.")
         conf.experiment.run_matlab = True
         OmegaConf.save(conf, f"{src_dir}/config.yaml")
-        subprocess.run(["python", f"{src_dir}/main.py"], check=True)
+        # subprocess.run(["python", f"{src_dir}/main.py"], check=True)
 
     X = np.vstack((x, t)).T
     y_sys = sys.flatten()[:, None]
@@ -703,7 +792,7 @@ def check_observers_and_wandb_upload(tot_true, tot_pred, conf, output_dir, compa
         pp.plot_generic_5_figs(tot_true, tot_pred, 0, run_figs, gt=True, MultiObs=False)
 
         matching = extract_matching(tot_true, tot_pred)
-        metrics = compute_metrics(matching[:, 0:2], matching[:, 3+el], matching[:, 3+n_obs+1+el], run_figs)
+        metrics = compute_metrics(matching[:, 0:2], matching[:, 3+el], matching[:, 3+n_obs+1+el], run_figs, system=matching[:, 2])
         # struttura di matching: x, t, sys_matlab, obs_matlab, mm_obs_matlab, obs_pinns, mm_obs_pinns
         if comparison_3d:
             pp.plot_comparison_3d(tot_true[:, 0:2], tot_true[:, 2], tot_pred[:, -1], run_figs)
@@ -956,7 +1045,7 @@ def calculate_l2(e, true, pred):
     tot = np.hstack((e, true, pred))
     t = np.unique(tot[:, 1])
     x = np.unique(tot[:, 0])
-    delta_x = x[1]- x[0]
+    delta_x = 0.01 if len(x)==1 else x[1]- x[0]
     for el in t:
         tot_el = tot[tot[:, 1] == el]
         el_true = tot_el[:, 2]
@@ -967,6 +1056,16 @@ def calculate_l2(e, true, pred):
         
         l2.append(np.sqrt(l2_el))
     return np.array(l2)
+
+
+def calculate_mse(true, pred):
+
+    true = true.reshape(len(true), 1)
+    pred = pred.reshape(len(true), 1)
+    err = true - pred
+    mse = np.sum(err**2)/len(err)
+
+    return np.array(mse)
 
 
 def solve_ic_comp(y1_0, y2_0, y3_0, K, a5):

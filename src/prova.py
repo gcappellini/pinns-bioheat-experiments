@@ -10,5 +10,5 @@ tests_dir = os.path.join(git_dir, "tests")
 os.makedirs(tests_dir, exist_ok=True)
 
 conf = OmegaConf.load(f"{src_dir}/config.yaml")
-s = uu.get_plot_params(conf)
-print(s)
+s = uu.ic_sys(np.linspace(0, 1))
+
