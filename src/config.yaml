@@ -35,6 +35,7 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
+  b1: 1.0e-05
   b2: 0.25
   b3: 0.19
   direct: false
@@ -205,10 +206,10 @@ plot:
 experiment:
   name:
   - cooling
-  - simulation_run_51
+  - simulation_run_51_new_ic
   import_data: false
   save_pickle: false
-  run_matlab: false
+  run_matlab: true
   run_wandb: false
   check_system: false
   type:

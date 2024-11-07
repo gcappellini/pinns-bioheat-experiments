@@ -195,18 +195,17 @@ def ic_obs(x):
 
     conf = OmegaConf.load(f"{src_dir}/config.yaml")
 
+    b1 = conf.model_properties.b1
     b2 = conf.model_properties.b2
-
     b3 = conf.model_properties.b3
 
-    theta_y10 = scale_t(conf.model_properties.Ty10)
-    theta_y20 = scale_t(conf.model_properties.Ty20)
-    theta_y30 = scale_t(conf.model_properties.Ty30)
-
-    b4 = cc.a5*(theta_y30-theta_y20)
-    b1 = (theta_y10-b4)*np.exp(b3)
-
-    return b1*(z**(b2))*np.exp(-b3*z) + b4*z
+    # theta_y10 = scale_t(conf.model_properties.Ty10)
+    # theta_y20 = scale_t(conf.model_properties.Ty20)
+    # theta_y30 = scale_t(conf.model_properties.Ty30)
+    # b4 = cc.a5*(theta_y30-theta_y20)
+    # b1 = (theta_y10-b4)*np.exp(b3)
+    # return b1*(z**(b2))*np.exp(-b3*z) + b4*z
+    return (1-z)*(np.exp(-b2/(z+b1))+b3)
     
 
 def ic_sys(x):

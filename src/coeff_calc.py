@@ -59,8 +59,3 @@ a3 = round(pwr_fact*rho*L0**2*beta*SAR_0*np.exp(cc*x0)/k*dT, 7)
 a4 = round(cc*L0, 7)
 a5 = round(L0*h/k, 7)
 
-
-
-
-
-print(a5)
