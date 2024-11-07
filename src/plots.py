@@ -1007,7 +1007,7 @@ def plot_generic_5_figs(tot_true, tot_pred, number, prj_figs, system=False, Mult
                 matlab_obs = matlab_sol_tx[:, 3 + number].reshape(len(x_matlab), 1)
                 all_preds = [true, pred, matlab_obs]
                 x_vals = [x_true, x_pred, x_matlab]
-                legend_labels = [system_label, observer_labels[number], observer_gt_labels[number]]
+                legend_labels = [system_gt_label, observer_labels[number], observer_gt_labels[number]]
                 colors = system_color, observer_colors[number], observer_gt_colors[number]
                 linestyles = system_linestyle, observer_linestyles[number], observer_gt_linestyles[number]
                 alphas = system_alpha, observer_alphas[number], observer_gt_alphas[number]
@@ -1015,7 +1015,7 @@ def plot_generic_5_figs(tot_true, tot_pred, number, prj_figs, system=False, Mult
             else:
                 all_preds = [true, pred]
                 x_vals = [x_true, x_pred]
-                legend_labels = [system_label, observer_labels[number]]
+                legend_labels = [system_gt_label, observer_labels[number]]
                 colors = system_color, observer_colors[number]
                 linestyles = system_linestyle, observer_linestyles[number]
                 alphas = system_alpha, observer_alphas[number]

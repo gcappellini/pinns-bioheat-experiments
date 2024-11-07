@@ -296,7 +296,7 @@ def create_nbho(run_figs):
     xmax = [1, 1]
     geom = dde.geometry.Rectangle(xmin, xmax)
     # timedomain = dde.geometry.TimeDomain(0, tau_max)
-    timedomain = dde.geometry.TimeDomain(0, 1.1)
+    timedomain = dde.geometry.TimeDomain(0, 2)
     geomtime = dde.geometry.GeometryXTime(geom, timedomain)
 
     bc_0 = dde.icbc.OperatorBC(geomtime, bc0_obs, boundary_0)
@@ -334,7 +334,8 @@ def create_nbho(run_figs):
         config.model_parameters.loss_weights = loss_weights.tolist()
         # model.compile("adam", lr=learning_rate, loss_weights=loss_weights, loss=loss_function)
         model.compile("adam", lr=learning_rate, loss_weights=loss_weights)
-
+    OmegaConf.save(config, f"{run_figs}/config.yaml")
+    OmegaConf.save(config, f"{src_dir}/config.yaml")
     return model
 
 def create_sys(run_figs):
@@ -348,7 +349,6 @@ def create_sys(run_figs):
     num_dense_nodes = config.model_properties.num_dense_nodes
     w_res, w_bc0, w_bc1, w_ic = config.model_properties.w_res, config.model_properties.w_bc0, config.model_properties.w_bc1, config.model_properties.w_ic
     num_domain, num_boundary, num_initial, num_test = config.model_properties.num_domain, config.model_properties.num_boundary, config.model_properties.num_initial, config.model_properties.num_test
-    loss_function = config.model_properties.loss_function
     a1 = cc.a1
     a2 = cc.a2
     a3 = cc.a3
@@ -411,12 +411,13 @@ def create_sys(run_figs):
         initial_losses = get_initial_loss(model)
         loss_weights = [w_res, w_bc0, w_bc1, w_ic]*(len(initial_losses)/ initial_losses)
         config.model_parameters.loss_weights = loss_weights.tolist()
-        model.compile("adam", lr=learning_rate, loss_weights=loss_weights, loss=loss_function)
+        model.compile("adam", lr=learning_rate, loss_weights=loss_weights)
     else:
         loss_weights = [w_res, w_bc0, w_bc1, w_ic]
         config.model_parameters.loss_weights = loss_weights.tolist()
         model.compile("adam", lr=learning_rate, loss_weights=loss_weights)
-
+    OmegaConf.save(config, f"{run_figs}/config.yaml")
+    OmegaConf.save(config, f"{src_dir}/config.yaml")
     return model
 
 def train_model(run_figs, system=False):

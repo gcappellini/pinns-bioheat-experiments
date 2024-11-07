@@ -12,13 +12,13 @@ model_properties:
   Ty20: 32.0
   Ty30: 21.5
   K: 50.0
-  activation: elu
+  activation: tanh
   initial_weights_regularizer: true
-  initialization: Glorot normal
-  iterations: 10000
+  initialization: Glorot uniform
+  iterations: 10001
   LBFGS: false
-  learning_rate: 6.662090562596794e-06
-  num_dense_layers: 9
+  learning_rate: 0.001
+  num_dense_layers: 4
   num_dense_nodes: 50
   num_domain: 400
   num_boundary: 200
@@ -63,4 +63,4 @@ model_parameters:
   - 1
 experiment:
 - cooling
-- simulation_run_51_new_ic
+- simulation

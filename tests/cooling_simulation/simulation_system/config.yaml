@@ -9,13 +9,13 @@ model_properties:
   Troom: 21.5
   Tmax: 32.0
   Ty10: 21.5
-  Ty20: 28.85
+  Ty20: 32.0
   Ty30: 21.5
   K: 50.0
   activation: tanh
   initial_weights_regularizer: true
   initialization: Glorot uniform
-  iterations: 5000
+  iterations: 10001
   LBFGS: false
   learning_rate: 0.001
   num_dense_layers: 4
@@ -35,10 +35,9 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b2: 0.25
-  b3: 0.19
+  b1: 1.4
+  b2: 0.818
   direct: true
-  condition_bc0: robin
 model_parameters:
   lam: 50
   upsilon: 50
@@ -57,12 +56,18 @@ model_parameters:
   x_gt2: 0.01
   x_gt1: 0.04
   x_y1: 0.07
+  loss_weights:
+  - 0.8425318598747253
+  - 28.63949966430664
+  - 372.8893737792969
+  - 15.400115966796875
 output:
   base_dir: ${hydra:runtime.output_dir}
   save_figures: true
 output_dir: ${hydra:run.dir}
 plot:
   rescale: true
+  display_every: 500
   colors:
     measuring_points:
     - '#F7CAC9'
@@ -204,7 +209,7 @@ plot:
 experiment:
   name:
   - cooling
-  - simulation_std_arch_adam
+  - simulation
   import_data: false
   save_pickle: false
   run_matlab: true
@@ -220,10 +225,8 @@ experiment:
         y1_0: 21.5
         gt1_0: 24.44
         gt2_0: 29.25
-        y2_0: 28.85
+        y2_0: 32.0
         y3_0: 21.5
-        b2: 0.25
-        b3: 0.19
       meas_1:
         title: Cooling 1
         date: '20240930_1'

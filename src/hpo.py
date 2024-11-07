@@ -32,34 +32,39 @@ dde.config.set_random_seed(200)
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
 
-prj = "hpo_311024_obs0"
+prj = "hpo_081124_obs0"
 prj_figs = co.set_prj(prj)
 
 # HPO setting
 n_calls = 50
-dim_learning_rate = Real(low=1e-5, high=5e-2, name="learning_rate", prior="log-uniform")
-dim_num_dense_layers = Integer(low=3, high=10, name="num_dense_layers")
+dim_learning_rate = Real(low=0.19008887042142172, high=0.000004602124754177265, name="learning_rate", prior="log-uniform")
+dim_num_dense_layers = Integer(low=2, high=26, name="num_dense_layers")
 dim_num_dense_nodes = Integer(low=5, high=250, name="num_dense_nodes")
-dim_activation = Categorical(categories=["elu", "silu", "sigmoid", "swish", "tanh"], name="activation") # ELU, GELU, ReLU, SELU, Sigmoid, SiLU, sin, Swish, tanh
+dim_activation = Categorical(categories=["ELU", "GELU", "ReLU", "SELU", "Sigmoid", "SiLU", "sin", "Swish", "tanh"], name="activation")
 dim_initialization = Categorical(categories=["Glorot normal", "Glorot uniform", "He normal", "He uniform"], name="initialization")
-# dim_w_bc0 = Integer(low=1, high=1e+2, name="w_bc0", prior="log-uniform")
+dim_w_bc0 = Integer(low=1, high=1e+2, name="w_bc0", prior="log-uniform")
+dim_w_bc1 = Integer(low=1, high=1e+2, name="w_bc1", prior="log-uniform")
+dim_w_res = Integer(low=1, high=1e+2, name="w_res", prior="log-uniform")
+dim_w_ic = Integer(low=1, high=1e+2, name="w_ic", prior="log-uniform")
 
 dimensions = [
     dim_learning_rate,
     dim_num_dense_layers,
     dim_num_dense_nodes,
     dim_activation,
-    dim_initialization
-    # dim_w_bc0
+    dim_initialization,
+    dim_w_bc0,
+    dim_w_bc1,
+    dim_w_res,
+    dim_w_ic
 ]
 
-default_parameters = [0.0001, 6, 92, "tanh", "Glorot normal"]
+default_parameters = [0.001, 4, 50, "tanh", "Glorot normal", 1, 1, 1, 1]
 
 conf = OmegaConf.load(f"{src_dir}/config.yaml")
 
-X, y_sys, y_obs, _ = uu.gen_testdata(conf, hpo=True)
+matlab_sol = uu.gen_testdata(conf, hpo=True)
 x_obs = uu.gen_obsdata(conf, hpo=True)
-tot_true = np.hstack((X, y_sys, y_obs))
 
 @use_named_args(dimensions=dimensions)
 def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation, initialization):
