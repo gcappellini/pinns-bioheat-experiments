@@ -46,7 +46,10 @@ def load_from_pickle(file_path):
     
 
 def compute_metrics(grid, true, pred, run_figs, system=None):
-    small_number = 1e-10
+    # Load loss weights from configuration
+    cfg = OmegaConf.load(f"{run_figs}/config.yaml")
+    loss_weights = cfg.model_parameters.loss_weights
+    small_number = 1e-8
     
     true = np.ravel(true)
     pred = np.ravel(pred)
@@ -54,7 +57,7 @@ def compute_metrics(grid, true, pred, run_figs, system=None):
     
     # Part 1: General metrics for pred (Observer PINNs vs Observer MATLAB)
     L2RE = np.sum(calculate_l2(grid, true, pred))
-    MSE = calculate_mse(true, pred)
+    MSE = dde.metrics.mean_squared_error(true, pred)
     max_err = np.max(np.abs(true_nonzero - pred))
     mean_err = np.mean(np.abs(true_nonzero - pred))
     
@@ -68,11 +71,12 @@ def compute_metrics(grid, true, pred, run_figs, system=None):
     # If system predictions are provided, calculate metrics for system (Observer PINNs vs System MATLAB)
     if system is not None:
         system = np.ravel(system)
+        system_nonzero = np.where(system != 0, system, small_number)
         
-        L2RE_sys = np.sum(calculate_l2(grid, pred, system))
-        MSE_sys = calculate_mse(pred, system)
-        max_err_sys = np.max(np.abs(pred - system))
-        mean_err_sys = np.mean(np.abs(pred - system))
+        L2RE_sys = np.sum(calculate_l2(grid, true, system))
+        MSE_sys = dde.metrics.mean_squared_error(true, system)
+        max_err_sys = np.max(np.abs(true_nonzero - system))
+        mean_err_sys = np.mean(np.abs(true_nonzero - system))
         
         # Store total metrics for system
         metrics.update({
@@ -100,7 +104,7 @@ def compute_metrics(grid, true, pred, run_figs, system=None):
         
         # Calculate metrics for pred under this specific condition
         L2RE_cond = np.sum(calculate_l2(grid[condition], true_cond, pred_cond))
-        MSE_cond = calculate_mse(true_cond, pred_cond)
+        MSE_cond = dde.metrics.mean_squared_error(true_cond, pred_cond)
         max_err_cond = np.max(np.abs(true_nonzero_cond - pred_cond))
         mean_err_cond = np.mean(np.abs(true_nonzero_cond - pred_cond))
         
@@ -115,13 +119,13 @@ def compute_metrics(grid, true, pred, run_figs, system=None):
         # Metrics for system, if provided
         if system is not None:
             system_cond = system[condition]
-            pred_nonzero_cond = np.where(pred[condition] != 0, pred[condition], small_number)
+            system_nonzero_cond = np.where(true_cond != 0, system_cond, small_number)
             
             # Calculate metrics for system under this specific condition
-            L2RE_sys_cond = np.sum(calculate_l2(grid[condition], pred_nonzero_cond, system_cond))
-            MSE_sys_cond = calculate_mse(system_cond, pred_nonzero_cond)
-            max_err_sys_cond = np.max(np.abs(pred_nonzero_cond - system_cond))
-            mean_err_sys_cond = np.mean(np.abs(pred_nonzero_cond - system_cond))
+            L2RE_sys_cond = np.sum(calculate_l2(grid[condition], true_cond, system_cond))
+            MSE_sys_cond = dde.metrics.mean_squared_error(true_cond, system_cond)
+            max_err_sys_cond = np.max(np.abs(true_nonzero_cond - system_cond))
+            mean_err_sys_cond = np.mean(np.abs(true_nonzero_cond - system_cond))
             
             # Store these system metrics in the dictionary
             metrics.update({
@@ -131,13 +135,26 @@ def compute_metrics(grid, true, pred, run_figs, system=None):
                 f"{cond_name}_mean_sys": mean_err_sys_cond,
             })
 
+    # Calculate and store LOSS metric for each condition (Observer PINNs vs Observer MATLAB)
+    LOSS_pred = np.sum(loss_weights * np.array([metrics[f"{cond}_MSE"] for cond in ["domain", "bc0", "bc1", "initial_condition"]]))
+    metrics["total_LOSS"] = LOSS_pred
+    for cond_name in conditions.keys():
+        metrics[f"{cond_name}_LOSS"] = loss_weights[0] * metrics.get(f"{cond_name}_MSE", 0)
+
+    # Calculate and store LOSS metric for system if provided (Observer PINNs vs System MATLAB)
+    if system is not None:
+        LOSS_sys = np.sum(loss_weights * np.array([metrics[f"{cond}_MSE_sys"] for cond in ["domain", "bc0", "bc1", "initial_condition"]]))
+        metrics["total_LOSS_sys"] = LOSS_sys
+        for cond_name in conditions.keys():
+            metrics[f"{cond_name}_LOSS_sys"] = loss_weights[0] * metrics.get(f"{cond_name}_MSE_sys", 0)
+
     # Write all metrics to file with improved formatting
     with open(f"{run_figs}/metrics.txt", "w") as file:
         file.write("=== METRICS REPORT ===\n\n")
         
         # Part 1: Observer PINNs vs Observer MATLAB
         file.write("Part 1: Observer PINNs vs Observer MATLAB\n\n")
-        for metric_name in ["L2RE", "MSE", "max", "mean"]:
+        for metric_name in ["L2RE", "MSE", "max", "mean", "LOSS"]:
             file.write(f"{metric_name.upper()}:\n")
             file.write(f"  Total: {metrics[f'total_{metric_name}']}\n")
             for cond_name in conditions.keys():
@@ -147,7 +164,7 @@ def compute_metrics(grid, true, pred, run_figs, system=None):
         # Part 2: Observer PINNs vs System MATLAB, if system is provided
         if system is not None:
             file.write("Part 2: Observer PINNs vs System MATLAB\n\n")
-            for metric_name in ["L2RE_sys", "MSE_sys", "max_sys", "mean_sys"]:
+            for metric_name in ["L2RE_sys", "MSE_sys", "max_sys", "mean_sys", "LOSS_sys"]:
                 file.write(f"{metric_name.split('_')[0].upper()}:\n")
                 file.write(f"  Total: {metrics[f'total_{metric_name}']}\n")
                 for cond_name in conditions.keys():
@@ -392,9 +409,11 @@ def create_sys(run_figs):
     if initial_weights_regularizer:
         initial_losses = get_initial_loss(model)
         loss_weights = [w_res, w_bc0, w_bc1, w_ic]*(len(initial_losses)/ initial_losses)
+        config.model_parameters.loss_weights = loss_weights
         model.compile("adam", lr=learning_rate, loss_weights=loss_weights, loss=loss_function)
     else:
         loss_weights = [w_res, w_bc0, w_bc1, w_ic]
+        config.model_parameters.loss_weights = loss_weights
         model.compile("adam", lr=learning_rate, loss_weights=loss_weights)
 
     return model

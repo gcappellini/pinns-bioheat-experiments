@@ -63,4 +63,4 @@ a5 = round(L0*h/k, 7)
 
 
 
-
+print(a5)

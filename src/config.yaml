@@ -20,9 +20,9 @@ model_properties:
   learning_rate: 6.662090562596794e-06
   num_dense_layers: 9
   num_dense_nodes: 50
-  num_domain: 400
-  num_boundary: 200
-  num_initial: 160
+  num_domain: 4000
+  num_boundary: 2000
+  num_initial: 1600
   num_test: 10000
   resampling: true
   resampler_period: 100
