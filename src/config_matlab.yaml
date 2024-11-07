@@ -9,7 +9,7 @@ model_properties:
   Troom: 21.5
   Tmax: 32.0
   Ty10: 21.5
-  Ty20: 28.85
+  Ty20: 32.0
   Ty30: 21.5
   K: 50.0
   activation: elu
@@ -20,9 +20,9 @@ model_properties:
   learning_rate: 6.662090562596794e-06
   num_dense_layers: 9
   num_dense_nodes: 50
-  num_domain: 4000
-  num_boundary: 2000
-  num_initial: 1600
+  num_domain: 400
+  num_boundary: 200
+  num_initial: 160
   num_test: 10000
   resampling: true
   resampler_period: 100
@@ -35,11 +35,9 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b1: 1.0e-05
-  b2: 0.25
-  b3: 0.19
+  b1: 1.4
+  b2: 0.818
   direct: false
-  condition_bc0: robin
 model_parameters:
   lam: 50
   upsilon: 50
@@ -58,6 +56,11 @@ model_parameters:
   x_gt2: 0.01
   x_gt1: 0.04
   x_y1: 0.07
+  loss_weights:
+  - 1
+  - 1
+  - 1
+  - 1
 experiment:
 - cooling
 - simulation_run_51_new_ic

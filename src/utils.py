@@ -197,7 +197,6 @@ def ic_obs(x):
 
     b1 = conf.model_properties.b1
     b2 = conf.model_properties.b2
-    b3 = conf.model_properties.b3
 
     # theta_y10 = scale_t(conf.model_properties.Ty10)
     # theta_y20 = scale_t(conf.model_properties.Ty20)
@@ -205,7 +204,8 @@ def ic_obs(x):
     # b4 = cc.a5*(theta_y30-theta_y20)
     # b1 = (theta_y10-b4)*np.exp(b3)
     # return b1*(z**(b2))*np.exp(-b3*z) + b4*z
-    return (1-z)*(np.exp(-b2/(z+b1))+b3)
+    return (1-z**b1)*(np.exp(-50/(z+0.001))+b2)
+
     
 
 def ic_sys(x):
@@ -326,10 +326,12 @@ def create_nbho(run_figs):
     if initial_weights_regularizer:
         initial_losses = get_initial_loss(model)
         loss_weights = [w_res, w_bc0, w_bc1, w_ic]*(len(initial_losses)/ initial_losses)
+        config.model_parameters.loss_weights = loss_weights.tolist()
         # model.compile("adam", lr=learning_rate, loss_weights=loss_weights, loss=loss_function)
         model.compile("adam", lr=learning_rate, loss_weights=loss_weights)
     else:
         loss_weights = [w_res, w_bc0, w_bc1, w_ic]
+        config.model_parameters.loss_weights = loss_weights.tolist()
         # model.compile("adam", lr=learning_rate, loss_weights=loss_weights, loss=loss_function)
         model.compile("adam", lr=learning_rate, loss_weights=loss_weights)
 
@@ -408,11 +410,11 @@ def create_sys(run_figs):
     if initial_weights_regularizer:
         initial_losses = get_initial_loss(model)
         loss_weights = [w_res, w_bc0, w_bc1, w_ic]*(len(initial_losses)/ initial_losses)
-        config.model_parameters.loss_weights = loss_weights
+        config.model_parameters.loss_weights = loss_weights.tolist()
         model.compile("adam", lr=learning_rate, loss_weights=loss_weights, loss=loss_function)
     else:
         loss_weights = [w_res, w_bc0, w_bc1, w_ic]
-        config.model_parameters.loss_weights = loss_weights
+        config.model_parameters.loss_weights = loss_weights.tolist()
         model.compile("adam", lr=learning_rate, loss_weights=loss_weights)
 
     return model
@@ -1259,8 +1261,6 @@ def configure_settings(cfg, experiment):
     cfg.model_properties.Ty30=meas_settings["y3_0"]
     cfg.model_parameters.gt1_0=meas_settings["gt1_0"]
     cfg.model_parameters.gt2_0=meas_settings["gt2_0"]
-    cfg.model_properties.b2=meas_settings["b2"]
-    cfg.model_properties.b3=meas_settings["b3"]
 
     return cfg
 

@@ -14,12 +14,14 @@ x = np.linspace(0, 1, num=1000)
 
 K = conf.model_properties.K
 
-def new_ic_obs(x, b1, b2, b3):
-    return (1-x)*(np.exp(-b2/(x+b1))+b3)
+def new_ic_obs(x, b1, b2):
+    # b1 = conf.model_properties.b1
+    # b2 = conf.model_properties.b2
+    return (1-x**b1)*(np.exp(-50/(x+0.001))+b2)
 
 sistema = uu.ic_sys(x)
 osservatore = uu.ic_obs(x)
-new_oss = new_ic_obs(x, 1e-05, 0.9, 0.70235)
+new_oss = new_ic_obs(x, 1.4, 0.818)
 
 theta_0 = sistema[0]
 thetahat_0 = osservatore[0]
@@ -37,5 +39,6 @@ new_dthetahat = (new_thetahat_delta - new_thetahat_0)/delta
 
 print(theta_0, dtheta, new_thetahat_0, new_dthetahat)
 print(dtheta - K *theta_0 , new_dthetahat - K*new_thetahat_0)
+
 
 

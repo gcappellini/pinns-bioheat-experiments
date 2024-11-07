@@ -30,7 +30,6 @@ dT = (Tmax-Troom)
 
 K = cfg.model_properties.K
 b2 = cfg.model_properties.b2
-b3 = cfg.model_properties.b3
 
 # Accessing model parameters from the config
 W0 = cfg.model_parameters.W0
