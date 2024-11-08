@@ -1032,9 +1032,10 @@ def run_matlab_ground_truth(prj_figs, conf1):
     t = np.unique(X[:, 1])
 
     # if n_obs==1:
-    #     pp.plot_tf_matlab_1obs(X, y_sys, y_observers, prj_figs)
+        # pp.plot_tf_matlab_1obs(X, y_sys, y_observers, prj_figs)
     #     pp.plot_l2_matlab_1obs(X, y_sys, y_observers, prj_figs)
     #     pp.plot_comparison_3d(X, y_sys, y_observers, prj_figs, gt= True)
+        # pp.plot_generic_5_figs(tot_true=solution, tot_pred=None, number=None, prj_figs=prj_figs)
 
     # else:
     #     mu = compute_mu(conf1)

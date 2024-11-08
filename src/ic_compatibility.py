@@ -28,6 +28,13 @@ def der_ic_obs(x, b1, b2):
     val = -b1*(x**(b1 - 1)) * (np.exp(-(50)/(x + 0.001)) + b2) + (50 *(1 - x**(b1)) * np.exp(-(50)/(x + 0.001)))/(x + 0.001)**2
     return val
 
+def new_ic_obs(x):
+    A = a5*(y3_0 - y2_0)
+    B = y2_0
+    C = A - K*B
+    return (K*B-A/K)
+
+
 # x^*=(1.4, 0.818) f(x^*)=1.3095 ottima convergenza
 # x^*=(0.90, 0.818) f(x^*)=0.1445 
 # x^*=(0.8912, 0.8500) f(x^*)=0.0100
@@ -35,8 +42,6 @@ def der_ic_obs(x, b1, b2):
 # x^*=(0.8771, 0.8180) f(x^*)=0.0007 with gp_edge
 # x^*=(0.7956, 0.6436) f(x^*)=0.0547 Troppo distante, osservatore non converge
 # x^*=(0.8416, 0.7514) f(x^*)=0.0161
-
-
 # x^*=(0.8072, 0.8146) f(x^*)=0.1181 per K=5
 
 

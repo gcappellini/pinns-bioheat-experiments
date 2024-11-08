@@ -20,7 +20,8 @@ function thetahat0 = obs_ic(x)
     % b4 = a5 * (theta30 - theta20);
     % b1 = (theta10 - b4) * exp(b3);
     % thetahat0 = b1 .* (x.^b2) .* exp(-b3 .* x) + b4 .* x;
-    thetahat0 = (1-x^b1).*(exp(-50/(x+0.001))+b2);
+    % thetahat0 = (1-x^b1).*(exp(-50/(x+0.001))+b2);
+    thetahat0 = (1-x^b1).*(b2);
 
 function theta_y1 = theta_1()
     global theta10
