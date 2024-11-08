@@ -198,12 +198,6 @@ def ic_obs(x):
     b1 = conf.model_properties.b1
     b2 = conf.model_properties.b2
 
-    # theta_y10 = scale_t(conf.model_properties.Ty10)
-    # theta_y20 = scale_t(conf.model_properties.Ty20)
-    # theta_y30 = scale_t(conf.model_properties.Ty30)
-    # b4 = cc.a5*(theta_y30-theta_y20)
-    # b1 = (theta_y10-b4)*np.exp(b3)
-    # return b1*(z**(b2))*np.exp(-b3*z) + b4*z
     return (1-z**b1)*(np.exp(-50/(z+0.001))+b2)
 
     

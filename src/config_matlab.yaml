@@ -35,8 +35,8 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b1: 1.4
-  b2: 0.818
+  b1: 0.8912
+  b2: 0.85
   direct: false
 model_parameters:
   lam: 50
@@ -57,10 +57,10 @@ model_parameters:
   x_gt1: 0.04
   x_y1: 0.07
   loss_weights:
-  - 1.110817551612854
-  - 163.16383361816406
-  - 41.69369888305664
-  - 14.638734817504883
+  - 1.785454273223877
+  - 16.553892135620117
+  - 139.61534118652344
+  - 9.853321075439453
 experiment:
 - cooling
-- simulation
+- simulation_new_ic_2
