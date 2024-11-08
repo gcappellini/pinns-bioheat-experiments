@@ -12,7 +12,7 @@ import coeff_calc as cc
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-import matlab.engine
+# import matlab.engine
 import subprocess
 
 
@@ -73,10 +73,10 @@ def compute_metrics(grid, true, pred, run_figs, system=None):
         system = np.ravel(system)
         system_nonzero = np.where(system != 0, system, small_number)
         
-        L2RE_sys = np.sum(calculate_l2(grid, true, system))
+        L2RE_sys = np.sum(calculate_l2(grid, pred, system))
         MSE_sys = calculate_mse(true, system)
-        max_err_sys = np.max(np.abs(true_nonzero - system))
-        mean_err_sys = np.mean(np.abs(true_nonzero - system))
+        max_err_sys = np.max(np.abs(system_nonzero - pred))
+        mean_err_sys = np.mean(np.abs(system_nonzero - pred))
         
         # Store total metrics for system
         metrics.update({
@@ -119,13 +119,13 @@ def compute_metrics(grid, true, pred, run_figs, system=None):
         # Metrics for system, if provided
         if system is not None:
             system_cond = system[condition]
-            system_nonzero_cond = np.where(true_cond != 0, system_cond, small_number)
+            system_nonzero_cond = np.where(system_cond != 0, system_cond, small_number)
             
             # Calculate metrics for system under this specific condition
-            L2RE_sys_cond = np.sum(calculate_l2(grid[condition], true_cond, system_cond))
-            MSE_sys_cond = calculate_mse(true_cond, system_cond)
-            max_err_sys_cond = np.max(np.abs(true_nonzero_cond - system_cond))
-            mean_err_sys_cond = np.mean(np.abs(true_nonzero_cond - system_cond))
+            L2RE_sys_cond = np.sum(calculate_l2(grid[condition], pred_cond, system_cond))
+            MSE_sys_cond = calculate_mse(pred_cond, system_cond)
+            max_err_sys_cond = np.max(np.abs(system_nonzero_cond - pred_cond))
+            mean_err_sys_cond = np.mean(np.abs(system_nonzero_cond - pred_cond))
             
             # Store these system metrics in the dictionary
             metrics.update({
