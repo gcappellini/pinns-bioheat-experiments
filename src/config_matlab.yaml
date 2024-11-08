@@ -11,7 +11,7 @@ model_properties:
   Ty10: 21.5
   Ty20: 32.0
   Ty30: 21.5
-  K: 50.0
+  K: 1.5
   activation: tanh
   initial_weights_regularizer: true
   initialization: Glorot normal
@@ -57,10 +57,10 @@ model_parameters:
   x_gt1: 0.04
   x_y1: 0.07
   loss_weights:
-  - 0.003925645840354264
-  - 14.727563858032227
-  - 7.919302940368652
-  - 103.08687210083008
+  - 1.110817551612854
+  - 163.16383361816406
+  - 41.69369888305664
+  - 14.638734817504883
 experiment:
 - cooling
-- simulation_new_ic
+- simulation

@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 import skopt
 from skopt import gp_minimize
-from skopt.plots import plot_convergence, plot_objective
+from skopt.plots import plot_convergence, plot_objective, plot_regret, partial_dependence, plot_evaluations, plot_histogram
 from skopt.space import Real, Categorical, Integer
 from skopt.utils import use_named_args
 import os
@@ -152,3 +152,5 @@ plt.savefig(f"{prj_figs}/plot_obj.png",
             dpi=300, bbox_inches='tight')
 plt.show()
 plt.close()
+
+partial_dependence
