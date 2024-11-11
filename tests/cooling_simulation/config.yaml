@@ -11,7 +11,7 @@ model_properties:
   Ty10: 21.5
   Ty20: 32.0
   Ty30: 21.5
-  K: 1.5
+  K: 4.6
   activation: tanh
   initial_weights_regularizer: true
   initialization: Glorot normal
@@ -20,10 +20,10 @@ model_properties:
   learning_rate: 0.001
   num_dense_layers: 4
   num_dense_nodes: 50
-  num_domain: 400
-  num_boundary: 200
-  num_initial: 160
-  num_test: 10000
+  num_domain: 8000
+  num_boundary: 4800
+  num_initial: 3200
+  num_test: 20000
   resampling: true
   resampler_period: 100
   w_res: 1
@@ -35,8 +35,8 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b1: 1.4
-  b2: 0.818
+  b1: 4.9149
+  b2: 0.354
   direct: false
 model_parameters:
   lam: 50
@@ -57,14 +57,13 @@ model_parameters:
   x_gt1: 0.04
   x_y1: 0.07
   loss_weights:
-  - 7.332447052001953
-  - 127.33390045166016
-  - 139.61534118652344
-  - 7.098683834075928
+  - 1.7919344902038574
+  - 21.01804542541504
+  - 123.5656967163086
+  - 4.845438003540039
 output:
   base_dir: ${hydra:runtime.output_dir}
   save_figures: true
-output_dir: ${hydra:run.dir}
 plot:
   rescale: true
   display_every: 500
@@ -103,7 +102,7 @@ plot:
       linewidth: 1.2
       alpha: 1.0
     observers:
-      colors:
+      color:
       - C0
       - C1
       - C2
@@ -112,7 +111,7 @@ plot:
       - C5
       - C6
       - C7
-      labels:
+      label:
       - Obs 0 PINNs
       - Obs 1 PINNs
       - Obs 2 PINNs
@@ -121,7 +120,7 @@ plot:
       - Obs 5 PINNs
       - Obs 6 PINNs
       - Obs 7 PINNs
-      linestyles:
+      linestyle:
       - '-'
       - -.
       - '-'
@@ -130,7 +129,7 @@ plot:
       - '-'
       - --
       - '-'
-      linewidths:
+      linewidth:
       - 1.2
       - 1.2
       - 1.2
@@ -139,7 +138,7 @@ plot:
       - 1.2
       - 1.2
       - 1.2
-      alphas:
+      alpha:
       - 1.0
       - 1.0
       - 1.0
@@ -161,7 +160,7 @@ plot:
       linewidth: 1.0
       alpha: 0.8
     observers_gt:
-      colors:
+      color:
       - C0
       - C1
       - C2
@@ -170,7 +169,7 @@ plot:
       - C5
       - C6
       - C7
-      labels:
+      label:
       - Obs 0 MATLAB
       - Obs 1 MATLAB
       - Obs 2 MATLAB
@@ -179,7 +178,7 @@ plot:
       - Obs 5 MATLAB
       - Obs 6 MATLAB
       - Obs 7 MATLAB
-      linestyles:
+      linestyle:
       - ':'
       - ':'
       - ':'
@@ -188,7 +187,7 @@ plot:
       - ':'
       - ':'
       - ':'
-      linewidths:
+      linewidth:
       - 1.2
       - 1.2
       - 1.2
@@ -197,7 +196,7 @@ plot:
       - 1.2
       - 1.2
       - 1.2
-      alphas:
+      alpha:
       - 0.7
       - 0.7
       - 0.7
@@ -206,6 +205,7 @@ plot:
       - 0.7
       - 0.7
       - 0.7
+output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/tests/cooling_simulation
 experiment:
   name:
   - cooling

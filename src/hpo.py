@@ -32,7 +32,7 @@ dde.config.set_random_seed(200)
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
 
-prj = "hpo_081124_obs0"
+prj = "hpo_111124_obs0"
 prj_figs = co.set_prj(prj)
 
 # HPO setting

@@ -11,7 +11,7 @@ model_properties:
   Ty10: 21.5
   Ty20: 32.0
   Ty30: 21.5
-  K: 1.5
+  K: 4.6
   activation: tanh
   initial_weights_regularizer: true
   initialization: Glorot normal
@@ -20,10 +20,10 @@ model_properties:
   learning_rate: 0.001
   num_dense_layers: 4
   num_dense_nodes: 50
-  num_domain: 400
-  num_boundary: 200
-  num_initial: 160
-  num_test: 10000
+  num_domain: 8000
+  num_boundary: 4800
+  num_initial: 3200
+  num_test: 20000
   resampling: true
   resampler_period: 100
   w_res: 1
@@ -35,8 +35,8 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b1: 1.4
-  b2: 0.818
+  b1: 4.9149
+  b2: 0.354
   direct: false
 model_parameters:
   lam: 50
@@ -57,10 +57,11 @@ model_parameters:
   x_gt1: 0.04
   x_y1: 0.07
   loss_weights:
-  - 7.332447052001953
-  - 127.33390045166016
-  - 139.61534118652344
-  - 7.098683834075928
+  - 1.7919344902038574
+  - 21.01804542541504
+  - 123.5656967163086
+  - 4.845438003540039
 experiment:
 - cooling
 - simulation
+output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/tests/cooling_simulation

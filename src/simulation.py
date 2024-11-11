@@ -18,18 +18,23 @@ def main():
     Main function to run the testing of the network, MATLAB ground truth, observer checks, and PINNs.
     """
     config = OmegaConf.load(f"{src_dir}/config.yaml")
+    out_dir = config.output_dir
+    out_dir = co.set_prj(out_dir)
+
+    OmegaConf.save(config, f"{out_dir}/config.yaml")
+    uu.run_matlab_ground_truth(out_dir)
     tot_true = uu.gen_testdata(config)
     x_obs = uu.gen_obsdata(config)
 
     # Load the configuration from the passed file
     config = OmegaConf.load(f"{src_dir}/config.yaml")
     
-    prj_name = config.experiment.name
+
     check_system = config.experiment.check_system
-    name_str = f"{prj_name[0]}_{prj_name[1]}"
+
 
     if check_system:
-        output_dir = co.set_prj(f"{name_str}/simulation_system")
+        output_dir = co.set_prj(f"{out_dir}/simulation_system")
         config.model_properties.W = config.model_parameters.W4
         config.model_properties.direct = True
         OmegaConf.save(config,f"{output_dir}/config.yaml")
@@ -41,7 +46,7 @@ def main():
 
     n_obs = config.model_parameters.n_obs
     config.model_properties.direct = False
-    output_dir = co.set_prj(f"{name_str}/simulation_{n_obs}obs")
+    output_dir = co.set_prj(f"{out_dir}/simulation_{n_obs}obs")
     OmegaConf.save(config,f"{output_dir}/config.yaml")
 
     # Generate and check observers if needed

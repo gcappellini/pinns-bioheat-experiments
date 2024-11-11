@@ -57,10 +57,11 @@ model_parameters:
   x_gt1: 0.04
   x_y1: 0.07
   loss_weights:
-  - 1.795885443687439
-  - 20.459774017333984
-  - 116.70507049560547
-  - 4.845524787902832
+  - 1.7919344902038574
+  - 21.01804542541504
+  - 123.5656967163086
+  - 4.845438003540039
 experiment:
 - cooling
-- simulation_BEST
+- simulation
+output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/tests/cooling_simulation
