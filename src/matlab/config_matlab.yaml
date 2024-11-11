@@ -20,10 +20,10 @@ model_properties:
   learning_rate: 0.001
   num_dense_layers: 4
   num_dense_nodes: 50
-  num_domain: 8000
-  num_boundary: 4800
-  num_initial: 3200
-  num_test: 20000
+  num_domain: 400
+  num_boundary: 240
+  num_initial: 160
+  num_test: 10000
   resampling: true
   resampler_period: 100
   w_res: 1
@@ -35,8 +35,8 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b1: 4.9149
-  b2: 0.354
+  b1: 6.3
+  b2: 0.9
   direct: false
 model_parameters:
   lam: 50
@@ -57,10 +57,10 @@ model_parameters:
   x_gt1: 0.04
   x_y1: 0.07
   loss_weights:
-  - 1.795885443687439
-  - 20.459774017333984
-  - 116.70507049560547
-  - 4.845524787902832
+  - 7.735109329223633
+  - 19.388935089111328
+  - 136.3924560546875
+  - 5.245687961578369
 experiment:
 - cooling
-- simulation_BEST
+- simulation_new_ic_2

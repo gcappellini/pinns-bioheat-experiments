@@ -270,18 +270,18 @@ def plot_l2(tot_true, tot_pred, number, folder, gt=False, MultiObs=False, system
     multi_obs_alpha = plot_params["multi_observer"]["alpha"]
 
     # For observers (e.g., in a loop for each observer)
-    observer_colors = plot_params["observers"]["colors"]
-    observer_linestyles = plot_params["observers"]["linestyles"]
-    observer_labels = plot_params["observers"]["labels"]
-    observer_linewidths = plot_params["observers"]["linewidths"]
-    observer_alphas = plot_params["observers"]["alphas"]
+    observer_colors = plot_params["observers"]["color"]
+    observer_linestyles = plot_params["observers"]["linestyle"]
+    observer_labels = plot_params["observers"]["label"]
+    observer_linewidths = plot_params["observers"]["linewidth"]
+    observer_alphas = plot_params["observers"]["alpha"]
 
     # Ground truth for observers, if gt is True
-    observer_gt_colors = plot_params["observers_gt"]["colors"]
-    observer_gt_linestyles = plot_params["observers_gt"]["linestyles"]
-    observer_gt_labels = plot_params["observers_gt"]["labels"]
-    observer_gt_linewidths = plot_params["observers_gt"]["linewidths"]
-    observer_gt_alphas = plot_params["observers_gt"]["alphas"]
+    observer_gt_colors = plot_params["observers_gt"]["color"]
+    observer_gt_linestyles = plot_params["observers_gt"]["linestyle"]
+    observer_gt_labels = plot_params["observers_gt"]["label"]
+    observer_gt_linewidths = plot_params["observers_gt"]["linewidth"]
+    observer_gt_alphas = plot_params["observers_gt"]["alpha"]
 
     # For a multi-observer plot
     multi_obs_gt_color = plot_params["multi_observer_gt"]["color"]
@@ -336,8 +336,10 @@ def plot_l2(tot_true, tot_pred, number, folder, gt=False, MultiObs=False, system
         legend_labels = [observer_labels[number]]
         colors=[observer_colors[number]]
         linestyles=[observer_linestyles[number]]
-        alphas=[observer_alphas[number]]
-        linewidths=[observer_linewidths[number]]
+        # alphas= observer_alphas[number]
+        alphas = 1.0
+        # linewidths=observer_linewidths[number]
+        linewidths = 1.0
 
     if gt:
         matlab_sol = matching[:, :n_obs+4]
@@ -898,7 +900,7 @@ def plot_mm_obs(multi_obs, tot_true, tot_pred, output_dir, comparison_3d=True):
         plot_comparison_3d(matching[:, 0:2], matching[:, 2], matching[:, -1], output_dir)
 
 
-def plot_generic_5_figs(tot_true, tot_pred, number, prj_figs, system=False, MultiObs=False, gt=False):
+def _plot_generic_5_figs(tot_true, tot_pred, number, prj_figs, system=False, MultiObs=False, gt=False):
     """
     Plot true values and predicted values at five time instants in a single row.
 
@@ -1048,3 +1050,70 @@ def plot_generic_5_figs(tot_true, tot_pred, number, prj_figs, system=False, Mult
     # Save and close figure
     filename = f"{prj_figs}/combined_plot.png"
     save_and_close(fig, filename)
+
+
+def plot_multiple_series(series_data, prj_figs):
+    """
+    Generalized plot function for multiple series at specified time instants.
+    
+    :param series_data: List of dictionaries, each with keys: 'grid', 'all_preds', 'label'.
+                        Each dictionary contains:
+                          - 'grid': Array with shape (N, 2) containing x and t values.
+                          - 'theta': Array of predicted/true values corresponding to 'grid'.
+                          - 'label': String indicating the type (e.g., "system", "observer", "multi_obs", etc.).
+    :param t_vals: List of time instants at which to plot.
+    :param prj_figs: Directory to save the figure.
+    :param rescale: Boolean indicating if the data should be rescaled for plotting.
+    """
+    t_vals = [0, 0.25, 0.51, 0.75, 1]
+    fig, axes = plt.subplots(1, len(t_vals), figsize=(15, 5))
+    
+    # Load configuration parameters for plotting
+    conf = OmegaConf.load(f'{prj_figs}/config.yaml')
+    rescale = conf.plot.rescale
+    plot_params = uu.get_plot_params(conf)
+    
+    # Loop through each time instant and create individual subplots
+    for i, tx in enumerate(t_vals):
+        # Process each data series in the series_data list
+        for series in series_data:
+            grid = series['grid']
+            values = series['theta']
+            label = series['label']
+            
+            # Get closest match to current time instant in the grid
+            closest_value = np.abs(grid[:, 1] - tx).min()
+            values_tx = values[np.abs(grid[:, 1] - tx) == closest_value]
+            x_vals = np.unique(grid[:, 0])
+            
+            # Retrieve plot parameters based on the label
+            color = plot_params[label]["color"]
+            linestyle = plot_params[label]["linestyle"]
+            alpha = plot_params[label]["alpha"]
+            linewidth = plot_params[label]["linewidth"]
+         
+            # Rescale values if required
+            x_vals_plot = uu.rescale_x(x_vals) if rescale else x_vals
+            values_plot = uu.rescale_t(values_tx) if rescale else values_tx
+            
+            # Plot the series on the current subplot
+            axes[i].plot(x_vals_plot, values_plot, label=plot_params[label]["label"],
+                         color=color, linestyle=linestyle, linewidth=linewidth, alpha=alpha)
+        
+        # Set time, labels, and title for each subplot
+        time = uu.rescale_time(tx) if rescale else tx
+        title = f"Time t={time} s" if rescale else fr"Time $\tau$={tx}"
+        xlabel, _, ylabel = uu.get_scaled_labels(rescale)
+        
+        # Configure subplot labels and title
+        axes[i].set_xlabel(xlabel)
+        if i == 0:
+            axes[i].set_ylabel(ylabel)
+            axes[i].legend(loc='best')
+        axes[i].set_title(title, fontweight='bold')
+        axes[i].grid(True)
+    
+    # Save and close figure
+    filename = f"{prj_figs}/combined_plot.png"
+    save_and_close(fig, filename)
+

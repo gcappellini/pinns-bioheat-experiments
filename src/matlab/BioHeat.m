@@ -31,9 +31,10 @@ h = config_data.model_properties.h;
 b1 = config_data.model_properties.b1;
 b2 = config_data.model_properties.b2;
 experiment_name = config_data.experiment;
+output_dir = config_data.output_dir;
 str_exp = sprintf('%s_%s', experiment_name{1}, experiment_name{2});
 path_exp = sprintf('%s/src/data/vessel/%s.txt', git_dir, str_exp);
-output_path = sprintf('%s/tests/%s/ground_truth', git_dir, str_exp);
+output_path = sprintf('%s/tests/%s', git_dir, output_dir);
 
 
 % Observer weights based on the number of observers (3 or 8)

@@ -194,11 +194,17 @@ def ic_obs(x):
         z = x[:, 0:1] 
 
     conf = OmegaConf.load(f"{src_dir}/config.yaml")
+    K = conf.model_properties.K
 
     b1 = conf.model_properties.b1
     b2 = conf.model_properties.b2
 
-    return (1-z**b1)*(np.exp(-50/(z+0.001))+b2)
+    A = cc.a5*(scale_t(cc.Ty30 - cc.Ty20))
+    B = scale_t(cc.Ty20)
+    C = b2 - (A - K*B)/K
+    return ((A-K*B)/K+C*np.exp(K*z))*(1-z)**(b1)
+
+    # return (1-z**b1)*(np.exp(-50/(z+0.001))+b2)
 
     
 
@@ -473,11 +479,11 @@ def train_and_save_model(model, callbacks, run_figs):
 
 def gen_testdata(conf, hpo=False):
     n = conf.model_parameters.n_obs
-    name = conf.experiment.name
+    dir_name = conf.output_dir
     if hpo:
         output_folder = f"{tests_dir}/cooling_simulation/ground_truth"
     else:
-        output_folder = f"{tests_dir}/{name[0]}_{name[1]}/ground_truth"
+        output_folder = f"{tests_dir}/{dir_name}"
 
     file_path = f"{output_folder}/output_matlab_{n}Obs.txt"
 
@@ -802,9 +808,27 @@ def check_observers_and_wandb_upload(tot_true, tot_pred, conf, output_dir, compa
             print(f"Initializing wandb for observer {el}...")
             wandb.init(project=name, name=label, config=aa)
                 
-        pp.plot_l2(tot_true, tot_pred, el, run_figs, gt=True)
+        # pp.plot_l2(tot_true, tot_pred, el, run_figs, gt=True)
         pp.plot_validation_3d(tot_true[:, 0:2], tot_true[:, -1], tot_pred[:, -1], run_figs)
-        pp.plot_generic_5_figs(tot_true, tot_pred, 0, run_figs, gt=True, MultiObs=False)
+        # pp.plot_generic_5_figs(tot_true, tot_pred, 0, run_figs, gt=True, MultiObs=False)
+        observers = {
+        "grid": tot_pred[:, :2],
+        "theta": tot_pred[:, -1],
+        "label": "observers",
+        }
+
+        observers_gt = {
+            "grid": tot_true[:, :2],
+            "theta": tot_true[:, -1],
+            "label": "observers_gt",
+        }
+
+        system_gt = {
+            "grid": tot_true[:, :2],
+            "theta": tot_true[:, 2],
+            "label": "system_gt",
+        }
+        pp.plot_multiple_series([observers, observers_gt, system_gt], run_figs)
 
         matching = extract_matching(tot_true, tot_pred)
         metrics = compute_metrics(matching[:, 0:2], matching[:, 3+el], matching[:, 3+n_obs+1+el], run_figs, system=matching[:, 2])
@@ -837,7 +861,19 @@ def check_system_and_wandb_upload(tot_true, tot_pred, conf, run_figs, comparison
     
     # for t in instants:
     #     pp.plot_tx(t, tot_true, tot_pred, 0, run_figs, system=True)
-    pp.plot_generic_5_figs(tot_true, tot_pred, 0, run_figs, system=True)
+
+    system = {
+        "grid": tot_pred[:, :2],
+        "theta": tot_pred[:, -1],
+        "label": "system",
+    }
+
+    system_gt = {
+        "grid": tot_true[:, :2],
+        "theta": tot_true[:, 2],
+        "label": "system_gt",
+    }
+    pp.plot_multiple_series([system, system_gt], run_figs)
 
     if comparison_3d:
         matching = extract_matching(tot_true, tot_pred)
@@ -934,13 +970,24 @@ def get_plot_params(conf):
 
     # Observers parameters (dynamically adjust for number of observers)
     n_obs = conf.model_parameters.n_obs
-    observer_params = {
-        "colors": entities.observers.colors[:n_obs],
-        "labels": entities.observers.labels[:n_obs],
-        "linestyles": entities.observers.linestyles[:n_obs],
-        "linewidths": entities.observers.linewidths[:n_obs],
-        "alphas": entities.observers.alphas[:n_obs]
-    }
+
+    # Conditional handling based on the number of observers
+    if n_obs == 1:
+        observer_params = {
+            "color": entities.observers.color[0],
+            "label": entities.observers.label[0],
+            "linestyle": entities.observers.linestyle[0],
+            "linewidth": entities.observers.linewidth[0],
+            "alpha": entities.observers.alpha[0]
+        }
+    else:
+        observer_params = {
+            "color": entities.observers.color[:n_obs],
+            "label": entities.observers.label[:n_obs],
+            "linestyle": entities.observers.linestyle[:n_obs],
+            "linewidth": entities.observers.linewidth[:n_obs],
+            "alpha": entities.observers.alpha[:n_obs]
+        }
 
     # Ground truth parameters
     system_gt_params = {
@@ -959,13 +1006,22 @@ def get_plot_params(conf):
         "alpha": entities.multi_observer_gt.alpha
     }
 
-    observer_gt_params = {
-        "colors": entities.observers_gt.colors[:n_obs],
-        "labels": entities.observers_gt.labels[:n_obs],
-        "linestyles": entities.observers_gt.linestyles[:n_obs],
-        "linewidths": entities.observers_gt.linewidths[:n_obs],
-        "alphas": entities.observers_gt.alphas[:n_obs]
-    }
+    if n_obs == 1:
+        observer_gt_params = {
+            "color": entities.observers_gt.color[0],
+            "label": entities.observers_gt.label[0],
+            "linestyle": entities.observers_gt.linestyle[0],
+            "linewidth": entities.observers_gt.linewidth[0],
+            "alpha": entities.observers_gt.alpha[0]
+        }
+    else:
+        observer_gt_params = {
+            "color": entities.observers_gt.color[:n_obs],
+            "label": entities.observers_gt.label[:n_obs],
+            "linestyle": entities.observers_gt.linestyle[:n_obs],
+            "linewidth": entities.observers_gt.linewidth[:n_obs],
+            "alpha": entities.observers_gt.alpha[:n_obs]
+        }
 
     # Adjust markers if experiment name starts with "meas_"
     markers = [None] * n_obs
@@ -1014,11 +1070,32 @@ def solve_ivp(multi_obs, fold, conf, x_obs):
     return y_pred
 
  
-def run_matlab_ground_truth(prj_figs, conf1):
+def run_matlab_ground_truth(prj_figs):
     """
     Optionally run MATLAB ground truth.
     """
-    n_obs = conf1.model_parameters.n_obs
+
+    cfg = OmegaConf.load(f"{prj_figs}/config.yaml")
+
+    # output_dir = f"{tests_dir}/{cfg.output_dir}"
+    
+    n_obs = cfg.model_parameters.n_obs
+    cfg.model_properties.W = cfg.model_parameters.W4
+    cfg.output_dir = prj_figs
+
+
+    cfg_matlab = OmegaConf.create({
+    "model_properties": cfg.model_properties,
+    "model_parameters": cfg.model_parameters,
+    "experiment": cfg.experiment.name,
+    "output_dir": cfg.output_dir,
+    })
+
+    OmegaConf.save(cfg_matlab,f"{prj_figs}/config_matlab.yaml")
+    OmegaConf.save(cfg,f"{prj_figs}/config.yaml")
+    OmegaConf.save(cfg_matlab,f"{src_dir}/config_matlab.yaml")
+    OmegaConf.save(cfg,f"{src_dir}/config.yaml")
+    n_obs = cfg.model_parameters.n_obs
 
     print("Running MATLAB ground truth calculation...")
     eng = matlab.engine.start_matlab()
@@ -1027,10 +1104,25 @@ def run_matlab_ground_truth(prj_figs, conf1):
     eng.quit()
 
     # X, y_sys, y_observers, y_mmobs = gen_testdata(conf1)
-    solution = gen_testdata(conf1)
+    solution = gen_testdata(cfg)
     X, y_sys, y_observers, y_mmobs = solution[:, 0:2], solution[:, 2], solution[:, 3:3+n_obs], solution[:, -1]
     t = np.unique(X[:, 1])
+    metr = compute_metrics(X, y_observers, y_observers, prj_figs, system=y_sys)
 
+    system_gt = {
+        "grid": X,
+        "theta": y_sys,
+        "label": "system_gt",
+    }
+
+    observer_gt = {
+        "grid": X,
+        "theta": y_observers,
+        "label": "observers_gt",
+    }
+
+    pp.plot_multiple_series([system_gt, observer_gt], prj_figs)
+    pp.plot_l2()
     # if n_obs==1:
         # pp.plot_tf_matlab_1obs(X, y_sys, y_observers, prj_figs)
     #     pp.plot_l2_matlab_1obs(X, y_sys, y_observers, prj_figs)
@@ -1052,6 +1144,8 @@ def run_matlab_ground_truth(prj_figs, conf1):
         # pp.plot_timeseries_with_predictions(df, y1_matlab, gt1_matlab, gt2_matlab, y2_matlab, prj_figs, gt=True)
 
     print("MATLAB ground truth completed.")
+    print("Metrics:", metr["total_L2RE_sys"])
+    return metr["total_L2RE_sys"]
 
 
 def calculate_l2(e, true, pred):

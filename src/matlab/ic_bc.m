@@ -16,12 +16,16 @@ function theta0 = sys_ic(x)
 
     
 function thetahat0 = obs_ic(x)
-    global b1 b2
+    global b1 b2 K theta20 theta30 a5
     % b4 = a5 * (theta30 - theta20);
     % b1 = (theta10 - b4) * exp(b3);
     % thetahat0 = b1 .* (x.^b2) .* exp(-b3 .* x) + b4 .* x;
     % thetahat0 = (1-x^b1).*(exp(-50/(x+0.001))+b2);
-    thetahat0 = (1-x^b1).*(b2);
+    % thetahat0 = (1-x^b1).*(b2);
+    A = a5 * (theta30 - theta20);
+    B = theta20;
+    C = b2 - (A - K.*B)/K;
+    thetahat0 = (((A-K*B)/K)+C*exp(K*x))*(1-x)^(b1);
 
 function theta_y1 = theta_1()
     global theta10
