@@ -11,9 +11,7 @@ function [sol] = OneDimBH_1Obs
     u1 = sol(:,:,1); %soluzione del sistema
     u2 = sol(:,:,2); %soluzione dell'osservatore 0
 
-    
-    filename = sprintf('%s/output_matlab_1Obs.txt', output_path);
-    fileID = fopen(filename,'w');
+    fileID = fopen(sprintf('%s/output_matlab_1Obs.txt', output_path),'w');
     
     for i = 1:101
        for j = 1:101

@@ -24,8 +24,7 @@ dev = torch.device("cpu")
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
 git_dir = os.path.dirname(src_dir)
-tests_dir = os.path.join(git_dir, "tests")
-os.makedirs(tests_dir, exist_ok=True)
+conf_dir = os.path.join(src_dir, "configs")
 
 
 models = os.path.join(git_dir, "models")
@@ -409,12 +408,10 @@ def create_sys(run_figs):
 
     if initial_weights_regularizer:
         initial_losses = get_initial_loss(model)
-        loss_weights = [w_res, w_bc0, w_bc1, w_ic]*(len(initial_losses)/ initial_losses)
-        config.model_parameters.loss_weights = loss_weights.tolist()
+        loss_weights = (len(initial_losses)/ initial_losses)
         model.compile("adam", lr=learning_rate, loss_weights=loss_weights)
     else:
         loss_weights = [w_res, w_bc0, w_bc1, w_ic]
-        config.model_parameters.loss_weights = loss_weights.tolist()
         model.compile("adam", lr=learning_rate, loss_weights=loss_weights)
     OmegaConf.save(config, f"{run_figs}/config.yaml")
     OmegaConf.save(config, f"{src_dir}/config.yaml")
@@ -477,15 +474,15 @@ def train_and_save_model(model, callbacks, run_figs):
     return losshistory, model
 
 
-def gen_testdata(conf, hpo=False):
+def gen_testdata(conf):
     n = conf.model_parameters.n_obs
     dir_name = conf.output_dir
-    if hpo:
-        output_folder = f"{tests_dir}/cooling_simulation/ground_truth"
-    else:
-        output_folder = f"{tests_dir}/{dir_name}"
+    # if hpo:
+    #     output_folder = f"{tests_dir}/cooling_simulation/ground_truth"
+    # else:
+    #     output_folder = f"{tests_dir}/{dir_name}"
 
-    file_path = f"{output_folder}/output_matlab_{n}Obs.txt"
+    file_path = f"{dir_name}/output_matlab_{n}Obs.txt"
 
     try:
         data = np.loadtxt(file_path)
@@ -526,10 +523,10 @@ def load_weights(conf):
     return t, np.array(weights)
 
 
-def gen_obsdata(conf, hpo=False):
+def gen_obsdata(conf):
     global f1, f2, f3
 
-    solution = gen_testdata(conf, hpo)
+    solution = gen_testdata(conf)
     g = solution[:, 0:3]
 
     # g = np.hstack((X, y_sys))
@@ -1069,6 +1066,30 @@ def solve_ivp(multi_obs, fold, conf, x_obs):
     np.savetxt(f'{fold}/prediction_mm_obs.txt', data_to_save, fmt='%.2f %.2f %.4f', delimiter=' ')
     return y_pred
 
+
+def store_configuration(prj_figs, label):
+    cfg = OmegaConf.load(f"{prj_figs}/config.yaml")
+
+    if label=="ground_truth":
+            cfg_matlab = OmegaConf.create({
+                "model_properties": cfg.model_properties,
+                "model_parameters": cfg.model_parameters,
+                "experiment": cfg.experiment.name,
+                "output_dir": cfg.output_dir,
+                })
+            OmegaConf.save(cfg_matlab,f"{conf_dir}/config_ground_truth.yaml")
+            OmegaConf.save(cfg_matlab,f"{prj_figs}/config_ground_truth.yaml")
+
+    if label=="direct":
+            cfg_direct = OmegaConf.create({
+                "model_properties": cfg.model_properties,
+                "model_parameters": cfg.model_parameters,
+                "experiment": cfg.experiment.name,
+                "output_dir": cfg.output_dir,
+                })
+            OmegaConf.save(cfg_direct,f"{conf_dir}/config_direct.yaml")
+            OmegaConf.save(cfg_direct,f"{prj_figs}/config_direct.yaml")
+
  
 def run_matlab_ground_truth(prj_figs):
     """
@@ -1122,7 +1143,7 @@ def run_matlab_ground_truth(prj_figs):
     }
 
     pp.plot_multiple_series([system_gt, observer_gt], prj_figs)
-    pp.plot_l2()
+    pp.plot_l2(system_gt, [observer_gt], prj_figs)
     # if n_obs==1:
         # pp.plot_tf_matlab_1obs(X, y_sys, y_observers, prj_figs)
     #     pp.plot_l2_matlab_1obs(X, y_sys, y_observers, prj_figs)

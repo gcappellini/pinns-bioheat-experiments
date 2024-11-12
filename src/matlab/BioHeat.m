@@ -8,7 +8,7 @@ addpath('/Users/guglielmocappellini/Desktop/phd/code/readyaml')
 
 src_dir = fileparts(cd);
 git_dir = fileparts(src_dir);
-filename = sprintf('%s/src/config_matlab.yaml', git_dir);
+filename = sprintf('%s/src/config_ground_truth.yaml', git_dir);
 
 % Read and parse the YAML file into a MATLAB struct
 config_data = readyaml(filename);
@@ -31,10 +31,12 @@ h = config_data.model_properties.h;
 b1 = config_data.model_properties.b1;
 b2 = config_data.model_properties.b2;
 experiment_name = config_data.experiment;
-output_dir = config_data.output_dir;
+output_path = config_data.output_dir;
+% output_path = fullfile(fileparts(git_dir), output_dir);
+
 str_exp = sprintf('%s_%s', experiment_name{1}, experiment_name{2});
 path_exp = sprintf('%s/src/data/vessel/%s.txt', git_dir, str_exp);
-output_path = sprintf('%s/tests/%s', git_dir, output_dir);
+% output_path = sprintf('%s/tests/%s', git_dir, output_dir);
 
 
 % Observer weights based on the number of observers (3 or 8)

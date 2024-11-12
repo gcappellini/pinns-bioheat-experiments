@@ -47,13 +47,13 @@ def plot_generic(x, y, title, xlabel, ylabel, legend_labels=None, log_scale=Fals
 
     # Plot each line with its corresponding x, y values, color, and linestyle
     for i, (xi, yi) in enumerate(zip(x, y)):
-        label = legend_labels[i] if legend_labels else None
-        color = colors[i] if colors else None  # Use provided colors or default
-        linestyle = linestyles[i] if linestyles else '-'  # Default to solid line
-        marker = markers[i] if markers else None
-        linewidth = linewidths[i] if linewidths else 1.2
+        label = legend_labels[i] if isinstance(legend_labels, list) and legend_labels else (legend_labels if legend_labels else None)
+        color = colors[i] if isinstance(colors, list) and colors else (colors if colors else None)  # Use provided colors or default
+        linestyle = linestyles[i] if isinstance(linestyles, list) and linestyles else (linestyles if linestyles else '-')  # Default to solid line
+        linewidth = linewidths[i] if isinstance(linewidths, list) and linewidths else (linewidths if linewidths else 1.2)
+        marker = markers[i] if isinstance(markers, list) and markers else (markers if markers else None)
         markersize = markersizes[i] if markersizes else 12
-        alpha=alphas[i] if alphas else 1
+        alpha=alphas[i] if isinstance(alphas, list) and alphas else (alphas if alphas else 1)
 
         ax.plot(xi, yi, label=label, color=color, linestyle=linestyle, marker=marker, linewidth=linewidth, markersize=markersize, alpha=alpha)
 
@@ -233,7 +233,7 @@ def plot_mu(mus, t, run_figs, gt=False):
         filename=f"{run_figs}/obs_error_{'matlab' if gt else 'pinns'}_{n_obs}obs.png"  # Filename to save the plot
     )
 
-def plot_l2(tot_true, tot_pred, number, folder, gt=False, MultiObs=False, system = False):
+def _plot_l2(tot_true, tot_pred, number, folder, gt=False, MultiObs=False, system = False):
     """
     Plot L2 norm of prediction errors for true and predicted values.
     
@@ -1117,3 +1117,67 @@ def plot_multiple_series(series_data, prj_figs):
     filename = f"{prj_figs}/combined_plot.png"
     save_and_close(fig, filename)
 
+
+def plot_l2(series_sys, series_data, folder):
+    """
+    Plot L2 norm of prediction errors for true and predicted values.
+    
+    :param xobs: Input observations (depth and time).
+    :param theta_true: True theta values.
+    :param model: A single model or a list of models if MultiObs is True.
+    :param number: Identifier for the observation.
+    :param folder: Directory to save the figure.
+    :param MultiObs: If True, use multiple models for predictions.
+    """
+
+    e = series_sys['grid']
+    theta_system = series_sys['theta'].reshape(len(e), 1)
+    t_pred = np.unique(e[:, 1])
+    t_pred = t_pred.reshape(len(t_pred), 1)
+
+    conf = OmegaConf.load(f'{folder}/config.yaml')
+    n_obs = conf.model_parameters.n_obs
+    plot_params = uu.get_plot_params(conf)
+
+    ll2 = []
+
+    for series in series_data:
+        values = series['theta']
+        label = series['label']
+
+        l2 = uu.calculate_l2(e, theta_system, values)
+        l2 = l2.reshape(len(l2), 1)
+
+        # t_vals = [t_pred for _ in range(n_obs + 1)]
+        t_vals = t_pred
+
+        legend_labels = plot_params[label]["label"]
+        colors = plot_params[label]["color"]
+        linestyles = plot_params[label]["linestyle"]
+        alphas = plot_params[label]["alpha"]
+        linewidths = plot_params[label]["linewidth"]
+
+        ll2.append(l2)
+
+
+    rescale = conf.plot.rescale
+    _, xlabel, _ = uu.get_scaled_labels(rescale)
+    t_vals_plot = uu.rescale_time(t_vals) if rescale else t_vals
+    ll2 = np.array(ll2)
+    ll2 = ll2.reshape(t_vals_plot.shape)
+
+    # Call the generic plotting function
+    plot_generic(
+        x=t_vals_plot.T,   # Provide time values for each line (either one for each model or just one for single prediction)
+        y=ll2.T,       # Multiple L2 error lines to plot
+        title="Prediction error norm",
+        xlabel=xlabel,
+        ylabel=r"$L2$ norm",
+        legend_labels=legend_labels,  # Labels for the legend
+        size=(6, 5),
+        filename=f"{folder}/l2_combined.png",
+        colors=colors,
+        linestyles=linestyles,
+        alphas=alphas,
+        linewidths=linewidths
+    )
