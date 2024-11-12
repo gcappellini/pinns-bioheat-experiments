@@ -1,14 +1,14 @@
 clear all
 close all
 
-global K lambda upsilon W W0 W1 W2 W3 W4 W5 W6 W7 b1 b2 theta10 theta20 theta30 theta_gt10 theta_gt20 X_gt1 X_gt2 om0 om1 om2  om3 om4  om5 om6 om7 a1 a2 a3 a4 a5 str_exp path_exp output_path
+global K lambda upsilon W_obs W_sys W0 W1 W2 W3 W4 W5 W6 W7 b1 b2 theta10 theta20 theta30 theta_gt10 theta_gt20 X_gt1 X_gt2 om0 om1 om2  om3 om4  om5 om6 om7 a1 a2 a3 a4 a5 str_exp path_exp output_path
 
 % Replace the following with the path to readyaml (find link on the internet)
 addpath('/Users/guglielmocappellini/Desktop/phd/code/readyaml')
 
 src_dir = fileparts(cd);
 git_dir = fileparts(src_dir);
-filename = sprintf('%s/src/config_ground_truth.yaml', git_dir);
+filename = sprintf('%s/src/configs/config_ground_truth.yaml', git_dir);
 
 % Read and parse the YAML file into a MATLAB struct
 config_data = readyaml(filename);
@@ -42,8 +42,8 @@ path_exp = sprintf('%s/src/data/vessel/%s.txt', git_dir, str_exp);
 % Observer weights based on the number of observers (3 or 8)
 if n_obs == 3
     W0 = config_data.model_parameters.W0;
-    W1 = config_data.model_parameters.W4;
-    W2 = config_data.model_parameters.W7;
+    W1 = config_data.model_parameters.W1;
+    W2 = config_data.model_parameters.W2;
 elseif n_obs == 8 
     W0 = config_data.model_parameters.W0;
     W1 = config_data.model_parameters.W1;
@@ -97,13 +97,15 @@ om5 = 0;
 om6 = 0;
 om7 = 0;
 
-W = config_data.model_parameters.W4;
+W_sys = config_data.model_parameters.W0
+W_obs = (config_data.model_parameters.W2)*10
+% W_obs = W_sys;
 
-% Call the correct solver based on the number of observers
-if n_obs == 3
-    sol = OneDimBH_3Obs;  % Call the 3-observer case
-elseif n_obs == 8
-    sol = OneDimBH_8Obs;  % Call the default or other number of observers case
-elseif n_obs == 1
-    sol = OneDimBH_1Obs;  % Call the default or other number of observers case
-end
+% % Call the correct solver based on the number of observers
+% if n_obs == 3
+%     sol = OneDimBH_3Obs;  % Call the 3-observer case
+% elseif n_obs == 8
+%     sol = OneDimBH_8Obs;  % Call the default or other number of observers case
+% elseif n_obs == 1
+%     sol = OneDimBH_1Obs;  % Call the default or other number of observers case
+% end

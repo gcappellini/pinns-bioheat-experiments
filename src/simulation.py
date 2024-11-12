@@ -10,6 +10,7 @@ current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
 git_dir = os.path.dirname(src_dir)
 tests_dir = os.path.join(git_dir, "tests")
+conf_dir = os.path.join(src_dir, "configs")
 os.makedirs(tests_dir, exist_ok=True)
 
 
@@ -17,10 +18,9 @@ def main():
     """
     Main function to run the testing of the network, MATLAB ground truth, observer checks, and PINNs.
     """
-    config = OmegaConf.load(f"{src_dir}/config.yaml")
+    config = OmegaConf.load(f"{conf_dir}/config_run.yaml")
     out_dir = config.output_dir
 
-    OmegaConf.save(config, f"{out_dir}/config.yaml")
     if config.experiment.run_matlab:
         uu.run_matlab_ground_truth(out_dir)
 

@@ -58,8 +58,8 @@ dimensions = [
 
 # @use_named_args(dimensions=dimensions)
 def fitness(b1, b2):
-    # global ITERATION
-    ITERATION: str="BEST"
+    global ITERATION
+    # ITERATION: str="BEST"
     run_figs = set_run(f"{ITERATION}")
             
     conf.model_properties.b1 = b1

@@ -324,7 +324,7 @@ def create_nbho(run_figs):
 
     if initial_weights_regularizer:
         initial_losses = get_initial_loss(model)
-        loss_weights = [w_res, w_bc0, w_bc1, w_ic]*(len(initial_losses)/ initial_losses)
+        loss_weights = (len(initial_losses)/ initial_losses)
         config.model_parameters.loss_weights = loss_weights.tolist()
         # model.compile("adam", lr=learning_rate, loss_weights=loss_weights, loss=loss_function)
         model.compile("adam", lr=learning_rate, loss_weights=loss_weights)
@@ -409,9 +409,11 @@ def create_sys(run_figs):
     if initial_weights_regularizer:
         initial_losses = get_initial_loss(model)
         loss_weights = (len(initial_losses)/ initial_losses)
+        config.model_parameters.loss_weights = loss_weights.tolist()
         model.compile("adam", lr=learning_rate, loss_weights=loss_weights)
     else:
         loss_weights = [w_res, w_bc0, w_bc1, w_ic]
+        config.model_parameters.loss_weights = loss_weights.tolist()
         model.compile("adam", lr=learning_rate, loss_weights=loss_weights)
     OmegaConf.save(config, f"{run_figs}/config.yaml")
     OmegaConf.save(config, f"{src_dir}/config.yaml")
@@ -1067,7 +1069,8 @@ def solve_ivp(multi_obs, fold, conf, x_obs):
     return y_pred
 
 
-def store_configuration(prj_figs, label):
+def get_configuration(prj_figs, label):
+
     cfg = OmegaConf.load(f"{prj_figs}/config.yaml")
 
     if label=="ground_truth":
@@ -1075,10 +1078,11 @@ def store_configuration(prj_figs, label):
                 "model_properties": cfg.model_properties,
                 "model_parameters": cfg.model_parameters,
                 "experiment": cfg.experiment.name,
-                "output_dir": cfg.output_dir,
+                "output_dir": prj_figs
                 })
             OmegaConf.save(cfg_matlab,f"{conf_dir}/config_ground_truth.yaml")
             OmegaConf.save(cfg_matlab,f"{prj_figs}/config_ground_truth.yaml")
+            return cfg_matlab
 
     if label=="direct":
             cfg_direct = OmegaConf.create({
@@ -1089,6 +1093,7 @@ def store_configuration(prj_figs, label):
                 })
             OmegaConf.save(cfg_direct,f"{conf_dir}/config_direct.yaml")
             OmegaConf.save(cfg_direct,f"{prj_figs}/config_direct.yaml")
+            return cfg_direct
 
  
 def run_matlab_ground_truth(prj_figs):
@@ -1096,27 +1101,10 @@ def run_matlab_ground_truth(prj_figs):
     Optionally run MATLAB ground truth.
     """
 
-    cfg = OmegaConf.load(f"{prj_figs}/config.yaml")
+    cfg = get_configuration(prj_figs, "ground_truth")
 
-    # output_dir = f"{tests_dir}/{cfg.output_dir}"
-    
     n_obs = cfg.model_parameters.n_obs
     cfg.model_properties.W = cfg.model_parameters.W4
-    cfg.output_dir = prj_figs
-
-
-    cfg_matlab = OmegaConf.create({
-    "model_properties": cfg.model_properties,
-    "model_parameters": cfg.model_parameters,
-    "experiment": cfg.experiment.name,
-    "output_dir": cfg.output_dir,
-    })
-
-    OmegaConf.save(cfg_matlab,f"{prj_figs}/config_matlab.yaml")
-    OmegaConf.save(cfg,f"{prj_figs}/config.yaml")
-    OmegaConf.save(cfg_matlab,f"{src_dir}/config_matlab.yaml")
-    OmegaConf.save(cfg,f"{src_dir}/config.yaml")
-    n_obs = cfg.model_parameters.n_obs
 
     print("Running MATLAB ground truth calculation...")
     eng = matlab.engine.start_matlab()
@@ -1124,26 +1112,17 @@ def run_matlab_ground_truth(prj_figs):
     eng.BioHeat(nargout=0)
     eng.quit()
 
-    # X, y_sys, y_observers, y_mmobs = gen_testdata(conf1)
     solution = gen_testdata(cfg)
     X, y_sys, y_observers, y_mmobs = solution[:, 0:2], solution[:, 2], solution[:, 3:3+n_obs], solution[:, -1]
     t = np.unique(X[:, 1])
     metr = compute_metrics(X, y_observers, y_observers, prj_figs, system=y_sys)
 
-    system_gt = {
-        "grid": X,
-        "theta": y_sys,
-        "label": "system_gt",
-    }
-
-    observer_gt = {
-        "grid": X,
-        "theta": y_observers,
-        "label": "observers_gt",
-    }
+    system_gt = { "grid": X, "theta": y_sys, "label": "system_gt"}
+    observer_gt = {"grid": X, "theta": y_observers, "label": "observers_gt"}
 
     pp.plot_multiple_series([system_gt, observer_gt], prj_figs)
     pp.plot_l2(system_gt, [observer_gt], prj_figs)
+
     # if n_obs==1:
         # pp.plot_tf_matlab_1obs(X, y_sys, y_observers, prj_figs)
     #     pp.plot_l2_matlab_1obs(X, y_sys, y_observers, prj_figs)
@@ -1399,3 +1378,15 @@ def extract_matching(tot_true, tot_pred):
 
     # Convert new_data to a numpy array
     return np.array(match)
+
+def initialize_run(cfg1):
+    rel_out_dir = cfg1.run.dir
+    abso = os.path.dirname(git_dir)
+    output_dir = f"{abso}/{rel_out_dir[2:]}"
+
+    os.makedirs(output_dir, exist_ok=True)
+    cfg1.output_dir = output_dir
+    OmegaConf.save(cfg1,f"{output_dir}/config.yaml")
+    OmegaConf.save(cfg1,f"{conf_dir}/config_run.yaml")
+
+    return cfg1, output_dir
