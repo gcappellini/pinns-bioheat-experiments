@@ -14,9 +14,7 @@ os.makedirs(tests_dir, exist_ok=True)
 def main(cfg: DictConfig):
 
     experiment = cfg.experiment.name
-    print(f"Running experiment {experiment}...")
-    cfg1 = uu.configure_settings(cfg, experiment)
-    uu.initialize_run(cfg1)
+    uu.initialize_run(cfg)
 
     # print(f"Output directory  : {hydra.core.hydra_config.HydraConfig.get().runtime.output_dir}")
 

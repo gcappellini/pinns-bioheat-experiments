@@ -97,8 +97,8 @@ om5 = 0;
 om6 = 0;
 om7 = 0;
 
-W_sys = config_data.model_parameters.W0
-W_obs = (config_data.model_parameters.W2)*10
+W_sys = config_data.model_parameters.W_sys;
+W_obs = config_data.model_parameters.W_obs;
 % W_obs = W_sys;
 
 % % Call the correct solver based on the number of observers

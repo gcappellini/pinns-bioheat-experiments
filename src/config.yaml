@@ -49,6 +49,8 @@ model_parameters:
   W5: 0.0021
   W6: 0.0026
   W7: 0.001207
+  W_sys: 6.3e-05
+  W_obs: 6.3e-05
   n_obs: 1
   gt1_0: 24.44
   gt2_0: 29.25
