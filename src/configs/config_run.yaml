@@ -35,8 +35,8 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b1: 4.9149
-  b2: 0.354
+  b1: 6.3
+  b2: 0.9
   direct: false
 model_parameters:
   lam: 50
@@ -49,6 +49,8 @@ model_parameters:
   W5: 0.0021
   W6: 0.0026
   W7: 0.001207
+  W_sys: 6.3e-05
+  W_obs: 6.3e-05
   n_obs: 1
   gt1_0: 24.44
   gt2_0: 29.25
@@ -150,6 +152,18 @@ plot:
       linestyle: --
       linewidth: 1.0
       alpha: 0.8
+    theory:
+      color: purple
+      label: Theory
+      linestyle: --
+      linewidth: 1.0
+      alpha: 1.0
+    bound:
+      color: chocolate
+      label: Bound
+      linestyle: -.
+      linewidth: 1.0
+      alpha: 1.0
     multi_observer_gt:
       color: gold
       label: MultiObs MATLAB
@@ -203,12 +217,10 @@ plot:
       - 0.7
       - 0.7
 experiment:
-  name:
-  - cooling
-  - simulation_debug
   import_data: false
   save_pickle: false
   run_matlab: true
+  simulation: true
   run_wandb: false
   check_system: false
   type:
@@ -311,4 +323,4 @@ experiment:
       y3_0: 23.26
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-12/15-31-43
+output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-13/14-34-12

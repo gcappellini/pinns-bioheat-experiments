@@ -582,24 +582,31 @@ def plot_l2(series_sys, series_data, folder):
     n_obs = conf.model_parameters.n_obs
     plot_params = uu.get_plot_params(conf)
 
+    t_vals = []
     ll2 = []
+    legend_labels = []
+    colors = []
+    linestyles = []
+    alphas = []
+    linewidths = []
 
     for series in series_data:
         values = series['theta']
         label = series['label']
 
-        l2 = uu.calculate_l2(e, theta_system, values)
+        if label in ('theory', 'bound'):
+            l2 = values
+        else:
+            l2 = uu.calculate_l2(e, theta_system, values)
         l2 = l2.reshape(len(l2), 1)
 
         # t_vals = [t_pred for _ in range(n_obs + 1)]
-        t_vals = t_pred
-
-        legend_labels = plot_params[label]["label"]
-        colors = plot_params[label]["color"]
-        linestyles = plot_params[label]["linestyle"]
-        alphas = plot_params[label]["alpha"]
-        linewidths = plot_params[label]["linewidth"]
-
+        t_vals.append(t_pred)
+        legend_labels.append(plot_params[label]["label"])
+        colors.append(plot_params[label]["color"])
+        linestyles.append(plot_params[label]["linestyle"])
+        alphas.append(plot_params[label]["alpha"])
+        linewidths.append(plot_params[label]["linewidth"])
         ll2.append(l2)
 
 
@@ -607,12 +614,13 @@ def plot_l2(series_sys, series_data, folder):
     _, xlabel, _ = uu.get_scaled_labels(rescale)
     t_vals_plot = uu.rescale_time(t_vals) if rescale else t_vals
     ll2 = np.array(ll2)
-    ll2 = ll2.reshape(t_vals_plot.shape)
+    ll2 = ll2.reshape(len(series_data), len(t_pred))
+    t_vals_plot = t_vals_plot.reshape(len(series_data), len(t_pred))
 
     # Call the generic plotting function
     plot_generic(
-        x=t_vals_plot.T,   # Provide time values for each line (either one for each model or just one for single prediction)
-        y=ll2.T,       # Multiple L2 error lines to plot
+        x=t_vals_plot,   # Provide time values for each line (either one for each model or just one for single prediction)
+        y=ll2,       # Multiple L2 error lines to plot
         title="Prediction error norm",
         xlabel=xlabel,
         ylabel=r"$L2$ norm",

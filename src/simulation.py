@@ -24,20 +24,20 @@ def main():
     if config.experiment.run_matlab:
         uu.run_matlab_ground_truth(out_dir)
 
-    tot_true = uu.gen_testdata(config)
-    x_obs = uu.gen_obsdata(config)
+    # tot_true = uu.gen_testdata(config)
+    # x_obs = uu.gen_obsdata(config)
 
 
-    if config.experiment.check_system:
-        output_dir = co.set_prj(f"{out_dir}/simulation_system")
-        config.model_properties.W = config.model_parameters.W4
-        config.model_properties.direct = True
-        OmegaConf.save(config,f"{output_dir}/config.yaml")
+    # if config.experiment.check_system:
+    #     output_dir = co.set_prj(f"{out_dir}/simulation_system")
+    #     config.model_properties.W = config.model_parameters.W4
+    #     config.model_properties.direct = True
+    #     OmegaConf.save(config,f"{output_dir}/config.yaml")
 
-        pinns_sys = uu.train_model(output_dir, system=True)
+    #     pinns_sys = uu.train_model(output_dir, system=True)
 
-        y_sys_pinns = uu.get_system_pred(pinns_sys, tot_true[:, 0:2], output_dir)
-        uu.check_system_and_wandb_upload(tot_true[:, :3], y_sys_pinns, config, output_dir)
+    #     y_sys_pinns = uu.get_system_pred(pinns_sys, tot_true[:, 0:2], output_dir)
+    #     uu.check_system_and_wandb_upload(tot_true[:, :3], y_sys_pinns, config, output_dir)
 
     # n_obs = config.model_parameters.n_obs
     # config.model_properties.direct = False

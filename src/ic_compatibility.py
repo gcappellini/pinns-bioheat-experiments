@@ -6,44 +6,26 @@ from coeff_calc import Ty10, Ty20, Ty30, a5
 np.random.seed(237)
 import matplotlib.pyplot as plt
 from skopt import gp_minimize
-from skopt.plots import plot_gaussian_process
+from scipy.optimize import minimize
+from skopt.plots import plot_gaussian_process, plot_convergence, plot_objective, plot_evaluations
 from skopt.space import Real
 from skopt.utils import use_named_args
-from common import set_run, set_prj
+from common import set_run
+import plots as pp
 
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
 git_dir = os.path.dirname(src_dir)
 tests_dir = os.path.join(git_dir, "tests")
+conf_dir = os.path.join(src_dir, "configs")
 os.makedirs(tests_dir, exist_ok=True)
 
-conf = OmegaConf.load(f"{src_dir}/config.yaml")
+conf = OmegaConf.load(f"{conf_dir}/config_run.yaml")
+output_dir = conf.output_dir
 x = np.linspace(0, 1, num=100)
 
 K = conf.model_properties.K
 
-# def ic_obs(x, b1, b2):
-#     return (1-x**b1)*(np.exp(-50/(x+0.001))+b2)
-
-# def der_ic_obs(x, b1, b2):
-#     val = -b1*(x**(b1 - 1)) * (np.exp(-(50)/(x + 0.001)) + b2) + (50 *(1 - x**(b1)) * np.exp(-(50)/(x + 0.001)))/(x + 0.001)**2
-#     return val
-
-# def new_ic_obs(x, obs0):
-#     A = a5*(y3_0 - y2_0)
-#     B = y2_0
-#     C = obs0 - (A - K*B)/K
-#     return ((A-K*B)/K+C*np.exp(K*x))*(1-x)**(2.8)
-
-
-# x^*=(1.4, 0.818) f(x^*)=1.3095 ottima convergenza
-# x^*=(0.90, 0.818) f(x^*)=0.1445 
-# x^*=(0.8912, 0.8500) f(x^*)=0.0100
-# x^*=(0.8927, 0.8500) f(x^*)=0.0001 with gp_edge
-# x^*=(0.8771, 0.8180) f(x^*)=0.0007 with gp_edge
-# x^*=(0.7956, 0.6436) f(x^*)=0.0547 Troppo distante, osservatore non converge
-# x^*=(0.8416, 0.7514) f(x^*)=0.0161
-# x^*=(0.8072, 0.8146) f(x^*)=0.1181 per K=5
 b1_0= 6.3
 b2_0= 0.9
 y1_0, y2_0, y3_0 = scale_t(Ty10), scale_t(Ty20), scale_t(Ty30)
@@ -56,14 +38,16 @@ dimensions = [
     dim_b2
 ]
 
-# @use_named_args(dimensions=dimensions)
+iters_history = {}
+
+@use_named_args(dimensions=dimensions)
 def fitness(b1, b2):
     global ITERATION
     # ITERATION: str="BEST"
-    run_figs = set_run(f"{ITERATION}")
+    run_figs = set_run(output_dir, f"{ITERATION}")
             
-    conf.model_properties.b1 = b1
-    conf.model_properties.b2 = b2
+    conf.model_properties.b1 = float(b1)
+    conf.model_properties.b2 = float(b2)
     OmegaConf.save(conf, f"{run_figs}/config.yaml")
     OmegaConf.save(conf, f"{src_dir}/config.yaml")
 
@@ -74,13 +58,12 @@ def fitness(b1, b2):
     print()
 
     metr = run_matlab_ground_truth(run_figs)
+    iters_history[ITERATION] = {"b1": b1, "b2": b2, "fitness": metr}
 
     ITERATION += 1
 
     return metr
 
-ITERATION = 0
-out_dir = set_prj(conf.output_dir)
 
 # res = gp_minimize(fitness,                  # the function to minimize
 #                   dimensions=dimensions,      # the bounds on each dimension of x
@@ -93,7 +76,55 @@ out_dir = set_prj(conf.output_dir)
 #                   random_state=1234) 
 
 
-# print("x^*=(%.4f, %.4f) f(x^*)=%.4f" % (res.x[0], res.x[1], res.fun))
+# convergence_fig = plot_convergence(res)
+# convergence_fig.figure.savefig(f"{output_dir}/convergence_plot.png")
 
-print(fitness(4.9149, 0.3540))
+# convergence_fig = plot_objective(res)
+# convergence_fig.figure.savefig(f"{output_dir}/objective_function.png")
+
+# convergence_fig = plot_evaluations(res)
+# convergence_fig.figure.savefig(f"{output_dir}/evaluations.png")
+
+# file_path = os.path.join(output_dir, 'results_ic.txt')
+
+# with open(file_path, 'w') as file:
+#     file.write("Named Tuple Results:\n")
+#     for field, value in res.items():
+#         file.write(f"{field}: {value}\n")
+
+# print(fitness(4.9149, 0.3540))
+ITERATION = 0
+
+bounds = [(0, 10), (0, 1)]
+result = minimize(fitness, [b1_0, b2_0], bounds=bounds, method='L-BFGS-B')
+
+print("x^*=(%.4f, %.4f) f(x^*)=%.4f" % (result.x[0], result.x[1], result.fun))
+
+file_path = os.path.join(output_dir, 'results_ic.txt')
+with open(file_path, 'w') as file:
+    file.write("Optimization Results:\n")
+    file.write(f"Optimal values of x and y: {result.x}\n")
+    file.write(f"Minimum value of the function: {result.fun}\n")
+    file.write(f"Gradients at optimal point (computed automatically): {result.jac}\n")
+    file.write(f"Number of function evaluations: {result.nfev}\n")
+    file.write(f"Number of gradient evaluations: {result.njev}\n")
+
+        # Write the iteration history
+    file.write("\nIteration History:\n")
+    file.write("Iteration, b1, b2, Fitness\n")
+    for iteration, data in iters_history.items():
+        file.write(f"{iteration}, {data['b1']}, {data['b2']}, {data['fitness']}\n")
+
+
+print("Optimal values of x and y:", result.x)
+print("Minimum value of the function:", result.fun)
+print("Gradients at optimal point (computed automatically):", result.jac)
+print("Number of function evaluations:", result.nfev)
+print("Number of gradient evaluations:", result.njev)
+
+iterations = list(iters_history.keys())  # Get iteration numbers (or use a sequence of values)
+fitness_values = [data["fitness"] for data in iters_history.values()]
+
+pp.plot_generic(iterations, fitness_values, 'Convergence Plot', 'Iteration', 'Fitness value', f"{output_dir}/convergence_plot.png")
+
 

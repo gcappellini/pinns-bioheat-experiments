@@ -6,7 +6,8 @@ import numpy as np
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
 
-cfg = OmegaConf.load(f'{src_dir}/config.yaml')
+conf_dir = os.path.join(src_dir, "configs")
+cfg = OmegaConf.load(f"{conf_dir}/config_run.yaml")
 
 L0 = cfg.model_properties.L0
 tauf = cfg.model_properties.tauf
@@ -40,6 +41,8 @@ W4 = cfg.model_parameters.W4
 W5 = cfg.model_parameters.W5
 W6 = cfg.model_parameters.W6
 W7 = cfg.model_parameters.W7
+W_sys = cfg.model_parameters.W_sys
+W_obs = cfg.model_parameters.W_obs
 
 lamb = cfg.model_parameters.lam  # Access the lambda parameter
 upsilon = cfg.model_parameters.upsilon
@@ -57,4 +60,15 @@ cc = np.log(2)/(PD - 10**(-2)*x0)
 a3 = round(pwr_fact*rho*L0**2*beta*SAR_0*np.exp(cc*x0)/k*dT, 7)
 a4 = round(cc*L0, 7)
 a5 = round(L0*h/k, 7)
+
+
+eta = np.where(K>=(np.pi**2)/4, (np.pi**2)/4, K)
+
+decay_rate_exact= 2*(eta/a1+W_sys*a2/a1)
+
+
+
+c_0 = (np.abs(W_obs*a2/a1 - W_sys*a2/a1)**2)/(eta/a1 + W_obs*a2/a1)**2
+
+decay_rate_diff= (eta/a1+W_obs*a2/a1)/2
 

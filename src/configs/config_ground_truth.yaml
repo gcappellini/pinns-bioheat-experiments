@@ -35,8 +35,8 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b1: 4.9149
-  b2: 0.354
+  b1: 6.3
+  b2: 0.9
   direct: false
 model_parameters:
   lam: 50
@@ -49,6 +49,8 @@ model_parameters:
   W5: 0.0021
   W6: 0.0026
   W7: 0.001207
+  W_sys: 6.3e-05
+  W_obs: 6.3e-05
   n_obs: 1
   gt1_0: 24.44
   gt2_0: 29.25
@@ -61,7 +63,4 @@ model_parameters:
   - 1
   - 1
   - 1
-experiment:
-- cooling
-- simulation_debug
-output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-12/15-31-43
+output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-13/14-34-12/0

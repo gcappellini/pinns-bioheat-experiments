@@ -8,7 +8,8 @@ import numpy as np
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
 
-cfg = OmegaConf.load(f"{src_dir}/config.yaml")
+conf_dir = os.path.join(src_dir, "configs")
+cfg = OmegaConf.load(f"{conf_dir}/config_run.yaml")
 
 ks = [1, 2, 10, 50, 100, 200, 250, 500]
 

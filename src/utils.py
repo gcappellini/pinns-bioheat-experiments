@@ -219,11 +219,11 @@ def ic_sys(x):
     theta20 = scale_t(conf.model_properties.Ty20)
     theta30 = scale_t(conf.model_properties.Ty30)
 
-    b = cc.a5 * (theta30-theta20)
-    c = theta20
-    a = -b -c
+    c_2 = cc.a5 * (theta30-theta20)
+    c_3 = theta20
+    c_1 = -c_2 -c_3
 
-    return a*z**2 + b*z + c
+    return c_1*z**2 + c_2*z + c_3
     # return np.zeros_like(z)
 
 
@@ -501,9 +501,8 @@ def gen_testdata(conf):
             y_mm_obs = y_obs
 
     except FileNotFoundError:
-        print(f"File not found: {file_path}. Setting conf.experiment.run_matlab to True.")
-        conf.experiment.run_matlab = True
-        OmegaConf.save(conf, f"{src_dir}/config.yaml")
+        print(f"File not found: {file_path}.")
+
         # subprocess.run(["python", f"{src_dir}/main.py"], check=True)
 
     X = np.vstack((x, t)).T
@@ -944,7 +943,7 @@ def get_plot_params(conf):
     :param conf: Configuration object loaded from YAML.
     :return: Dictionary containing plot parameters for each entity.
     """
-    exp_name = conf.experiment.name
+    # exp_name = conf.experiment.name
 
     # Load entity-specific configurations from the config
     entities = conf.plot.entities
@@ -956,6 +955,22 @@ def get_plot_params(conf):
         "linestyle": entities.system.linestyle,
         "linewidth": entities.system.linewidth,
         "alpha": entities.system.alpha
+    }
+
+    theory_params = {
+        "color": entities.theory.color,
+        "label": entities.theory.label,
+        "linestyle": entities.theory.linestyle,
+        "linewidth": entities.theory.linewidth,
+        "alpha": entities.theory.alpha
+    }
+
+    bound_params = {
+        "color": entities.bound.color,
+        "label": entities.bound.label,
+        "linestyle": entities.bound.linestyle,
+        "linewidth": entities.bound.linewidth,
+        "alpha": entities.bound.alpha
     }
 
     # Multi-observer parameters
@@ -1024,11 +1039,13 @@ def get_plot_params(conf):
 
     # Adjust markers if experiment name starts with "meas_"
     markers = [None] * n_obs
-    if exp_name[1].startswith("meas_"):
-        markers[0] = "*"
+    # if exp_name[1].startswith("meas_"):
+    #     markers[0] = "*"
 
     return {
         "system": system_params,
+        "theory": theory_params,
+        "bound": bound_params,
         "multi_observer": multi_observer_params,
         "observers": observer_params,
         "system_gt": system_gt_params,
@@ -1077,7 +1094,6 @@ def get_configuration(prj_figs, label):
             cfg_matlab = OmegaConf.create({
                 "model_properties": cfg.model_properties,
                 "model_parameters": cfg.model_parameters,
-                "experiment": cfg.experiment.name,
                 "output_dir": prj_figs
                 })
             OmegaConf.save(cfg_matlab,f"{conf_dir}/config_ground_truth.yaml")
@@ -1116,12 +1132,15 @@ def run_matlab_ground_truth(prj_figs):
     X, y_sys, y_observers, y_mmobs = solution[:, 0:2], solution[:, 2], solution[:, 3:3+n_obs], solution[:, -1]
     t = np.unique(X[:, 1])
     metr = compute_metrics(X, y_observers, y_observers, prj_figs, system=y_sys)
+    y_theory, y_bound = compute_y_theory(X, y_sys, y_observers)
 
     system_gt = { "grid": X, "theta": y_sys, "label": "system_gt"}
     observer_gt = {"grid": X, "theta": y_observers, "label": "observers_gt"}
+    theory = {"grid": X, "theta": y_theory, "label": "theory"}
+    bound = {"grid": X, "theta": y_bound, "label": "bound"}
 
     pp.plot_multiple_series([system_gt, observer_gt], prj_figs)
-    pp.plot_l2(system_gt, [observer_gt], prj_figs)
+    pp.plot_l2(system_gt, [observer_gt, theory, bound], prj_figs)
 
     # if n_obs==1:
         # pp.plot_tf_matlab_1obs(X, y_sys, y_observers, prj_figs)
@@ -1146,6 +1165,24 @@ def run_matlab_ground_truth(prj_figs):
     print("MATLAB ground truth completed.")
     print("Metrics:", metr["total_L2RE_sys"])
     return metr["total_L2RE_sys"]
+
+
+def compute_y_theory(grid, sys, obs):
+    str = np.where(np.abs(cc.W_sys - cc.W_obs) <= 1e-08, 'exact', 'diff')
+    x = np.unique(grid[:, 0])
+    t = np.unique(grid[:, -1])
+    sys_0 = sys[:len(x)]
+    sys_0 = sys_0.reshape(len(sys_0), 1)
+    obs_0 = obs[:len(x)]
+    obs_0 = obs_0.reshape(len(obs_0), 1)
+    l2_0 = calculate_l2(grid[grid[:, 1]==0], sys_0, obs_0)
+
+    # decay = cc.decay_rate_exact if str=='exact' else cc.decay_rate_diff if str=='diff'
+    decay = getattr(cc, f"decay_rate_{str}")
+
+    return l2_0 * np.exp(-decay*t), np.full_like(t, cc.c_0)
+
+
 
 
 def calculate_l2(e, true, pred):
@@ -1333,26 +1370,26 @@ def point_ground_truths(conf):
     return y1_truth_sc, gt1_truth_sc, gt2_truth_sc, y2_truth_sc
 
 
-def configure_settings(cfg, experiment):
-    cfg.model_properties.direct = False
-    cfg.model_properties.W = cfg.model_parameters.W4
-    exp_type_settings = getattr(cfg.experiment.type, experiment[0])
-    cfg.model_properties.pwr_fact=exp_type_settings["pwr_fact"]
-    cfg.model_properties.h=exp_type_settings["h"]
+# def configure_settings(cfg, experiment):
+#     cfg.model_properties.direct = False
+#     cfg.model_properties.W = cfg.model_parameters.W4
+#     exp_type_settings = getattr(cfg.experiment.type, experiment[0])
+#     cfg.model_properties.pwr_fact=exp_type_settings["pwr_fact"]
+#     cfg.model_properties.h=exp_type_settings["h"]
 
-    if experiment[1].startswith("simulation"):
-        name_exp = "simulation"
-    else:
-        name_exp = experiment[1]
+#     if experiment[1].startswith("simulation"):
+#         name_exp = "simulation"
+#     else:
+#         name_exp = experiment[1]
         
-    meas_settings = getattr(exp_type_settings, name_exp)
-    cfg.model_properties.Ty10=meas_settings["y1_0"]
-    cfg.model_properties.Ty20=meas_settings["y2_0"]
-    cfg.model_properties.Ty30=meas_settings["y3_0"]
-    cfg.model_parameters.gt1_0=meas_settings["gt1_0"]
-    cfg.model_parameters.gt2_0=meas_settings["gt2_0"]
+#     meas_settings = getattr(exp_type_settings, name_exp)
+#     cfg.model_properties.Ty10=meas_settings["y1_0"]
+#     cfg.model_properties.Ty20=meas_settings["y2_0"]
+#     cfg.model_properties.Ty30=meas_settings["y3_0"]
+#     cfg.model_parameters.gt1_0=meas_settings["gt1_0"]
+#     cfg.model_parameters.gt2_0=meas_settings["gt2_0"]
 
-    return cfg
+#     return cfg
 
 
 def extract_matching(tot_true, tot_pred):

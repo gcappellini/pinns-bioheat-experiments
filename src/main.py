@@ -13,19 +13,17 @@ os.makedirs(tests_dir, exist_ok=True)
 @hydra.main(version_base=None, config_path=current_dir, config_name="config")
 def main(cfg: DictConfig):
 
-    experiment = cfg.experiment.name
     uu.initialize_run(cfg)
+    subprocess.run(["python", f'{src_dir}/ic_compatibility.py'])
 
-    # print(f"Output directory  : {hydra.core.hydra_config.HydraConfig.get().runtime.output_dir}")
+    # if cfg.experiment.import_data:
+    #     subprocess.run(["python", f'{src_dir}/import_data.py'])
 
-    if cfg.experiment.import_data:
-        subprocess.run(["python", f'{src_dir}/import_data.py'])
+    # if cfg.experiment.simulation: 
+    #     subprocess.run(["python", f'{src_dir}/simulation.py'])
 
-    if experiment[1].startswith("simulation"): 
-        subprocess.run(["python", f'{src_dir}/simulation.py'])
-
-    if experiment[1].startswith("meas_"):    
-        subprocess.run(["python", f'{src_dir}/measurements.py'])
+    # if experiment[1].startswith("meas_"):    
+    #     subprocess.run(["python", f'{src_dir}/measurements.py'])
 
 
 if __name__ == "__main__":

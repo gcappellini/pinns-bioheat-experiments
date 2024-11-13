@@ -61,7 +61,8 @@ dimensions = [
 
 default_parameters = [0.001, 4, 50, "tanh", "Glorot normal", 1, 1, 1, 1]
 
-conf = OmegaConf.load(f"{src_dir}/config.yaml")
+conf_dir = os.path.join(src_dir, "configs")
+conf = OmegaConf.load(f"{conf_dir}/config_run.yaml")
 
 matlab_sol = uu.gen_testdata(conf, hpo=True)
 x_obs = uu.gen_obsdata(conf, hpo=True)

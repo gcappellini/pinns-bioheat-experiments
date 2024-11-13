@@ -30,11 +30,11 @@ t_gt20 = config_data.model_parameters.gt2_0;
 h = config_data.model_properties.h;
 b1 = config_data.model_properties.b1;
 b2 = config_data.model_properties.b2;
-experiment_name = config_data.experiment;
+% experiment_name = config_data.experiment;
 output_path = config_data.output_dir;
 % output_path = fullfile(fileparts(git_dir), output_dir);
 
-str_exp = sprintf('%s_%s', experiment_name{1}, experiment_name{2});
+% str_exp = sprintf('%s_%s', experiment_name{1}, experiment_name{2});
 path_exp = sprintf('%s/src/data/vessel/%s.txt', git_dir, str_exp);
 % output_path = sprintf('%s/tests/%s', git_dir, output_dir);
 
@@ -101,11 +101,11 @@ W_sys = config_data.model_parameters.W_sys;
 W_obs = config_data.model_parameters.W_obs;
 % W_obs = W_sys;
 
-% % Call the correct solver based on the number of observers
-% if n_obs == 3
-%     sol = OneDimBH_3Obs;  % Call the 3-observer case
-% elseif n_obs == 8
-%     sol = OneDimBH_8Obs;  % Call the default or other number of observers case
-% elseif n_obs == 1
-%     sol = OneDimBH_1Obs;  % Call the default or other number of observers case
-% end
+% Call the correct solver based on the number of observers
+if n_obs == 3
+    sol = OneDimBH_3Obs;  % Call the 3-observer case
+elseif n_obs == 8
+    sol = OneDimBH_8Obs;  % Call the default or other number of observers case
+elseif n_obs == 1
+    sol = OneDimBH_1Obs;  % Call the default or other number of observers case
+end
