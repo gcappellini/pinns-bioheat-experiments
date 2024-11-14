@@ -1180,7 +1180,7 @@ def compute_y_theory(grid, sys, obs):
     # decay = cc.decay_rate_exact if str=='exact' else cc.decay_rate_diff if str=='diff'
     decay = getattr(cc, f"decay_rate_{str}")
 
-    return l2_0 * np.exp(-decay*t), np.full_like(t, cc.c_0)
+    return l2_0 * np.exp(-t*decay), np.full_like(t, cc.c_0)
 
 
 

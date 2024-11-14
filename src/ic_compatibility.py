@@ -38,7 +38,7 @@ dimensions = [
     dim_b2
 ]
 
-iters_history = {}
+# iters_history = {}
 
 @use_named_args(dimensions=dimensions)
 def fitness(b1, b2):
@@ -93,38 +93,89 @@ def fitness(b1, b2):
 #         file.write(f"{field}: {value}\n")
 
 # print(fitness(4.9149, 0.3540))
-ITERATION = 0
+# ITERATION = 0
 
-bounds = [(0, 10), (0, 1)]
-result = minimize(fitness, [b1_0, b2_0], bounds=bounds, method='L-BFGS-B')
+# bounds = [(0, 10), (0, 1)]
+# result = minimize(fitness, [b1_0, b2_0], bounds=bounds, method='L-BFGS-B')
 
-print("x^*=(%.4f, %.4f) f(x^*)=%.4f" % (result.x[0], result.x[1], result.fun))
+# print("x^*=(%.4f, %.4f) f(x^*)=%.4f" % (result.x[0], result.x[1], result.fun))
 
-file_path = os.path.join(output_dir, 'results_ic.txt')
-with open(file_path, 'w') as file:
-    file.write("Optimization Results:\n")
-    file.write(f"Optimal values of x and y: {result.x}\n")
-    file.write(f"Minimum value of the function: {result.fun}\n")
-    file.write(f"Gradients at optimal point (computed automatically): {result.jac}\n")
-    file.write(f"Number of function evaluations: {result.nfev}\n")
-    file.write(f"Number of gradient evaluations: {result.njev}\n")
+# file_path = os.path.join(output_dir, 'results_ic.txt')
+# with open(file_path, 'w') as file:
+#     file.write("Optimization Results:\n")
+#     file.write(f"Optimal values of x and y: {result.x}\n")
+#     file.write(f"Minimum value of the function: {result.fun}\n")
+#     file.write(f"Gradients at optimal point (computed automatically): {result.jac}\n")
+#     file.write(f"Number of function evaluations: {result.nfev}\n")
+#     file.write(f"Number of gradient evaluations: {result.njev}\n")
 
-        # Write the iteration history
-    file.write("\nIteration History:\n")
-    file.write("Iteration, b1, b2, Fitness\n")
-    for iteration, data in iters_history.items():
-        file.write(f"{iteration}, {data['b1']}, {data['b2']}, {data['fitness']}\n")
+#         # Write the iteration history
+#     # file.write("\nIteration History:\n")
+# file_path = os.path.join(output_dir, 'history.txt')
+# with open(file_path, 'w') as file:    
+#     for iteration, data in iters_history.items():
+#         file.write(f"{iteration}, {data['b1']}, {data['b2']}, {data['fitness']}\n")
 
 
-print("Optimal values of x and y:", result.x)
-print("Minimum value of the function:", result.fun)
-print("Gradients at optimal point (computed automatically):", result.jac)
-print("Number of function evaluations:", result.nfev)
-print("Number of gradient evaluations:", result.njev)
+# print("Optimal values of x and y:", result.x)
+# print("Minimum value of the function:", result.fun)
+# print("Gradients at optimal point (computed automatically):", result.jac)
+# print("Number of function evaluations:", result.nfev)
+# print("Number of gradient evaluations:", result.njev)
 
+iters_history_arr = np.loadtxt(f"{git_dir}/outputs/2024-11-13/14-34-12/history.txt", dtype="float64", delimiter=",")
+iters_history_arr_filtered = iters_history_arr#[iters_history_arr[:, 3]<=50]
+iters_history = {
+    int(row[0]): {
+        "b1": row[1],
+        "b2": row[2],
+        "fitness": row[3]
+    }
+    for row in iters_history_arr_filtered
+}
 iterations = list(iters_history.keys())  # Get iteration numbers (or use a sequence of values)
 fitness_values = [data["fitness"] for data in iters_history.values()]
 
-pp.plot_generic(iterations, fitness_values, 'Convergence Plot', 'Iteration', 'Fitness value', f"{output_dir}/convergence_plot.png")
+# pp.plot_generic(iterations, fitness_values, 'Convergence Plot', 'Iteration', 'Fitness value', f"{output_dir}/convergence_plot.png")
+
+# Plot the convergence
+plt.figure(figsize=(8, 6))
+plt.plot(iterations, fitness_values, marker='o', color='b', label='Fitness value')
+plt.xlabel('Iteration')
+plt.ylabel('L2 norm')
+plt.title('Convergence Plot')
+plt.grid(True)
+plt.legend()
+plt.tight_layout()
+
+# Save the convergence plot
+plt.savefig(f"{output_dir}/convergence_plot.png")
 
 
+# Extract b1 and b2 values for each iteration
+b1_values = [data["b1"] for data in iters_history.values()]
+b2_values = [data["b2"] for data in iters_history.values()]
+
+# Plot the convergence of b1
+plt.figure(figsize=(8, 6))
+plt.plot(iterations, b1_values, marker='o', color='r', label='b1')
+plt.xlabel('Iteration')
+plt.ylabel('b1 Value')
+plt.title('Convergence of b1')
+plt.grid(True)
+plt.legend()
+plt.tight_layout()
+plt.savefig(f"{output_dir}/b1_convergence_plot.png")
+# plt.show()
+
+# Plot the convergence of b2
+plt.figure(figsize=(8, 6))
+plt.plot(iterations, b2_values, marker='o', color='g', label='b2')
+plt.xlabel('Iteration')
+plt.ylabel('b2 Value')
+plt.title('Convergence of b2')
+plt.grid(True)
+plt.legend()
+plt.tight_layout()
+plt.savefig(f"{output_dir}/b2_convergence_plot.png")
+# plt.show()
