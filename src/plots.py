@@ -510,7 +510,8 @@ def plot_multiple_series(series_data, prj_figs):
     fig, axes = plt.subplots(1, len(t_vals), figsize=(15, 5))
     
     # Load configuration parameters for plotting
-    conf = OmegaConf.load(f'{prj_figs}/config.yaml')
+    cfg = OmegaConf.load(f'{prj_figs}/config.yaml')
+    conf = OmegaConf.load(f"{cfg.output_dir}/config.yaml")
     rescale = conf.plot.rescale
     plot_params = uu.get_plot_params(conf)
     
@@ -584,7 +585,7 @@ def plot_multiple_series(series_data, prj_figs):
     save_and_close(fig, filename)
 
 
-def plot_l2(series_sys, series_data, folder, rescale=None):
+def plot_l2(series_sys, series_data, folder):
     """
     Plot L2 norm of prediction errors for true and predicted values.
     
@@ -601,8 +602,8 @@ def plot_l2(series_sys, series_data, folder, rescale=None):
     t_pred = np.unique(e[:, 1])
     t_pred = t_pred.reshape(len(t_pred), 1)
 
-    conf = OmegaConf.load(f'{folder}/config.yaml')
-    n_obs = conf.model_parameters.n_obs
+    cfg = OmegaConf.load(f'{folder}/config.yaml')
+    conf = OmegaConf.load(f"{cfg.output_dir}/config.yaml")
     plot_params = uu.get_plot_params(conf)
 
     t_vals = []
@@ -633,7 +634,8 @@ def plot_l2(series_sys, series_data, folder, rescale=None):
         ll2.append(l2)
 
 
-    rescale = conf.plot.rescale if rescale==None else rescale
+    # rescale = conf.plot.rescale if rescale==None else rescale
+    rescale=False
     _, xlabel, _ = uu.get_scaled_labels(rescale)
     t_vals_plot = np.array(uu.rescale_time(t_vals)) if rescale else np.array(t_vals)
     ll2 = np.array(ll2)

@@ -59,10 +59,10 @@ model_parameters:
   x_gt1: 0.04
   x_y1: 0.07
   loss_weights:
-  - 0.2756814956665039
-  - 244.59474182128906
-  - 1641.191162109375
-  - 12.134330749511719
+  - 0.27703657746315
+  - 248.46188354492188
+  - 1580.208251953125
+  - 11.95880126953125
 plot:
   rescale: true
   display_every: 500
@@ -323,4 +323,4 @@ experiment:
       y3_0: 23.26
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-15/20-23-11
+output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-16/00-37-10

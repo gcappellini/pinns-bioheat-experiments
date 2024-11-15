@@ -34,20 +34,24 @@ run_figs = [None]
 
 def set_run(prj_figs, run):
     global run_figs
+
     cfg = OmegaConf.load(f"{prj_figs}/config.yaml")
     run_figs = os.path.join(prj_figs, run)
     os.makedirs(run_figs, exist_ok=True)
-    OmegaConf.save(cfg, f"{run_figs}/config.yaml")
-    OmegaConf.save(cfg, f"{conf_dir}/config_{run}.yaml")
+
+    if run.startswith("ground_truth"):
+        cfg_out = OmegaConf.create({
+        "model_properties": cfg.model_properties,
+        "model_parameters": cfg.model_parameters,
+        "output_dir": cfg.output_dir
+        })
+    else:
+        cfg_out=cfg
+
+    OmegaConf.save(cfg_out, f"{run_figs}/config.yaml")
+    OmegaConf.save(cfg_out, f"{conf_dir}/config_{run}.yaml")
 
     return run_figs
-
-def read_json(filepath):
-    if os.path.exists(filepath):
-        with open(filepath, 'r') as file:
-            data = json.load(file)
-    return data
-
 
 
 def generate_config_hash(config_data):

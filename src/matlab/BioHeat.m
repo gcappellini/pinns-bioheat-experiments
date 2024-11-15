@@ -36,7 +36,7 @@ output_path = config_data.output_dir;
 
 % str_exp = sprintf('%s_%s', experiment_name{1}, experiment_name{2});
 path_exp = sprintf('%s/src/data/vessel/%s.txt', git_dir, str_exp);
-% output_path = sprintf('%s/tests/%s', git_dir, output_dir);
+% output_path = sprintf('%s/', output_dir);
 
 
 % Observer weights based on the number of observers (3 or 8)

@@ -481,7 +481,7 @@ def gen_testdata(conf):
     # else:
     #     output_folder = f"{tests_dir}/{dir_name}"
 
-    file_path = f"{dir_name}/output_matlab_{n}Obs.txt"
+    file_path = f"{dir_name}/ground_truth/output_matlab_{n}Obs.txt"
 
     try:
         data = np.loadtxt(file_path)
@@ -841,22 +841,13 @@ def check_system_and_wandb_upload(tot_true, tot_pred, conf, run_figs, comparison
     """
     Check observers and optionally upload results to wandb.
     """
-    run_wandb = conf.experiment.run_wandb
-    name = conf.experiment.name
-    
-
-    if run_wandb:
-        aa = OmegaConf.load(f"{run_figs}/config.yaml")
-        print(f"Initializing wandb for system...")
-        wandb.init(project=name, name=f"system", config=aa)
+    # run_wandb = conf.experiment.run_wandb
+    # name = conf.experiment.name
+    # if run_wandb:
+    #     aa = OmegaConf.load(f"{run_figs}/config.yaml")
+    #     print(f"Initializing wandb for system...")
+    #     wandb.init(project=name, name=f"system", config=aa)
             
-    pp.plot_l2(tot_true, tot_pred, 0, run_figs, system=True)
-    # pp.plot_tf(tot_true, tot_pred, 0, run_figs, system=True)
-
-    
-    # for t in instants:
-    #     pp.plot_tx(t, tot_true, tot_pred, 0, run_figs, system=True)
-
     system = {
         "grid": tot_pred[:, :2],
         "theta": tot_pred[:, -1],
@@ -869,16 +860,17 @@ def check_system_and_wandb_upload(tot_true, tot_pred, conf, run_figs, comparison
         "label": "system_gt",
     }
     pp.plot_multiple_series([system, system_gt], run_figs)
+    pp.plot_l2(system, [system_gt], run_figs)
 
     if comparison_3d:
         matching = extract_matching(tot_true, tot_pred)
         pp.plot_validation_3d(tot_true[:, 0:2], tot_true[:, 2], tot_pred[:, -1], run_figs, system=True)
 
     metrics = compute_metrics(matching[:, 0:2], matching[:, 2], matching[:, 3], run_figs)
-    if run_wandb:
-        matching = extract_matching(tot_true, tot_pred)
-        wandb.log(metrics)
-        wandb.finish()
+    # if run_wandb:
+    #     matching = extract_matching(tot_true, tot_pred)
+    #     wandb.log(metrics)
+    #     wandb.finish()
 
     return metrics
 
@@ -1082,39 +1074,14 @@ def solve_ivp(multi_obs, fold, conf, x_obs):
     np.savetxt(f'{fold}/prediction_mm_obs.txt', data_to_save, fmt='%.2f %.2f %.4f', delimiter=' ')
     return y_pred
 
-
-def get_configuration(prj_figs, label):
-
-    cfg = OmegaConf.load(f"{prj_figs}/config.yaml")
-
-    if label=="ground_truth":
-            cfg_matlab = OmegaConf.create({
-                "model_properties": cfg.model_properties,
-                "model_parameters": cfg.model_parameters,
-                "output_dir": prj_figs
-                })
-            OmegaConf.save(cfg_matlab,f"{conf_dir}/config_ground_truth.yaml")
-            OmegaConf.save(cfg_matlab,f"{prj_figs}/config_ground_truth.yaml")
-            return cfg_matlab
-
-    if label=="direct":
-            cfg_direct = OmegaConf.create({
-                "model_properties": cfg.model_properties,
-                "model_parameters": cfg.model_parameters,
-                "experiment": cfg.experiment.name,
-                "output_dir": cfg.output_dir,
-                })
-            OmegaConf.save(cfg_direct,f"{conf_dir}/config_direct.yaml")
-            OmegaConf.save(cfg_direct,f"{prj_figs}/config_direct.yaml")
-            return cfg_direct
-
  
 def run_matlab_ground_truth(prj_figs):
     """
     Optionally run MATLAB ground truth.
     """
 
-    cfg = get_configuration(prj_figs, "ground_truth")
+    # cfg = get_configuration(prj_figs, "ground_truth")
+    cfg = OmegaConf.load(f"{prj_figs}/config.yaml")
 
     n_obs = cfg.model_parameters.n_obs
     cfg.model_properties.W = cfg.model_parameters.W4
@@ -1137,7 +1104,7 @@ def run_matlab_ground_truth(prj_figs):
     bound = {"grid": X, "theta": y_bound, "label": "bound"}
 
     pp.plot_multiple_series([system_gt, observer_gt], prj_figs)
-    pp.plot_l2(system_gt, [observer_gt, theory, bound], prj_figs, rescale=False)
+    pp.plot_l2(system_gt, [observer_gt, theory, bound], prj_figs)
 
     # if n_obs==1:
         # pp.plot_tf_matlab_1obs(X, y_sys, y_observers, prj_figs)
