@@ -788,8 +788,7 @@ def check_observers_and_wandb_upload(tot_true, tot_pred, conf, output_dir, compa
     """
     Check observers and optionally upload results to wandb.
     """
-    run_wandb = conf.experiment.run_wandb
-    name = conf.experiment.name
+    # run_wandb = conf.experiment.run_wandb
     n_obs = conf.model_parameters.n_obs
 
     for el in range(n_obs):
@@ -798,14 +797,12 @@ def check_observers_and_wandb_upload(tot_true, tot_pred, conf, output_dir, compa
         # tot_obs_pred = np.vstack((tot_pred[0], tot_pred[1], pred)).T
         run_figs = os.path.join(output_dir, label)
 
-        if run_wandb:
-            aa = OmegaConf.load(f"{run_figs}/config.yaml")
-            print(f"Initializing wandb for observer {el}...")
-            wandb.init(project=name, name=label, config=aa)
+        # if run_wandb:
+        #     aa = OmegaConf.load(f"{run_figs}/config.yaml")
+        #     print(f"Initializing wandb for observer {el}...")
+        #     wandb.init(project=name, name=label, config=aa)
                 
-        # pp.plot_l2(tot_true, tot_pred, el, run_figs, gt=True)
         pp.plot_validation_3d(tot_true[:, 0:2], tot_true[:, -1], tot_pred[:, -1], run_figs)
-        # pp.plot_generic_5_figs(tot_true, tot_pred, 0, run_figs, gt=True, MultiObs=False)
         observers = {
         "grid": tot_pred[:, :2],
         "theta": tot_pred[:, -1],
@@ -824,16 +821,16 @@ def check_observers_and_wandb_upload(tot_true, tot_pred, conf, output_dir, compa
             "label": "system_gt",
         }
         pp.plot_multiple_series([observers, observers_gt, system_gt], run_figs)
-
+        pp.plot_l2(system_gt, [observers, observers_gt], run_figs)
         matching = extract_matching(tot_true, tot_pred)
         metrics = compute_metrics(matching[:, 0:2], matching[:, 3+el], matching[:, 3+n_obs+1+el], run_figs, system=matching[:, 2])
         # struttura di matching: x, t, sys_matlab, obs_matlab, mm_obs_matlab, obs_pinns, mm_obs_pinns
         if comparison_3d:
             pp.plot_comparison_3d(tot_true[:, 0:2], tot_true[:, 2], tot_pred[:, -1], run_figs)
 
-        if run_wandb:
-            wandb.log(metrics)
-            wandb.finish()
+        # if run_wandb:
+        #     wandb.log(metrics)
+        #     wandb.finish()
 
 
 
