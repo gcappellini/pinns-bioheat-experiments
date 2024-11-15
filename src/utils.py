@@ -350,7 +350,7 @@ def create_sys(run_figs):
     a3 = cc.a3
     a4 = cc.a4
     a5 = cc.a5
-    W = config.model_parameters.W4
+    W_sys = config.model_parameters.W_sys
 
     theta10 = scale_t(config.model_properties.Ty10)
 
@@ -362,7 +362,7 @@ def create_sys(run_figs):
 
         return (
             a1 * dtheta_tau
-            - dtheta_xx + W * a2 * theta - a3 * torch.exp(-a4*x[:, 0:1])
+            - dtheta_xx + W_sys * a2 * theta - a3 * torch.exp(-a4*x[:, 0:1])
         )
     
 

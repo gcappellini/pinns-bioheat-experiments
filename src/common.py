@@ -22,6 +22,7 @@ current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
 git_dir = os.path.dirname(src_dir)
 tests_dir = os.path.join(git_dir, "tests")
+conf_dir = os.path.join(src_dir, "configs")
 os.makedirs(tests_dir, exist_ok=True)
 
 
@@ -33,9 +34,11 @@ run_figs = [None]
 
 def set_run(prj_figs, run):
     global run_figs
-
+    cfg = OmegaConf.load(f"{prj_figs}/config.yaml")
     run_figs = os.path.join(prj_figs, run)
     os.makedirs(run_figs, exist_ok=True)
+    OmegaConf.save(cfg, f"{run_figs}/config.yaml")
+    OmegaConf.save(cfg, f"{conf_dir}/config_{run}.yaml")
 
     return run_figs
 
