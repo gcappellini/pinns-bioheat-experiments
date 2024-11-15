@@ -29,7 +29,7 @@ Ty20 = cfg.model_properties.Ty20
 Ty30 = cfg.model_properties.Ty30
 dT = (Tmax-Troom)
 
-K = cfg.model_properties.K
+alfa = cfg.model_properties.alfa
 b2 = cfg.model_properties.b2
 
 # Accessing model parameters from the config
@@ -54,21 +54,23 @@ def rescale_t(t):
 "coefficients a1, a2, a3, a4, a5"
 
 a1 = round((L0**2/tauf)*((rho*c)/k), 7)
-a2 = round(L0**2*c/k, 7)
+a2 = round(L0**2*rho*c/k, 7)
 cc = np.log(2)/(PD - 10**(-2)*x0)
 # cc = 16
 a3 = round(pwr_fact*rho*L0**2*beta*SAR_0*np.exp(cc*x0)/k*dT, 7)
 a4 = round(cc*L0, 7)
 a5 = round(L0*h/k, 7)
+K = alfa*L0
 
 
 eta = np.where(K>=(np.pi**2)/4, (np.pi**2)/4, K)
 
-decay_rate_exact= 2*(eta/a1+W_sys*a2/a1)
-
+decay_rate_exact= (eta/a1+W_sys*a2/a1)
 
 
 c_0 = (np.abs(W_obs*a2/a1 - W_sys*a2/a1)**2)/(eta/a1 + W_obs*a2/a1)**2
 
 decay_rate_diff= (eta/a1+W_obs*a2/a1)/2
+
+print(decay_rate_exact)
 

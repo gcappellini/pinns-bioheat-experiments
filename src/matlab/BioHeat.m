@@ -17,7 +17,7 @@ n_obs = config_data.model_parameters.n_obs;
 L0 = config_data.model_properties.L0;
 tauf = config_data.model_properties.tauf;
 k = config_data.model_properties.k;
-K = config_data.model_properties.K;
+alfa = config_data.model_properties.alfa;
 rho = config_data.model_properties.rho;
 cp = config_data.model_properties.c;
 t_room = config_data.model_properties.Troom;
@@ -77,10 +77,11 @@ dT = t_max - t_room;
 
 % Compute constants a1, a2, a3
 a1 = (L0^2/tauf)*(rho*cp/k);
-a2 = L0^2*cp/k;
+a2 = L0^2*rho*cp/k;
 a3 = pwr_fact*rho*(L0^2)*beta*SAR_0*exp(cc*x0)/k*dT;
 a4 = cc*L0;
 a5 = (h*L0)/k;
+K = alfa*L0;
 theta10 = (t_y10 - t_room)/(t_max - t_room);
 theta20 = (t_y20 - t_room)/(t_max - t_room);
 theta30 = (t_y30 - t_room)/(t_max - t_room);

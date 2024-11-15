@@ -11,7 +11,7 @@ model_properties:
   Ty10: 21.5
   Ty20: 32.0
   Ty30: 21.5
-  K: 4.6
+  alfa: 50
   activation: tanh
   initial_weights_regularizer: true
   initialization: Glorot normal
@@ -49,8 +49,8 @@ model_parameters:
   W5: 0.0021
   W6: 0.0026
   W7: 0.001207
-  W_sys: 6.3e-05
-  W_obs: 6.3e-05
+  W_sys: 0.003303
+  W_obs: 0.003303
   n_obs: 1
   gt1_0: 24.44
   gt2_0: 29.25
