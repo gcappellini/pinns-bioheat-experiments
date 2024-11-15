@@ -238,8 +238,6 @@ def create_nbho(run_figs):
     num_dense_nodes = config.model_properties.num_dense_nodes
     w_res, w_bc0, w_bc1, w_ic = config.model_properties.w_res, config.model_properties.w_bc0, config.model_properties.w_bc1, config.model_properties.w_ic
     num_domain, num_boundary, num_initial, num_test = config.model_properties.num_domain, config.model_properties.num_boundary, config.model_properties.num_initial, config.model_properties.num_test
-    # condition_bc0, tau_max = config.model_properties.condition_bc0, config.model_properties.tau_max
-    # loss_function = config.model_properties.loss_function
 
     a1 = cc.a1
     a2 = cc.a2
@@ -252,8 +250,6 @@ def create_nbho(run_figs):
 
 
     def pde(x, theta):
-        # dtheta_tau = dde.grad.jacobian(theta, x, i=0, j=4)
-        # dtheta_tau = dde.grad.jacobian(theta, x, i=0, j=3)
         dtheta_tau = dde.grad.jacobian(theta, x, i=0, j=2)
         dtheta_xx = dde.grad.hessian(theta, x, i=0, j=0)
 
@@ -1140,7 +1136,7 @@ def run_matlab_ground_truth(prj_figs):
     bound = {"grid": X, "theta": y_bound, "label": "bound"}
 
     pp.plot_multiple_series([system_gt, observer_gt], prj_figs)
-    pp.plot_l2(system_gt, [observer_gt, theory, bound], prj_figs)
+    pp.plot_l2(system_gt, [observer_gt, theory, bound], prj_figs, rescale=False)
 
     # if n_obs==1:
         # pp.plot_tf_matlab_1obs(X, y_sys, y_observers, prj_figs)

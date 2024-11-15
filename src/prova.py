@@ -11,8 +11,5 @@ git_dir = os.path.dirname(src_dir)
 tests_dir = os.path.join(git_dir, "tests")
 os.makedirs(tests_dir, exist_ok=True)
 
-conf = OmegaConf.load(f"{src_dir}/config.yaml")
-x = np.linspace(0, 1, num=100)
-
-print(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
+print(0.14*np.exp(-1))
 

@@ -14,17 +14,9 @@ os.makedirs(tests_dir, exist_ok=True)
 def main(cfg: DictConfig):
 
     uu.initialize_run(cfg)
-    # subprocess.run(["python", f'{src_dir}/ic_compatibility.py'])
-    subprocess.run(["python", f'{src_dir}/simulation.py'])
+    subprocess.run(["python", f'{src_dir}/ic_compatibility.py'])
+    # subprocess.run(["python", f'{src_dir}/simulation.py'])
 
-    # if cfg.experiment.import_data:
-    #     subprocess.run(["python", f'{src_dir}/import_data.py'])
-
-    # if cfg.experiment.simulation: 
-    #     subprocess.run(["python", f'{src_dir}/simulation.py'])
-
-    # if experiment[1].startswith("meas_"):    
-    #     subprocess.run(["python", f'{src_dir}/measurements.py'])
 
 
 if __name__ == "__main__":

@@ -72,5 +72,4 @@ c_0 = (np.abs(W_obs*a2/a1 - W_sys*a2/a1)**2)/(eta/a1 + W_obs*a2/a1)**2
 
 decay_rate_diff= (eta/a1+W_obs*a2/a1)/2
 
-print(decay_rate_exact)
 

@@ -24,10 +24,10 @@ conf = OmegaConf.load(f"{conf_dir}/config_run.yaml")
 output_dir = conf.output_dir
 x = np.linspace(0, 1, num=100)
 
-K = conf.model_properties.K
+# K = conf.model_properties.K
 
-b1_0= 6.3
-b2_0= 0.9
+b1_0= 4.0
+b2_0= 0.7
 y1_0, y2_0, y3_0 = scale_t(Ty10), scale_t(Ty20), scale_t(Ty30)
 
 dim_b1 = Real(low=0.0, high=10.0, name="b1")
@@ -38,7 +38,7 @@ dimensions = [
     dim_b2
 ]
 
-# iters_history = {}
+iters_history = {}
 
 @use_named_args(dimensions=dimensions)
 def fitness(b1, b2):
@@ -93,46 +93,46 @@ def fitness(b1, b2):
 #         file.write(f"{field}: {value}\n")
 
 # print(fitness(4.9149, 0.3540))
-# ITERATION = 0
 
-# bounds = [(0, 10), (0, 1)]
-# result = minimize(fitness, [b1_0, b2_0], bounds=bounds, method='L-BFGS-B')
+ITERATION = 0
+bounds = [(0, 10), (0, 1)]
+result = minimize(fitness, [b1_0, b2_0], bounds=bounds, method='L-BFGS-B', tol=1e-4)
 
-# print("x^*=(%.4f, %.4f) f(x^*)=%.4f" % (result.x[0], result.x[1], result.fun))
+print("x^*=(%.4f, %.4f) f(x^*)=%.4f" % (result.x[0], result.x[1], result.fun))
 
-# file_path = os.path.join(output_dir, 'results_ic.txt')
-# with open(file_path, 'w') as file:
-#     file.write("Optimization Results:\n")
-#     file.write(f"Optimal values of x and y: {result.x}\n")
-#     file.write(f"Minimum value of the function: {result.fun}\n")
-#     file.write(f"Gradients at optimal point (computed automatically): {result.jac}\n")
-#     file.write(f"Number of function evaluations: {result.nfev}\n")
-#     file.write(f"Number of gradient evaluations: {result.njev}\n")
+file_path = os.path.join(output_dir, 'results_ic.txt')
+with open(file_path, 'w') as file:
+    file.write("Optimization Results:\n")
+    file.write(f"Optimal values of x and y: {result.x}\n")
+    file.write(f"Minimum value of the function: {result.fun}\n")
+    file.write(f"Gradients at optimal point (computed automatically): {result.jac}\n")
+    file.write(f"Number of function evaluations: {result.nfev}\n")
+    file.write(f"Number of gradient evaluations: {result.njev}\n")
 
-#         # Write the iteration history
-#     # file.write("\nIteration History:\n")
-# file_path = os.path.join(output_dir, 'history.txt')
-# with open(file_path, 'w') as file:    
-#     for iteration, data in iters_history.items():
-#         file.write(f"{iteration}, {data['b1']}, {data['b2']}, {data['fitness']}\n")
+        # Write the iteration history
+    # file.write("\nIteration History:\n")
+file_path = os.path.join(output_dir, 'history.txt')
+with open(file_path, 'w') as file:    
+    for iteration, data in iters_history.items():
+        file.write(f"{iteration}, {data['b1']}, {data['b2']}, {data['fitness']}\n")
 
 
-# print("Optimal values of x and y:", result.x)
-# print("Minimum value of the function:", result.fun)
-# print("Gradients at optimal point (computed automatically):", result.jac)
-# print("Number of function evaluations:", result.nfev)
-# print("Number of gradient evaluations:", result.njev)
+print("Optimal values of x and y:", result.x)
+print("Minimum value of the function:", result.fun)
+print("Gradients at optimal point (computed automatically):", result.jac)
+print("Number of function evaluations:", result.nfev)
+print("Number of gradient evaluations:", result.njev)
 
-iters_history_arr = np.loadtxt(f"{git_dir}/outputs/2024-11-13/14-34-12/history.txt", dtype="float64", delimiter=",")
-iters_history_arr_filtered = iters_history_arr#[iters_history_arr[:, 3]<=50]
-iters_history = {
-    int(row[0]): {
-        "b1": row[1],
-        "b2": row[2],
-        "fitness": row[3]
-    }
-    for row in iters_history_arr_filtered
-}
+# iters_history_arr = np.loadtxt(f"{git_dir}/outputs/2024-11-13/14-34-12/history.txt", dtype="float64", delimiter=",")
+# iters_history_arr_filtered = iters_history_arr#[iters_history_arr[:, 3]<=50]
+# iters_history = {
+#     int(row[0]): {
+#         "b1": row[1],
+#         "b2": row[2],
+#         "fitness": row[3]
+#     }
+#     for row in iters_history_arr_filtered
+# }
 iterations = list(iters_history.keys())  # Get iteration numbers (or use a sequence of values)
 fitness_values = [data["fitness"] for data in iters_history.values()]
 

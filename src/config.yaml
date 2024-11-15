@@ -35,8 +35,8 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b1: 2.0789
-  b2: 1.0
+  b1: 4.056743848794146
+  b2: 0.39797889447834417
   direct: false
 model_parameters:
   lam: 50
@@ -49,8 +49,8 @@ model_parameters:
   W5: 0.0021
   W6: 0.0026
   W7: 0.001207
-  W_sys: 0.003303
-  W_obs: 0.003303
+  W_sys: 6.3e-05
+  W_obs: 6.3e-05
   n_obs: 1
   gt1_0: 24.44
   gt2_0: 29.25
@@ -323,4 +323,4 @@ experiment:
       y3_0: 23.26
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-14/12-28-57
+output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-15/16-50-43

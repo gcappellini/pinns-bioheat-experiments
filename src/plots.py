@@ -561,7 +561,7 @@ def plot_multiple_series(series_data, prj_figs):
     save_and_close(fig, filename)
 
 
-def plot_l2(series_sys, series_data, folder):
+def plot_l2(series_sys, series_data, folder, rescale=None):
     """
     Plot L2 norm of prediction errors for true and predicted values.
     
@@ -610,9 +610,9 @@ def plot_l2(series_sys, series_data, folder):
         ll2.append(l2)
 
 
-    rescale = conf.plot.rescale
+    rescale = conf.plot.rescale if rescale==None else rescale
     _, xlabel, _ = uu.get_scaled_labels(rescale)
-    t_vals_plot = uu.rescale_time(t_vals) if rescale else t_vals
+    t_vals_plot = np.array(uu.rescale_time(t_vals)) if rescale else np.array(t_vals)
     ll2 = np.array(ll2)
     ll2 = ll2.reshape(len(series_data), len(t_pred))
     t_vals_plot = t_vals_plot.reshape(len(series_data), len(t_pred))
