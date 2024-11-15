@@ -499,14 +499,12 @@ def plot_multiple_series(series_data, prj_figs):
     """
     Generalized plot function for multiple series at specified time instants.
     
-    :param series_data: List of dictionaries, each with keys: 'grid', 'all_preds', 'label'.
+    :param series_data: List of dictionaries, each with keys: 'grid', 'theta', 'label'.
                         Each dictionary contains:
                           - 'grid': Array with shape (N, 2) containing x and t values.
                           - 'theta': Array of predicted/true values corresponding to 'grid'.
                           - 'label': String indicating the type (e.g., "system", "observer", "multi_obs", etc.).
-    :param t_vals: List of time instants at which to plot.
     :param prj_figs: Directory to save the figure.
-    :param rescale: Boolean indicating if the data should be rescaled for plotting.
     """
     t_vals = [0, 0.25, 0.51, 0.75, 1]
     fig, axes = plt.subplots(1, len(t_vals), figsize=(15, 5))
@@ -516,9 +514,13 @@ def plot_multiple_series(series_data, prj_figs):
     rescale = conf.plot.rescale
     plot_params = uu.get_plot_params(conf)
     
+    all_y_values = []  # Collect all y-values across all subplots for global scaling
+    y_limits_per_subplot = []  # Store individual y-limits for each subplot
+
     # Loop through each time instant and create individual subplots
     for i, tx in enumerate(t_vals):
-        # Process each data series in the series_data list
+        subplot_y_values = []  # Track y-values for the current subplot
+        
         for series in series_data:
             grid = series['grid']
             values = series['theta']
@@ -539,9 +541,17 @@ def plot_multiple_series(series_data, prj_figs):
             x_vals_plot = uu.rescale_x(x_vals) if rescale else x_vals
             values_plot = uu.rescale_t(values_tx) if rescale else values_tx
             
+            # Collect y-values for scaling
+            subplot_y_values.extend(values_plot)
+            all_y_values.extend(values_plot)
+            
             # Plot the series on the current subplot
             axes[i].plot(x_vals_plot, values_plot, label=plot_params[label]["label"],
                          color=color, linestyle=linestyle, linewidth=linewidth, alpha=alpha)
+        
+        # Compute y-limits for this subplot
+        subplot_y_min, subplot_y_max = min(subplot_y_values), max(subplot_y_values)
+        y_limits_per_subplot.append((subplot_y_min, subplot_y_max))
         
         # Set time, labels, and title for each subplot
         time = uu.rescale_time(tx) if rescale else tx
@@ -556,8 +566,21 @@ def plot_multiple_series(series_data, prj_figs):
         axes[i].set_title(title, fontweight='bold')
         axes[i].grid(True)
     
+    # Determine global margins based on all data
+    global_y_min, global_y_max = min(all_y_values), max(all_y_values)
+    global_margin = 0.1 * (global_y_max - global_y_min)  # 10% margin
+    
+    # Apply adjusted limits with margin to each subplot
+    for i, (subplot_y_min, subplot_y_max) in enumerate(y_limits_per_subplot):
+        # Expand subplot's limits to include a margin based on global extrema
+        margin = 1.5 * (subplot_y_max - subplot_y_min)  # Local margin for visibility
+        adjusted_y_min = max(global_y_min, subplot_y_min - margin)
+        adjusted_y_max = min(global_y_max, subplot_y_max + margin)
+        axes[i].set_ylim(adjusted_y_min, adjusted_y_max)
+    
     # Save and close figure
     filename = f"{prj_figs}/combined_plot.png"
+    fig.tight_layout()  # Adjust layout for better spacing
     save_and_close(fig, filename)
 
 

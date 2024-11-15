@@ -31,6 +31,7 @@ models = os.path.join(git_dir, "models")
 os.makedirs(models, exist_ok=True)
 
 f1, f2, f3 = [None]*3
+n_digits = 6
 
 
 def get_initial_loss(model):
@@ -558,7 +559,7 @@ def scale_t(t):
     Tmax = properties.model_properties.Tmax
     k = (t - Troom) / (Tmax - Troom)
 
-    return round(k, 4)
+    return round(k, n_digits)
 
 def rescale_t(theta):
     properties = OmegaConf.load(f"{src_dir}/config.yaml")
@@ -570,13 +571,13 @@ def rescale_t(theta):
     if isinstance(theta, (int, float)):
         part = np.array(theta, dtype=float)  # Ensure each part is converted into a numpy array
         rescaled_part = Troom + (Tmax - Troom) * part  # Apply the rescaling
-        rescaled_theta.append(np.round(rescaled_part, 2)) 
+        rescaled_theta.append(np.round(rescaled_part, n_digits)) 
 
     else:
         for part in theta:
             part = np.array(part, dtype=float)  # Ensure each part is converted into a numpy array
             rescaled_part = Troom + (Tmax - Troom) * part  # Apply the rescaling
-            rescaled_theta.append(np.round(rescaled_part, 2))  # Round and append each rescaled part
+            rescaled_theta.append(np.round(rescaled_part, n_digits))  # Round and append each rescaled part
     return rescaled_theta
 
 def rescale_x(X):
@@ -605,7 +606,7 @@ def scale_time(t):
     tauf = properties.model_properties.tauf
     j = t/tauf
 
-    return np.round(j, 4)
+    return np.round(j, n_digits)
 
 def get_tc_positions():
     daa = OmegaConf.load(f"{src_dir}/config.yaml")
@@ -885,10 +886,10 @@ def check_system_and_wandb_upload(tot_true, tot_pred, conf, run_figs, comparison
 def get_system_pred(model, X, output_dir):
     preds = [X[:, 0], X[:, -1]]
     y_sys_pinns = model.predict(X)
-    data_to_save = np.column_stack((X[:, 0].round(2), X[:, -1].round(2), y_sys_pinns.round(4)))
+    data_to_save = np.column_stack((X[:, 0].round(n_digits), X[:, -1].round(n_digits), y_sys_pinns.round(n_digits)))
     np.savetxt(f'{output_dir}/prediction_system.txt', data_to_save, fmt='%.2f %.2f %.4f', delimiter=' ') 
 
-    preds = np.array(data_to_save).reshape(len(preds[0]), 3).round(4)
+    preds = np.array(data_to_save).reshape(len(preds[0]), 3).round(n_digits)
     return preds
 
 
@@ -899,10 +900,10 @@ def get_observers_preds(multi_obs, x_obs, output_dir, conf):
         obs_pred = multi_obs.predict(x_obs)
         obs_pred = obs_pred.reshape(len(obs_pred),)
         run_figs = os.path.join(output_dir, f"obs_0")
-        data_to_save = np.column_stack((x_obs[:, 0].round(2), x_obs[:, -1].round(2), obs_pred.round(4)))
+        data_to_save = np.column_stack((x_obs[:, 0].round(n_digits), x_obs[:, -1].round(n_digits), obs_pred.round(n_digits)))
         np.savetxt(f'{run_figs}/prediction_obs_0.txt', data_to_save, fmt='%.2f %.2f %.4f', delimiter=' ') 
         preds.append(obs_pred)
-        preds = np.array(preds).reshape(3, len(preds[0])).round(4)
+        preds = np.array(preds).reshape(3, len(preds[0])).round(n_digits)
         OmegaConf.save(conf, f"{run_figs}/config.yaml")
         return preds.T
 
@@ -911,7 +912,7 @@ def get_observers_preds(multi_obs, x_obs, output_dir, conf):
             obs_pred = multi_obs[el].predict(x_obs)
             run_figs = os.path.join(output_dir, f"obs_{el}")
             obs_pred = obs_pred.reshape(len(obs_pred),)
-            data_to_save = np.column_stack((x_obs[:, 0].round(2), x_obs[:, -1].round(2), obs_pred.round(4)))
+            data_to_save = np.column_stack((x_obs[:, 0].round(n_digits), x_obs[:, -1].round(n_digits), obs_pred.round(n_digits)))
             np.savetxt(f'{run_figs}/prediction_obs_{el}.txt', data_to_save, fmt='%.2f %.2f %.4f', delimiter=' ')
             preds.append(obs_pred)
 
@@ -920,7 +921,7 @@ def get_observers_preds(multi_obs, x_obs, output_dir, conf):
         OmegaConf.save(conf, f"{run_figs}/config.yaml")
         mm_pred = solve_ivp(multi_obs, run_figs, conf, x_obs)
         preds.append(mm_pred)
-        preds = np.array(preds).reshape(len(multi_obs)+3, len(preds[0])).round(4)
+        preds = np.array(preds).reshape(len(multi_obs)+3, len(preds[0])).round(n_digits)
         return preds.T
 
 
@@ -1077,7 +1078,7 @@ def solve_ivp(multi_obs, fold, conf, x_obs):
     np.save(f'{fold}/weights_l_{lam}_u_{ups}.npy', weights)
     pp.plot_weights(weights[1:], weights[0], fold, conf)
     y_pred = mm_predict(multi_obs, x_obs, fold)
-    data_to_save = np.column_stack((x_obs[:, 0].round(2), x_obs[:, -1].round(2), y_pred.round(4)))
+    data_to_save = np.column_stack((x_obs[:, 0].round(n_digits), x_obs[:, -1].round(n_digits), y_pred.round(n_digits)))
     np.savetxt(f'{fold}/prediction_mm_obs.txt', data_to_save, fmt='%.2f %.2f %.4f', delimiter=' ')
     return y_pred
 
@@ -1393,7 +1394,7 @@ def extract_matching(tot_true, tot_pred):
     
     xs = np.unique(tot_true[:, 0])
     filtered_true=[]
-    tot_true[:, 1] = tot_true[:, 1].round(2)
+    tot_true[:, 1] = tot_true[:, 1].round(n_digits)
     for el in np.unique(tot_true[:, 1]):
         for i in range(len(xs)):
             el_pred = tot_true[tot_true[:, 1]==el][i]

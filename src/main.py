@@ -14,8 +14,8 @@ os.makedirs(tests_dir, exist_ok=True)
 def main(cfg: DictConfig):
 
     uu.initialize_run(cfg)
-    subprocess.run(["python", f'{src_dir}/ic_compatibility.py'])
-    # subprocess.run(["python", f'{src_dir}/simulation.py'])
+    # subprocess.run(["python", f'{src_dir}/ic_compatibility.py'])
+    subprocess.run(["python", f'{src_dir}/simulation.py'])
 
 
 
