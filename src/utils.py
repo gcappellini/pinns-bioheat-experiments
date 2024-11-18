@@ -194,7 +194,7 @@ def ic_obs(x):
         z = x[:, 0:1] 
 
     conf = OmegaConf.load(f"{src_dir}/config.yaml")
-    K = conf.model_properties.K
+    K = cc.K
 
     b1 = conf.model_properties.b1
     b2 = conf.model_properties.b2
@@ -245,7 +245,7 @@ def create_nbho(run_figs):
     a3 = cc.a3
     a4 = cc.a4
     a5 = cc.a5
-    K = config.model_properties.K
+    K = cc.K
     W = config.model_properties.W
 
 
@@ -684,6 +684,7 @@ def import_obsdata(nam, extended = True):
 def mm_observer(config):
 
     n_obs = config.model_parameters.n_obs
+    out_dir = config.output_dir
 
     if n_obs==8:
         W0, W1, W2, W3, W4, W5, W6, W7 = config.model_parameters.W0, config.model_parameters.W1, config.model_parameters.W2, config.model_parameters.W3, config.model_parameters.W4, config.model_parameters.W5, config.model_parameters.W6, config.model_parameters.W7
@@ -693,10 +694,9 @@ def mm_observer(config):
         obs = np.array([W0, W1, W2])
 
     if n_obs==1:
-        W = config.model_parameters.W4
+        W = config.model_parameters.W_obs
         config.model_properties.W = float(W)
-        run_figs = co.set_run(f"obs_0")    
-        OmegaConf.save(config, f"{run_figs}/config.yaml")   
+        run_figs = co.set_run(out_dir, f"obs_0")    
         return train_model(run_figs)
 
     multi_obs = []
@@ -795,14 +795,14 @@ def check_observers_and_wandb_upload(tot_true, tot_pred, conf, output_dir, compa
         label = f"obs_{el}"
 
         # tot_obs_pred = np.vstack((tot_pred[0], tot_pred[1], pred)).T
-        run_figs = os.path.join(output_dir, label)
+        # run_figs = os.path.join(output_dir, label)
 
         # if run_wandb:
         #     aa = OmegaConf.load(f"{run_figs}/config.yaml")
         #     print(f"Initializing wandb for observer {el}...")
         #     wandb.init(project=name, name=label, config=aa)
                 
-        pp.plot_validation_3d(tot_true[:, 0:2], tot_true[:, -1], tot_pred[:, -1], run_figs)
+        pp.plot_validation_3d(tot_true[:, 0:2], tot_true[:, -1], tot_pred[:, -1], output_dir)
         observers = {
         "grid": tot_pred[:, :2],
         "theta": tot_pred[:, -1],
@@ -820,6 +820,8 @@ def check_observers_and_wandb_upload(tot_true, tot_pred, conf, output_dir, compa
             "theta": tot_true[:, 2],
             "label": "system_gt",
         }
+        run_figs = output_dir
+        # os.makedirs(run_figs, exist_ok=True)
         pp.plot_multiple_series([observers, observers_gt, system_gt], run_figs)
         pp.plot_l2(system_gt, [observers, observers_gt], run_figs)
         matching = extract_matching(tot_true, tot_pred)
@@ -888,12 +890,12 @@ def get_observers_preds(multi_obs, x_obs, output_dir, conf):
     if n_obs==1:
         obs_pred = multi_obs.predict(x_obs)
         obs_pred = obs_pred.reshape(len(obs_pred),)
-        run_figs = os.path.join(output_dir, f"obs_0")
+        # run_figs = os.path.join(output_dir, f"obs_0")
         data_to_save = np.column_stack((x_obs[:, 0].round(n_digits), x_obs[:, -1].round(n_digits), obs_pred.round(n_digits)))
-        np.savetxt(f'{run_figs}/prediction_obs_0.txt', data_to_save, fmt='%.2f %.2f %.4f', delimiter=' ') 
+        np.savetxt(f'{output_dir}/prediction_obs_0.txt', data_to_save, fmt='%.2f %.2f %.4f', delimiter=' ') 
         preds.append(obs_pred)
         preds = np.array(preds).reshape(3, len(preds[0])).round(n_digits)
-        OmegaConf.save(conf, f"{run_figs}/config.yaml")
+        OmegaConf.save(conf, f"{output_dir}/config.yaml")
         return preds.T
 
     else:

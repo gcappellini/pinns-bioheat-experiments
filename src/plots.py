@@ -392,7 +392,6 @@ def plot_validation_3d(e, t_true, t_pred, run_figs, system=False):
     # Column titles for each subplot
     col_titles = ["MATLAB", "PINNs", "Error"] 
 
-    conf = OmegaConf.load(f"{run_figs}/config.yaml")
     rescale = conf.plot.rescale
     n = conf.model_parameters.n_obs
 
