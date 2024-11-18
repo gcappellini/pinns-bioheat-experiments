@@ -25,17 +25,17 @@ def main():
         output_dir = co.set_run(out_dir, f"ground_truth")
         uu.run_matlab_ground_truth(output_dir)
 
-    # if config.experiment.check_system:
-    #     config.model_properties.W = config.model_parameters.W_sys
-    #     config.model_properties.direct = True
+    if config.experiment.check_system:
+        config.model_properties.W = config.model_parameters.W_sys
+        config.model_properties.direct = True
         
-    #     output_dir = co.set_run(out_dir, "simulation_system")
+        output_dir = co.set_run(out_dir, "simulation_system")
 
-    #     pinns_sys = uu.train_model(output_dir, system=True)
+        pinns_sys = uu.train_model(output_dir, system=True)
         
-    #     tot_true = uu.gen_testdata(config)
-    #     y_sys_pinns = uu.get_system_pred(pinns_sys, tot_true[:, 0:2], output_dir)
-    #     uu.check_system_and_wandb_upload(tot_true[:, :3], y_sys_pinns, config, output_dir)
+        tot_true = uu.gen_testdata(config)
+        y_sys_pinns = uu.get_system_pred(pinns_sys, tot_true[:, 0:2], output_dir)
+        uu.check_system_and_wandb_upload(tot_true[:, :3], y_sys_pinns, config, output_dir)
 
     # x_obs = uu.gen_obsdata(config)
     # n_obs = config.model_parameters.n_obs

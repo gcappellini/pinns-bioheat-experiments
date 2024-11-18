@@ -48,7 +48,7 @@ def plot_generic(x, y, title, xlabel, ylabel, legend_labels=None, log_scale=Fals
     # Plot each line with its corresponding x, y values, color, and linestyle
     for i, (xi, yi) in enumerate(zip(x, y)):
         label = legend_labels[i] if isinstance(legend_labels, list) and legend_labels else (legend_labels if legend_labels else None)
-        color = colors[i] if isinstance(colors, list) and colors else (colors if colors else None)  # Use provided colors or default
+        color = colors[i] if isinstance(colors, list) and colors else None  # Use provided colors or default
         linestyle = linestyles[i] if isinstance(linestyles, list) and linestyles else (linestyles if linestyles else '-')  # Default to solid line
         linewidth = linewidths[i] if isinstance(linewidths, list) and linewidths else (linewidths if linewidths else 1.2)
         marker = markers[i] if isinstance(markers, list) and markers else (markers if markers else None)
@@ -515,12 +515,10 @@ def plot_multiple_series(series_data, prj_figs):
     rescale = conf.plot.rescale
     plot_params = uu.get_plot_params(conf)
     
-    all_y_values = []  # Collect all y-values across all subplots for global scaling
-    y_limits_per_subplot = []  # Store individual y-limits for each subplot
+    lims = []  # Store the scale (range) for each subplot
 
     # Loop through each time instant and create individual subplots
     for i, tx in enumerate(t_vals):
-        subplot_y_values = []  # Track y-values for the current subplot
         
         for series in series_data:
             grid = series['grid']
@@ -542,17 +540,9 @@ def plot_multiple_series(series_data, prj_figs):
             x_vals_plot = uu.rescale_x(x_vals) if rescale else x_vals
             values_plot = uu.rescale_t(values_tx) if rescale else values_tx
             
-            # Collect y-values for scaling
-            subplot_y_values.extend(values_plot)
-            all_y_values.extend(values_plot)
-            
             # Plot the series on the current subplot
             axes[i].plot(x_vals_plot, values_plot, label=plot_params[label]["label"],
                          color=color, linestyle=linestyle, linewidth=linewidth, alpha=alpha)
-        
-        # Compute y-limits for this subplot
-        subplot_y_min, subplot_y_max = min(subplot_y_values), max(subplot_y_values)
-        y_limits_per_subplot.append((subplot_y_min, subplot_y_max))
         
         # Set time, labels, and title for each subplot
         time = uu.rescale_time(tx) if rescale else tx
@@ -566,18 +556,18 @@ def plot_multiple_series(series_data, prj_figs):
             axes[i].legend(loc='best')
         axes[i].set_title(title, fontweight='bold')
         axes[i].grid(True)
-    
-    # Determine global margins based on all data
-    global_y_min, global_y_max = min(all_y_values), max(all_y_values)
-    global_margin = 0.1 * (global_y_max - global_y_min)  # 10% margin
-    
-    # Apply adjusted limits with margin to each subplot
-    for i, (subplot_y_min, subplot_y_max) in enumerate(y_limits_per_subplot):
-        # Expand subplot's limits to include a margin based on global extrema
-        margin = 1.5 * (subplot_y_max - subplot_y_min)  # Local margin for visibility
-        adjusted_y_min = max(global_y_min, subplot_y_min - margin)
-        adjusted_y_max = min(global_y_max, subplot_y_max + margin)
-        axes[i].set_ylim(adjusted_y_min, adjusted_y_max)
+        lims.append(axes[i].get_ylim())
+
+    scales = []
+    # Apply adjusted limits with harmonized scales to each subplot
+    for i, (y_min, y_max) in enumerate(lims):
+        scales.append(y_max-y_min)
+
+    max_scale = np.max(scales)
+    for i, scale in enumerate(scales):
+        if scale<=max_scale/20:
+            scales[i]=max_scale/20
+        axes[i].set_ylim(y_min, y_min + scales[i])
     
     # Save and close figure
     filename = f"{prj_figs}/combined_plot.png"

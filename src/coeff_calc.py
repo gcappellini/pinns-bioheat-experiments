@@ -7,7 +7,7 @@ current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
 
 conf_dir = os.path.join(src_dir, "configs")
-cfg = OmegaConf.load(f"{conf_dir}/config_run.yaml")
+cfg = OmegaConf.load(f"{src_dir}/config.yaml")
 
 L0 = cfg.model_properties.L0
 tauf = cfg.model_properties.tauf
@@ -67,9 +67,8 @@ eta = np.where(K>=(np.pi**2)/4, (np.pi**2)/4, K)
 
 decay_rate_exact= (eta/a1+W_sys*a2/a1)
 
-
 c_0 = (np.abs(W_obs*a2/a1 - W_sys*a2/a1)**2)/(eta/a1 + W_obs*a2/a1)**2
 
 decay_rate_diff= (eta/a1+W_obs*a2/a1)/2
-
+# print(f"Wsys:{W_sys}, Wobs:{W_obs}, c0: {c_0}, decay exact:{decay_rate_exact}, decay diff:{decay_rate_diff}")
 

@@ -321,7 +321,7 @@ def create_nbho(run_figs):
 
     if initial_weights_regularizer:
         initial_losses = get_initial_loss(model)
-        loss_weights = (len(initial_losses)/ initial_losses)
+        loss_weights = [w_res, w_bc0, w_bc1, w_ic]*(len(initial_losses)/ initial_losses)
         config.model_parameters.loss_weights = loss_weights.tolist()
         # model.compile("adam", lr=learning_rate, loss_weights=loss_weights, loss=loss_function)
         model.compile("adam", lr=learning_rate, loss_weights=loss_weights)
@@ -405,7 +405,7 @@ def create_sys(run_figs):
 
     if initial_weights_regularizer:
         initial_losses = get_initial_loss(model)
-        loss_weights = (len(initial_losses)/ initial_losses)
+        loss_weights = [w_res, w_bc0, w_bc1, w_ic]*(len(initial_losses)/ initial_losses)
         config.model_parameters.loss_weights = loss_weights.tolist()
         model.compile("adam", lr=learning_rate, loss_weights=loss_weights)
     else:
