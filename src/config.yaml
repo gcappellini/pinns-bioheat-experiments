@@ -15,7 +15,7 @@ model_properties:
   activation: ELU
   initial_weights_regularizer: true
   initialization: He uniform
-  iterations: 1
+  iterations: 10000
   LBFGS: false
   learning_rate: 4.602124754177265e-06
   num_dense_layers: 2
