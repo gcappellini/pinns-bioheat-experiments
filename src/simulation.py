@@ -22,15 +22,17 @@ def main():
     out_dir = config.output_dir
 
     if config.experiment.run_matlab:
-        output_dir = co.set_run(out_dir, f"ground_truth")
+        conf = co.filter_config_for_matlab(config)
+        output_dir = co.set_run(out_dir, conf, f"ground_truth")
         uu.run_matlab_ground_truth(output_dir)
 
     tot_true = uu.gen_testdata(config)
+
     if config.experiment.check_system:
         config.model_properties.W = config.model_parameters.W_sys
         config.model_properties.direct = True
         
-        output_dir = co.set_run(out_dir, "simulation_system")
+        output_dir = co.set_run(out_dir, config, "simulation_system")
 
         pinns_sys = uu.train_model(output_dir, system=True)
         
@@ -38,16 +40,19 @@ def main():
         y_sys_pinns = uu.get_system_pred(pinns_sys, tot_true[:, 0:2], output_dir)
         uu.check_system_and_wandb_upload(tot_true[:, :3], y_sys_pinns, config, output_dir)
 
-    x_obs = uu.gen_obsdata(config)
-    # n_obs = config.model_parameters.n_obs
+
+    
+    n_obs = config.model_parameters.n_obs
     config.model_properties.direct = False
-    # output_dir = co.set_run(out_dir, f"simulation_{n_obs}obs")
+    output_dir = co.set_run(out_dir, config, f"simulation_{n_obs}obs")
+    
 
     # Generate and check observers if needed
     multi_obs = uu.mm_observer(config)
 
-    tot_pred = uu.get_observers_preds(multi_obs, x_obs, out_dir, config)
-    uu.check_observers_and_wandb_upload(tot_true, tot_pred, config, out_dir)
+    x_obs = uu.gen_obsdata(config)
+    tot_pred = uu.get_observers_preds(multi_obs, x_obs, output_dir, config)
+    uu.check_observers_and_wandb_upload(tot_true, tot_pred, config, output_dir)
 
     # if n_obs>1:
     #     run_figs = co.set_run(f"mm_obs")

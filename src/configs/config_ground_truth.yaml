@@ -15,7 +15,7 @@ model_properties:
   activation: tanh
   initial_weights_regularizer: true
   initialization: Glorot normal
-  iterations: 1
+  iterations: 10000
   LBFGS: false
   learning_rate: 0.001
   num_dense_layers: 4
@@ -29,7 +29,7 @@ model_properties:
   w_res: 1
   w_bc0: 1
   w_bc1: 1
-  w_ic: 10
+  w_ic: 1
   beta: 0.9
   pwr_fact: 0.0
   SAR_0: 50.0
@@ -37,7 +37,7 @@ model_properties:
   x0: 0.001
   b1: 4.3424
   b2: 0.5053
-  direct: false
+  direct: true
 model_parameters:
   lam: 50
   upsilon: 50
@@ -59,8 +59,8 @@ model_parameters:
   x_gt1: 0.04
   x_y1: 0.07
   loss_weights:
-  - 0.048366133123636246
-  - 24.893394470214844
-  - 136.3924560546875
-  - 49.63640213012695
-output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-18/18-19-51
+  - 0.27703657746315
+  - 248.46188354492188
+  - 1580.208251953125
+  - 11.95880126953125
+output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-19/11-19-27

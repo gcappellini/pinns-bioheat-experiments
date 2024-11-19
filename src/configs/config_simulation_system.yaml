@@ -4,7 +4,7 @@ model_properties:
   k: 0.6
   rho: 1000.0
   c: 4186.0
-  W: 6.3e-05
+  W: 0.001651
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
@@ -29,7 +29,7 @@ model_properties:
   w_res: 1
   w_bc0: 1
   w_bc1: 1
-  w_ic: 18
+  w_ic: 1
   beta: 0.9
   pwr_fact: 0.0
   SAR_0: 50.0
@@ -37,7 +37,7 @@ model_properties:
   x0: 0.001
   b1: 4.3424
   b2: 0.5053
-  direct: false
+  direct: true
 model_parameters:
   lam: 50
   upsilon: 50
@@ -49,8 +49,8 @@ model_parameters:
   W5: 0.0021
   W6: 0.0026
   W7: 0.001207
-  W_sys: 6.3e-05
-  W_obs: 6.3e-05
+  W_sys: 0.001651
+  W_obs: 0.001651
   n_obs: 1
   gt1_0: 24.44
   gt2_0: 29.25
@@ -59,10 +59,10 @@ model_parameters:
   x_gt1: 0.04
   x_y1: 0.07
   loss_weights:
-  - 0.4455815851688385
+  - 0.27703657746315
   - 248.46188354492188
   - 1580.208251953125
-  - 119.5880126953125
+  - 11.95880126953125
 plot:
   rescale: true
   display_every: 500
@@ -323,4 +323,4 @@ experiment:
       y3_0: 23.26
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-18/17-32-05
+output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-19/11-14-17

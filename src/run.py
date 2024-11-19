@@ -12,10 +12,10 @@ conf_dir = os.path.join(src_dir, "configs")
 # cfg = OmegaConf.load(f"{conf_dir}/config_run.yaml")
 cfg = OmegaConf.load(f"{src_dir}/config.yaml")
 
-ks = [0.001207]
+ks = [6.3e-05, 0.001207, 0.001651, 0.003303]
 
 for WW in ks:
-    cfg.model_parameters.W_sys = WW
+    cfg.model_parameters.W_sys = 0.001651
     cfg.model_properties.W = WW
     cfg.model_parameters.W_obs = WW
     OmegaConf.save(cfg, f"{src_dir}/config.yaml")

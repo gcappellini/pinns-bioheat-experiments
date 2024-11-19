@@ -269,18 +269,11 @@ def create_nbho(run_figs):
         dtheta_hat_x = dde.grad.jacobian(theta_hat, x, i=0, j=0)
         y3 = 0
         y2 = x[:, 1:2]
-        flusso = a5 * (y2 - y3)
-        
-        # return - dtheta_x - a5 * (x[:, 3:4] - x[:, 2:3]) - K * (x[:, 2:3] - theta)
-        # return - dtheta_x + a5 * x[:, 2:3] - K * (x[:, 2:3] - theta)
-        # if condition_bc0=="dirichlet":
-        #     return theta_hat - y2
 
-        # if condition_bc0=="neumann":
-        #     return dtheta_hat_x - flusso
-        
-        # if condition_bc0=="robin":
-        return dtheta_hat_x/K - (flusso/K + (theta_hat - y2))
+        return dtheta_hat_x - K*theta_hat - (a5 - K)* y2 + a5 * y3
+
+
+        # return dtheta_hat_x - ((a5 - K) * y2 - a5* y3 + K*theta_hat)
 
     
     # xmin = [0, 0, 0, 0]
@@ -370,7 +363,7 @@ def create_sys(run_figs):
         y3 = scale_t(config.model_properties.Ty30)
         dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0)
 
-        return dtheta_x - a5 * (theta - y3)
+        return dtheta_x + a5 * (y3 - theta)
     
     def bc1_sys(x, theta, X):
 
@@ -685,6 +678,7 @@ def mm_observer(config):
 
     n_obs = config.model_parameters.n_obs
     out_dir = config.output_dir
+    simul_dir = os.path.join(out_dir, f"simulation_{n_obs}obs")
 
     if n_obs==8:
         W0, W1, W2, W3, W4, W5, W6, W7 = config.model_parameters.W0, config.model_parameters.W1, config.model_parameters.W2, config.model_parameters.W3, config.model_parameters.W4, config.model_parameters.W5, config.model_parameters.W6, config.model_parameters.W7
@@ -696,7 +690,8 @@ def mm_observer(config):
     if n_obs==1:
         W = config.model_parameters.W_obs
         config.model_properties.W = float(W)
-        run_figs = co.set_run(out_dir, f"obs_0")    
+        run_figs = co.set_run(simul_dir, config, "obs_0")
+  
         return train_model(run_figs)
 
     multi_obs = []
