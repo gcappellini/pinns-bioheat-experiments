@@ -14,12 +14,12 @@ model_properties:
   alfa: 50
   activation: tanh
   initial_weights_regularizer: true
-  initialization: Glorot normal
+  initialization: Glorot uniform
   iterations: 1
   LBFGS: false
-  learning_rate: 0.001
-  num_dense_layers: 4
-  num_dense_nodes: 50
+  learning_rate: 0.00161035359117982
+  num_dense_layers: 12
+  num_dense_nodes: 237
   num_domain: 400
   num_boundary: 240
   num_initial: 160

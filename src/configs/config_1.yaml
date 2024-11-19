@@ -12,14 +12,14 @@ model_properties:
   Ty20: 32.0
   Ty30: 21.5
   alfa: 50
-  activation: tanh
+  activation: ReLU
   initial_weights_regularizer: true
-  initialization: Glorot normal
+  initialization: He uniform
   iterations: 1
   LBFGS: false
-  learning_rate: 0.001
-  num_dense_layers: 4
-  num_dense_nodes: 50
+  learning_rate: 6.584140793623185e-06
+  num_dense_layers: 20
+  num_dense_nodes: 232
   num_domain: 400
   num_boundary: 240
   num_initial: 160

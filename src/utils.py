@@ -466,9 +466,9 @@ def train_and_save_model(model, callbacks, run_figs):
     return losshistory, model
 
 
-def gen_testdata(conf):
+def gen_testdata(conf, path=None):
     n = conf.model_parameters.n_obs
-    dir_name = conf.output_dir
+    dir_name = path if path is not None else conf.output_dir
     # if hpo:
     #     output_folder = f"{tests_dir}/cooling_simulation/ground_truth"
     # else:
@@ -514,10 +514,10 @@ def load_weights(conf):
     return t, np.array(weights)
 
 
-def gen_obsdata(conf):
+def gen_obsdata(conf, path=None):
     global f1, f2, f3
 
-    solution = gen_testdata(conf)
+    solution = gen_testdata(conf, path)
     g = solution[:, 0:3]
 
     # g = np.hstack((X, y_sys))

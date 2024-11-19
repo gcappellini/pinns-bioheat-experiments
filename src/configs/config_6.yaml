@@ -11,19 +11,19 @@ model_properties:
   Ty10: 21.5
   Ty20: 32.0
   Ty30: 21.5
-  K: 4.6
-  activation: tanh
+  alfa: 50
+  activation: GELU
   initial_weights_regularizer: true
-  initialization: Glorot normal
-  iterations: 10000
+  initialization: Glorot uniform
+  iterations: 1
   LBFGS: false
-  learning_rate: 0.001
-  num_dense_layers: 4
-  num_dense_nodes: 50
-  num_domain: 8000
-  num_boundary: 4800
-  num_initial: 3200
-  num_test: 20000
+  learning_rate: 0.18450228421641407
+  num_dense_layers: 15
+  num_dense_nodes: 111
+  num_domain: 400
+  num_boundary: 240
+  num_initial: 160
+  num_test: 1000
   resampling: true
   resampler_period: 100
   w_res: 1
@@ -35,20 +35,22 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b1: 4.9149
-  b2: 0.354
+  b1: 4.3424
+  b2: 0.5053
   direct: false
 model_parameters:
   lam: 50
   upsilon: 50
   W0: 6.3e-05
   W1: 0.0006
-  W2: 0.001207
+  W2: 0.003303
   W3: 0.0014
   W4: 0.001651
   W5: 0.0021
   W6: 0.0026
-  W7: 0.003303
+  W7: 0.001207
+  W_sys: 0.001651
+  W_obs: 0.001651
   n_obs: 1
   gt1_0: 24.44
   gt2_0: 29.25
@@ -57,14 +59,10 @@ model_parameters:
   x_gt1: 0.04
   x_y1: 0.07
   loss_weights:
-  - 1.7919344902038574
-  - 21.01804542541504
-  - 123.5656967163086
-  - 4.845438003540039
-output:
-  base_dir: ${hydra:runtime.output_dir}
-  save_figures: true
-output_dir: optim_ic
+  - 0.048366133123636246
+  - 2.032113552093506
+  - 136.3924560546875
+  - 4.963640213012695
 plot:
   rescale: true
   display_every: 500
@@ -154,6 +152,18 @@ plot:
       linestyle: --
       linewidth: 1.0
       alpha: 0.8
+    theory:
+      color: purple
+      label: Theory
+      linestyle: --
+      linewidth: 1.0
+      alpha: 1.0
+    bound:
+      color: chocolate
+      label: Bound
+      linestyle: -.
+      linewidth: 1.0
+      alpha: 1.0
     multi_observer_gt:
       color: gold
       label: MultiObs MATLAB
@@ -207,12 +217,10 @@ plot:
       - 0.7
       - 0.7
 experiment:
-  name:
-  - cooling
-  - simulation
   import_data: false
   save_pickle: false
   run_matlab: true
+  simulation: true
   run_wandb: false
   check_system: false
   type:
@@ -313,3 +321,6 @@ experiment:
       gt2_0: 23.73
       y2_0: 24.0
       y3_0: 23.26
+run:
+  dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-19/12-15-21
