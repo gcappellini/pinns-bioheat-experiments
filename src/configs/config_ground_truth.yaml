@@ -15,7 +15,7 @@ model_properties:
   activation: tanh
   initial_weights_regularizer: true
   initialization: He uniform
-  iterations: 10000
+  iterations: 2000
   LBFGS: false
   learning_rate: 0.00031596
   num_dense_layers: 4
@@ -59,8 +59,8 @@ model_parameters:
   x_gt1: 0.04
   x_y1: 0.07
   loss_weights:
-  - 0.0026642372831702232
-  - 0.5525102615356445
-  - 10.139838218688965
-  - 2.241417407989502
-output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-20/09-43-03
+  - 0.006289862096309662
+  - 2.0888912677764893
+  - 27.680763244628906
+  - 8.396754264831543
+output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-20/09-50-01

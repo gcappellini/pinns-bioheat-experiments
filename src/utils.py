@@ -186,201 +186,90 @@ def output_transform(x, y):
     return x[:, 0:1] * y
 
 
-def ic_obs(x):
-
-    if len(x.shape) == 1:
-        z = x 
-    else:
-        z = x[:, 0:1] 
-
-    conf = OmegaConf.load(f"{src_dir}/config.yaml")
-    K = cc.K
-
-    b1 = conf.model_properties.b1
-    b2 = conf.model_properties.b2
-
-    A = cc.a5*(scale_t(cc.Ty30 - cc.Ty20))
-    B = scale_t(cc.Ty20)
-    C = b2 - (A - K*B)/K
-    return ((A-K*B)/K+C*np.exp(K*z))*(1-z)**(b1)
-
-    # return (1-z**b1)*(np.exp(-50/(z+0.001))+b2)
-
+def create_model(run_figs):
+    """
+    Generalized function to create and configure a PDE solver model using DeepXDE.
     
-
-def ic_sys(x):
-
-    if len(x.shape) == 1:
-        z = x 
-    else:
-        z = x[:, 0:1] 
-
-    conf = OmegaConf.load(f"{src_dir}/config.yaml")
-
-    theta20 = scale_t(conf.model_properties.Ty20)
-    theta30 = scale_t(conf.model_properties.Ty30)
-
-    c_2 = cc.a5 * (theta30-theta20)
-    c_3 = theta20
-    c_1 = -c_2 -c_3
-
-    return c_1*z**2 + c_2*z + c_3
-    # return np.zeros_like(z)
-
-
-def create_nbho(run_figs):
+    :param run_figs: Path to the directory containing the configuration file.
+    :param direct: Boolean flag to configure the model as "sys" (direct=True) or "nbho" (direct=False).
+    :param src_dir: Optional source directory for saving the configuration.
+    :return: A compiled DeepXDE model.
+    """
+    # Load configuration
     config = OmegaConf.load(f'{run_figs}/config.yaml')
+    model_props = config.model_properties
+    model_pars = config.model_parameters
 
-    activation = config.model_properties.activation
-    initial_weights_regularizer = config.model_properties.initial_weights_regularizer
-    initialization = config.model_properties.initialization
-    learning_rate = config.model_properties.learning_rate
-    num_dense_layers = config.model_properties.num_dense_layers
-    num_dense_nodes = config.model_properties.num_dense_nodes
-    w_res, w_bc0, w_bc1, w_ic = config.model_properties.w_res, config.model_properties.w_bc0, config.model_properties.w_bc1, config.model_properties.w_ic
-    num_domain, num_boundary, num_initial, num_test = config.model_properties.num_domain, config.model_properties.num_boundary, config.model_properties.num_initial, config.model_properties.num_test
-
-    a1 = cc.a1
-    a2 = cc.a2
-    a3 = cc.a3
-    a4 = cc.a4
-    a5 = cc.a5
-    K = cc.K
-    W = config.model_properties.W
-
-
-
-    def pde(x, theta):
-        dtheta_tau = dde.grad.jacobian(theta, x, i=0, j=2)
-        dtheta_xx = dde.grad.hessian(theta, x, i=0, j=0)
-
-        return (
-            a1 * dtheta_tau
-            - dtheta_xx + W * a2 * theta - a3 * torch.exp(-a4*x[:, 0:1])
-        )
-    
-
-    def bc1_obs(x, theta, X):
-
-        # return theta - x[:, 1:2]
-        return theta - 0
-
-    def bc0_obs(x, theta_hat, X):
-        dtheta_hat_x = dde.grad.jacobian(theta_hat, x, i=0, j=0)
-        y3 = 0
-        y2 = x[:, 1:2]
-
-        return dtheta_hat_x - K*theta_hat - (a5 - K)* y2 + a5 * y3
-
-
-        # return dtheta_hat_x - ((a5 - K) * y2 - a5* y3 + K*theta_hat)
-
-    
-    # xmin = [0, 0, 0, 0]
-    # xmax = [1, 0.2, 1, 1]
-    # geom = dde.geometry.Hypercube(xmin, xmax)
-    # xmin = [0, 0, 0]
-    # xmax = [1, 0.2, 1]
-    xmin = [0, 0]
-    xmax = [1, 1]
-    geom = dde.geometry.Rectangle(xmin, xmax)
-    # timedomain = dde.geometry.TimeDomain(0, tau_max)
-    timedomain = dde.geometry.TimeDomain(0, 2)
-    geomtime = dde.geometry.GeometryXTime(geom, timedomain)
-
-    bc_0 = dde.icbc.OperatorBC(geomtime, bc0_obs, boundary_0)
-    bc_1 = dde.icbc.OperatorBC(geomtime, bc1_obs, boundary_1)
-
-    ic = dde.icbc.IC(geomtime, ic_obs, lambda _, on_initial: on_initial)
-
-    data = dde.data.TimePDE(
-        geomtime,
-        lambda x, theta: pde(x, theta),
-        [bc_0, bc_1, ic],
-        num_domain=num_domain,
-        num_boundary=num_boundary,
-        num_initial=num_initial,
-        num_test=num_test,
+    # Extract shared parameters from the configuration
+    direct = model_props.direct
+    activation = model_props.activation
+    initial_weights_regularizer = model_props.initial_weights_regularizer
+    initialization = model_props.initialization
+    learning_rate = model_props.learning_rate
+    num_dense_layers = model_props.num_dense_layers
+    num_dense_nodes = model_props.num_dense_nodes
+    loss_weights = [model_props.w_res, model_props.w_bc0, model_props.w_bc1, model_props.w_ic]
+    num_domain, num_boundary, num_initial, num_test = (
+        model_props.num_domain, model_props.num_boundary,
+        model_props.num_initial, model_props.num_test,
     )
+    a1, a2, a3, a4, a5 = cc.a1, cc.a2, cc.a3, cc.a4, cc.a5
+    K = cc.K
 
-    # layer_size = [5] + [num_dense_nodes] * num_dense_layers + [1]
-    # layer_size = [4] + [num_dense_nodes] * num_dense_layers + [1]
-    layer_size = [3] + [num_dense_nodes] * num_dense_layers + [1]
-    net = dde.nn.FNN(layer_size, activation, initialization)
+    # Shared problem constants
+    W = model_props.W if not direct else model_pars.W_sys
+    theta10 = scale_t(model_props.Ty10)
 
-    # net.apply_output_transform(output_transform)
+    def ic_fun(x):
+        z = x if len(x.shape) == 1 else x[:, :1]
+        theta20 = scale_t(model_props.Ty20)
+        theta30 = scale_t(model_props.Ty30)
 
-    model = dde.Model(data, net)
+        c_2 = a5 * (theta30 - theta20)
+        c_3 = theta20
 
-    if initial_weights_regularizer:
-        initial_losses = get_initial_loss(model)
-        loss_weights = [w_res, w_bc0, w_bc1, w_ic]*(len(initial_losses)/ initial_losses)
-        config.model_parameters.loss_weights = loss_weights.tolist()
-        # model.compile("adam", lr=learning_rate, loss_weights=loss_weights, loss=loss_function)
-        model.compile("adam", lr=learning_rate, loss_weights=loss_weights)
-    else:
-        loss_weights = [w_res, w_bc0, w_bc1, w_ic]
-        config.model_parameters.loss_weights = loss_weights.tolist()
-        # model.compile("adam", lr=learning_rate, loss_weights=loss_weights, loss=loss_function)
-        model.compile("adam", lr=learning_rate, loss_weights=loss_weights)
-    OmegaConf.save(config, f"{run_figs}/config.yaml")
-    OmegaConf.save(config, f"{src_dir}/config.yaml")
-    return model
+        if direct:
+            c_1 = -c_2 - c_3
+            return c_1 * z**2 + c_2 * z + c_3
+        
+        else:
+            c_1 = model_props.b2 - (c_2 - K * c_3) / K
+            return ((c_2 - K * c_3) / K + c_1 * np.exp(K * z)) * (1 - z) ** model_props.b1
 
-def create_sys(run_figs):
-    config = OmegaConf.load(f'{run_figs}/config.yaml')
-
-    activation = config.model_properties.activation
-    initial_weights_regularizer = config.model_properties.initial_weights_regularizer
-    initialization = config.model_properties.initialization
-    learning_rate = config.model_properties.learning_rate
-    num_dense_layers = config.model_properties.num_dense_layers
-    num_dense_nodes = config.model_properties.num_dense_nodes
-    w_res, w_bc0, w_bc1, w_ic = config.model_properties.w_res, config.model_properties.w_bc0, config.model_properties.w_bc1, config.model_properties.w_ic
-    num_domain, num_boundary, num_initial, num_test = config.model_properties.num_domain, config.model_properties.num_boundary, config.model_properties.num_initial, config.model_properties.num_test
-    a1 = cc.a1
-    a2 = cc.a2
-    a3 = cc.a3
-    a4 = cc.a4
-    a5 = cc.a5
-    W_sys = config.model_parameters.W_sys
-
-    theta10 = scale_t(config.model_properties.Ty10)
-
-
-
-    def pde(x, theta):
-        dtheta_tau = dde.grad.jacobian(theta, x, i=0, j=1)
-        dtheta_xx = dde.grad.hessian(theta, x, i=0, j=0)
-
-        return (
-            a1 * dtheta_tau
-            - dtheta_xx + W_sys * a2 * theta - a3 * torch.exp(-a4*x[:, 0:1])
-        )
-    
-
-    def bc0_sys(x, theta, X):
-        y3 = scale_t(config.model_properties.Ty30)
+    def bc0_fun(x, theta, _):
+        y3 = scale_t(model_props.Ty30)
         dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0)
+        if direct:
+            return dtheta_x + a5 * (y3 - theta)
+        else:
+            y2 = x[:, 1:2]
+            return dtheta_x - K * theta - (a5 - K) * y2 + a5 * 0
 
-        return dtheta_x + a5 * (y3 - theta)
-    
-    def bc1_sys(x, theta, X):
-
+    def bc1_fun(x, theta, _):
         return theta - theta10
 
-    xmin = 0
-    xmax = 1
-    geom = dde.geometry.Interval(xmin, xmax)
-    timedomain = dde.geometry.TimeDomain(0, 1.1)
+
+    # Shared PDE
+    def pde(x, theta):
+        dtheta_tau = dde.grad.jacobian(theta, x, i=0, j=1 if direct else 2)
+        dtheta_xx = dde.grad.hessian(theta, x, i=0, j=0)
+        source_term = -a3 * torch.exp(-a4 * x[:, :1])
+        return a1 * dtheta_tau - dtheta_xx + W * a2 * theta + source_term
+
+    # Geometry and time domain
+    if direct:
+        geom = dde.geometry.Interval(0, 1)
+    else:
+        geom = dde.geometry.Rectangle([0, 0], [1, 1])
+
+    timedomain = dde.geometry.TimeDomain(0, 1.5)
     geomtime = dde.geometry.GeometryXTime(geom, timedomain)
 
+    ic = dde.icbc.IC(geomtime, ic_fun, lambda _, on_initial: on_initial)
+    bc_1 = dde.icbc.OperatorBC(geomtime, bc1_fun, boundary_1)
+    bc_0 = dde.icbc.OperatorBC(geomtime, bc0_fun, boundary_0)
 
-    bc_0 = dde.icbc.OperatorBC(geomtime, bc0_sys, boundary_0)
-    bc_1 = dde.icbc.OperatorBC(geomtime, bc1_sys, boundary_1)
-
-    ic = dde.icbc.IC(geomtime, ic_sys, lambda _, on_initial: on_initial)
-
+    # Data object
     data = dde.data.TimePDE(
         geomtime,
         lambda x, theta: pde(x, theta),
@@ -391,22 +280,26 @@ def create_sys(run_figs):
         num_test=num_test,
     )
 
-    layer_size = [2] + [num_dense_nodes] * num_dense_layers + [1]
+    # Define the network
+    input_dim = 2 if direct else 3
+    layer_size = [input_dim] + [num_dense_nodes] * num_dense_layers + [1]
     net = dde.nn.FNN(layer_size, activation, initialization)
 
+    # Compile the model
     model = dde.Model(data, net)
-
     if initial_weights_regularizer:
         initial_losses = get_initial_loss(model)
-        loss_weights = [w_res, w_bc0, w_bc1, w_ic]*(len(initial_losses)/ initial_losses)
-        config.model_parameters.loss_weights = loss_weights.tolist()
+        loss_weights = [
+            lw * len(initial_losses) / il
+            for lw, il in zip(loss_weights, initial_losses)
+        ]
         model.compile("adam", lr=learning_rate, loss_weights=loss_weights)
     else:
-        loss_weights = [w_res, w_bc0, w_bc1, w_ic]
-        config.model_parameters.loss_weights = loss_weights.tolist()
         model.compile("adam", lr=learning_rate, loss_weights=loss_weights)
-    OmegaConf.save(config, f"{run_figs}/config.yaml")
+
     OmegaConf.save(config, f"{src_dir}/config.yaml")
+    OmegaConf.save(config, f"{run_figs}/config.yaml")
+
     return model
 
 def train_model(run_figs, system=False):
@@ -416,7 +309,7 @@ def train_model(run_figs, system=False):
     n = config.model_properties.iterations
     model_path = os.path.join(models, f"model_{config_hash}.pt-{n}.pt")
 
-    mm = create_sys(run_figs) if system else create_nbho(run_figs)
+    mm = create_model(run_figs)
 
     if os.path.exists(model_path):
         # Model exists, load it
@@ -425,7 +318,6 @@ def train_model(run_figs, system=False):
         return mm
     
     LBFGS = config.model_properties.LBFGS
-    ini_w = config.model_properties.initial_weights_regularizer
     resampler = config.model_properties.resampling
     resampler_period = config.model_properties.resampler_period
 
@@ -435,6 +327,7 @@ def train_model(run_figs, system=False):
 
     if LBFGS:
         # if ini_w:
+            # ini_w = config.model_properties.initial_weights_regularizer
         #     initial_losses = get_initial_loss(mm)
         #     loss_weights = len(initial_losses) / initial_losses
         #     mm.compile("L-BFGS", loss_weights=loss_weights)
