@@ -23,7 +23,7 @@ function [sol] = OneDimBH_3Obs
     
     
     % Print Solution PDE
-    filename = sprintf('%s/output_matlab_3Obs.txt', output_path);
+    filename = sprintf('%s/ground_truth/output_matlab_3Obs.txt', output_path);
     fileID = fopen(filename,'w');
     
     for i = 1:101
@@ -31,8 +31,6 @@ function [sol] = OneDimBH_3Obs
             
          fprintf(fileID,'%6.2f %6.2f %12.8f %12.8f %12.8f %12.8f %12.8f\n', ...
          x(j), t(i), u1(i,j), u2(i,j), u3(i,j), u4(i,j), uav(i,j));
-    
-            
        end
     end
     
@@ -52,7 +50,7 @@ function [sol] = OneDimBH_3Obs
     
     %-----------------
     function [c,f,s] = OneDimBHpde_3Obs(x,t,u,dudx)
-    global lambda om0 om1 om2 W W0 W1 W2 a1 a2 a3 a4
+    global lambda om0 om1 om2 W_sys W0 W1 W2 a1 a2 a3 a4
     %la prima equazione è quella del sistema, a seguire gli osservatoris
     t
     c = [a1; a1; a1; a1; 1; 1; 1];
@@ -60,7 +58,7 @@ function [sol] = OneDimBH_3Obs
     
     den=u(5)*exp(-om0)+u(6)*exp(-om1)+u(7)*exp(-om2);
     
-    s = [-W*a2*u(1)+a3*exp(-a4*x); 
+    s = [-W_sys*a2*u(1)+a3*exp(-a4*x); 
         -W0*a2*u(2)+a3*exp(-a4*x); 
         -W1*a2*u(3)+a3*exp(-a4*x); 
         -W2*a2*u(4)+a3*exp(-a4*x); 
@@ -72,27 +70,29 @@ function [sol] = OneDimBH_3Obs
 
     
     function u0 = OneDimBHic_3Obs(x)
-    [theta0, thetahat0] = ic_bc(x, 0);
+    [theta0, thetahat0, ~, ~, ~] = ic_bc(x);
     
-    u0 = [theta0; thetahat0;  thetahat0; thetahat0; 1/3; 1/3; 1/3];
+    u0 = [theta0; thetahat0; thetahat0; thetahat0; 1/3; 1/3; 1/3];
     % --------------------------------------------------------------------------
     
     
     function [pl,ql,pr,qr] = OneDimBHbc_3Obs(xl,ul,xr,ur,t)
-    global K om0 om1 om2 upsilon a5 theta30 theta10
-    % [theta_y1, theta_y3] = ic_bc(0, t);
-    flusso = a5*(theta30-ul(1));
+    global K om0 om1 om2 upsilon a5
+    [~, ~, theta_y1, ~, ~] = ic_bc(xr);
+    [~, ~, ~, ~, theta_y3] = ic_bc(xl);
+
+    flusso = a5*(theta_y3-ul(1));
     
     pl = [flusso;
-        flusso+K*(ul(1)-ul(2));
-        flusso+K*(ul(1)-ul(3));
-        flusso+K*(ul(1)-ul(4));
+        flusso-K*(ul(2)-ul(1));
+        flusso-K*(ul(3)-ul(1));
+        flusso-K*(ul(4)-ul(1));
         0;0;0];
     ql = [1;1;1;1;1;1;1];
-    pr = [ur(1) - theta10; 
-        ur(2) - theta10; 
-        ur(3) - theta10; 
-        ur(4) - theta10; 
+    pr = [ur(1) - theta_y1; 
+        ur(2) - theta_y1; 
+        ur(3) - theta_y1; 
+        ur(4) - theta_y1; 
         0;0;0];
     
     qr = [0;0;0;0; 1;1;1];

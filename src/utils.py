@@ -403,7 +403,9 @@ def gen_obsdata(conf, path=None):
     rows_1 = g[g[:, 0] == 1.0]
     rows_0 = g[g[:, 0] == 0.0]
 
-    # y1 = rows_1[:, 2].reshape(len(instants),)
+    # y1_dummy = rows_1[:, 2].reshape(len(instants),)
+    # y10 = scale_t(conf.model_properties.Ty10)
+    # y1 = np.full_like(y1_dummy, y10)
     # f1 = interp1d(instants, y1, kind='previous')
 
     y2 = rows_0[:, 2].reshape(len(instants),)
@@ -591,12 +593,10 @@ def mm_observer(config):
     for j in range(n_obs):
         perf = obs[j]
         config.model_properties.W = float(perf)
-        run_figs = co.set_run(f"obs_{j}")
-        OmegaConf.save(config, f"{run_figs}/config.yaml") 
+        run_figs = co.set_run(simul_dir, config, f"obs_{j}")
 
         model = train_model(run_figs)
         multi_obs.append(model)
-
 
     return multi_obs
 
@@ -605,7 +605,8 @@ def mu(o, tau_in):
     global f1, f2, f3
 
     tau = np.where(tau_in<0.9944, tau_in, 0.9944)
-    xo = np.vstack((np.zeros_like(tau), f1(tau), f2(tau), f3(tau), tau)).T
+    # xo = np.vstack((np.zeros_like(tau), f1(tau), f2(tau), f3(tau), tau)).T
+    xo = np.vstack((np.zeros_like(tau), f2(tau), tau)).T
     muu = []
 
     for el in o:
@@ -690,27 +691,15 @@ def check_observers_and_wandb_upload(tot_true, tot_pred, conf, output_dir, compa
         #     wandb.init(project=name, name=label, config=aa)
                 
         pp.plot_validation_3d(tot_true[:, 0:2], tot_true[:, -1], tot_pred[:, -1], output_dir)
-        observers = {
-        "grid": tot_pred[:, :2],
-        "theta": tot_pred[:, -1],
-        "label": "observers",
-        }
 
-        observers_gt = {
-            "grid": tot_true[:, :2],
-            "theta": tot_true[:, -1],
-            "label": "observers_gt",
-        }
+        mm_obs = {"grid": tot_pred[:, :2], "theta": tot_pred[:, -1], "label": "multi_observer"}
+        mm_obs_gt = {"grid": tot_true[:, :2], "theta": tot_true[:, -1], "label": "multi_observer_gt"}
+        system_gt = {"grid": tot_true[:, :2], "theta": tot_true[:, 2], "label": "system_gt"}
 
-        system_gt = {
-            "grid": tot_true[:, :2],
-            "theta": tot_true[:, 2],
-            "label": "system_gt",
-        }
         run_figs = output_dir
         # os.makedirs(run_figs, exist_ok=True)
-        pp.plot_multiple_series([observers, observers_gt, system_gt], run_figs)
-        pp.plot_l2(system_gt, [observers, observers_gt], run_figs)
+        pp.plot_multiple_series([mm_obs, mm_obs_gt, system_gt], run_figs)
+        pp.plot_l2(system_gt, [mm_obs, mm_obs_gt], run_figs)
         matching = extract_matching(tot_true, tot_pred)
         metrics = compute_metrics(matching[:, 0:2], matching[:, 3+el], matching[:, 3+n_obs+1+el], run_figs, system=matching[:, 2])
         # struttura di matching: x, t, sys_matlab, obs_matlab, mm_obs_matlab, obs_pinns, mm_obs_pinns
@@ -794,8 +783,8 @@ def get_observers_preds(multi_obs, x_obs, output_dir, conf):
             np.savetxt(f'{run_figs}/prediction_obs_{el}.txt', data_to_save, fmt='%.2f %.2f %.4f', delimiter=' ')
             preds.append(obs_pred)
 
-        run_figs = co.set_run(f"mm_obs")
         conf.model_properties.W = None
+        run_figs = co.set_run(output_dir, conf, f"mm_obs")
         OmegaConf.save(conf, f"{run_figs}/config.yaml")
         mm_pred = solve_ivp(multi_obs, run_figs, conf, x_obs)
         preds.append(mm_pred)
@@ -857,26 +846,7 @@ def get_plot_params(conf):
         "alpha": entities.multi_observer.alpha
     }
 
-    # Observers parameters (dynamically adjust for number of observers)
-    n_obs = conf.model_parameters.n_obs
 
-    # Conditional handling based on the number of observers
-    if n_obs == 1:
-        observer_params = {
-            "color": entities.observers.color[0],
-            "label": entities.observers.label[0],
-            "linestyle": entities.observers.linestyle[0],
-            "linewidth": entities.observers.linewidth[0],
-            "alpha": entities.observers.alpha[0]
-        }
-    else:
-        observer_params = {
-            "color": entities.observers.color[:n_obs],
-            "label": entities.observers.label[:n_obs],
-            "linestyle": entities.observers.linestyle[:n_obs],
-            "linewidth": entities.observers.linewidth[:n_obs],
-            "alpha": entities.observers.alpha[:n_obs]
-        }
 
     # Ground truth parameters
     system_gt_params = {
@@ -895,21 +865,28 @@ def get_plot_params(conf):
         "alpha": entities.multi_observer_gt.alpha
     }
 
-    if n_obs == 1:
-        observer_gt_params = {
-            "color": entities.observers_gt.color[0],
-            "label": entities.observers_gt.label[0],
-            "linestyle": entities.observers_gt.linestyle[0],
-            "linewidth": entities.observers_gt.linewidth[0],
-            "alpha": entities.observers_gt.alpha[0]
+    # Observers parameters (dynamically adjust for number of observers)
+    n_obs = conf.model_parameters.n_obs
+
+    # Prepare observer(s) parameters
+    observer_params = {}
+    observer_gt_params = {}
+
+    for i in range(n_obs):
+        observer_params[f"observer_{i}"] = {
+            "color": entities.observers.color[i],
+            "label": entities.observers.label[i],
+            "linestyle": entities.observers.linestyle[i],
+            "linewidth": entities.observers.linewidth[i],
+            "alpha": entities.observers.alpha[i]
         }
-    else:
-        observer_gt_params = {
-            "color": entities.observers_gt.color[:n_obs],
-            "label": entities.observers_gt.label[:n_obs],
-            "linestyle": entities.observers_gt.linestyle[:n_obs],
-            "linewidth": entities.observers_gt.linewidth[:n_obs],
-            "alpha": entities.observers_gt.alpha[:n_obs]
+
+        observer_gt_params[f"observer_{i}_gt"] = {
+            "color": entities.observers_gt.color[i],
+            "label": entities.observers_gt.label[i],
+            "linestyle": entities.observers_gt.linestyle[i],
+            "linewidth": entities.observers_gt.linewidth[i],
+            "alpha": entities.observers_gt.alpha[i]
         }
 
     # Adjust markers if experiment name starts with "meas_"
@@ -917,15 +894,16 @@ def get_plot_params(conf):
     # if exp_name[1].startswith("meas_"):
     #     markers[0] = "*"
 
+    # Return combined parameters
     return {
         "system": system_params,
         "theory": theory_params,
         "bound": bound_params,
         "multi_observer": multi_observer_params,
-        "observers": observer_params,
         "system_gt": system_gt_params,
         "multi_observer_gt": multi_observer_gt_params,
-        "observers_gt": observer_gt_params,
+        **observer_params,
+        **observer_gt_params,
         "markers": markers
     }
 
@@ -954,7 +932,7 @@ def solve_ivp(multi_obs, fold, conf, x_obs):
     weights[1:] = sol.y
     
     np.save(f'{fold}/weights_l_{lam}_u_{ups}.npy', weights)
-    pp.plot_weights(weights[1:], weights[0], fold, conf)
+    # pp.plot_weights(weights[1:], weights[0], fold, conf)
     y_pred = mm_predict(multi_obs, x_obs, fold)
     data_to_save = np.column_stack((x_obs[:, 0].round(n_digits), x_obs[:, -1].round(n_digits), y_pred.round(n_digits)))
     np.savetxt(f'{fold}/prediction_mm_obs.txt', data_to_save, fmt='%.2f %.2f %.4f', delimiter=' ')
@@ -981,16 +959,30 @@ def run_matlab_ground_truth(prj_figs):
     solution = gen_testdata(cfg)
     X, y_sys, y_observers, y_mmobs = solution[:, 0:2], solution[:, 2], solution[:, 3:3+n_obs], solution[:, -1]
     t = np.unique(X[:, 1])
-    metr = compute_metrics(X, y_observers, y_observers, prj_figs, system=y_sys)
-    y_theory, y_bound = compute_y_theory(X, y_sys, y_observers)
+    y_multi_obs = y_observers if n_obs==1 else y_mmobs
+    metr = compute_metrics(X, y_multi_obs, y_multi_obs, prj_figs, system=y_sys)
 
     system_gt = { "grid": X, "theta": y_sys, "label": "system_gt"}
-    observer_gt = {"grid": X, "theta": y_observers, "label": "observers_gt"}
-    theory = {"grid": X, "theta": y_theory, "label": "theory"}
-    bound = {"grid": X, "theta": y_bound, "label": "bound"}
+    mm_obs_gt = { "grid": X, "theta": y_multi_obs, "label": "multi_observer_gt"}
 
-    pp.plot_multiple_series([system_gt, observer_gt], prj_figs)
-    pp.plot_l2(system_gt, [observer_gt, theory, bound], prj_figs)
+    observers_gt = {
+        f"observer_{i}_gt": {
+            "grid": X,
+            "theta": y_observers[:, i],
+            "label": f"observer_{i}_gt"
+        }
+        for i in range(n_obs)}
+
+    pp.plot_multiple_series([system_gt, mm_obs_gt], prj_figs)
+
+    if n_obs==1:
+        y_theory, y_bound = compute_y_theory(X, y_sys, y_multi_obs)
+        theory = {"grid": X, "theta": y_theory, "label": "theory"}
+        bound = {"grid": X, "theta": y_bound, "label": "bound"}
+
+        pp.plot_l2(system_gt, [mm_obs_gt, theory, bound], prj_figs)
+    else:
+        pp.plot_l2(system_gt, [mm_obs_gt], prj_figs)
 
     # if n_obs==1:
         # pp.plot_tf_matlab_1obs(X, y_sys, y_observers, prj_figs)

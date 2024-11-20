@@ -26,7 +26,7 @@ function [sol] = OneDimBH_1Obs
     %-----------------
     function [c,f,s] = OneDimBHpde_1Obs(x,t,u,dudx)
     global a1 a2 a3 a4 W_obs W_sys
-    %la prima equazione è quella del sistema, a seguire gli osservatoris
+    %la prima equazione è quella del sistema, a seguire gli osservatori
     t
     c = [a1; a1];
     f = [1; 1].* dudx;

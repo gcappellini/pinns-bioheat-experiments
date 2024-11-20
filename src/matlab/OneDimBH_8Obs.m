@@ -61,7 +61,7 @@ function [sol] = OneDimBH_8Obs
     
     %-----------------
     function [c,f,s] = OneDimBHpde(x,t,u,dudx)
-    global lambda om0 om1 om2 om3 om4 om5 om6 om7 W W0 W1 W2 W3 W4 W5 W6 W7 a1 a2 a3 a4
+    global lambda om0 om1 om2 om3 om4 om5 om6 om7 W_sys W0 W1 W2 W3 W4 W5 W6 W7 a1 a2 a3 a4
     %la prima equazione è quella del sistema, a seguire gli osservatoris
     t
     c = [a1; a1; a1; a1; a1; a1; a1; a1; a1; 1; 1; 1; 1; 1; 1; 1; 1];
@@ -70,7 +70,7 @@ function [sol] = OneDimBH_8Obs
     den=u(10)*exp(-om0)+u(11)*exp(-om1)+u(12)*exp(-om2)+u(13)*exp(-om3)+...
         u(14)*exp(-om4)+u(15)*exp(-om5)+u(16)*exp(-om6)+u(17)*exp(-om7);
     
-    s = [-W*a2*u(1)+a3*exp(-a4*x); 
+    s = [-W_sys*a2*u(1)+a3*exp(-a4*x); 
         -W0*a2*u(2)+a3*exp(-a4*x); 
         -W1*a2*u(3)+a3*exp(-a4*x); 
         -W2*a2*u(4)+a3*exp(-a4*x); 
@@ -91,7 +91,7 @@ function [sol] = OneDimBH_8Obs
     % --------------------------------------------------------------------------
     
     function u0 = OneDimBHic(x)
-    [theta0, thetahat0, theta_y1, theta_y2, theta_y3] = ic_bc(x, 0);
+    [theta0, thetahat0, ~, ~, ~] = ic_bc(x);
     
     u0 = [theta0; thetahat0; thetahat0; thetahat0; thetahat0; thetahat0; thetahat0; thetahat0; thetahat0; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8; 1/8];
     % --------------------------------------------------------------------------
@@ -99,7 +99,8 @@ function [sol] = OneDimBH_8Obs
     
     function [pl,ql,pr,qr] = OneDimBHbc(xl,ul,xr,ur,t)
     global K om0 om1 om2 om3 om4 om5 om6 om7 upsilon a5
-    [theta0, thetahat0, theta_y1, theta_y2, theta_y3] = ic_bc(0, t);
+    [~, ~, theta_y1, ~, ~] = ic_bc(xr);
+    [~, ~, ~, ~, theta_y3] = ic_bc(xl);
     flusso = a5*(theta_y3-ul(1));
     
     pl = [flusso;

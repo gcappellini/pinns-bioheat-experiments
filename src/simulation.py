@@ -46,11 +46,9 @@ def main():
     config.model_properties.direct = False
     output_dir = co.set_run(out_dir, config, f"simulation_{n_obs}obs")
     
-
-    # Generate and check observers if needed
+    x_obs = uu.gen_obsdata(config)
     multi_obs = uu.mm_observer(config)
 
-    x_obs = uu.gen_obsdata(config, path=f"{tests_dir}/cooling_simulation")
     tot_pred = uu.get_observers_preds(multi_obs, x_obs, output_dir, config)
     uu.check_observers_and_wandb_upload(tot_true, tot_pred, config, output_dir)
 

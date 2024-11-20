@@ -39,10 +39,10 @@ model_properties:
   b2: 0.5053
   direct: false
 model_parameters:
-  lam: 50
-  upsilon: 50
+  lam: 1
+  upsilon: 1
   W0: 6.3e-05
-  W1: 0.0006
+  W1: 0.001651
   W2: 0.003303
   W3: 0.0014
   W4: 0.001651
@@ -51,7 +51,7 @@ model_parameters:
   W7: 0.001207
   W_sys: 0.001651
   W_obs: 0.001651
-  n_obs: 1
+  n_obs: 3
   gt1_0: 24.44
   gt2_0: 29.25
   x_y2: 0
@@ -100,29 +100,38 @@ plot:
       linestyle: ':'
       linewidth: 1.2
       alpha: 1.0
+    observer_0:
+      color: C0
+      label: Obs 0 PINNs
+      linestyle: '-'
+      linewidth: 1.2
+      alpha: 1.0
+    observer_1:
+      color: C1
+      label: Obs 1 PINNs
+      linestyle: -.
+      linewidth: 1.2
+      alpha: 1.0
+    observer_2:
+      color: C2
+      label: Obs 2 PINNs
+      linestyle: '-'
+      linewidth: 1.2
+      alpha: 1.0
     observers:
       color:
-      - C0
-      - C1
-      - C2
       - C9
       - C4
       - C5
       - C6
       - C7
       label:
-      - Obs 0 PINNs
-      - Obs 1 PINNs
-      - Obs 2 PINNs
       - Obs 3 PINNs
       - Obs 4 PINNs
       - Obs 5 PINNs
       - Obs 6 PINNs
       - Obs 7 PINNs
       linestyle:
-      - '-'
-      - -.
-      - '-'
       - -.
       - --
       - '-'
@@ -134,13 +143,7 @@ plot:
       - 1.2
       - 1.2
       - 1.2
-      - 1.2
-      - 1.2
-      - 1.2
       alpha:
-      - 1.0
-      - 1.0
-      - 1.0
       - 1.0
       - 1.0
       - 1.0
@@ -170,20 +173,32 @@ plot:
       linestyle: --
       linewidth: 1.0
       alpha: 0.8
+    observer_0_gt:
+      color: C0
+      label: Obs 0 MATLAB
+      linestyle: ':'
+      linewidth: 1.2
+      alpha: 0.7
+    observer_1_gt:
+      color: C1
+      label: Obs 1 MATLAB
+      linestyle: ':'
+      linewidth: 1.2
+      alpha: 0.7
+    observer_2_gt:
+      color: C2
+      label: Obs 2 MATLAB
+      linestyle: ':'
+      linewidth: 1.2
+      alpha: 0.7
     observers_gt:
       color:
-      - C0
-      - C1
-      - C2
       - C9
       - C4
       - C5
       - C6
       - C7
       label:
-      - Obs 0 MATLAB
-      - Obs 1 MATLAB
-      - Obs 2 MATLAB
       - Obs 3 MATLAB
       - Obs 4 MATLAB
       - Obs 5 MATLAB
@@ -195,22 +210,13 @@ plot:
       - ':'
       - ':'
       - ':'
-      - ':'
-      - ':'
-      - ':'
       linewidth:
       - 1.2
       - 1.2
       - 1.2
       - 1.2
       - 1.2
-      - 1.2
-      - 1.2
-      - 1.2
       alpha:
-      - 0.7
-      - 0.7
-      - 0.7
       - 0.7
       - 0.7
       - 0.7
@@ -323,4 +329,4 @@ experiment:
       y3_0: 23.26
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-20/14-36-55
+output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-20/16-22-01
