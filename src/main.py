@@ -15,8 +15,8 @@ def main(cfg: DictConfig):
 
     uu.initialize_run(cfg)
     # subprocess.run(["python", f'{src_dir}/ic_compatibility.py'])
-    # subprocess.run(["python", f'{src_dir}/simulation.py'])
-    subprocess.run(["python", f'{src_dir}/hpo.py'])
+    subprocess.run(["python", f'{src_dir}/simulation.py'])
+    # subprocess.run(["python", f'{src_dir}/hpo.py'])
 
 
 if __name__ == "__main__":
