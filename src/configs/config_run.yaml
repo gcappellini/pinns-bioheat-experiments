@@ -15,14 +15,14 @@ model_properties:
   activation: tanh
   initial_weights_regularizer: true
   initialization: He uniform
-  iterations: 2000
-  LBFGS: false
-  learning_rate: 0.00031596
+  iterations: 10000
+  LBFGS: true
+  learning_rate: 0.001
   num_dense_layers: 4
-  num_dense_nodes: 138
-  num_domain: 400
-  num_boundary: 240
-  num_initial: 160
+  num_dense_nodes: 50
+  num_domain: 16348
+  num_boundary: 4000
+  num_initial: 2000
   num_test: 1000
   resampling: true
   resampler_period: 100
@@ -219,7 +219,7 @@ plot:
 experiment:
   import_data: false
   save_pickle: false
-  run_matlab: true
+  run_matlab: false
   simulation: true
   run_wandb: false
   check_system: false
@@ -323,4 +323,4 @@ experiment:
       y3_0: 23.26
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-20/09-50-01
+output_dir: /app/guglielmo/pinns-bioheat-experiments/outputs/2024-11-20/09-57-24

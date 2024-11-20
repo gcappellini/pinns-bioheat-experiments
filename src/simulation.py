@@ -42,17 +42,17 @@ def main():
 
 
     
-    n_obs = config.model_parameters.n_obs
-    config.model_properties.direct = False
-    output_dir = co.set_run(out_dir, config, f"simulation_{n_obs}obs")
+    # n_obs = config.model_parameters.n_obs
+    # config.model_properties.direct = False
+    # output_dir = co.set_run(out_dir, config, f"simulation_{n_obs}obs")
     
 
-    # Generate and check observers if needed
-    multi_obs = uu.mm_observer(config)
+    # # Generate and check observers if needed
+    # multi_obs = uu.mm_observer(config)
 
-    x_obs = uu.gen_obsdata(config)
-    tot_pred = uu.get_observers_preds(multi_obs, x_obs, output_dir, config)
-    uu.check_observers_and_wandb_upload(tot_true, tot_pred, config, output_dir)
+    # x_obs = uu.gen_obsdata(config, path=f"{tests_dir}/cooling_simulation")
+    # tot_pred = uu.get_observers_preds(multi_obs, x_obs, output_dir, config)
+    # uu.check_observers_and_wandb_upload(tot_true, tot_pred, config, output_dir)
 
     # if n_obs>1:
     #     run_figs = co.set_run(f"mm_obs")
