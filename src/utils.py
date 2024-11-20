@@ -12,7 +12,7 @@ import coeff_calc as cc
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-# import matlab.engine
+import matlab.engine
 import subprocess
 
 
@@ -25,25 +25,21 @@ current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
 git_dir = os.path.dirname(src_dir)
 conf_dir = os.path.join(src_dir, "configs")
-
-
 models = os.path.join(git_dir, "models")
 os.makedirs(models, exist_ok=True)
 
 f1, f2, f3 = [None]*3
 n_digits = 6
 
+dde.optimizers.config.set_LBFGS_options(maxcor=100, ftol=1e-08, gtol=1e-08, maxiter=15000, maxfun=None, maxls=50)
+# If L-BFGS stops earlier than expected, set the default float type to ‘float64’:
+# dde.config.set_default_float("float64")
+
 
 def get_initial_loss(model):
     model.compile("adam", lr=0.001)
     losshistory, _ = model.train(0)
     return losshistory.loss_train[0]
-
-
-def load_from_pickle(file_path):
-    with open(file_path, 'rb') as pkl_file:
-        return pickle.load(pkl_file)
-    
 
 def compute_metrics(grid, true, pred, run_figs, system=None):
     # Load loss weights from configuration
@@ -302,7 +298,7 @@ def create_model(run_figs):
 
     return model
 
-def train_model(run_figs, system=False):
+def train_model(run_figs):
     global models
     config = OmegaConf.load(f'{run_figs}/config.yaml')
     config_hash = co.generate_config_hash(config.model_properties)
@@ -346,7 +342,7 @@ def train_and_save_model(model, callbacks, run_figs):
     config_hash = co.generate_config_hash(conf.model_properties)
     model_path = os.path.join(models, f"model_{config_hash}.pt")
 
-    losshistory, _ = model.train(
+    losshistory, train_state = model.train(
         iterations=conf.model_properties.iterations,
         callbacks=callbacks,
         model_save_path=model_path,
@@ -355,6 +351,7 @@ def train_and_save_model(model, callbacks, run_figs):
     confi_path = os.path.join(models, f"config_{config_hash}.yaml")
     OmegaConf.save(conf, confi_path)
 
+    dde.saveplot(losshistory, train_state, issave=True, isplot=False, loss_fname=f'loss_{config_hash}.dat', train_fname=f'train_{config_hash}.dat', test_fname=f'test_{config_hash}.dat', output_dir=models)
 
     return losshistory, model
 
@@ -394,19 +391,6 @@ def gen_testdata(conf, path=None):
     return np.hstack((X, y_sys, y_obs, y_mm_obs))
 
 
-def load_weights(conf):
-    n = conf.model_parameters.n_obs
-    name = conf.experiment.name
-    output_folder = f"{tests_dir}/{name[0]}_{name[1]}/ground_truth"
-    if n==8:
-        data = np.loadtxt(f"{output_folder}/weights_matlab_{n}Obs.txt")
-        t, weights = data[:, 0:1], data[:, 1:9].T
-    if n==3:
-        data = np.loadtxt(f"{output_folder}/weights_matlab_{n}Obs.txt")
-        t, weights = data[:, 0:1], data[:, 1:4].T
-    return t, np.array(weights)
-
-
 def gen_obsdata(conf, path=None):
     global f1, f2, f3
 
@@ -435,9 +419,18 @@ def gen_obsdata(conf, path=None):
     return Xobs
 
 
-def load_from_pickle(file_path):
-    with open(file_path, 'rb') as pkl_file:
-        return pickle.load(pkl_file)
+def load_weights(conf):
+    n = conf.model_parameters.n_obs
+    name = conf.experiment.name
+    output_folder = f"{tests_dir}/{name[0]}_{name[1]}/ground_truth"
+    if n==8:
+        data = np.loadtxt(f"{output_folder}/weights_matlab_{n}Obs.txt")
+        t, weights = data[:, 0:1], data[:, 1:9].T
+    if n==3:
+        data = np.loadtxt(f"{output_folder}/weights_matlab_{n}Obs.txt")
+        t, weights = data[:, 0:1], data[:, 1:4].T
+    return t, np.array(weights)
+
     
 def scale_t(t):
     properties = OmegaConf.load(f"{src_dir}/config.yaml")
@@ -446,6 +439,7 @@ def scale_t(t):
     k = (t - Troom) / (Tmax - Troom)
 
     return round(k, n_digits)
+
 
 def rescale_t(theta):
     properties = OmegaConf.load(f"{src_dir}/config.yaml")
@@ -466,6 +460,7 @@ def rescale_t(theta):
             rescaled_theta.append(np.round(rescaled_part, n_digits))  # Round and append each rescaled part
     return rescaled_theta
 
+
 def rescale_x(X):
     properties = OmegaConf.load(f"{src_dir}/config.yaml")
     L0 = properties.model_properties.L0
@@ -479,6 +474,7 @@ def rescale_x(X):
 
     return rescaled_X
 
+
 def rescale_time(tau):
     tau = np.array(tau)
     properties = OmegaConf.load(f"{src_dir}/config.yaml")
@@ -487,12 +483,14 @@ def rescale_time(tau):
 
     return np.round(j, 0)
 
+
 def scale_time(t):
     properties = OmegaConf.load(f"{src_dir}/config.yaml")
     tauf = properties.model_properties.tauf
     j = t/tauf
 
     return np.round(j, n_digits)
+
 
 def get_tc_positions():
     daa = OmegaConf.load(f"{src_dir}/config.yaml")
@@ -503,6 +501,7 @@ def get_tc_positions():
     x_y1 = 1.0
 
     return [x_y2, round(x_gt2, 2), round(x_gt1, 2), x_y1] 
+
 
 def import_testdata(name):
     df = load_from_pickle(f"{src_dir}/data/vessel/{name}.pkl")
@@ -1032,8 +1031,6 @@ def compute_y_theory(grid, sys, obs):
     decay = getattr(cc, f"decay_rate_{str}")
 
     return l2_0 * np.exp(-t*decay), np.full_like(t, cc.c_0)
-
-
 
 
 def calculate_l2(e, true, pred):

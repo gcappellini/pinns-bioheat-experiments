@@ -6,6 +6,7 @@ import deepxde as dde
 import torch
 import utils as uu
 from omegaconf import OmegaConf
+import datetime
 
 # Set up directories and random seed
 dde.config.set_random_seed(200)
@@ -159,7 +160,7 @@ def plot_loss_components(losshistory, nam):
         ylabel="loss",
         legend_labels=legend_labels,
         log_scale=True,  # We want a log scale on the y-axis
-        filename=f"{models_dir}/losses_{nam}.png",
+        filename=f"{models_dir}/{str(datetime.date.today())}_losses_{nam}.png",
         colors=colors
     )
 

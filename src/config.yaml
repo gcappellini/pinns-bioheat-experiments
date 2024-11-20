@@ -4,7 +4,7 @@ model_properties:
   k: 0.6
   rho: 1000.0
   c: 4186.0
-  W: 0.001651
+  W: 0.001207
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
@@ -13,7 +13,7 @@ model_properties:
   Ty30: 21.5
   alfa: 50
   activation: tanh
-  initial_weights_regularizer: true
+  initial_weights_regularizer: false
   initialization: He uniform
   iterations: 2000
   LBFGS: true
@@ -50,7 +50,7 @@ model_parameters:
   W6: 0.0026
   W7: 0.001207
   W_sys: 0.001651
-  W_obs: 0.001651
+  W_obs: 0.001207
   n_obs: 1
   gt1_0: 24.44
   gt2_0: 29.25
@@ -323,4 +323,4 @@ experiment:
       y3_0: 23.26
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /app/guglielmo/pinns-bioheat-experiments/outputs/2024-11-20/09-57-24
+output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-20/13-36-22
