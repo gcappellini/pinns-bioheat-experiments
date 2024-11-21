@@ -1,7 +1,6 @@
 setuptools
 matplotlib
 sympy
-torch 
 tqdm
 matplotlib
 numpy
@@ -11,7 +10,6 @@ scipy
 wandb
 seaborn
 deepxde
-uncertainties
 simpy
 hydra-core
 # matlabengine

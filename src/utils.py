@@ -628,13 +628,10 @@ def calculate_mu(os, tr):
 
 def compute_mu(conf):
     n_obs = conf.model_parameters.n_obs
-    g = np.hstack((gen_testdata(conf)))
+    g = gen_testdata(conf)
     rows_0 = g[g[:, 0] == 0.0]
     sys_0 = rows_0[:, 2:3]
-    if n_obs==8:
-        obss_0 = rows_0[:, 3:11]
-    if n_obs==3:
-        obss_0 = rows_0[:, 3:6]
+    obss_0 = rows_0[:, 3:3+n_obs]
 
     muu = []
 
@@ -965,13 +962,7 @@ def run_matlab_ground_truth(prj_figs):
     system_gt = { "grid": X, "theta": y_sys, "label": "system_gt"}
     mm_obs_gt = { "grid": X, "theta": y_multi_obs, "label": "multi_observer_gt"}
 
-    observers_gt = {
-        f"observer_{i}_gt": {
-            "grid": X,
-            "theta": y_observers[:, i],
-            "label": f"observer_{i}_gt"
-        }
-        for i in range(n_obs)}
+    observers_gt = {f"observer_{i}_gt": {"grid": X, "theta": y_observers[:, i], "label": f"observer_{i}_gt"} for i in range(n_obs)}
 
     pp.plot_multiple_series([system_gt, mm_obs_gt], prj_figs)
 
@@ -979,26 +970,16 @@ def run_matlab_ground_truth(prj_figs):
         y_theory, y_bound = compute_y_theory(X, y_sys, y_multi_obs)
         theory = {"grid": X, "theta": y_theory, "label": "theory"}
         bound = {"grid": X, "theta": y_bound, "label": "bound"}
-
         pp.plot_l2(system_gt, [mm_obs_gt, theory, bound], prj_figs)
+
     else:
         pp.plot_l2(system_gt, [mm_obs_gt], prj_figs)
 
-    # if n_obs==1:
-        # pp.plot_tf_matlab_1obs(X, y_sys, y_observers, prj_figs)
-    #     pp.plot_l2_matlab_1obs(X, y_sys, y_observers, prj_figs)
-    #     pp.plot_comparison_3d(X, y_sys, y_observers, prj_figs, gt= True)
-        # pp.plot_generic_5_figs(tot_true=solution, tot_pred=None, number=None, prj_figs=prj_figs)
+        mu = compute_mu(cfg)
+        pp.plot_mu(mu, t, prj_figs, gt=True)
+        t, weights = load_weights(cfg)
+        pp.plot_weights(weights, t, prj_figs, cfg, gt=True)
 
-    # else:
-    #     mu = compute_mu(conf1)
-    #     pp.plot_mu(mu, t, prj_figs, gt=True)
-
-    #     t, weights = load_weights(conf1)
-    #     pp.plot_weights(weights, t, prj_figs, conf1, gt=True)
-    #     pp.plot_tf_matlab(X, y_sys, y_observers, y_mmobs, prj_figs)
-    #     pp.plot_comparison_3d(X, y_sys, y_mmobs, prj_figs, gt= True)
-    #     pp.plot_l2_matlab(X, y_sys, y_observers, y_mmobs, prj_figs)
 
         # y1_matlab, gt1_matlab, gt2_matlab, y2_matlab = point_ground_truths(conf1)
         # df = load_from_pickle(f"{src_dir}/data/vessel/{string}.pkl")

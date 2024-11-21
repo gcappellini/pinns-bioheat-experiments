@@ -165,26 +165,41 @@ def plot_loss_components(losshistory, nam):
     )
 
 
-# def plot_weights(weights, t, run_figs, conf, gt=False):
-def plot_weights(weights, t, run_figs, conf1, gt=False):
-    lam = conf1.model_parameters.lam
-    ups = conf1.model_parameters.upsilon
-    n_obs = conf1.model_parameters.n_obs
+def plot_weights(t, series_data, run_figs):
+
+    cfg = OmegaConf.load(f'{run_figs}/config.yaml')
+    conf = OmegaConf.load(f"{cfg.output_dir}/config.yaml")
+    plot_params = uu.get_plot_params(conf)
+    n_obs = conf.model_parameters.n_obs
+    lam = conf.model_parameters.lam
+    ups = conf.model_parameters.upsilon
 
     # Prepare the labels for each weight line
-    legend_labels = [f"Weight $p_{i}$" for i in range(weights.shape[0])]
+    legend_labels = [f"Weight $p_{i}$" for i in range(n_obs)]
+
+    colors = []
+    linestyles = []
+    run_figs
+    rescale = conf.plot.rescale
+    alphas = []
+    linewidths = []
+    weights = []
+
+    for series in series_data:
+        values = series['weight']
+        label = series['label']
+        colors.append(plot_params[label]["color"])
+        linestyles.append(plot_params[label]["linestyle"])
+        alphas.append(plot_params[label]["alpha"])
+        linewidths.append(plot_params[label]["linewidth"])
+        weights.append(values)
 
     # Define the title with the lambda value
     title = fr"Dynamic weights, $\lambda={lam}$, $\upsilon={ups}$"
-    a = t.reshape(len(t),)
-    times = np.full_like(weights, a)
-
-    conf = OmegaConf.load(f"{src_dir}/config.yaml")
-    colors = uu.get_obs_colors(conf)
-    linestyles = uu.get_obs_linestyles(conf)
-    rescale = conf.plot.rescale
-    _, xlabel, _ = uu.get_scaled_labels(rescale) 
+    t = t.reshape(len(t), 1)
+    times = np.full_like(weights, t)
     times_plot = uu.rescale_time(times) if rescale else times
+    _, xlabel, _ = uu.get_scaled_labels(rescale) 
     
     # Call the generic plotting function
     plot_generic(
@@ -197,23 +212,44 @@ def plot_weights(weights, t, run_figs, conf1, gt=False):
         size=(6, 5),               # Figure size
         colors=colors,
         linestyles=linestyles,
-        filename=f"{run_figs}/weights_l_{lam}_u_{ups}_{'matlab' if gt else 'pinns'}_{n_obs}obs.png"  # Filename to save the plot
+        filename=f"{run_figs}/weights.png",  # Filename to save the plot
+        colors=colors,
+        linestyles=linestyles,
+        alphas=alphas,
+        linewidths=linewidths
     )
 
 
-def plot_mu(mus, t, run_figs, gt=False):
-    conf = OmegaConf.load(f"{src_dir}/config.yaml")
+def plot_mu(t, series_data, run_figs):
+
+    cfg = OmegaConf.load(f'{run_figs}/config.yaml')
+    conf = OmegaConf.load(f"{cfg.output_dir}/config.yaml")
+    plot_params = uu.get_plot_params(conf)
     n_obs = conf.model_parameters.n_obs
     # Prepare the labels for each line based on the number of columns in `mus`
-    legend_labels = [f"$e_{i}$" for i in range(mus.shape[1])]
-    
-    t = t.reshape(len(t), 1)
+    legend_labels = [f"$e_{i}$" for i in range(n_obs)]
+
+    colors = []
+    linestyles = []
+    run_figs
+    rescale = conf.plot.rescale
+    alphas = []
+    linewidths = []
+    mus = []
+
+    for series in series_data:
+        values = series['mu']
+        label = series['label']
+        colors.append(plot_params[label]["color"])
+        linestyles.append(plot_params[label]["linestyle"])
+        alphas.append(plot_params[label]["alpha"])
+        linewidths.append(plot_params[label]["linewidth"])
+        mus.append(values)
+
     # Define the title for the plot
     title = "Observation errors"
+    t = t.reshape(len(t), 1)
     times = np.full_like(mus, t)
-    colors = uu.get_obs_colors(conf)
-    linestyles = uu.get_obs_linestyles(conf)
-    rescale = conf.plot.rescale
     times_plot = uu.rescale_time(times) if rescale else times  
     _, xlabel, _ = uu.get_scaled_labels(rescale) 
 
@@ -231,7 +267,11 @@ def plot_mu(mus, t, run_figs, gt=False):
         size=(6, 5),               # Figure size
         colors=colors,
         linestyles=linestyles,
-        filename=f"{run_figs}/obs_error_{'matlab' if gt else 'pinns'}_{n_obs}obs.png"  # Filename to save the plot
+        filename=f"{run_figs}/obs_error.png",  # Filename to save the plot
+        colors=colors,
+        linestyles=linestyles,
+        alphas=alphas,
+        linewidths=linewidths
     )
 
 
