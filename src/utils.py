@@ -351,8 +351,6 @@ def train_and_save_model(model, callbacks, run_figs):
     confi_path = os.path.join(models, f"config_{config_hash}.yaml")
     OmegaConf.save(conf, confi_path)
 
-    dde.saveplot(losshistory, train_state, issave=True, isplot=False, loss_fname=f'loss_{config_hash}.dat', train_fname=f'train_{config_hash}.dat', test_fname=f'test_{config_hash}.dat', output_dir=models)
-
     return losshistory, model
 
 
@@ -368,17 +366,15 @@ def gen_testdata(conf, path=None):
 
     try:
         data = np.loadtxt(file_path)
+        x, t, sys = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T
 
-        if n == 8:
-            x, t, sys, y_obs, mmobs = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:11], data[:, 11:12].T
-            y_mm_obs = mmobs.flatten()[:, None]
-        elif n == 3:
-            x, t, sys, y_obs, mmobs = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:6], data[:, 6:7].T
-            y_mm_obs = mmobs.flatten()[:, None]
-        elif n == 1:
-            x, t, sys, y_obs = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T, data[:, 3:4].T
+        if n == 1:
+            y_obs = data[:, 3:4].T
             y_obs = y_obs.flatten()[:, None]
             y_mm_obs = y_obs
+        else:
+            y_obs, mmobs = data[:, 3:3+n], data[:, -1].T
+            y_mm_obs = mmobs.flatten()[:, None]
 
     except FileNotFoundError:
         print(f"File not found: {file_path}.")
@@ -421,16 +417,15 @@ def gen_obsdata(conf, path=None):
     return Xobs
 
 
-def load_weights(conf):
+def load_weights(conf, label, path=None):
     n = conf.model_parameters.n_obs
-    name = conf.experiment.name
-    output_folder = f"{tests_dir}/{name[0]}_{name[1]}/ground_truth"
-    if n==8:
-        data = np.loadtxt(f"{output_folder}/weights_matlab_{n}Obs.txt")
-        t, weights = data[:, 0:1], data[:, 1:9].T
-    if n==3:
-        data = np.loadtxt(f"{output_folder}/weights_matlab_{n}Obs.txt")
-        t, weights = data[:, 0:1], data[:, 1:4].T
+    dir_name = path if path is not None else conf.output_dir
+    lamb = conf.model_parameters.lam
+    ups = conf.model_parameters.upsilon
+
+    data = np.loadtxt(f"{dir_name}/{label}/weights_l_{lamb}_u_{ups}.txt")
+    t, weights = data[:, 0:1], data[:, 1:1+n]
+
     return t, np.array(weights)
 
     
@@ -574,19 +569,17 @@ def mm_observer(config):
     out_dir = config.output_dir
     simul_dir = os.path.join(out_dir, f"simulation_{n_obs}obs")
 
-    if n_obs==8:
-        W0, W1, W2, W3, W4, W5, W6, W7 = config.model_parameters.W0, config.model_parameters.W1, config.model_parameters.W2, config.model_parameters.W3, config.model_parameters.W4, config.model_parameters.W5, config.model_parameters.W6, config.model_parameters.W7
-        obs = np.array([W0, W1, W2, W3, W4, W5, W6, W7])
-    if n_obs==3:
-        W0, W1, W2 = config.model_parameters.W0, config.model_parameters.W4, config.model_parameters.W7
-        obs = np.array([W0, W1, W2])
-
     if n_obs==1:
         W = config.model_parameters.W_obs
         config.model_properties.W = float(W)
         run_figs = co.set_run(simul_dir, config, "obs_0")
   
         return train_model(run_figs)
+    
+    else:
+        W0, W1, W2, W3, W4, W5, W6, W7 = config.model_parameters.W0, config.model_parameters.W1, config.model_parameters.W2, config.model_parameters.W3, config.model_parameters.W4, config.model_parameters.W5, config.model_parameters.W6, config.model_parameters.W7
+        obs = np.array([W0, W1, W2, W3, W4, W5, W6, W7])
+
 
     multi_obs = []
     
@@ -601,34 +594,32 @@ def mm_observer(config):
     return multi_obs
 
 
-def mu(o, tau_in):
+def mu(o, tau_in, upsilon):
     global f1, f2, f3
 
     tau = np.where(tau_in<0.9944, tau_in, 0.9944)
-    # xo = np.vstack((np.zeros_like(tau), f1(tau), f2(tau), f3(tau), tau)).T
     xo = np.vstack((np.zeros_like(tau), f2(tau), tau)).T
     muu = []
 
     for el in o:
         oss = el.predict(xo)
         true = f2(tau)
-        scrt = calculate_mu(oss, true)
+        scrt = calculate_mu(oss, true, upsilon)
         muu.append(scrt)
-    muu = np.column_stack(muu)#.reshape(len(muu),)
+    muu = np.column_stack(muu)
     return muu
 
 
-def calculate_mu(os, tr):
+def calculate_mu(os, tr, upsilon):
     tr = tr.reshape(os.shape)
-    net = OmegaConf.load(f"{src_dir}/config.yaml")
-    upsilon = net.model_parameters.upsilon
     scrt = upsilon*np.abs(os-tr)**2
     return scrt
 
 
-def compute_mu(conf):
+def compute_mu(conf, g):
     n_obs = conf.model_parameters.n_obs
-    g = gen_testdata(conf)
+    upsilon = conf.model_parameters.upsilon
+
     rows_0 = g[g[:, 0] == 0.0]
     sys_0 = rows_0[:, 2:3]
     obss_0 = rows_0[:, 3:3+n_obs]
@@ -636,18 +627,18 @@ def compute_mu(conf):
     muu = []
 
     for el in range(obss_0.shape[1]):
-        mu_value = calculate_mu(obss_0[:, el], sys_0)
+        mu_value = calculate_mu(obss_0[:, el], sys_0, upsilon)
         muu.append(mu_value)
     muu = np.column_stack(muu)#.reshape(len(muu),)
     return muu
 
 
 
-def mm_predict(multi_obs, obs_grid, prj_figs):
-    conf = OmegaConf.load(f"{prj_figs}/config.yaml")
+def mm_predict(multi_obs, obs_grid, folder):
+    conf = OmegaConf.load(f"{folder}/config.yaml")
     ups = conf.model_parameters.upsilon
     lam = conf.model_parameters.lam
-    a = np.load(f'{prj_figs}/weights_l_{lam}_u_{ups}.npy', allow_pickle=True)
+    a = np.loadtxt(f'{folder}/weights_l_{lam}_u_{ups}.txt')
     weights = a[1:]
 
     num_time_steps = weights.shape[1]
@@ -657,13 +648,13 @@ def mm_predict(multi_obs, obs_grid, prj_figs):
     for row in obs_grid:
         t = row[-1]
         closest_idx = int(np.round(t * (num_time_steps - 1)))
-        w = weights[:, closest_idx]
+        w = weights[closest_idx]
 
         # Predict using the multi_obs predictors for the current row
         o_preds = np.array([multi_obs[i].predict(row.reshape(1, -1)) for i in range(len(multi_obs))]).flatten()
 
         # Combine the predictions using the weights for the current row
-        prediction = np.dot(w, o_preds)
+        prediction = np.dot(w[1:], o_preds)
         predictions.append(prediction)
 
     return np.array(predictions)
@@ -679,9 +670,6 @@ def check_observers_and_wandb_upload(tot_true, tot_pred, conf, output_dir, compa
     for el in range(n_obs):
         label = f"obs_{el}"
 
-        # tot_obs_pred = np.vstack((tot_pred[0], tot_pred[1], pred)).T
-        # run_figs = os.path.join(output_dir, label)
-
         # if run_wandb:
         #     aa = OmegaConf.load(f"{run_figs}/config.yaml")
         #     print(f"Initializing wandb for observer {el}...")
@@ -693,10 +681,34 @@ def check_observers_and_wandb_upload(tot_true, tot_pred, conf, output_dir, compa
         mm_obs_gt = {"grid": tot_true[:, :2], "theta": tot_true[:, -1], "label": "multi_observer_gt"}
         system_gt = {"grid": tot_true[:, :2], "theta": tot_true[:, 2], "label": "system_gt"}
 
+        observers_gt = [
+            {"grid": tot_true[:, :2], "theta": tot_true[:, 3+i], "label": f"observer_{i}_gt"} 
+            for i in range(n_obs)
+        ]
+
+        observers = [
+            {"grid": tot_pred[:, :2], "theta": tot_pred[:, 3+i], "label": f"observer_{i}"} 
+            for i in range(n_obs)
+        ]
+
         run_figs = output_dir
         # os.makedirs(run_figs, exist_ok=True)
-        pp.plot_multiple_series([mm_obs, mm_obs_gt, system_gt], run_figs)
-        pp.plot_l2(system_gt, [mm_obs, mm_obs_gt], run_figs)
+        pp.plot_multiple_series([mm_obs, mm_obs_gt, system_gt, *observers_gt, *observers], run_figs)
+        pp.plot_l2(system_gt, [mm_obs, mm_obs_gt, *observers_gt, *observers], run_figs)
+
+        if n_obs>1:
+            mu = compute_mu(conf, tot_pred)
+            mu = mu[1:, :]
+            t, weights = load_weights(conf, f"simulation_{n_obs}obs")
+
+            observers_mu = [
+            {"t": t, "weight": weights[:, i], "mu": mu[:, i], "label": f"observer_{i}"} 
+            for i in range(n_obs)
+            ]
+
+            pp.plot_mu(observers_mu, run_figs)
+            pp.plot_weights(observers_mu, run_figs)
+
         matching = extract_matching(tot_true, tot_pred)
         metrics = compute_metrics(matching[:, 0:2], matching[:, 3+el], matching[:, 3+n_obs+1+el], run_figs, system=matching[:, 2])
         # struttura di matching: x, t, sys_matlab, obs_matlab, mm_obs_matlab, obs_pinns, mm_obs_pinns
@@ -751,7 +763,7 @@ def get_system_pred(model, X, output_dir):
     preds = [X[:, 0], X[:, -1]]
     y_sys_pinns = model.predict(X)
     data_to_save = np.column_stack((X[:, 0].round(n_digits), X[:, -1].round(n_digits), y_sys_pinns.round(n_digits)))
-    np.savetxt(f'{output_dir}/prediction_system.txt', data_to_save, fmt='%.2f %.2f %.4f', delimiter=' ') 
+    np.savetxt(f'{output_dir}/prediction_system.txt', data_to_save, fmt='%.2f %.2f %.6f', delimiter=' ') 
 
     preds = np.array(data_to_save).reshape(len(preds[0]), 3).round(n_digits)
     return preds
@@ -765,7 +777,7 @@ def get_observers_preds(multi_obs, x_obs, output_dir, conf):
         obs_pred = obs_pred.reshape(len(obs_pred),)
         # run_figs = os.path.join(output_dir, f"obs_0")
         data_to_save = np.column_stack((x_obs[:, 0].round(n_digits), x_obs[:, -1].round(n_digits), obs_pred.round(n_digits)))
-        np.savetxt(f'{output_dir}/prediction_obs_0.txt', data_to_save, fmt='%.2f %.2f %.4f', delimiter=' ') 
+        np.savetxt(f'{output_dir}/prediction_obs_0.txt', data_to_save, fmt='%.2f %.2f %.6f', delimiter=' ') 
         preds.append(obs_pred)
         preds = np.array(preds).reshape(3, len(preds[0])).round(n_digits)
         OmegaConf.save(conf, f"{output_dir}/config.yaml")
@@ -774,18 +786,16 @@ def get_observers_preds(multi_obs, x_obs, output_dir, conf):
     else:
         for el in range(n_obs):
             obs_pred = multi_obs[el].predict(x_obs)
-            run_figs = os.path.join(output_dir, f"obs_{el}")
             obs_pred = obs_pred.reshape(len(obs_pred),)
-            data_to_save = np.column_stack((x_obs[:, 0].round(n_digits), x_obs[:, -1].round(n_digits), obs_pred.round(n_digits)))
-            np.savetxt(f'{run_figs}/prediction_obs_{el}.txt', data_to_save, fmt='%.2f %.2f %.4f', delimiter=' ')
             preds.append(obs_pred)
 
         conf.model_properties.W = None
         run_figs = co.set_run(output_dir, conf, f"mm_obs")
         OmegaConf.save(conf, f"{run_figs}/config.yaml")
-        mm_pred = solve_ivp(multi_obs, run_figs, conf, x_obs)
+        mm_pred = solve_ivp(multi_obs, output_dir, conf, x_obs)
         preds.append(mm_pred)
         preds = np.array(preds).reshape(len(multi_obs)+3, len(preds[0])).round(n_digits)
+        np.savetxt(f'{output_dir}/prediction_mm_obs_{el}.txt', preds, delimiter=' ')
         return preds.T
 
 
@@ -914,7 +924,7 @@ def solve_ivp(multi_obs, fold, conf, x_obs):
     p0 = np.full((n_obs,), 1/n_obs)
 
     def f(t, p):
-        a = mu(multi_obs, t)
+        a = mu(multi_obs, t, ups)
         e = np.exp(-1 * a)
         d = np.inner(p, e)
         f_list = []
@@ -927,12 +937,12 @@ def solve_ivp(multi_obs, fold, conf, x_obs):
     weights = np.zeros((sol.y.shape[0] + 1, sol.y.shape[1]))
     weights[0] = sol.t
     weights[1:] = sol.y
+    weights = weights.T
     
-    np.save(f'{fold}/weights_l_{lam}_u_{ups}.npy', weights)
+    np.savetxt(f'{fold}/weights_l_{lam}_u_{ups}.txt', weights.round(n_digits), delimiter=' ')
     # pp.plot_weights(weights[1:], weights[0], fold, conf)
     y_pred = mm_predict(multi_obs, x_obs, fold)
-    data_to_save = np.column_stack((x_obs[:, 0].round(n_digits), x_obs[:, -1].round(n_digits), y_pred.round(n_digits)))
-    np.savetxt(f'{fold}/prediction_mm_obs.txt', data_to_save, fmt='%.2f %.2f %.4f', delimiter=' ')
+
     return y_pred
 
  
@@ -962,9 +972,12 @@ def run_matlab_ground_truth(prj_figs):
     system_gt = { "grid": X, "theta": y_sys, "label": "system_gt"}
     mm_obs_gt = { "grid": X, "theta": y_multi_obs, "label": "multi_observer_gt"}
 
-    observers_gt = {f"observer_{i}_gt": {"grid": X, "theta": y_observers[:, i], "label": f"observer_{i}_gt"} for i in range(n_obs)}
+    observers_gt = [
+            {"grid": X, "theta": y_observers[:, i], "label": f"observer_{i}_gt"} 
+            for i in range(n_obs)
+        ]
 
-    pp.plot_multiple_series([system_gt, mm_obs_gt], prj_figs)
+    pp.plot_multiple_series([system_gt, mm_obs_gt, *observers_gt], prj_figs)
 
     if n_obs==1:
         y_theory, y_bound = compute_y_theory(X, y_sys, y_multi_obs)
@@ -973,12 +986,17 @@ def run_matlab_ground_truth(prj_figs):
         pp.plot_l2(system_gt, [mm_obs_gt, theory, bound], prj_figs)
 
     else:
-        pp.plot_l2(system_gt, [mm_obs_gt], prj_figs)
+        pp.plot_l2(system_gt, [mm_obs_gt, *observers_gt], prj_figs)
+        mu = compute_mu(cfg, solution)
+        t, weights = load_weights(cfg, "ground_truth")
 
-        mu = compute_mu(cfg)
-        pp.plot_mu(mu, t, prj_figs, gt=True)
-        t, weights = load_weights(cfg)
-        pp.plot_weights(weights, t, prj_figs, cfg, gt=True)
+        observers_mu = [
+            {"t": t, "weight": weights[:, i], "mu": mu[:, i], "label": f"observer_{i}_gt"} 
+            for i in range(n_obs)
+        ]
+
+        pp.plot_mu(observers_mu, prj_figs)
+        pp.plot_weights(observers_mu, prj_figs)
 
 
         # y1_matlab, gt1_matlab, gt2_matlab, y2_matlab = point_ground_truths(conf1)

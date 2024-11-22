@@ -35,7 +35,7 @@ function [sol] = OneDimBH_3Obs
     end
     
     
-    filename2 = sprintf('%s/weights_matlab_3Obs.txt', output_path);
+    filename2 = sprintf('%s/ground_truth/weights_matlab_3Obs.txt', output_path);
     fileID = fopen(filename2,'w');
     
     for i = 1:101

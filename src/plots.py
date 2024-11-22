@@ -128,6 +128,21 @@ def configure_subplot(ax, XS, surface, xlabel, ylabel, zlabel):
     ax.set_zlabel(zlabel, fontsize=7, labelpad=-4)
 
 
+def save_loss_components(iters, y_values, legend_labels, nam):
+    # Save the data to a text file
+    data_filename = f"{models_dir}/{str(datetime.date.today())}_losses_{nam}.txt"
+    with open(data_filename, "w") as file:
+        file.write("Loss Components Data\n")
+        file.write("=" * 50 + "\n")
+        file.write(f"{'Iteration':>12}  {'Loss Type':>12}  {'Loss Value':>20}\n")
+        file.write("-" * 50 + "\n")
+        
+        for i, label in enumerate(legend_labels):
+            for step, value in zip(iters, y_values[i]):
+                file.write(f"{step:>12}  {label:>12}  {value:>20.8e}\n")
+            file.write("-" * 50 + "\n")
+
+
 # Main plot functions
 def plot_loss_components(losshistory, nam):
     # Prepare the loss data
@@ -151,6 +166,8 @@ def plot_loss_components(losshistory, nam):
     conf = OmegaConf.load(f"{src_dir}/config.yaml")
     colors = conf.plot.colors.losses
 
+    save_loss_components(iters, y_values, legend_labels, nam)
+
     # Call the generic plotting function
     plot_generic(
         x=iterations,
@@ -165,7 +182,7 @@ def plot_loss_components(losshistory, nam):
     )
 
 
-def plot_weights(t, series_data, run_figs):
+def plot_weights(series_data, run_figs):
 
     cfg = OmegaConf.load(f'{run_figs}/config.yaml')
     conf = OmegaConf.load(f"{cfg.output_dir}/config.yaml")
@@ -184,6 +201,7 @@ def plot_weights(t, series_data, run_figs):
     alphas = []
     linewidths = []
     weights = []
+    t_vals = []
 
     for series in series_data:
         values = series['weight']
@@ -192,14 +210,16 @@ def plot_weights(t, series_data, run_figs):
         linestyles.append(plot_params[label]["linestyle"])
         alphas.append(plot_params[label]["alpha"])
         linewidths.append(plot_params[label]["linewidth"])
-        weights.append(values)
+        t_vals.append(series['t'])
+        weights.append(values.reshape(series['t'].shape))
 
     # Define the title with the lambda value
     title = fr"Dynamic weights, $\lambda={lam}$, $\upsilon={ups}$"
-    t = t.reshape(len(t), 1)
-    times = np.full_like(weights, t)
-    times_plot = uu.rescale_time(times) if rescale else times
-    _, xlabel, _ = uu.get_scaled_labels(rescale) 
+    
+    times_plot = uu.rescale_time(t_vals) if rescale else t_vals
+    _, xlabel, _ = uu.get_scaled_labels(rescale)
+    weights = np.array(weights)
+    times_plot = np.array(times_plot) 
     
     # Call the generic plotting function
     plot_generic(
@@ -213,14 +233,12 @@ def plot_weights(t, series_data, run_figs):
         colors=colors,
         linestyles=linestyles,
         filename=f"{run_figs}/weights.png",  # Filename to save the plot
-        colors=colors,
-        linestyles=linestyles,
         alphas=alphas,
         linewidths=linewidths
     )
 
 
-def plot_mu(t, series_data, run_figs):
+def plot_mu(series_data, run_figs):
 
     cfg = OmegaConf.load(f'{run_figs}/config.yaml')
     conf = OmegaConf.load(f"{cfg.output_dir}/config.yaml")
@@ -236,30 +254,30 @@ def plot_mu(t, series_data, run_figs):
     alphas = []
     linewidths = []
     mus = []
+    t_vals = []
 
     for series in series_data:
         values = series['mu']
         label = series['label']
+        t_vals.append(series['t'])
         colors.append(plot_params[label]["color"])
         linestyles.append(plot_params[label]["linestyle"])
         alphas.append(plot_params[label]["alpha"])
         linewidths.append(plot_params[label]["linewidth"])
-        mus.append(values)
+        mus.append(values.reshape(series['t'].shape))
 
     # Define the title for the plot
     title = "Observation errors"
-    t = t.reshape(len(t), 1)
-    times = np.full_like(mus, t)
-    times_plot = uu.rescale_time(times) if rescale else times  
+    # t = t.reshape(len(t), 1)
+    mus = np.array(mus)
+
+    times_plot = np.array(uu.rescale_time(t_vals)) if rescale else np.array(t_vals)  
     _, xlabel, _ = uu.get_scaled_labels(rescale) 
 
-    # if gt:
-    times_plot = times_plot.T
-    mus = mus.T
     # Call the generic plotting function
     plot_generic(
-        x=np.array(times_plot),                       # Time data for the x-axis
-        y=np.array(mus),                   # Transpose mus to get lines for each observation error
+        x=times_plot,                       # Time data for the x-axis
+        y=mus,                   # Transpose mus to get lines for each observation error
         title=title,               # Plot title
         xlabel=xlabel,      # x-axis label
         ylabel=r"Error $\mu$",             # y-axis label
@@ -268,8 +286,6 @@ def plot_mu(t, series_data, run_figs):
         colors=colors,
         linestyles=linestyles,
         filename=f"{run_figs}/obs_error.png",  # Filename to save the plot
-        colors=colors,
-        linestyles=linestyles,
         alphas=alphas,
         linewidths=linewidths
     )

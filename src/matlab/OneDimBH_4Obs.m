@@ -1,5 +1,5 @@
 function [sol] = OneDimBH_4Obs
-    global output_path
+    global output_path lambda upsilon
 
     m = 0;
     x = linspace(0,1,101);
@@ -37,7 +37,7 @@ function [sol] = OneDimBH_4Obs
     end
     
     
-    filename2 = sprintf('%s/weights_matlab_4Obs.txt', output_path);
+    filename2 = sprintf('%s/ground_truth/weights_l_%d_u_%d.txt', output_path, lambda, upsilon);
     fileID = fopen(filename2,'w');
     
     for i = 1:101
@@ -59,7 +59,7 @@ function [sol] = OneDimBH_4Obs
     f = [1; 1; 1; 1; 1; 1; 1; 1; 1].* dudx;
     
     den=u(6)*exp(-om0)+u(7)*exp(-om1)+u(8)*exp(-om2)+u(9)*exp(-om3);
-    
+
     s = [-W_sys*a2*u(1)+a3*exp(-a4*x); 
         -W0*a2*u(2)+a3*exp(-a4*x); 
         -W1*a2*u(3)+a3*exp(-a4*x); 
@@ -93,7 +93,9 @@ function [sol] = OneDimBH_4Obs
         flusso-K*(ul(4)-ul(1));
         flusso-K*(ul(5)-ul(1));
         0;0;0;0];
+
     ql = [1;1;1;1;1;1;1;1;1];
+
     pr = [ur(1) - theta_y1; 
         ur(2) - theta_y1; 
         ur(3) - theta_y1; 
@@ -101,7 +103,7 @@ function [sol] = OneDimBH_4Obs
         ur(5) - theta_y1; 
         0;0;0; 0];
     
-    qr = [0;0;0;0; 1;1;1];
+    qr = [0;0;0;0; 0; 1; 1;1;1];
     om0=upsilon*((ul(2)-ul(1)))^2;
     om1=upsilon*((ul(3)-ul(1)))^2;
     om2=upsilon*((ul(4)-ul(1)))^2;

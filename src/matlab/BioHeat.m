@@ -38,22 +38,14 @@ output_path = config_data.output_dir;
 path_exp = sprintf('%s/src/data/vessel/%s.txt', git_dir, str_exp);
 % output_path = sprintf('%s/', output_dir);
 
-
-% Observer weights based on the number of observers (3 or 8)
-if n_obs == 3
-    W0 = config_data.model_parameters.W0;
-    W1 = config_data.model_parameters.W1;
-    W2 = config_data.model_parameters.W2;
-elseif n_obs == 8 
-    W0 = config_data.model_parameters.W0;
-    W1 = config_data.model_parameters.W1;
-    W2 = config_data.model_parameters.W2;
-    W3 = config_data.model_parameters.W3;
-    W4 = config_data.model_parameters.W4;
-    W5 = config_data.model_parameters.W5;
-    W6 = config_data.model_parameters.W6;
-    W7 = config_data.model_parameters.W7;
-end
+W0 = config_data.model_parameters.W0;
+W1 = config_data.model_parameters.W1;
+W2 = config_data.model_parameters.W2;
+W3 = config_data.model_parameters.W3;
+W4 = config_data.model_parameters.W4;
+W5 = config_data.model_parameters.W5;
+W6 = config_data.model_parameters.W6;
+W7 = config_data.model_parameters.W7;
 
 % Other parameters
 % delta = config_data.model_properties.delta;
@@ -100,13 +92,14 @@ om7 = 0;
 
 W_sys = config_data.model_parameters.W_sys;
 W_obs = config_data.model_parameters.W_obs;
-% W_obs = W_sys;
 
 % Call the correct solver based on the number of observers
-if n_obs == 3
-    sol = OneDimBH_3Obs;  % Call the 3-observer case
+if n_obs == 1
+    sol = OneDimBH_1Obs;
+elseif n_obs == 3
+    sol = OneDimBH_3Obs;
+elseif n_obs == 4
+    sol = OneDimBH_4Obs;
 elseif n_obs == 8
-    sol = OneDimBH_8Obs;  % Call the default or other number of observers case
-elseif n_obs == 1
-    sol = OneDimBH_1Obs;  % Call the default or other number of observers case
+    sol = OneDimBH_8Obs;
 end
