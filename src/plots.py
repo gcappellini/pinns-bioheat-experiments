@@ -703,3 +703,5 @@ def plot_l2(series_sys, series_data, folder):
         alphas=alphas,
         linewidths=linewidths
     )
+
+# if __name__ == "__main__":

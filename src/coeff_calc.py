@@ -73,4 +73,6 @@ c_0: float = (np.abs(W_obs*a2/a1 - W_sys*a2/a1)**2)/(eta/a1 + W_obs*a2/a1)**2
 decay_rate_diff: float = (eta/a1+W_obs*a2/a1)/2
 # print(f"Wsys:{W_sys}, Wobs:{W_obs}, c0: {c_0}, decay exact:{decay_rate_exact}, decay diff:{decay_rate_diff}")
 
+# if __name__ == "__main__":
+
 

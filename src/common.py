@@ -106,3 +106,5 @@ def find_matching_json(folder_path, target_dict):
     # If no matching file is found
     print("No matching file found.")
     return None
+
+# if __name__ == "__main__":
