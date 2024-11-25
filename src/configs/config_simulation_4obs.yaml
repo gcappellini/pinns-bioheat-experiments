@@ -14,7 +14,7 @@ model_properties:
   alfa: 50
   activation: tanh
   initial_weights_regularizer: false
-  initialization: He uniform
+  initialization: Glorot uniform
   optimizer: None
   iters: 5000
   learning_rate: 0.001
@@ -226,7 +226,7 @@ plot:
 experiment:
   import_data: false
   save_pickle: false
-  run_matlab: true
+  run_matlab: false
   simulation: true
   run_wandb: false
   check_system: false
@@ -330,4 +330,4 @@ experiment:
       y3_0: 23.26
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-25/15-10-38
+output_dir: /app/guglielmo/pinns-bioheat-experiments/outputs/2024-11-25/14-25-00

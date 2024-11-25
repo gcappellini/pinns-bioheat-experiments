@@ -21,8 +21,10 @@ def main():
     """
     config = compose(config_name='config_run')
     out_dir = config.output_dir
+    run_gt = config.experiment.run_matlab
+    gt_dir = f"{tests_dir}/cooling_simulation"
 
-    if config.experiment.run_matlab:
+    if run_gt:
         conf = co.filter_config_for_matlab(config)
         output_dir = co.set_run(out_dir, conf, f"ground_truth")
         uu.run_matlab_ground_truth()
@@ -30,7 +32,7 @@ def main():
         tot_true = uu.gen_testdata(config)
     
     else:
-        tot_true = uu.gen_testdata(config, path=out_dir)
+        tot_true = uu.gen_testdata(config, path=gt_dir)
 
     if config.experiment.check_system:
         config.model_properties.W = config.model_parameters.W_sys
@@ -49,7 +51,7 @@ def main():
     config.model_properties.direct = False
     output_dir = co.set_run(out_dir, config, f"simulation_{n_obs}obs")
     
-    x_obs = uu.gen_obsdata(config)
+    x_obs = uu.gen_obsdata(config) if run_gt else uu.gen_obsdata(config, path=gt_dir)
     multi_obs = uu.mm_observer(config)
 
     tot_pred = uu.get_observers_preds(multi_obs, x_obs, output_dir, config)
