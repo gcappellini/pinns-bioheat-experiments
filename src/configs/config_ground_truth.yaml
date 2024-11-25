@@ -14,7 +14,7 @@ model_properties:
   alfa: 50
   activation: tanh
   initial_weights_regularizer: false
-  initialization: He uniform
+  initialization: Glorot uniform
   optimizer: None
   iters: 5000
   learning_rate: 0.001
@@ -63,4 +63,4 @@ model_parameters:
   - 2.0888912677764893
   - 27.680763244628906
   - 8.396754264831543
-output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-25/15-10-38
+output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-25/18-51-03

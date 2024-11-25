@@ -14,9 +14,9 @@ model_properties:
   alfa: 50
   activation: tanh
   initial_weights_regularizer: false
-  initialization: He uniform
-  iterations: 10000
-  LBFGS: true
+  initialization: Glorot uniform
+  optimizer: L-BFGS
+  iters: 5000
   learning_rate: 0.001
   num_dense_layers: 4
   num_dense_nodes: 50
@@ -95,7 +95,7 @@ plot:
       linewidth: 1.2
       alpha: 1.0
     multi_observer:
-      color: gold
+      color: darkblue
       label: MultiObs PINNs
       linestyle: ':'
       linewidth: 1.2
@@ -126,11 +126,11 @@ plot:
       - C6
       - C7
       label:
+      - Obs 1 PINNs
+      - Obs 2 PINNs
       - Obs 3 PINNs
       - Obs 4 PINNs
       - Obs 5 PINNs
-      - Obs 6 PINNs
-      - Obs 7 PINNs
       linestyle:
       - -.
       - --
@@ -168,7 +168,7 @@ plot:
       linewidth: 1.0
       alpha: 1.0
     multi_observer_gt:
-      color: gold
+      color: orange
       label: MultiObs MATLAB
       linestyle: --
       linewidth: 1.0
@@ -199,11 +199,11 @@ plot:
       - C6
       - C7
       label:
+      - Obs 1 MATLAB
+      - Obs 2 MATLAB
       - Obs 3 MATLAB
       - Obs 4 MATLAB
       - Obs 5 MATLAB
-      - Obs 6 MATLAB
-      - Obs 7 MATLAB
       linestyle:
       - ':'
       - ':'
@@ -330,4 +330,4 @@ experiment:
       y3_0: 23.26
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/tests/cooling_simulation
+output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-25/18-51-03

@@ -12,7 +12,7 @@ import coeff_calc as cc
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-# import matlab.engine
+import matlab.engine
 import subprocess
 from hydra import initialize, compose
 
@@ -32,7 +32,8 @@ os.makedirs(models, exist_ok=True)
 f1, f2, f3 = [None]*3
 n_digits = 6
 
-dde.optimizers.config.set_LBFGS_options(maxcor=100, ftol=1e-08, gtol=1e-08, maxiter=15000, maxfun=None, maxls=50)
+# dde.optimizers.config.set_LBFGS_options(maxcor=100, ftol=1e-08, gtol=1e-08, maxiter=15000, maxfun=None, maxls=50)
+dde.optimizers.config.set_LBFGS_options(maxcor=1, ftol=1e-02, gtol=1e-02, maxiter=1, maxfun=None, maxls=5)
 # If L-BFGS stops earlier than expected, set the default float type to ‘float64’:
 # dde.config.set_default_float("float64")
 
@@ -312,44 +313,73 @@ def create_callbacks(config):
     callbacks = [dde.callbacks.PDEPointResampler(period=resampler_period)] if resampler else []
     return callbacks
 
-
-def train_model(conf):
-    model = create_model(conf)
-    # Step 1: train with Adam
-    conf.model_properties.optimizer = "adam"
+def restore_model(conf, model_path):
+    """Restore a trained model from a file."""
+    model = create_model(conf)  # Ensure the model structure is created
     model = compile_optimizer_and_losses(model, conf)
-    config_hash_adam = co.generate_config_hash(conf.model_properties)
-    model_path_adam = os.path.join(models, f"model_{config_hash_adam}")
-    callbacks = create_callbacks(conf)
+    model.restore(model_path)  # Load the weights from the saved path
+    # model = torch.load(model_path, weights_only=True)
+    return model
 
-    model.train(
-        iterations=conf.model_properties.iters,
-        callbacks=callbacks,
-        model_save_path=model_path_adam,
-        # model_restore_path = model_path,
-        display_every=conf.plot.display_every
-    )
 
-    confi_path = os.path.join(models, f"config_{config_hash_adam}.yaml")
-    OmegaConf.save(conf, confi_path)
-
-    # Step 2: train with LBFGS
+def check_for_trained_model(conf):
+    """Check if a model trained with LBFGS optimizer exists."""
     conf.model_properties.optimizer = "L-BFGS"
-    model = compile_optimizer_and_losses(model, conf)
     config_hash_lbfgs = co.generate_config_hash(conf.model_properties)
-    model_path_lbfgs = os.path.join(models, f"model_{config_hash_lbfgs}")
+    models_files = os.listdir(models)
+    # Filter for matching files
+    filtered_models = [file for file in models_files if config_hash_lbfgs in file and file.endswith(".pt")]
+    if not filtered_models:
+        return None
+    # Return the path to the first sorted model
+    sorted_files = sorted(filtered_models)
+    model_path = os.path.join(models, sorted_files[0])
+    model = restore_model(conf, model_path)
+    return model
+
+
+def train_and_save_model(conf, optimizer, config_hash, save_path):
+    """Helper function to train and save a model."""
+    model = create_model(conf)
+    conf.model_properties.optimizer = optimizer
+    model = compile_optimizer_and_losses(model, conf)
     callbacks = create_callbacks(conf)
 
     losshistory, _ = model.train(
+        iterations=conf.model_properties.iters,
         callbacks=callbacks,
-        model_save_path=model_path_lbfgs,
-        # model_restore_path = model_path,
+        model_save_path=save_path,
         display_every=conf.plot.display_every
     )
-
-    confi_path = os.path.join(models, f"config_{config_hash_lbfgs}.yaml")
+    # Save configuration
+    confi_path = os.path.join(models, f"config_{config_hash}.yaml")
     OmegaConf.save(conf, confi_path)
 
+    return model, losshistory
+
+
+def train_model(conf):
+    """Train a model, checking for existing LBFGS-trained models first."""
+    # Step 0: Check for LBFGS-trained model
+    trained_model = check_for_trained_model(conf)
+
+    if trained_model:
+        # Return the trained model directly if found
+        return trained_model
+
+    # Step 1: Train with Adam optimizer
+    conf.model_properties.optimizer = "adam"
+    config_hash_adam = co.generate_config_hash(conf.model_properties)
+    model_path_adam = os.path.join(models, f"model_{config_hash_adam}.pt")
+    model, _ = train_and_save_model(conf, "adam", config_hash_adam, model_path_adam)
+
+    # Step 2: Train with LBFGS optimizer
+    conf.model_properties.optimizer = "L-BFGS"
+    config_hash_lbfgs = co.generate_config_hash(conf.model_properties)
+    model_path_lbfgs = os.path.join(models, f"model_{config_hash_lbfgs}.pt")
+    model, losshistory = train_and_save_model(conf, "L-BFGS", config_hash_lbfgs, model_path_lbfgs)
+
+    # Plot loss components
     pp.plot_loss_components(losshistory, config_hash_lbfgs)
 
     return model
