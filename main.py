@@ -7,19 +7,24 @@ from omegaconf import DictConfig, OmegaConf
 git_dir = os.getcwd()
 src_dir = os.path.join(git_dir, "src")
 conf_dir = os.path.join(src_dir, "configs")
-# git_dir = os.path.dirname(src_dir)
-# tests_dir = os.path.join(git_dir, "tests")
-# os.makedirs(tests_dir, exist_ok=True)
 
 logger = logging.getLogger(__name__)
 
+def initialize_run(cfg1):
+
+    output_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
+    cfg1.output_dir = output_dir
+    OmegaConf.save(cfg1,f"{output_dir}/config.yaml")
+    OmegaConf.save(cfg1,f"{conf_dir}/config_run.yaml")
+
+    return cfg1, output_dir
 
 @hydra.main(version_base=None, config_path=conf_dir, config_name="config_run")
 def main(cfg: DictConfig):
-
-    logger.info(f'Working dir: {os.getcwd()}')
-
-
+    
+    initialize_run(cfg)
+    
+    subprocess.run(["python", f'{src_dir}/simulation.py'])
 
 if __name__ == "__main__":
     main()

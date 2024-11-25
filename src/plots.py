@@ -7,6 +7,8 @@ import torch
 import utils as uu
 from omegaconf import OmegaConf
 import datetime
+from hydra import compose
+import coeff_calc as cc 
 
 # Set up directories and random seed
 dde.config.set_random_seed(200)
@@ -163,7 +165,7 @@ def plot_loss_components(losshistory, nam):
     iters = losshistory.steps
     loss_terms = np.array(y_values)
     iterations = np.array([iters]*len(y_values))
-    conf = OmegaConf.load(f"{src_dir}/config.yaml")
+    conf = compose(config_name='config_run')
     colors = conf.plot.colors.losses
 
     save_loss_components(iters, y_values, legend_labels, nam)
@@ -184,8 +186,7 @@ def plot_loss_components(losshistory, nam):
 
 def plot_weights(series_data, run_figs):
 
-    cfg = OmegaConf.load(f'{run_figs}/config.yaml')
-    conf = OmegaConf.load(f"{cfg.output_dir}/config.yaml")
+    conf = compose(config_name='config_run')
     plot_params = uu.get_plot_params(conf)
     n_obs = conf.model_parameters.n_obs
     lam = conf.model_parameters.lam
@@ -240,8 +241,7 @@ def plot_weights(series_data, run_figs):
 
 def plot_mu(series_data, run_figs):
 
-    cfg = OmegaConf.load(f'{run_figs}/config.yaml')
-    conf = OmegaConf.load(f"{cfg.output_dir}/config.yaml")
+    conf = compose(config_name='config_run')
     plot_params = uu.get_plot_params(conf)
     n_obs = conf.model_parameters.n_obs
     # Prepare the labels for each line based on the number of columns in `mus`
@@ -316,7 +316,7 @@ def plot_tx(tx, tot_true, tot_obs_pred, number, prj_figs, system=False, gt=False
     x_pred = np.unique(tot_obs_pred[:, 0])
 
     # Load configuration and plot parameters
-    conf = OmegaConf.load(f'{prj_figs}/config.yaml')
+    conf = compose(config_name='config_run')
     plot_params = uu.get_plot_params(conf)
     n_obs = conf.model_parameters.n_obs
 
@@ -392,8 +392,9 @@ def plot_comparison_3d(e, t_true, t_pred, run_figs, gt=False):
     :param t_pred: Predicted values reshaped for 3D plotting.
     :param run_figs: Directory to save the plot.
     """
-    conf = OmegaConf.load(f"{run_figs}/config.yaml")
-    n_obs = conf.model_parameters.n_obs
+    conf = compose(config_name='config_run')
+    n = conf.model_parameters.n_obs
+    rescale = conf.plot.rescale
     # Determine the unique points in X and Y dimensions
     la = len(np.unique(e[:, 0]))  # Number of unique X points
     le = len(np.unique(e[:, 1]))  # Number of unique Y points
@@ -403,11 +404,7 @@ def plot_comparison_3d(e, t_true, t_pred, run_figs, gt=False):
     theta_pred = t_pred.reshape(le, la)
 
     # Column titles for each subplot
-    col_titles = ["System", "Observer", "Error"] if n_obs==1 else ["System", "MultiObserver", "Error"]
-
-    conf = OmegaConf.load(f"{run_figs}/config.yaml")
-    rescale = conf.plot.rescale
-    n = conf.model_parameters.n_obs
+    col_titles = ["System", "Observer", "Error"] if n==1 else ["System", "MultiObserver", "Error"]
 
     fname = f"{run_figs}/comparison_3d_matlab_{n}obs.png" if gt else f"{run_figs}/comparison_3d_pinns_{n}obs.png"
 
@@ -436,7 +433,7 @@ def plot_validation_3d(e, t_true, t_pred, run_figs, system=False):
     :param t_pred: Predicted values reshaped for 3D plotting.
     :param run_figs: Directory to save the plot.
     """
-    conf = OmegaConf.load(f"{run_figs}/config.yaml")
+    conf = compose(config_name='config_run')
 
     # Determine the unique points in X and Y dimensions
     la = len(np.unique(e[:, 0]))  # Number of unique X points
@@ -471,7 +468,8 @@ def plot_validation_3d(e, t_true, t_pred, run_figs, system=False):
     
 
 def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, prj_figs, gt=False):
-    conf = OmegaConf.load(f"{src_dir}/config.yaml")
+
+    conf = compose(config_name='config_run')
 
     time_in_minutes = df['tau']*conf.model_properties.tauf / 60
     time_matlab = np.linspace(0, time_in_minutes.max(), len(y1_pred))
@@ -525,32 +523,6 @@ def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, p
     )
 
 
-def plot_mm_obs(multi_obs, tot_true, tot_pred, output_dir, comparison_3d=True):
-    
-    t = np.unique(tot_pred[:, 1:2])
-    mus = uu.mu(multi_obs, t)
-    
-
-    # if run_wandb:
-    #     print(f"Initializing wandb for multi observer ...")
-    #     wandb.init(project= str, name=f"mm_obs")
-
-    matching = uu.extract_matching(tot_true, tot_pred)
-    uu.compute_metrics(matching[:, 2], matching[:, 3], output_dir)
-    
-    # if run_wandb:
-    #     wandb.log(metrics)
-    #     wandb.finish()
-
-    plot_mu(mus, t, output_dir)
-    plot_l2(tot_true, tot_pred, 0, output_dir, MultiObs=True)
-    plot_generic_5_figs(tot_true, tot_pred, 0, output_dir, MultiObs=True)
-
-    if comparison_3d:
-        matching = uu.extract_matching(tot_true, tot_pred)
-        plot_comparison_3d(matching[:, 0:2], matching[:, 2], matching[:, -1], output_dir)
-
-
 def plot_multiple_series(series_data, prj_figs):
     """
     Generalized plot function for multiple series at specified time instants.
@@ -566,8 +538,7 @@ def plot_multiple_series(series_data, prj_figs):
     fig, axes = plt.subplots(1, len(t_vals), figsize=(15, 5))
     
     # Load configuration parameters for plotting
-    cfg = OmegaConf.load(f'{prj_figs}/config.yaml')
-    conf = OmegaConf.load(f"{cfg.output_dir}/config.yaml")
+    conf = compose(config_name='config_run')
     rescale = conf.plot.rescale
     plot_params = uu.get_plot_params(conf)
     
@@ -648,8 +619,7 @@ def plot_l2(series_sys, series_data, folder):
     t_pred = np.unique(e[:, 1])
     t_pred = t_pred.reshape(len(t_pred), 1)
 
-    cfg = OmegaConf.load(f'{folder}/config.yaml')
-    conf = OmegaConf.load(f"{cfg.output_dir}/config.yaml")
+    conf = compose(config_name='config_run')
     plot_params = uu.get_plot_params(conf)
 
     t_vals = []
@@ -704,4 +674,54 @@ def plot_l2(series_sys, series_data, folder):
         linewidths=linewidths
     )
 
+
+def plot_matlab_ground_truth(prj_figs):
+    cfg = compose(config_name='config_run')
+    solution = uu.gen_testdata(cfg)
+    n_obs = cc.n_obs
+    X, y_sys, y_observers, y_mmobs = solution[:, 0:2], solution[:, 2], solution[:, 3:3+n_obs], solution[:, -1]
+    t = np.unique(X[:, 1])
+
+    show_obs = cfg.plot.show_obs
+
+    y_multi_obs = y_observers if n_obs==1 else y_mmobs
+    metr = uu.compute_metrics(X, y_multi_obs, y_multi_obs, prj_figs, system=y_sys)
+
+    system_gt = { "grid": X, "theta": y_sys, "label": "system_gt"}
+    mm_obs_gt = { "grid": X, "theta": y_multi_obs, "label": "multi_observer_gt"}
+
+    observers_gt = [
+            {"grid": X, "theta": y_observers[:, i], "label": f"observer_{i}_gt"} 
+            for i in range(n_obs)
+        ]
+
+    plot_multiple_series([system_gt, mm_obs_gt, *observers_gt], prj_figs)
+
+    if n_obs==1:
+        y_theory, y_bound = uu.compute_y_theory(X, y_sys, y_multi_obs)
+        theory = {"grid": X, "theta": y_theory, "label": "theory"}
+        bound = {"grid": X, "theta": y_bound, "label": "bound"}
+        plot_l2(system_gt, [mm_obs_gt, theory, bound], prj_figs)
+
+    else:
+        series_to_plot = [mm_obs_gt, *observers_gt] if show_obs else [mm_obs_gt]
+        plot_l2(system_gt, series_to_plot, prj_figs)
+        mu = uu.compute_mu(cfg, solution)
+        t, weights = uu.load_weights(cfg, "ground_truth")
+
+        observers_mu = [
+            {"t": t, "weight": weights[:, i], "mu": mu[:, i], "label": f"observer_{i}_gt"} 
+            for i in range(n_obs)
+        ]
+
+        plot_mu(observers_mu, prj_figs)
+        plot_weights(observers_mu, prj_figs)
+
+        # y1_matlab, gt1_matlab, gt2_matlab, y2_matlab = point_ground_truths(conf1)
+        # df = load_from_pickle(f"{src_dir}/data/vessel/{string}.pkl")
+        # pp.plot_timeseries_with_predictions(df, y1_matlab, gt1_matlab, gt2_matlab, y2_matlab, prj_figs, gt=True)
+
+    print("MATLAB ground truth completed.")
+    print("Metrics:", metr["total_L2RE_sys"])
+    return metr["total_L2RE_sys"]
 # if __name__ == "__main__":

@@ -5,6 +5,7 @@ import common as co
 import wandb
 import plots as pp
 from omegaconf import OmegaConf
+from hydra import compose
 
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
@@ -18,15 +19,18 @@ def main():
     """
     Main function to run the testing of the network, MATLAB ground truth, observer checks, and PINNs.
     """
-    config = OmegaConf.load(f"{conf_dir}/config_run.yaml")
+    config = compose(config_name='config_run')
     out_dir = config.output_dir
 
     if config.experiment.run_matlab:
         conf = co.filter_config_for_matlab(config)
         output_dir = co.set_run(out_dir, conf, f"ground_truth")
-        uu.run_matlab_ground_truth(output_dir)
-
-    tot_true = uu.gen_testdata(config)
+        uu.run_matlab_ground_truth()
+        pp.plot_matlab_ground_truth(output_dir)
+        tot_true = uu.gen_testdata(config)
+    
+    else:
+        tot_true = uu.gen_testdata(config, path=out_dir)
 
     if config.experiment.check_system:
         config.model_properties.W = config.model_parameters.W_sys
@@ -34,8 +38,7 @@ def main():
         
         output_dir = co.set_run(out_dir, config, "simulation_system")
 
-        pinns_sys = uu.train_model(output_dir)
-        
+        pinns_sys = uu.train_model(config)
         
         y_sys_pinns = uu.get_system_pred(pinns_sys, tot_true[:, 0:2], output_dir)
         uu.check_system_and_wandb_upload(tot_true[:, :3], y_sys_pinns, config, output_dir)

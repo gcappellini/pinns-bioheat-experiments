@@ -1,13 +1,16 @@
 import os
 from omegaconf import OmegaConf
 import numpy as np
+from hydra import initialize, compose
 
 
 current_file: str = os.path.abspath(__file__)
 src_dir: str = os.path.dirname(current_file)
 
 conf_dir: str = os.path.join(src_dir, "configs")
-cfg: dict = OmegaConf.load(f"{src_dir}/config.yaml")
+
+initialize('configs', version_base=None)
+cfg = compose(config_name='config_run')
 
 
 L0: float = cfg.model_properties.L0
@@ -33,7 +36,9 @@ dT: float = (Tmax-Troom)
 alfa: float = cfg.model_properties.alfa
 b2: float = cfg.model_properties.b2
 
-# Accessing model parameters from the config
+x_gt1: float = cfg.model_parameters.x_gt1
+x_gt2: float = cfg.model_parameters.x_gt2
+
 W0: float = cfg.model_parameters.W0
 W1: float = cfg.model_parameters.W1
 W2: float = cfg.model_parameters.W2
@@ -44,6 +49,7 @@ W6: float = cfg.model_parameters.W6
 W7: float = cfg.model_parameters.W7
 W_sys: float = cfg.model_parameters.W_sys
 W_obs: float = cfg.model_parameters.W_obs
+n_obs: int = cfg.model_parameters.n_obs
 
 lamb: float = cfg.model_parameters.lam  # Access the lambda parameter
 upsilon: float = cfg.model_parameters.upsilon
@@ -74,5 +80,3 @@ decay_rate_diff: float = (eta/a1+W_obs*a2/a1)/2
 # print(f"Wsys:{W_sys}, Wobs:{W_obs}, c0: {c_0}, decay exact:{decay_rate_exact}, decay diff:{decay_rate_diff}")
 
 # if __name__ == "__main__":
-
-

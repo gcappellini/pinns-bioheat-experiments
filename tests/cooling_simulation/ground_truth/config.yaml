@@ -4,7 +4,7 @@ model_properties:
   k: 0.6
   rho: 1000.0
   c: 4186.0
-  W: 0.001651
+  W: 0.003303
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
@@ -13,16 +13,16 @@ model_properties:
   Ty30: 21.5
   alfa: 50
   activation: tanh
-  initial_weights_regularizer: true
-  initialization: Glorot normal
-  iterations: 1
-  LBFGS: false
+  initial_weights_regularizer: false
+  initialization: He uniform
+  iterations: 10000
+  LBFGS: true
   learning_rate: 0.001
   num_dense_layers: 4
   num_dense_nodes: 50
-  num_domain: 400
-  num_boundary: 240
-  num_initial: 160
+  num_domain: 16348
+  num_boundary: 4000
+  num_initial: 2000
   num_test: 1000
   resampling: true
   resampler_period: 100
@@ -39,19 +39,19 @@ model_properties:
   b2: 0.5053
   direct: false
 model_parameters:
-  lam: 50
-  upsilon: 50
+  lam: 1
+  upsilon: 1
   W0: 6.3e-05
-  W1: 0.0006
-  W2: 0.003303
-  W3: 0.0014
+  W1: 0.001207
+  W2: 0.001651
+  W3: 0.003303
   W4: 0.001651
   W5: 0.0021
   W6: 0.0026
   W7: 0.001207
   W_sys: 0.001651
   W_obs: 0.001651
-  n_obs: 1
+  n_obs: 4
   gt1_0: 24.44
   gt2_0: 29.25
   x_y2: 0
@@ -59,8 +59,8 @@ model_parameters:
   x_gt1: 0.04
   x_y1: 0.07
   loss_weights:
-  - 0.048366133123636246
-  - 2.032113552093506
-  - 136.3924560546875
-  - 4.963640213012695
-output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-19/12-09-07
+  - 0.006289862096309662
+  - 2.0888912677764893
+  - 27.680763244628906
+  - 8.396754264831543
+output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/tests/cooling_simulation

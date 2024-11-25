@@ -65,7 +65,7 @@ model_parameters:
   - 8.396754264831543
 plot:
   rescale: true
-  display_every: 500
+  display_every: 200
   colors:
     measuring_points:
     - '#F7CAC9'
@@ -222,6 +222,7 @@ plot:
       - 0.7
       - 0.7
       - 0.7
+  show_obs: false
 experiment:
   import_data: false
   save_pickle: false
@@ -329,4 +330,4 @@ experiment:
       y3_0: 23.26
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-22/12-30-03
+output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/tests/cooling_simulation

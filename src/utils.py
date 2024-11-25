@@ -14,6 +14,7 @@ import common as co
 from omegaconf import OmegaConf
 import matlab.engine
 import subprocess
+from hydra import initialize, compose
 
 
 dde.config.set_random_seed(200)
@@ -36,6 +37,7 @@ dde.optimizers.config.set_LBFGS_options(maxcor=100, ftol=1e-08, gtol=1e-08, maxi
 # dde.config.set_default_float("float64")
 
 
+
 def get_initial_loss(model):
     model.compile("adam", lr=0.001)
     losshistory, _ = model.train(0)
@@ -43,7 +45,7 @@ def get_initial_loss(model):
 
 def compute_metrics(grid, true, pred, run_figs, system=None):
     # Load loss weights from configuration
-    cfg = OmegaConf.load(f"{run_figs}/config.yaml")
+    cfg = compose(config_name='config_run')
     loss_weights = cfg.model_parameters.loss_weights
     small_number = 1e-8
     
@@ -182,7 +184,7 @@ def output_transform(x, y):
     return x[:, 0:1] * y
 
 
-def create_model(run_figs):
+def create_model(config):
     """
     Generalized function to create and configure a PDE solver model using DeepXDE.
     
@@ -192,19 +194,15 @@ def create_model(run_figs):
     :return: A compiled DeepXDE model.
     """
     # Load configuration
-    config = OmegaConf.load(f'{run_figs}/config.yaml')
     model_props = config.model_properties
     model_pars = config.model_parameters
 
     # Extract shared parameters from the configuration
     direct = model_props.direct
-    activation = model_props.activation
-    initial_weights_regularizer = model_props.initial_weights_regularizer
+    activation = model_props.activation  
     initialization = model_props.initialization
-    learning_rate = model_props.learning_rate
     num_dense_layers = model_props.num_dense_layers
     num_dense_nodes = model_props.num_dense_nodes
-    loss_weights = [model_props.w_res, model_props.w_bc0, model_props.w_bc1, model_props.w_ic]
     num_domain, num_boundary, num_initial, num_test = (
         model_props.num_domain, model_props.num_boundary,
         model_props.num_initial, model_props.num_test,
@@ -212,7 +210,6 @@ def create_model(run_figs):
     a1, a2, a3, a4, a5 = cc.a1, cc.a2, cc.a3, cc.a4, cc.a5
     K = cc.K
 
-    # Shared problem constants
     W = model_props.W if not direct else model_pars.W_sys
     theta10 = scale_t(model_props.Ty10)
 
@@ -244,15 +241,12 @@ def create_model(run_figs):
     def bc1_fun(x, theta, _):
         return theta - theta10
 
-
-    # Shared PDE
     def pde(x, theta):
         dtheta_tau = dde.grad.jacobian(theta, x, i=0, j=1 if direct else 2)
         dtheta_xx = dde.grad.hessian(theta, x, i=0, j=0)
         source_term = -a3 * torch.exp(-a4 * x[:, :1])
         return a1 * dtheta_tau - dtheta_xx + W * a2 * theta + source_term
 
-    # Geometry and time domain
     if direct:
         geom = dde.geometry.Interval(0, 1)
     else:
@@ -283,75 +277,82 @@ def create_model(run_figs):
 
     # Compile the model
     model = dde.Model(data, net)
-    if initial_weights_regularizer:
-        initial_losses = get_initial_loss(model)
-        loss_weights = [
-            lw * len(initial_losses) / il
-            for lw, il in zip(loss_weights, initial_losses)
-        ]
-        model.compile("adam", lr=learning_rate, loss_weights=loss_weights)
-    else:
-        model.compile("adam", lr=learning_rate, loss_weights=loss_weights)
-
-    OmegaConf.save(config, f"{src_dir}/config.yaml")
-    OmegaConf.save(config, f"{run_figs}/config.yaml")
 
     return model
 
-def train_model(run_figs):
-    global models
-    config = OmegaConf.load(f'{run_figs}/config.yaml')
-    config_hash = co.generate_config_hash(config.model_properties)
-    n = config.model_properties.iterations
-    model_path = os.path.join(models, f"model_{config_hash}.pt-{n}.pt")
+def compile_optimizer_and_losses(model, conf):
+    model_props = conf.model_properties
+    initial_weights_regularizer = model_props.initial_weights_regularizer
+    learning_rate = model_props.learning_rate
+    loss_weights = [model_props.w_res, model_props.w_bc0, model_props.w_bc1, model_props.w_ic]
+    optimizer = conf.model_properties.optimizer
 
-    mm = create_model(run_figs)
+    if optimizer == "adam":
+        if initial_weights_regularizer:
+            initial_losses = get_initial_loss(model)
+            loss_weights = [
+                lw * len(initial_losses) / il
+                for lw, il in zip(loss_weights, initial_losses)
+            ]
+            model.compile(optimizer, lr=learning_rate, loss_weights=loss_weights)
+        else:
+            model.compile(optimizer, lr=learning_rate, loss_weights=loss_weights)
+        return model
 
-    if os.path.exists(model_path):
-        # Model exists, load it
-        print(f"Loading model from {model_path}")
-        mm.restore(model_path, device=torch.device(dev), verbose=0)
-        return mm
-    
-    LBFGS = config.model_properties.LBFGS
+    else:
+        model.compile(optimizer)
+
+    return model
+
+
+def create_callbacks(config):
     resampler = config.model_properties.resampling
     resampler_period = config.model_properties.resampler_period
 
     callbacks = [dde.callbacks.PDEPointResampler(period=resampler_period)] if resampler else []
-
-    losshistory, mm = train_and_save_model(mm, callbacks, run_figs)
-
-    if LBFGS:
-        # if ini_w:
-            # ini_w = config.model_properties.initial_weights_regularizer
-        #     initial_losses = get_initial_loss(mm)
-        #     loss_weights = len(initial_losses) / initial_losses
-        #     mm.compile("L-BFGS", loss_weights=loss_weights)
-        # else:
-        mm.compile("L-BFGS")
-        losshistory, mm = train_and_save_model(mm, callbacks, run_figs)
-        
-    pp.plot_loss_components(losshistory, config_hash)
-    return mm
+    return callbacks
 
 
-def train_and_save_model(model, callbacks, run_figs):
-    global models
+def train_model(conf):
+    model = create_model(conf)
+    # Step 1: train with Adam
+    conf.model_properties.optimizer = "adam"
+    model = compile_optimizer_and_losses(model, conf)
+    config_hash_adam = co.generate_config_hash(conf.model_properties)
+    model_path_adam = os.path.join(models, f"model_{config_hash_adam}")
+    callbacks = create_callbacks(conf)
 
-    conf = OmegaConf.load(f'{run_figs}/config.yaml')
-    config_hash = co.generate_config_hash(conf.model_properties)
-    model_path = os.path.join(models, f"model_{config_hash}.pt")
-
-    losshistory, train_state = model.train(
-        iterations=conf.model_properties.iterations,
+    model.train(
+        iterations=conf.model_properties.iters,
         callbacks=callbacks,
-        model_save_path=model_path,
+        model_save_path=model_path_adam,
+        # model_restore_path = model_path,
         display_every=conf.plot.display_every
     )
-    confi_path = os.path.join(models, f"config_{config_hash}.yaml")
+
+    confi_path = os.path.join(models, f"config_{config_hash_adam}.yaml")
     OmegaConf.save(conf, confi_path)
 
-    return losshistory, model
+    # Step 2: train with LBFGS
+    conf.model_properties.optimizer = "L-BFGS"
+    model = compile_optimizer_and_losses(model, conf)
+    config_hash_lbfgs = co.generate_config_hash(conf.model_properties)
+    model_path_lbfgs = os.path.join(models, f"model_{config_hash_lbfgs}")
+    callbacks = create_callbacks(conf)
+
+    losshistory, _ = model.train(
+        callbacks=callbacks,
+        model_save_path=model_path_lbfgs,
+        # model_restore_path = model_path,
+        display_every=conf.plot.display_every
+    )
+
+    confi_path = os.path.join(models, f"config_{config_hash_lbfgs}.yaml")
+    OmegaConf.save(conf, confi_path)
+
+    pp.plot_loss_components(losshistory, config_hash_lbfgs)
+
+    return model
 
 
 def gen_testdata(conf, path=None):
@@ -430,18 +431,17 @@ def load_weights(conf, label, path=None):
 
     
 def scale_t(t):
-    properties = OmegaConf.load(f"{src_dir}/config.yaml")
-    Troom = properties.model_properties.Troom
-    Tmax = properties.model_properties.Tmax
+    Troom = cc.Troom
+    Tmax = cc.Tmax
     k = (t - Troom) / (Tmax - Troom)
 
     return round(k, n_digits)
 
 
 def rescale_t(theta):
-    properties = OmegaConf.load(f"{src_dir}/config.yaml")
-    Troom = properties.model_properties.Troom
-    Tmax = properties.model_properties.Tmax
+
+    Troom = cc.Troom
+    Tmax = cc.Tmax
 
     # Iterate through each component in theta and rescale if it is a list-like object
     rescaled_theta = []
@@ -459,14 +459,12 @@ def rescale_t(theta):
 
 
 def rescale_x(X):
-    properties = OmegaConf.load(f"{src_dir}/config.yaml")
-    L0 = properties.model_properties.L0
 
     # Iterate through each component in X and rescale if it is a list-like object
     rescaled_X = []
     for part in X:
         part = np.array(part, dtype=float)  # Ensure each part is converted into a numpy array
-        rescaled_part = part * L0           # Apply the scaling
+        rescaled_part = part * cc.L0           # Apply the scaling
         rescaled_X.append(rescaled_part)    # Append rescaled part to the result list
 
     return rescaled_X
@@ -474,27 +472,24 @@ def rescale_x(X):
 
 def rescale_time(tau):
     tau = np.array(tau)
-    properties = OmegaConf.load(f"{src_dir}/config.yaml")
-    tauf = properties.model_properties.tauf
+    tauf = cc.tauf
     j = tau*tauf
 
     return np.round(j, 0)
 
 
 def scale_time(t):
-    properties = OmegaConf.load(f"{src_dir}/config.yaml")
-    tauf = properties.model_properties.tauf
+    tauf = cc.tauf
     j = t/tauf
 
     return np.round(j, n_digits)
 
 
 def get_tc_positions():
-    daa = OmegaConf.load(f"{src_dir}/config.yaml")
-    L0 = daa.model_properties.L0
+    L0 = cc.L0
     x_y2 = 0.0
-    x_gt2 = (daa.model_parameters.x_gt2)/L0
-    x_gt1 = (daa.model_parameters.x_gt1)/L0
+    x_gt2 = (cc.x_gt2)/L0
+    x_gt1 = (cc.x_gt1)/L0
     x_y1 = 1.0
 
     return [x_y2, round(x_gt2, 2), round(x_gt1, 2), x_y1] 
@@ -574,7 +569,7 @@ def mm_observer(config):
         config.model_properties.W = float(W)
         run_figs = co.set_run(simul_dir, config, "obs_0")
   
-        return train_model(run_figs)
+        return train_model(config)
     
     else:
         W0, W1, W2, W3, W4, W5, W6, W7 = config.model_parameters.W0, config.model_parameters.W1, config.model_parameters.W2, config.model_parameters.W3, config.model_parameters.W4, config.model_parameters.W5, config.model_parameters.W6, config.model_parameters.W7
@@ -588,7 +583,7 @@ def mm_observer(config):
         config.model_properties.W = float(perf)
         run_figs = co.set_run(simul_dir, config, f"obs_{j}")
 
-        model = train_model(run_figs)
+        model = train_model(config)
         multi_obs.append(model)
 
     return multi_obs
@@ -635,9 +630,9 @@ def compute_mu(conf, g):
 
 
 def mm_predict(multi_obs, obs_grid, folder):
-    conf = OmegaConf.load(f"{folder}/config.yaml")
-    ups = conf.model_parameters.upsilon
-    lam = conf.model_parameters.lam
+
+    ups = cc.upsilon
+    lam = cc.lamb
     a = np.loadtxt(f'{folder}/weights_l_{lam}_u_{ups}.txt')
     weights = a[1:]
 
@@ -666,12 +661,14 @@ def check_observers_and_wandb_upload(tot_true, tot_pred, conf, output_dir, compa
     """
     # run_wandb = conf.experiment.run_wandb
     n_obs = conf.model_parameters.n_obs
+    show_obs = conf.plot.show_obs
 
     for el in range(n_obs):
-        label = f"obs_{el}"
+        
 
         # if run_wandb:
-        #     aa = OmegaConf.load(f"{run_figs}/config.yaml")
+            # label = f"obs_{el}"
+        #     aa = compose(config_name='config_run')
         #     print(f"Initializing wandb for observer {el}...")
         #     wandb.init(project=name, name=label, config=aa)
                 
@@ -693,8 +690,9 @@ def check_observers_and_wandb_upload(tot_true, tot_pred, conf, output_dir, compa
 
         run_figs = output_dir
         # os.makedirs(run_figs, exist_ok=True)
-        pp.plot_multiple_series([mm_obs, mm_obs_gt, system_gt, *observers_gt, *observers], run_figs)
-        pp.plot_l2(system_gt, [mm_obs, mm_obs_gt, *observers_gt, *observers], run_figs)
+        series_to_plot = [*observers_gt, *observers, mm_obs, mm_obs_gt, system_gt] if show_obs else [mm_obs, mm_obs_gt, system_gt]
+        pp.plot_multiple_series(series_to_plot, run_figs)
+        pp.plot_l2(system_gt, series_to_plot, run_figs)
 
         if n_obs>1:
             mu = compute_mu(conf, tot_pred)
@@ -728,7 +726,7 @@ def check_system_and_wandb_upload(tot_true, tot_pred, conf, run_figs, comparison
     # run_wandb = conf.experiment.run_wandb
     # name = conf.experiment.name
     # if run_wandb:
-    #     aa = OmegaConf.load(f"{run_figs}/config.yaml")
+    #     aa = compose(config_name='config_run')
     #     print(f"Initializing wandb for system...")
     #     wandb.init(project=name, name=f"system", config=aa)
             
@@ -946,66 +944,17 @@ def solve_ivp(multi_obs, fold, conf, x_obs):
     return y_pred
 
  
-def run_matlab_ground_truth(prj_figs):
+def run_matlab_ground_truth():
     """
     Optionally run MATLAB ground truth.
     """
-
-    # cfg = get_configuration(prj_figs, "ground_truth")
-    cfg = OmegaConf.load(f"{prj_figs}/config.yaml")
-
-    n_obs = cfg.model_parameters.n_obs
-    cfg.model_properties.W = cfg.model_parameters.W4
 
     print("Running MATLAB ground truth calculation...")
     eng = matlab.engine.start_matlab()
     eng.cd(f"{src_dir}/matlab", nargout=0)
     eng.BioHeat(nargout=0)
     eng.quit()
-
-    solution = gen_testdata(cfg)
-    X, y_sys, y_observers, y_mmobs = solution[:, 0:2], solution[:, 2], solution[:, 3:3+n_obs], solution[:, -1]
-    t = np.unique(X[:, 1])
-    y_multi_obs = y_observers if n_obs==1 else y_mmobs
-    metr = compute_metrics(X, y_multi_obs, y_multi_obs, prj_figs, system=y_sys)
-
-    system_gt = { "grid": X, "theta": y_sys, "label": "system_gt"}
-    mm_obs_gt = { "grid": X, "theta": y_multi_obs, "label": "multi_observer_gt"}
-
-    observers_gt = [
-            {"grid": X, "theta": y_observers[:, i], "label": f"observer_{i}_gt"} 
-            for i in range(n_obs)
-        ]
-
-    pp.plot_multiple_series([system_gt, mm_obs_gt, *observers_gt], prj_figs)
-
-    if n_obs==1:
-        y_theory, y_bound = compute_y_theory(X, y_sys, y_multi_obs)
-        theory = {"grid": X, "theta": y_theory, "label": "theory"}
-        bound = {"grid": X, "theta": y_bound, "label": "bound"}
-        pp.plot_l2(system_gt, [mm_obs_gt, theory, bound], prj_figs)
-
-    else:
-        pp.plot_l2(system_gt, [mm_obs_gt, *observers_gt], prj_figs)
-        mu = compute_mu(cfg, solution)
-        t, weights = load_weights(cfg, "ground_truth")
-
-        observers_mu = [
-            {"t": t, "weight": weights[:, i], "mu": mu[:, i], "label": f"observer_{i}_gt"} 
-            for i in range(n_obs)
-        ]
-
-        pp.plot_mu(observers_mu, prj_figs)
-        pp.plot_weights(observers_mu, prj_figs)
-
-
-        # y1_matlab, gt1_matlab, gt2_matlab, y2_matlab = point_ground_truths(conf1)
-        # df = load_from_pickle(f"{src_dir}/data/vessel/{string}.pkl")
-        # pp.plot_timeseries_with_predictions(df, y1_matlab, gt1_matlab, gt2_matlab, y2_matlab, prj_figs, gt=True)
-
-    print("MATLAB ground truth completed.")
-    print("Metrics:", metr["total_L2RE_sys"])
-    return metr["total_L2RE_sys"]
+    print("MATLAB ground truth calculation completed.")
 
 
 def compute_y_theory(grid, sys, obs):
@@ -1255,14 +1204,3 @@ def extract_matching(tot_true, tot_pred):
     # Convert new_data to a numpy array
     return np.array(match)
 
-def initialize_run(cfg1):
-    rel_out_dir = cfg1.run.dir
-    abso = os.path.dirname(git_dir)
-    output_dir = f"{abso}/{rel_out_dir[2:]}"
-
-    os.makedirs(output_dir, exist_ok=True)
-    cfg1.output_dir = output_dir
-    OmegaConf.save(cfg1,f"{output_dir}/config.yaml")
-    OmegaConf.save(cfg1,f"{conf_dir}/config_run.yaml")
-
-    return cfg1, output_dir
