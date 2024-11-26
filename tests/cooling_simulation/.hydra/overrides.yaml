@@ -1,1 +1,3 @@
-[]
+- experiment.ground_truth=false
+- model_parameters.upsilon=10
+- model_parameters.lam=10

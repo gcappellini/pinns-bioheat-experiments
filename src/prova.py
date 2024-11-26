@@ -2,8 +2,8 @@ import os
 import numpy as np
 from omegaconf import OmegaConf
 import hydra
-import common as co
-import utils as uu
+# import common as co
+# import utils as uu
 np.random.seed(237)
 
 current_file = os.path.abspath(__file__)
@@ -14,11 +14,5 @@ tests_dir = os.path.join(git_dir, "tests")
 os.makedirs(tests_dir, exist_ok=True)
 
 cfg = OmegaConf.load(f"{conf_dir}/config_run.yaml")
+cfg.experiment
 
-
-cfg.model_properties.optimizer = "L-BFGS"
-b = co.generate_config_hash(cfg.model_properties)
-print(f"L-BFGS hash: {b}")
-
-a = uu.check_for_trained_model(cfg)
-print(a)

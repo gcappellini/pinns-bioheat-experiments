@@ -13,7 +13,6 @@ import plots as pp
 import common as co
 from omegaconf import OmegaConf
 import matlab.engine
-import subprocess
 from hydra import initialize, compose
 
 
@@ -46,7 +45,7 @@ def get_initial_loss(model):
 
 def compute_metrics(grid, true, pred, run_figs, system=None):
     # Load loss weights from configuration
-    cfg = compose(config_name='config_run')
+    cfg = OmegaConf.load(f"{run_figs}/config.yaml")
     loss_weights = cfg.model_parameters.loss_weights
     small_number = 1e-8
     
@@ -388,12 +387,8 @@ def train_model(conf):
 def gen_testdata(conf, path=None):
     n = conf.model_parameters.n_obs
     dir_name = path if path is not None else conf.output_dir
-    # if hpo:
-    #     output_folder = f"{tests_dir}/cooling_simulation/ground_truth"
-    # else:
-    #     output_folder = f"{tests_dir}/{dir_name}"
 
-    file_path = f"{dir_name}/ground_truth/output_matlab_{n}Obs.txt"
+    file_path = f"{dir_name}/output_matlab_{n}Obs.txt"
 
     try:
         data = np.loadtxt(file_path)
@@ -410,19 +405,27 @@ def gen_testdata(conf, path=None):
     except FileNotFoundError:
         print(f"File not found: {file_path}.")
 
-        # subprocess.run(["python", f"{src_dir}/main.py"], check=True)
-
     X = np.vstack((x, t)).T
     y_sys = sys.flatten()[:, None]
     
-    return np.hstack((X, y_sys, y_obs, y_mm_obs))
+    out = np.hstack((X, y_sys, y_obs, y_mm_obs))
 
+    system_gt = {"grid": out[:, :2], "theta": out[:, 2], "label": "system_gt"}
+    mm_obs_gt = { "grid": out[:, :2], "theta": out[:, -1], "label": "multi_observer_gt"}
+
+    observers_gt = [
+            {"grid": out[:, :2], "theta": out[:, 3+i], "label": f"observer_{i}_gt"} 
+            for i in range(n)
+        ]
+    
+    return system_gt, observers_gt, mm_obs_gt
 
 def gen_obsdata(conf, path=None):
     global f1, f2, f3
 
-    solution = gen_testdata(conf, path)
-    g = solution[:, 0:3]
+    system_gt, _, _ = gen_testdata(conf, path)
+
+    g = np.hstack((system_gt["grid"], system_gt["theta"].reshape(len(system_gt["grid"]),1)))
 
     # g = np.hstack((X, y_sys))
     instants = np.unique(g[:, 1])
@@ -588,31 +591,39 @@ def import_obsdata(nam, extended = True):
     return Xobs
 
 
-def mm_observer(config):
+def execute(config, label):
+    """
+    Executes the simulation based on the configuration and label.
 
-    n_obs = config.model_parameters.n_obs
+    Args:
+        config: Configuration object for the simulation.
+        label: Simulation label (e.g., "simulation_direct" or others).
+
+    Returns:
+        Model output or list of models based on the simulation type.
+    """
+    # Define output directories
     out_dir = config.output_dir
-    simul_dir = os.path.join(out_dir, f"simulation_{n_obs}obs")
+    simul_dir = os.path.join(out_dir, label)
 
-    if n_obs==1:
-        W = config.model_parameters.W_obs
-        config.model_properties.W = float(W)
-        run_figs = co.set_run(simul_dir, config, "obs_0")
-  
-        return train_model(config)
-    
-    else:
-        W0, W1, W2, W3, W4, W5, W6, W7 = config.model_parameters.W0, config.model_parameters.W1, config.model_parameters.W2, config.model_parameters.W3, config.model_parameters.W4, config.model_parameters.W5, config.model_parameters.W6, config.model_parameters.W7
-        obs = np.array([W0, W1, W2, W3, W4, W5, W6, W7])
+    # if label == "simulation_direct":
+    #     output_model = train_model(config)
+    #     return output_model
 
+    n_obs, obs = cc.n_obs, cc.obs
+
+    if n_obs == 1:
+        W_index = config.model_parameters.W_index
+        config.model_properties.W = obs[W_index]
+        co.set_run(simul_dir, config, f"obs_{W_index}")
+        output_model = train_model(config)
+        return output_model
 
     multi_obs = []
-    
     for j in range(n_obs):
         perf = obs[j]
         config.model_properties.W = float(perf)
-        run_figs = co.set_run(simul_dir, config, f"obs_{j}")
-
+        co.set_run(simul_dir, config, f"obs_{j}")
         model = train_model(config)
         multi_obs.append(model)
 
@@ -685,7 +696,7 @@ def mm_predict(multi_obs, obs_grid, folder):
     return np.array(predictions)
 
 
-def check_observers_and_wandb_upload(tot_true, tot_pred, conf, output_dir, comparison_3d=True):
+def check_observers_and_wandb_upload(mm_obs_gt, mm_obs, system_gt, conf, output_dir, comparison_3d=True, observers_gt=None, observers=None):
     """
     Check observers and optionally upload results to wandb.
     """
@@ -693,63 +704,44 @@ def check_observers_and_wandb_upload(tot_true, tot_pred, conf, output_dir, compa
     n_obs = conf.model_parameters.n_obs
     show_obs = conf.plot.show_obs
 
-    for el in range(n_obs):
-        
-
-        # if run_wandb:
-            # label = f"obs_{el}"
-        #     aa = compose(config_name='config_run')
-        #     print(f"Initializing wandb for observer {el}...")
-        #     wandb.init(project=name, name=label, config=aa)
+    # if run_wandb:
+    #     label = f"obs_{el}"
+    #     aa = compose(config_name='config_run')
+    #     print(f"Initializing wandb for observer {el}...")
+    #     wandb.init(project=name, name=label, config=aa)
                 
-        pp.plot_validation_3d(tot_true[:, 0:2], tot_true[:, -1], tot_pred[:, -1], output_dir)
+    series_to_plot = [*observers_gt, *observers, mm_obs, mm_obs_gt, system_gt] if show_obs else [mm_obs, mm_obs_gt, system_gt]
+    pp.plot_multiple_series(series_to_plot, output_dir)
+    pp.plot_l2(system_gt, series_to_plot, output_dir)
 
-        mm_obs = {"grid": tot_pred[:, :2], "theta": tot_pred[:, -1], "label": "multi_observer"}
-        mm_obs_gt = {"grid": tot_true[:, :2], "theta": tot_true[:, -1], "label": "multi_observer_gt"}
-        system_gt = {"grid": tot_true[:, :2], "theta": tot_true[:, 2], "label": "system_gt"}
+    matching = extract_matching(system_gt, *observers, mm_obs)
+    matching_observers = extract_matching(mm_obs_gt, mm_obs)
 
-        observers_gt = [
-            {"grid": tot_true[:, :2], "theta": tot_true[:, 3+i], "label": f"observer_{i}_gt"} 
-            for i in range(n_obs)
+    if n_obs>1:
+        mu = compute_mu(conf, matching)
+        mu = mu[1:, :]
+        t, weights = load_weights(conf, f"simulation_mm_obs")
+
+        observers_mu = [
+        {"t": t, "weight": weights[:, i], "mu": mu[:, i], "label": f"observer_{i}"} 
+        for i in range(n_obs)
         ]
 
-        observers = [
-            {"grid": tot_pred[:, :2], "theta": tot_pred[:, 3+i], "label": f"observer_{i}"} 
-            for i in range(n_obs)
-        ]
+        pp.plot_mu(observers_mu, output_dir)
+        pp.plot_weights(observers_mu, output_dir)
 
-        run_figs = output_dir
-        # os.makedirs(run_figs, exist_ok=True)
-        series_to_plot = [*observers_gt, *observers, mm_obs, mm_obs_gt, system_gt] if show_obs else [mm_obs, mm_obs_gt, system_gt]
-        pp.plot_multiple_series(series_to_plot, run_figs)
-        pp.plot_l2(system_gt, series_to_plot, run_figs)
-
-        if n_obs>1:
-            mu = compute_mu(conf, tot_pred)
-            mu = mu[1:, :]
-            t, weights = load_weights(conf, f"simulation_{n_obs}obs")
-
-            observers_mu = [
-            {"t": t, "weight": weights[:, i], "mu": mu[:, i], "label": f"observer_{i}"} 
-            for i in range(n_obs)
-            ]
-
-            pp.plot_mu(observers_mu, run_figs)
-            pp.plot_weights(observers_mu, run_figs)
-
-        matching = extract_matching(tot_true, tot_pred)
-        metrics = compute_metrics(matching[:, 0:2], matching[:, 3+el], matching[:, 3+n_obs+1+el], run_figs, system=matching[:, 2])
+        metrics = compute_metrics(matching[:, 0:2], matching_observers[:, 2], matching[:, -1], output_dir, system=matching[:, 2])
+        # pp.plot_validation_3d(tot_true[:, 0:2], tot_true[:, -1], tot_pred[:, -1], output_dir)
         # struttura di matching: x, t, sys_matlab, obs_matlab, mm_obs_matlab, obs_pinns, mm_obs_pinns
         if comparison_3d:
-            pp.plot_comparison_3d(tot_true[:, 0:2], tot_true[:, 2], tot_pred[:, -1], run_figs)
+            pp.plot_comparison_3d(matching[:, 0:2], matching[:, 2], matching[:, -1], output_dir)
 
         # if run_wandb:
         #     wandb.log(metrics)
         #     wandb.finish()
 
 
-
-def check_system_and_wandb_upload(tot_true, tot_pred, conf, run_figs, comparison_3d=True):
+def check_system_and_wandb_upload(system_gt, system, conf, run_figs, comparison_3d=True):
     """
     Check observers and optionally upload results to wandb.
     """
@@ -760,23 +752,13 @@ def check_system_and_wandb_upload(tot_true, tot_pred, conf, run_figs, comparison
     #     print(f"Initializing wandb for system...")
     #     wandb.init(project=name, name=f"system", config=aa)
             
-    system = {
-        "grid": tot_pred[:, :2],
-        "theta": tot_pred[:, -1],
-        "label": "system",
-    }
 
-    system_gt = {
-        "grid": tot_true[:, :2],
-        "theta": tot_true[:, 2],
-        "label": "system_gt",
-    }
     pp.plot_multiple_series([system, system_gt], run_figs)
     pp.plot_l2(system, [system_gt], run_figs)
 
+    matching = extract_matching(system_gt, system)
     if comparison_3d:
-        matching = extract_matching(tot_true, tot_pred)
-        pp.plot_validation_3d(tot_true[:, 0:2], tot_true[:, 2], tot_pred[:, -1], run_figs, system=True)
+        pp.plot_validation_3d(matching[:, 0:2], matching[:, 2], matching[:, -1], run_figs, system=True)
 
     metrics = compute_metrics(matching[:, 0:2], matching[:, 2], matching[:, 3], run_figs)
     # if run_wandb:
@@ -787,44 +769,91 @@ def check_system_and_wandb_upload(tot_true, tot_pred, conf, run_figs, comparison
     return metrics
 
 
-def get_system_pred(model, X, output_dir):
+def get_pred(model, X, output_dir, label):
+
     preds = [X[:, 0], X[:, -1]]
     y_sys_pinns = model.predict(X)
     data_to_save = np.column_stack((X[:, 0].round(n_digits), X[:, -1].round(n_digits), y_sys_pinns.round(n_digits)))
-    np.savetxt(f'{output_dir}/prediction_system.txt', data_to_save, fmt='%.2f %.2f %.6f', delimiter=' ') 
+    np.savetxt(f'{output_dir}/prediction_{label}.txt', data_to_save, fmt='%.2f %.2f %.6f', delimiter=' ') 
 
     preds = np.array(data_to_save).reshape(len(preds[0]), 3).round(n_digits)
-    return preds
+    preds_dict = {"grid": preds[:, :2], "theta": preds[:, 2], "label": label}
+    return preds_dict
+
 
 
 def get_observers_preds(multi_obs, x_obs, output_dir, conf):
+    """
+    Generate predictions for observers and multi-observer models.
+
+    Args:
+        multi_obs: Model(s) for multiple observers.
+        x_obs: Input data for prediction.
+        output_dir: Directory to save predictions and configuration.
+        conf: Configuration object.
+
+    Returns:
+        obs_dict: List of dictionaries for each observer's predictions.
+        mm_obs: Dictionary for multi-observer's predictions.
+    """
     n_obs = conf.model_parameters.n_obs
     preds = [x_obs[:, 0], x_obs[:, -1]]
-    if n_obs==1:
-        obs_pred = multi_obs.predict(x_obs)
-        obs_pred = obs_pred.reshape(len(obs_pred),)
-        # run_figs = os.path.join(output_dir, f"obs_0")
-        data_to_save = np.column_stack((x_obs[:, 0].round(n_digits), x_obs[:, -1].round(n_digits), obs_pred.round(n_digits)))
-        np.savetxt(f'{output_dir}/prediction_obs_0.txt', data_to_save, fmt='%.2f %.2f %.6f', delimiter=' ') 
+
+    # Process for a single observer
+    if n_obs == 1:
+        obs_pred = multi_obs.predict(x_obs).reshape(-1)
+        data_to_save = np.column_stack((x_obs[:, 0], x_obs[:, -1], obs_pred)).round(n_digits)
+        np.savetxt(f'{output_dir}/prediction_obs_{cc.W_index}.txt', data_to_save, fmt='%.3f %.3f %.6f', delimiter=' ')
+
         preds.append(obs_pred)
-        preds = np.array(preds).reshape(3, len(preds[0])).round(n_digits)
+        preds = np.array(preds).T.round(n_digits)
+
         OmegaConf.save(conf, f"{output_dir}/config.yaml")
-        return preds.T
 
-    else:
-        for el in range(n_obs):
-            obs_pred = multi_obs[el].predict(x_obs)
-            obs_pred = obs_pred.reshape(len(obs_pred),)
-            preds.append(obs_pred)
+        obs_dict = [{
+            "grid": preds[:, :2],
+            "theta": preds[:, 2],
+            "label": f"observer_{cc.W_index}"
+        }]
+        mm_obs = {
+            "grid": preds[:, :2],
+            "theta": preds[:, 2],
+            "label": "multi_observer"
+        }
+        return obs_dict, mm_obs
 
-        conf.model_properties.W = None
-        run_figs = co.set_run(output_dir, conf, f"mm_obs")
-        OmegaConf.save(conf, f"{run_figs}/config.yaml")
-        mm_pred = solve_ivp(multi_obs, output_dir, conf, x_obs)
-        preds.append(mm_pred)
-        preds = np.array(preds).reshape(len(multi_obs)+3, len(preds[0])).round(n_digits)
-        np.savetxt(f'{output_dir}/prediction_mm_obs_{el}.txt', preds, delimiter=' ')
-        return preds.T
+    # Process for multiple observers
+    for el in range(n_obs):
+        obs_pred = multi_obs[el].predict(x_obs).reshape(-1)
+        preds.append(obs_pred)
+
+    # Save and configure multi-observer predictions
+    conf.model_properties.W = None
+    run_figs, _ = co.set_run(output_dir, conf, "mm_obs")
+    OmegaConf.save(conf, f"{run_figs}/config.yaml")
+
+    mm_pred = solve_ivp(multi_obs, output_dir, conf, x_obs)
+    preds.append(mm_pred)
+
+    # Save multi-observer predictions
+    preds = np.array(preds).T.round(n_digits)
+    np.savetxt(f'{output_dir}/prediction_mm_obs.txt', preds, delimiter=' ')
+
+    # Prepare observer dictionaries
+    obs_dict = [
+        {
+            "grid": preds[:, :2],
+            "theta": preds[:, 2 + i],
+            "label": f"observer_{i}"
+        }
+        for i in range(n_obs)
+    ]
+    mm_obs = {
+        "grid": preds[:, :2],
+        "theta": preds[:, -1],
+        "label": "multi_observer"
+    }
+    return obs_dict, mm_obs
 
 
 def get_scaled_labels(rescale):
@@ -1000,7 +1029,9 @@ def compute_y_theory(grid, sys, obs):
     # decay = cc.decay_rate_exact if str=='exact' else cc.decay_rate_diff if str=='diff'
     decay = getattr(cc, f"decay_rate_{str}")
 
-    return l2_0 * np.exp(-t*decay), np.full_like(t, cc.c_0)
+    theory = {"grid": grid, "theta": l2_0 * np.exp(-t*decay), "label": "theory"}
+    bound = {"grid": grid, "theta": np.full_like(t, cc.c_0), "label": "bound"}
+    return theory, bound
 
 
 def calculate_l2(e, true, pred):
@@ -1188,49 +1219,77 @@ def point_ground_truths(conf):
     return y1_truth_sc, gt1_truth_sc, gt2_truth_sc, y2_truth_sc
 
 
-# def configure_settings(cfg, experiment):
-#     cfg.model_properties.direct = False
-#     cfg.model_properties.W = cfg.model_parameters.W4
-#     exp_type_settings = getattr(cfg.experiment.type, experiment[0])
-#     cfg.model_properties.pwr_fact=exp_type_settings["pwr_fact"]
-#     cfg.model_properties.h=exp_type_settings["h"]
+def configure_settings(cfg, experiment):
+    cfg.model_properties.direct = False
+    cfg.model_properties.W = cfg.model_parameters.W4
+    exp_type_settings = getattr(cfg.experiment.type, experiment[0])
+    cfg.model_properties.pwr_fact=exp_type_settings["pwr_fact"]
+    cfg.model_properties.h=exp_type_settings["h"]
 
-#     if experiment[1].startswith("simulation"):
-#         name_exp = "simulation"
-#     else:
-#         name_exp = experiment[1]
+    if experiment[1].startswith("simulation"):
+        name_exp = "simulation"
+    else:
+        name_exp = experiment[1]
         
-#     meas_settings = getattr(exp_type_settings, name_exp)
-#     cfg.model_properties.Ty10=meas_settings["y1_0"]
-#     cfg.model_properties.Ty20=meas_settings["y2_0"]
-#     cfg.model_properties.Ty30=meas_settings["y3_0"]
-#     cfg.model_parameters.gt1_0=meas_settings["gt1_0"]
-#     cfg.model_parameters.gt2_0=meas_settings["gt2_0"]
+    meas_settings = getattr(exp_type_settings, name_exp)
+    cfg.model_properties.Ty10=meas_settings["y1_0"]
+    cfg.model_properties.Ty20=meas_settings["y2_0"]
+    cfg.model_properties.Ty30=meas_settings["y3_0"]
+    cfg.model_parameters.gt1_0=meas_settings["gt1_0"]
+    cfg.model_parameters.gt2_0=meas_settings["gt2_0"]
 
-#     return cfg
+    return cfg
 
 
-def extract_matching(tot_true, tot_pred):
-    # Extract the columns from tot_true
+def extract_matching(d_true, *d_preds):
+    """
+    Matches true data points with predicted data points for multiple predictions.
     
+    Args:
+        d_true: Dictionary containing true data with keys "grid" and "theta".
+        *d_preds: Multiple dictionaries containing predicted data with keys "grid" and "theta".
+    
+    Returns:
+        A numpy array with the matched true and predicted values for all inputs.
+    """
+    # Extract the columns from d_true
+    tot_true = np.hstack((d_true["grid"], d_true["theta"].reshape(len(d_true["grid"]), 1)))
+
+    # Prepare the true data for matching
     xs = np.unique(tot_true[:, 0])
-    filtered_true=[]
+    filtered_true = []
     tot_true[:, 1] = tot_true[:, 1].round(n_digits)
+    
     for el in np.unique(tot_true[:, 1]):
         for i in range(len(xs)):
-            el_pred = tot_true[tot_true[:, 1]==el][i]
+            el_pred = tot_true[tot_true[:, 1] == el][i]
             filtered_true.append(el_pred)
-
+    
     tot_true = np.array(filtered_true)
 
+    # Prepare the predicted data for each d_pred
+    tot_preds = []
+    for d_pred in d_preds:
+        pred = np.hstack((d_pred["grid"], d_pred["theta"].reshape(len(d_pred["grid"]), 1)))
+        tot_preds.append(pred)
+
+    # Match true data with predicted data
     match = []
-    for el in np.unique(tot_true[:, 0]):
-        trues = tot_true[tot_true[:, 0]==el]
-        preds = tot_pred[tot_pred[:, 0]==el][:, 2:]
-        match_el = np.hstack((trues, preds))
+    for x in np.unique(tot_true[:, 0]):
+        # Filter true values for the current x
+        trues = tot_true[tot_true[:, 0] == x]
+        
+        # Filter predicted values for the current x for each d_pred
+        preds = [pred[pred[:, 0] == x][:, 2:] for pred in tot_preds]
+        
+        # Combine all predicted values column-wise
+        combined_preds = np.hstack(preds) if preds else np.empty((len(trues), 0))
+        
+        # Combine true and predicted values
+        match_el = np.hstack((trues, combined_preds))
         for tt in range(len(match_el)):
             match.append(match_el[tt])
-
-    # Convert new_data to a numpy array
+    
+    # Convert match list to a numpy array
     return np.array(match)
 

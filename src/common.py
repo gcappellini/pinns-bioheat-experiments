@@ -38,10 +38,20 @@ def set_run(prj_figs, cfg, run):
     run_figs = os.path.join(prj_figs, run)
     os.makedirs(run_figs, exist_ok=True)
 
+    if run=="ground_truth":
+        cfg = filter_config_for_matlab(cfg)
+    
+    if run=="simulation_system":
+        cfg.model_properties.W = cfg.model_parameters.W_sys
+        cfg.model_properties.direct = True
+
+    if run=="simulation_mm_obs":
+        cfg.model_properties.direct = False
+
     OmegaConf.save(cfg, f"{run_figs}/config.yaml")
     OmegaConf.save(cfg, f"{conf_dir}/config_{run}.yaml")
 
-    return run_figs
+    return run_figs, cfg
 
 
 def filter_config_for_matlab(cfg):

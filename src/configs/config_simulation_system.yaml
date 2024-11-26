@@ -14,9 +14,9 @@ model_properties:
   alfa: 50
   activation: tanh
   initial_weights_regularizer: false
-  initialization: He uniform
-  iterations: 10000
-  LBFGS: true
+  initialization: Glorot uniform
+  optimizer: None
+  iters: 2
   learning_rate: 0.001
   num_dense_layers: 4
   num_dense_nodes: 50
@@ -50,7 +50,7 @@ model_parameters:
   W6: 0.0026
   W7: 0.001207
   W_sys: 0.001651
-  W_obs: 0.001651
+  W_index: 2
   n_obs: 4
   gt1_0: 24.44
   gt2_0: 29.25
@@ -95,7 +95,7 @@ plot:
       linewidth: 1.2
       alpha: 1.0
     multi_observer:
-      color: gold
+      color: darkblue
       label: MultiObs PINNs
       linestyle: ':'
       linewidth: 1.2
@@ -126,11 +126,11 @@ plot:
       - C6
       - C7
       label:
+      - Obs 1 PINNs
+      - Obs 2 PINNs
       - Obs 3 PINNs
       - Obs 4 PINNs
       - Obs 5 PINNs
-      - Obs 6 PINNs
-      - Obs 7 PINNs
       linestyle:
       - -.
       - --
@@ -168,7 +168,7 @@ plot:
       linewidth: 1.0
       alpha: 1.0
     multi_observer_gt:
-      color: gold
+      color: orange
       label: MultiObs MATLAB
       linestyle: --
       linewidth: 1.0
@@ -199,11 +199,11 @@ plot:
       - C6
       - C7
       label:
+      - Obs 1 MATLAB
+      - Obs 2 MATLAB
       - Obs 3 MATLAB
       - Obs 4 MATLAB
       - Obs 5 MATLAB
-      - Obs 6 MATLAB
-      - Obs 7 MATLAB
       linestyle:
       - ':'
       - ':'
@@ -224,110 +224,45 @@ plot:
       - 0.7
   show_obs: false
 experiment:
+  ground_truth: true
+  simulation_system: true
+  simulation_mm_obs: true
+experiment_type:
   import_data: false
   save_pickle: false
-  run_matlab: true
-  simulation: true
   run_wandb: false
-  check_system: true
-  type:
-    cooling:
-      h: 10.0
-      pwr_fact: 0.0
-      threshold: 0.5
-      show_y3: false
-      simulation:
-        y1_0: 21.5
-        gt1_0: 24.44
-        gt2_0: 29.25
-        y2_0: 32.0
-        y3_0: 21.5
-      meas_1:
-        title: Cooling 1
-        date: '20240930_1'
-        string: cooling_meas_1
-        start_min: 41
-        end_min: 71
-        y1_0: 22.28
-        gt1_0: 24.44
-        gt2_0: 29.25
-        y2_0: 26.67
-        y3_0: 21.5
-        K: 50.0
-        b2: 0.0236
-        b3: 0.3091
-      meas_2:
-        title: Cooling 2
-        date: '20240930_3'
-        string: cooling_meas_2
-        start_min: 30
-        end_min: 60
-        y1_0: 22.84
-        gt1_0: 24.56
-        gt2_0: 29.46
-        y2_0: 28.6
-        y3_0: 21.5
-        K: 50.0
-        b2: 0.0079
-        b3: -0.0491
-    heating:
-      h: 238.0
-      pwr_fact: 0.4
-      threshold: 50
-      show_y3: true
-      meas_1:
-        title: Heating 1
-        date: '20240522_1'
-        string: heating_meas_1
-        start_min: 4
-        end_min: 34
-        y1_0: 21.88
-        gt1_0: 22.67
-        gt2_0: 26.3
-        y2_0: 26.76
-        y3_0: 25.8
-        b2: 0.0236
-        b3: 0.3091
-      meas_2:
-        title: Heating 2
-        date: '20240927_3'
-        string: heating_meas_2
-        start_min: 105
-        end_min: 135
-        y1_0: 22.87
-        gt1_0: 23.48
-        gt2_0: 24.24
-        y2_0: 24.71
-        y3_0: 23.98
-        b2: 0.0236
-        b3: 0.3091
-      meas_3:
-        title: Heating 3
-        date: '20240930_1'
-        string: heating_meas_3
-        start_min: 5
-        end_min: 35
-        y1_0: 21.61
-        gt1_0: 21.5
-        gt2_0: 21.74
-        y2_0: 23.24
-        y3_0: 23.82
-        b2: 0.0236
-        b3: 0.3091
-    antenna_characterization:
-      pwr_fact: 1.0
-      threshold: 50
-      show_y3: false
-      title: Antenna characterization
+  cooling:
+    h: 10.0
+    pwr_fact: 0.0
+    threshold: 0.5
+    show_y3: false
+    simulation:
+      y1_0: 21.5
+      gt1_0: 24.44
+      gt2_0: 29.25
+      y2_0: 32.0
+      y3_0: 21.5
+    meas_1:
+      title: Cooling 1
+      date: '20240930_1'
+      string: cooling_meas_1
+      start_min: 41
+      end_min: 71
+      y1_0: 22.28
+      gt1_0: 24.44
+      gt2_0: 29.25
+      y2_0: 26.67
+      y3_0: 21.5
+      K: 50.0
+      b2: 0.0236
+      b3: 0.3091
+    meas_2:
+      title: Cooling 2
       date: '20240930_3'
-      string: antenna_characterization
-      start_min: 0
-      end_min: 17
-      y1_0: 22.56
-      gt1_0: 22.99
-      gt2_0: 23.73
-      y2_0: 24.0
-      y3_0: 23.26
+      string: cooling_meas_2
+      start_min: 30
+      end_min: 60
+      y1_0: 22.84
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-25/12-29-22
+output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-26/00-58-28

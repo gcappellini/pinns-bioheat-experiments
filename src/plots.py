@@ -677,36 +677,23 @@ def plot_l2(series_sys, series_data, folder):
 
 def plot_matlab_ground_truth(prj_figs):
     cfg = compose(config_name='config_run')
-    solution = uu.gen_testdata(cfg)
+    system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(cfg, path=prj_figs)
     n_obs = cc.n_obs
-    X, y_sys, y_observers, y_mmobs = solution[:, 0:2], solution[:, 2], solution[:, 3:3+n_obs], solution[:, -1]
-    t = np.unique(X[:, 1])
 
     show_obs = cfg.plot.show_obs
 
-    y_multi_obs = y_observers if n_obs==1 else y_mmobs
-    metr = uu.compute_metrics(X, y_multi_obs, y_multi_obs, prj_figs, system=y_sys)
-
-    system_gt = { "grid": X, "theta": y_sys, "label": "system_gt"}
-    mm_obs_gt = { "grid": X, "theta": y_multi_obs, "label": "multi_observer_gt"}
-
-    observers_gt = [
-            {"grid": X, "theta": y_observers[:, i], "label": f"observer_{i}_gt"} 
-            for i in range(n_obs)
-        ]
-
+    metr = uu.compute_metrics(system_gt["grid"], system_gt["theta"], mm_obs_gt["theta"], prj_figs, system=system_gt["theta"])
     plot_multiple_series([system_gt, mm_obs_gt, *observers_gt], prj_figs)
 
     if n_obs==1:
-        y_theory, y_bound = uu.compute_y_theory(X, y_sys, y_multi_obs)
-        theory = {"grid": X, "theta": y_theory, "label": "theory"}
-        bound = {"grid": X, "theta": y_bound, "label": "bound"}
+        theory, bound = uu.compute_y_theory(system_gt["grid"], system_gt["theta"], mm_obs_gt["theta"])
         plot_l2(system_gt, [mm_obs_gt, theory, bound], prj_figs)
 
     else:
         series_to_plot = [mm_obs_gt, *observers_gt] if show_obs else [mm_obs_gt]
         plot_l2(system_gt, series_to_plot, prj_figs)
-        mu = uu.compute_mu(cfg, solution)
+        matching = uu.extract_matching(system_gt, *observers_gt)
+        mu = uu.compute_mu(cfg, matching)
         t, weights = uu.load_weights(cfg, "ground_truth")
 
         observers_mu = [
@@ -724,4 +711,5 @@ def plot_matlab_ground_truth(prj_figs):
     print("MATLAB ground truth completed.")
     print("Metrics:", metr["total_L2RE_sys"])
     return metr["total_L2RE_sys"]
+
 # if __name__ == "__main__":

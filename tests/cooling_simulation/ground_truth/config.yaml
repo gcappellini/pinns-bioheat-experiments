@@ -14,9 +14,9 @@ model_properties:
   alfa: 50
   activation: tanh
   initial_weights_regularizer: false
-  initialization: He uniform
-  iterations: 10000
-  LBFGS: true
+  initialization: Glorot uniform
+  optimizer: None
+  iters: 5000
   learning_rate: 0.001
   num_dense_layers: 4
   num_dense_nodes: 50
@@ -39,19 +39,19 @@ model_properties:
   b2: 0.5053
   direct: false
 model_parameters:
-  lam: 1
-  upsilon: 1
-  W0: 6.3e-05
+  lam: 10
+  upsilon: 10
+  W0: 0.003303
   W1: 0.001207
   W2: 0.001651
-  W3: 0.003303
-  W4: 0.001651
+  W3: 0.001207
+  W4: 6.3e-05
   W5: 0.0021
   W6: 0.0026
   W7: 0.001207
   W_sys: 0.001651
-  W_obs: 0.001651
-  n_obs: 4
+  W_index: 2
+  n_obs: 3
   gt1_0: 24.44
   gt2_0: 29.25
   x_y2: 0

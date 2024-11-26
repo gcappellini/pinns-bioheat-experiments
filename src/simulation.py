@@ -21,45 +21,46 @@ def main():
     """
     config = compose(config_name='config_run')
     out_dir = config.output_dir
-    run_gt = config.experiment.run_matlab
-    gt_dir = f"{tests_dir}/cooling_simulation"
+    dict_exp = config.experiment
 
-    if run_gt:
-        conf = co.filter_config_for_matlab(config)
-        output_dir = co.set_run(out_dir, conf, f"ground_truth")
+    output_dir_gt, _ = co.set_run(out_dir, config, "ground_truth")
+
+    if dict_exp["ground_truth"]:
+
+        # Step 1. execute
         uu.run_matlab_ground_truth()
-        pp.plot_matlab_ground_truth(output_dir)
-        tot_true = uu.gen_testdata(config)
-    
-    else:
-        tot_true = uu.gen_testdata(config, path=gt_dir)
+        pp.plot_matlab_ground_truth(output_dir_gt)
 
-    if config.experiment.check_system:
-        config.model_properties.W = config.model_parameters.W_sys
-        config.model_properties.direct = True
+    system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config, path=output_dir_gt)
+
+    if dict_exp["simulation_system"]:
+
+        # Step 0. prepare for simulation_system
+        output_dir_system, cfg_system = co.set_run(out_dir, config, "simulation_system")
+
+        # Step 1. execute
+        pinns_sys = uu.train_model(cfg_system)
         
-        output_dir = co.set_run(out_dir, config, "simulation_system")
+        # Step 2. load data
+        system = uu.get_pred(pinns_sys, system_gt["grid"], output_dir_system, "system")
 
-        pinns_sys = uu.train_model(config)
-        
-        y_sys_pinns = uu.get_system_pred(pinns_sys, tot_true[:, 0:2], output_dir)
-        uu.check_system_and_wandb_upload(tot_true[:, :3], y_sys_pinns, config, output_dir)
+        # Step 3. plot data
+        uu.check_system_and_wandb_upload(system_gt, system, cfg_system, output_dir_system)
 
-
+    if dict_exp["simulation_mm_obs"]:
     
-    n_obs = config.model_parameters.n_obs
-    config.model_properties.direct = False
-    output_dir = co.set_run(out_dir, config, f"simulation_{n_obs}obs")
+        # Step 0. prepare for simulation_obs
+        output_dir_inverse, config_inverse = co.set_run(out_dir, config, "simulation_mm_obs")
     
-    x_obs = uu.gen_obsdata(config) if run_gt else uu.gen_obsdata(config, path=gt_dir)
-    multi_obs = uu.mm_observer(config)
+        # Step 1. execute
+        multi_obs = uu.execute(config_inverse, "simulation_mm_obs")
 
-    tot_pred = uu.get_observers_preds(multi_obs, x_obs, output_dir, config)
-    uu.check_observers_and_wandb_upload(tot_true, tot_pred, config, output_dir)
+        # Step 2. load data
+        x_obs = uu.gen_obsdata(config_inverse, path=output_dir_gt)
+        observers, mm_obs = uu.get_observers_preds(multi_obs, x_obs, output_dir_inverse, config_inverse)
 
-    # if n_obs>1:
-    #     run_figs = co.set_run(f"mm_obs")
-    #     pp.plot_mm_obs(multi_obs, tot_true, tot_pred, run_figs)
+        # Step 3. plot data
+        uu.check_observers_and_wandb_upload(mm_obs_gt, mm_obs, system_gt, config_inverse, output_dir_inverse, observers=observers, observers_gt=observers_gt)
 
 
 if __name__ == "__main__":

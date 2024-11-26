@@ -112,11 +112,14 @@ hydra:
     hydra:
     - hydra.run.dir=tests/cooling_simulation
     - hydra.mode=RUN
-    task: []
+    task:
+    - experiment.ground_truth=false
+    - model_parameters.upsilon=10
+    - model_parameters.lam=10
   job:
     name: main
     chdir: null
-    override_dirname: ''
+    override_dirname: experiment.ground_truth=false,model_parameters.lam=10,model_parameters.upsilon=10
     id: ???
     num: ???
     config_name: config_run

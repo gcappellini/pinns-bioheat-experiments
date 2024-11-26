@@ -47,6 +47,14 @@ W5 = config_data.model_parameters.W5;
 W6 = config_data.model_parameters.W6;
 W7 = config_data.model_parameters.W7;
 
+W_sys = config_data.model_parameters.W_sys;
+W_index = config_data.model_parameters.W_index;
+
+% Combine the perfusions into an array
+obs = [W0, W1, W2, W3, W4, W5, W6, W7];
+
+W_obs = obs(W_index-1);
+
 % Other parameters
 % delta = config_data.model_properties.delta;
 lambda = config_data.model_parameters.lam;
@@ -89,9 +97,6 @@ om4 = 0;
 om5 = 0;
 om6 = 0;
 om7 = 0;
-
-W_sys = config_data.model_parameters.W_sys;
-W_obs = config_data.model_parameters.W_obs;
 
 % Call the correct solver based on the number of observers
 if n_obs == 1
