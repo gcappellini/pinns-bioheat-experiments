@@ -683,15 +683,17 @@ def plot_matlab_ground_truth(prj_figs):
     show_obs = cfg.plot.show_obs
 
     metr = uu.compute_metrics(system_gt["grid"], system_gt["theta"], mm_obs_gt["theta"], prj_figs, system=system_gt["theta"])
-    plot_multiple_series([system_gt, mm_obs_gt, *observers_gt], prj_figs)
+    
 
     if n_obs==1:
         theory, bound = uu.compute_y_theory(system_gt["grid"], system_gt["theta"], mm_obs_gt["theta"])
-        plot_l2(system_gt, [mm_obs_gt, theory, bound], prj_figs)
+        plot_l2(system_gt, [*observers_gt, theory, bound], prj_figs)
+        plot_multiple_series([system_gt, *observers_gt], prj_figs)
 
     else:
         series_to_plot = [mm_obs_gt, *observers_gt] if show_obs else [mm_obs_gt]
         plot_l2(system_gt, series_to_plot, prj_figs)
+        plot_multiple_series(series_to_plot, prj_figs)
         matching = uu.extract_matching(system_gt, *observers_gt)
         mu = uu.compute_mu(cfg, matching)
         t, weights = uu.load_weights(cfg, "ground_truth")

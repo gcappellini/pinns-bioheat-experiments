@@ -51,7 +51,7 @@ W_sys: float = cfg.model_parameters.W_sys
 W_index: int = cfg.model_parameters.W_index
 n_obs: int = cfg.model_parameters.n_obs
 obs = np.array([W0, W1, W2, W3, W4, W5, W6, W7])
-W_obs = obs[W_index]
+W_obs = float(obs[int(W_index)])
 
 lamb: float = cfg.model_parameters.lam  # Access the lambda parameter
 upsilon: float = cfg.model_parameters.upsilon

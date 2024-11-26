@@ -52,8 +52,8 @@ W_index = config_data.model_parameters.W_index;
 
 % Combine the perfusions into an array
 obs = [W0, W1, W2, W3, W4, W5, W6, W7];
-
-W_obs = obs(W_index-1);
+matlab_index=W_index+1;
+W_obs = obs(matlab_index);
 
 % Other parameters
 % delta = config_data.model_properties.delta;

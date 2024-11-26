@@ -614,7 +614,7 @@ def execute(config, label):
 
     if n_obs == 1:
         W_index = config.model_parameters.W_index
-        config.model_properties.W = obs[W_index]
+        config.model_properties.W = cc.W_obs
         co.set_run(simul_dir, config, f"obs_{W_index}")
         output_model = train_model(config)
         return output_model
@@ -710,14 +710,15 @@ def check_observers_and_wandb_upload(mm_obs_gt, mm_obs, system_gt, conf, output_
     #     print(f"Initializing wandb for observer {el}...")
     #     wandb.init(project=name, name=label, config=aa)
                 
-    series_to_plot = [*observers_gt, *observers, mm_obs, mm_obs_gt, system_gt] if show_obs else [mm_obs, mm_obs_gt, system_gt]
+    series_to_plot = [*observers_gt, *observers, mm_obs, mm_obs_gt, system_gt] if show_obs else [mm_obs, mm_obs_gt, system_gt] if n_obs>1 else [*observers_gt, *observers]
     pp.plot_multiple_series(series_to_plot, output_dir)
     pp.plot_l2(system_gt, series_to_plot, output_dir)
 
-    matching = extract_matching(system_gt, *observers, mm_obs)
-    matching_observers = extract_matching(mm_obs_gt, mm_obs)
-
     if n_obs>1:
+
+        matching = extract_matching(system_gt, *observers, mm_obs)
+        matching_observers = extract_matching(mm_obs_gt, mm_obs)
+
         mu = compute_mu(conf, matching)
         mu = mu[1:, :]
         t, weights = load_weights(conf, f"simulation_mm_obs")
@@ -815,11 +816,7 @@ def get_observers_preds(multi_obs, x_obs, output_dir, conf):
             "theta": preds[:, 2],
             "label": f"observer_{cc.W_index}"
         }]
-        mm_obs = {
-            "grid": preds[:, :2],
-            "theta": preds[:, 2],
-            "label": "multi_observer"
-        }
+        mm_obs = obs_dict
         return obs_dict, mm_obs
 
     # Process for multiple observers
