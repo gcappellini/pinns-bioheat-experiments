@@ -4,7 +4,7 @@ model_properties:
   k: 0.6
   rho: 1000.0
   c: 4186.0
-  W: 0.001207
+  W: 0.003303
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
@@ -265,4 +265,4 @@ experiment_type:
       y1_0: 22.84
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/multirun/2024-11-26/13-10-41/3
+output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/multirun/2024-11-26/13-10-41/2
