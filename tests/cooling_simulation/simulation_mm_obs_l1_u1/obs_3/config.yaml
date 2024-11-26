@@ -45,12 +45,12 @@ model_parameters:
   W1: 0.001207
   W2: 0.001651
   W3: 0.003303
-  W4: 0.002207
+  W4: 6.3e-05
   W5: 0.0021
   W6: 0.0026
   W7: 0.001207
   W_sys: 0.001651
-  W_index: 2
+  W_index: 3
   n_obs: 4
   gt1_0: 24.44
   gt2_0: 29.25
@@ -100,38 +100,29 @@ plot:
       linestyle: ':'
       linewidth: 1.2
       alpha: 1.0
-    observer_0:
-      color: C0
-      label: Obs 0 PINNs
-      linestyle: '-'
-      linewidth: 1.2
-      alpha: 1.0
-    observer_1:
-      color: C1
-      label: Obs 1 PINNs
-      linestyle: -.
-      linewidth: 1.2
-      alpha: 1.0
-    observer_2:
-      color: C2
-      label: Obs 2 PINNs
-      linestyle: '-'
-      linewidth: 1.2
-      alpha: 1.0
     observers:
       color:
+      - C0
+      - C1
+      - C2
       - C9
       - C4
       - C5
       - C6
       - C7
       label:
+      - Obs 0 PINNs
       - Obs 1 PINNs
       - Obs 2 PINNs
       - Obs 3 PINNs
       - Obs 4 PINNs
       - Obs 5 PINNs
+      - Obs 6 PINNs
+      - Obs 7 PINNs
       linestyle:
+      - '-'
+      - -.
+      - '-'
       - -.
       - --
       - '-'
@@ -143,7 +134,13 @@ plot:
       - 1.2
       - 1.2
       - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
       alpha:
+      - 1.0
+      - 1.0
+      - 1.0
       - 1.0
       - 1.0
       - 1.0
@@ -173,38 +170,29 @@ plot:
       linestyle: --
       linewidth: 1.0
       alpha: 0.8
-    observer_0_gt:
-      color: C0
-      label: Obs 0 MATLAB
-      linestyle: ':'
-      linewidth: 1.2
-      alpha: 0.7
-    observer_1_gt:
-      color: C1
-      label: Obs 1 MATLAB
-      linestyle: ':'
-      linewidth: 1.2
-      alpha: 0.7
-    observer_2_gt:
-      color: C2
-      label: Obs 2 MATLAB
-      linestyle: ':'
-      linewidth: 1.2
-      alpha: 0.7
     observers_gt:
       color:
+      - C0
+      - C1
+      - C2
       - C9
       - C4
       - C5
       - C6
       - C7
       label:
+      - Obs 0 MATLAB
       - Obs 1 MATLAB
       - Obs 2 MATLAB
       - Obs 3 MATLAB
       - Obs 4 MATLAB
       - Obs 5 MATLAB
+      - Obs 6 MATLAB
+      - Obs 7 MATLAB
       linestyle:
+      - ':'
+      - ':'
+      - ':'
       - ':'
       - ':'
       - ':'
@@ -216,7 +204,13 @@ plot:
       - 1.2
       - 1.2
       - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
       alpha:
+      - 0.7
+      - 0.7
+      - 0.7
       - 0.7
       - 0.7
       - 0.7

@@ -4,7 +4,7 @@ model_properties:
   k: 0.6
   rho: 1000.0
   c: 4186.0
-  W: 0.001207
+  W: 0.003303
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
@@ -15,8 +15,8 @@ model_properties:
   activation: tanh
   initial_weights_regularizer: false
   initialization: Glorot uniform
-  optimizer: L-BFGS
-  iters: 5000
+  optimizer: None
+  iters: 1500
   learning_rate: 0.001
   num_dense_layers: 4
   num_dense_nodes: 50
@@ -39,7 +39,7 @@ model_properties:
   b2: 0.5053
   direct: false
 model_parameters:
-  lam: 20
+  lam: 1
   upsilon: 1
   W0: 6.3e-05
   W1: 0.001207
@@ -218,7 +218,7 @@ plot:
       - 0.7
   show_obs: false
 experiment:
-  ground_truth: false
+  ground_truth: true
   simulation_system: false
   simulation_mm_obs: true
 experiment_type:

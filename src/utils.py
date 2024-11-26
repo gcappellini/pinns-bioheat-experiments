@@ -31,8 +31,8 @@ os.makedirs(models, exist_ok=True)
 f1, f2, f3 = [None]*3
 n_digits = 6
 
-# dde.optimizers.config.set_LBFGS_options(maxcor=100, ftol=1e-08, gtol=1e-08, maxiter=15000, maxfun=None, maxls=50)
-dde.optimizers.config.set_LBFGS_options(maxcor=1, ftol=1e-02, gtol=1e-02, maxiter=1, maxfun=None, maxls=5)
+dde.optimizers.config.set_LBFGS_options(maxcor=100, ftol=1e-08, gtol=1e-08, maxiter=15000, maxfun=None, maxls=50)
+# dde.optimizers.config.set_LBFGS_options(maxcor=1, ftol=1e-02, gtol=1e-02, maxiter=1, maxfun=None, maxls=5)
 # If L-BFGS stops earlier than expected, set the default float type to ‘float64’:
 # dde.config.set_default_float("float64")
 
@@ -360,6 +360,7 @@ def train_and_save_model(conf, optimizer, config_hash, save_path):
 def train_model(conf):
     """Train a model, checking for existing LBFGS-trained models first."""
     # Step 0: Check for LBFGS-trained model
+    conf.model_properties.iters = 1500 if conf.model_properties.W==cc.W3 else 5000
     trained_model = check_for_trained_model(conf)
 
     if trained_model:
@@ -410,13 +411,19 @@ def gen_testdata(conf, path=None):
     
     out = np.hstack((X, y_sys, y_obs, y_mm_obs))
 
+    label_mm_obs_gt = f"observer_{cc.W_index}_gt" if n==1 else "multi_observer_gt"
+
     system_gt = {"grid": out[:, :2], "theta": out[:, 2], "label": "system_gt"}
-    mm_obs_gt = { "grid": out[:, :2], "theta": out[:, -1], "label": "multi_observer_gt"}
+    mm_obs_gt = { "grid": out[:, :2], "theta": out[:, -1], "label": label_mm_obs_gt}
 
     observers_gt = [
-            {"grid": out[:, :2], "theta": out[:, 3+i], "label": f"observer_{i}_gt"} 
-            for i in range(n)
-        ]
+        {
+            "grid": out[:, :2], 
+            "theta": out[:, 3+i], 
+            "label": f"observer_{cc.W_index}_gt" if n == 1 else f"observer_{i}_gt"
+        }
+        for i in range(n)
+    ]
     
     return system_gt, observers_gt, mm_obs_gt
 
@@ -709,12 +716,17 @@ def check_observers_and_wandb_upload(mm_obs_gt, mm_obs, system_gt, conf, output_
     #     aa = compose(config_name='config_run')
     #     print(f"Initializing wandb for observer {el}...")
     #     wandb.init(project=name, name=label, config=aa)
-                
-    series_to_plot = [*observers_gt, *observers, mm_obs, mm_obs_gt, system_gt] if show_obs else [mm_obs, mm_obs_gt, system_gt] if n_obs>1 else [*observers_gt, *observers]
-    pp.plot_multiple_series(series_to_plot, output_dir)
-    pp.plot_l2(system_gt, series_to_plot, output_dir)
+            
+
+    if n_obs==1:
+        series_to_plot = [system_gt, *observers_gt, *observers]
+        pp.plot_multiple_series(series_to_plot, output_dir)
+        pp.plot_l2(system_gt, series_to_plot[1:], output_dir)
 
     if n_obs>1:
+        series_to_plot = [system_gt, mm_obs, mm_obs_gt, *observers_gt, *observers] if show_obs else [system_gt, mm_obs, mm_obs_gt]
+        pp.plot_multiple_series(series_to_plot, output_dir)
+        pp.plot_l2(system_gt, series_to_plot[1:], output_dir)
 
         matching = extract_matching(system_gt, *observers, mm_obs)
         matching_observers = extract_matching(mm_obs_gt, mm_obs)
@@ -933,7 +945,10 @@ def get_plot_params(conf):
     observer_params = {}
     observer_gt_params = {}
 
-    for i in range(n_obs):
+    for j in range(n_obs):
+
+        i=cc.W_index if n_obs==1 else j
+
         observer_params[f"observer_{i}"] = {
             "color": entities.observers.color[i],
             "label": entities.observers.label[i],
