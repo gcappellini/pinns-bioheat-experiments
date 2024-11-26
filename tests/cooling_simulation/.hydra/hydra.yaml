@@ -114,11 +114,11 @@ hydra:
     - hydra.mode=RUN
     task:
     - experiment.ground_truth=false
-    - model_parameters.lam=20
+    - model_parameters.upsilon=10
   job:
     name: main
     chdir: null
-    override_dirname: experiment.ground_truth=false,model_parameters.lam=20
+    override_dirname: experiment.ground_truth=false,model_parameters.upsilon=10
     id: ???
     num: ???
     config_name: config_run
