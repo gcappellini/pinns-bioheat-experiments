@@ -1,5 +1,5 @@
 function [sol] = OneDimBH_3Obs
-    global output_path
+    global output_path lambda upsilon
 
     m = 0;
     x = linspace(0,1,101);
@@ -35,7 +35,7 @@ function [sol] = OneDimBH_3Obs
     end
     
     
-    filename2 = sprintf('%s/ground_truth/weights_matlab_3Obs.txt', output_path);
+    filename2 = sprintf('%s/ground_truth/weights_l_%d_u_%d.txt', output_path, lambda, upsilon);
     fileID = fopen(filename2,'w');
     
     for i = 1:101

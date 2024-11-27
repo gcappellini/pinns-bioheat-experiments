@@ -360,7 +360,7 @@ def train_and_save_model(conf, optimizer, config_hash, save_path):
 def train_model(conf):
     """Train a model, checking for existing LBFGS-trained models first."""
     # Step 0: Check for LBFGS-trained model
-    conf.model_properties.iters = 1500 if conf.model_properties.W==cc.W3 else 5000
+    conf.model_properties.iters = 1500 if conf.model_properties.W==0.003303 else 5000
     trained_model = check_for_trained_model(conf)
 
     if trained_model:
@@ -703,83 +703,99 @@ def mm_predict(multi_obs, obs_grid, folder):
     return np.array(predictions)
 
 
-def check_observers_and_wandb_upload(mm_obs_gt, mm_obs, system_gt, conf, output_dir, comparison_3d=True, observers_gt=None, observers=None):
-    """
-    Check observers and optionally upload results to wandb.
-    """
-    # run_wandb = conf.experiment.run_wandb
-    n_obs = conf.model_parameters.n_obs
-    show_obs = conf.plot.show_obs
+def plot_and_compute_metrics(system_gt, series_to_plot, matching_args, conf, output_dir, system_metrics=False, comparison_3d=True):
+    """Helper function for plotting and computing metrics."""
+    direct, n_obs = conf.model_properties.direct, conf.model_parameters.n_obs
+    pp.plot_multiple_series(series_to_plot, output_dir)
+    pp.plot_l2(system_gt, series_to_plot[1:], output_dir)
 
-    # if run_wandb:
-    #     label = f"obs_{el}"
-    #     aa = compose(config_name='config_run')
-    #     print(f"Initializing wandb for observer {el}...")
-    #     wandb.init(project=name, name=label, config=aa)
-            
+    matching = extract_matching(*matching_args)
 
-    if n_obs==1:
-        series_to_plot = [system_gt, *observers_gt, *observers]
-        pp.plot_multiple_series(series_to_plot, output_dir)
-        pp.plot_l2(system_gt, series_to_plot[1:], output_dir)
+    if comparison_3d:
+        pp.plot_validation_3d(matching[:, :2], matching[:, 2], matching[:, -1], output_dir, system=True)
 
-    if n_obs>1:
-        series_to_plot = [system_gt, mm_obs, mm_obs_gt, *observers_gt, *observers] if show_obs else [system_gt, mm_obs, mm_obs_gt]
-        pp.plot_multiple_series(series_to_plot, output_dir)
-        pp.plot_l2(system_gt, series_to_plot[1:], output_dir)
-
-        matching = extract_matching(system_gt, *observers, mm_obs)
-        matching_observers = extract_matching(mm_obs_gt, mm_obs)
-
-        mu = compute_mu(conf, matching)
-        mu = mu[1:, :]
-        t, weights = load_weights(conf, f"simulation_mm_obs")
+    if not direct and n_obs>1:
+        mu = compute_mu(conf, matching)[1:]
+        t, weights = load_weights(conf, "simulation_mm_obs")
 
         observers_mu = [
-        {"t": t, "weight": weights[:, i], "mu": mu[:, i], "label": f"observer_{i}"} 
-        for i in range(n_obs)
+            {"t": t, "weight": weights[:, i], "mu": mu[:, i], "label": f"observer_{i}"}
+            for i in range(n_obs)
         ]
 
+        # Plot results for multiple observers
         pp.plot_mu(observers_mu, output_dir)
         pp.plot_weights(observers_mu, output_dir)
 
-        metrics = compute_metrics(matching[:, 0:2], matching_observers[:, 2], matching[:, -1], output_dir, system=matching[:, 2])
-        # pp.plot_validation_3d(tot_true[:, 0:2], tot_true[:, -1], tot_pred[:, -1], output_dir)
-        # struttura di matching: x, t, sys_matlab, obs_matlab, mm_obs_matlab, obs_pinns, mm_obs_pinns
-        if comparison_3d:
-            pp.plot_comparison_3d(matching[:, 0:2], matching[:, 2], matching[:, -1], output_dir)
+    metrics = compute_metrics(
+        matching[:, 0:2],
+        matching[:, 2] if not system_metrics else matching[:, -1],
+        matching[:, -1],
+        output_dir,
+        system=matching[:, 2] if system_metrics else None,
+    )
 
-        # if run_wandb:
-        #     wandb.log(metrics)
-        #     wandb.finish()
+    return matching, metrics
 
 
-def check_system_and_wandb_upload(system_gt, system, conf, run_figs, comparison_3d=True):
+def check_pinns_and_wandb_upload(
+    mm_obs_gt=None,
+    mm_obs=None,
+    system=None,
+    system_gt=None,
+    conf=None,
+    output_dir=None,
+    observers_gt=None,
+    observers=None,
+):
     """
     Check observers and optionally upload results to wandb.
     """
-    # run_wandb = conf.experiment.run_wandb
-    # name = conf.experiment.name
-    # if run_wandb:
-    #     aa = compose(config_name='config_run')
-    #     print(f"Initializing wandb for system...")
-    #     wandb.init(project=name, name=f"system", config=aa)
+    if conf is None:
+        raise ValueError("Configuration (`conf`) is required.")
+
+    direct = conf.model_properties.direct if conf and conf.model_properties else False
+    n_obs = conf.model_parameters.n_obs if conf and conf.model_parameters else 0
+    show_obs = conf.plot.show_obs if conf and conf.plot else False
+
+    if output_dir is None:
+        raise ValueError("Output directory (`output_dir`) is required.")
+
+    if direct:
+        series_to_plot_direct = [system, system_gt]
+        _, metrics_direct = plot_and_compute_metrics(system_gt, series_to_plot_direct, (system_gt, system), conf, output_dir, system_metrics=True)
+        return metrics_direct
+
+    if not direct:
+        # Indirect modeling path
+        if n_obs == 1:
+            if not observers_gt or not observers:
+                raise ValueError("For `n_obs=1`, both `observers_gt` and `observers` must be provided.")
             
+            series_to_plot_n1 = [system_gt, *observers_gt, *observers]
+            matching_args_n1 = (system_gt, *observers, mm_obs)
 
-    pp.plot_multiple_series([system, system_gt], run_figs)
-    pp.plot_l2(system, [system_gt], run_figs)
+            _, metrics = plot_and_compute_metrics(system_gt, series_to_plot_n1, matching_args_n1, conf, output_dir, system_metrics=True)
+            return metrics
 
-    matching = extract_matching(system_gt, system)
-    if comparison_3d:
-        pp.plot_validation_3d(matching[:, 0:2], matching[:, 2], matching[:, -1], run_figs, system=True)
+        elif n_obs > 1:
+            if not mm_obs_gt or not mm_obs:
+                raise ValueError("For `n_obs>1`, both `mm_obs_gt` and `mm_obs` must be provided.")
 
-    metrics = compute_metrics(matching[:, 0:2], matching[:, 2], matching[:, 3], run_figs)
-    # if run_wandb:
-    #     matching = extract_matching(tot_true, tot_pred)
-    #     wandb.log(metrics)
-    #     wandb.finish()
+            series_to_plot_mm_obs = (
+                [system_gt, mm_obs, mm_obs_gt, *observers_gt, *observers]
+                if show_obs
+                else [system_gt, mm_obs, mm_obs_gt]
+            )
 
-    return metrics
+            # Matching and metrics calculation
+            matching_args_mm_obs = (system_gt, *observers, mm_obs)
+
+            # Final metrics
+            _, metrics = plot_and_compute_metrics(system_gt, series_to_plot_mm_obs, matching_args_mm_obs, conf, output_dir, system_metrics=True)
+            return metrics
+
+    return None
 
 
 def get_pred(model, X, output_dir, label):
@@ -828,7 +844,7 @@ def get_observers_preds(multi_obs, x_obs, output_dir, conf):
             "theta": preds[:, 2],
             "label": f"observer_{cc.W_index}"
         }]
-        mm_obs = obs_dict
+        mm_obs = obs_dict[0]
         return obs_dict, mm_obs
 
     # Process for multiple observers
@@ -1282,7 +1298,7 @@ def extract_matching(d_true, *d_preds):
     # Prepare the predicted data for each d_pred
     tot_preds = []
     for d_pred in d_preds:
-        pred = np.hstack((d_pred["grid"], d_pred["theta"].reshape(len(d_pred["grid"]), 1)))
+        pred = np.hstack((d_pred["grid"], d_pred["theta"].reshape(-1, 1)))
         tot_preds.append(pred)
 
     # Match true data with predicted data

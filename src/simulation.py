@@ -45,7 +45,7 @@ def main():
         system = uu.get_pred(pinns_sys, system_gt["grid"], output_dir_system, "system")
 
         # Step 3. plot data
-        uu.check_system_and_wandb_upload(system_gt, system, cfg_system, output_dir_system)
+        uu.check_pinns_and_wandb_upload(system_gt=system_gt, system=system, conf=cfg_system, output_dir=output_dir_system)
 
     if dict_exp["simulation_mm_obs"]:
     
@@ -60,7 +60,7 @@ def main():
         observers, mm_obs = uu.get_observers_preds(multi_obs, x_obs, output_dir_inverse, config_inverse)
 
         # Step 3. plot data
-        uu.check_observers_and_wandb_upload(mm_obs_gt, mm_obs, system_gt, config_inverse, output_dir_inverse, observers=observers, observers_gt=observers_gt)
+        uu.check_pinns_and_wandb_upload(mm_obs_gt=mm_obs_gt, mm_obs=mm_obs, system_gt=system_gt, conf=config_inverse, output_dir=output_dir_inverse, observers=observers, observers_gt=observers_gt)
 
 
 if __name__ == "__main__":
