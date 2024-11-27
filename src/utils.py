@@ -715,11 +715,13 @@ def plot_and_compute_metrics(system_gt, series_to_plot, matching_args, conf, out
         pp.plot_validation_3d(matching[:, :2], matching[:, 2], matching[:, -1], output_dir, system=True)
 
     if not direct and n_obs>1:
-        mu = compute_mu(conf, matching)[1:]
-        t, weights = load_weights(conf, "simulation_mm_obs")
+        condition = output_dir.endswith("ground_truth")
+        label_run = "ground_truth" if condition else "simulation_mm_obs"
+        mu = compute_mu(conf, matching) if condition else compute_mu(conf, matching)[1:]
+        t, weights = load_weights(conf, label_run)
 
         observers_mu = [
-            {"t": t, "weight": weights[:, i], "mu": mu[:, i], "label": f"observer_{i}"}
+            {"t": t, "weight": weights[:, i], "mu": mu[:, i], "label": f"observer_{i}_gt" if condition else f"observer_{i}"}
             for i in range(n_obs)
         ]
 

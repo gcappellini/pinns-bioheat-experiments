@@ -45,10 +45,10 @@ model_parameters:
   W1: 0.001207
   W2: 0.001651
   W3: 0.003303
-  W4: 6.3e-05
-  W5: 0.0021
-  W6: 0.0026
-  W7: 0.001207
+  W4: 0.00191
+  W5: 0.00238
+  W6: 0.00284
+  W7: 0.0033
   W_sys: 0.001651
   W_index: 3
   n_obs: 4
@@ -218,7 +218,7 @@ plot:
       - 0.7
   show_obs: false
 experiment:
-  ground_truth: true
+  ground_truth: false
   simulation_system: false
   simulation_mm_obs: true
 experiment_type:

@@ -13,6 +13,5 @@ git_dir = os.path.dirname(src_dir)
 tests_dir = os.path.join(git_dir, "tests")
 os.makedirs(tests_dir, exist_ok=True)
 
-cfg = OmegaConf.load(f"{conf_dir}/config_run.yaml")
-cfg.experiment
+
 
