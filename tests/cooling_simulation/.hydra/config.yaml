@@ -39,8 +39,8 @@ model_properties:
   b2: 0.5053
   direct: false
 model_parameters:
-  lam: 50
-  upsilon: 10
+  lam: 500
+  upsilon: 1
   W0: 6.3e-05
   W1: 0.001207
   W2: 0.001651
@@ -259,4 +259,4 @@ experiment_type:
       y1_0: 22.84
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/tests/cooling_simulation
+output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/tests/cooling_simulation_3obs

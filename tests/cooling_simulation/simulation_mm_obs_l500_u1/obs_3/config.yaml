@@ -15,8 +15,8 @@ model_properties:
   activation: tanh
   initial_weights_regularizer: false
   initialization: Glorot uniform
-  optimizer: None
-  iters: 1500
+  optimizer: L-BFGS
+  iters: 5000
   learning_rate: 0.001
   num_dense_layers: 4
   num_dense_nodes: 50

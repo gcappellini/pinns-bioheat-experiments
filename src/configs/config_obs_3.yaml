@@ -4,7 +4,7 @@ model_properties:
   k: 0.6
   rho: 1000.0
   c: 4186.0
-  W: 0.003303
+  W: 0.001207
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
@@ -40,11 +40,11 @@ model_properties:
   direct: false
 model_parameters:
   lam: 1
-  upsilon: 1
+  upsilon: 5
   W0: 6.3e-05
-  W1: 0.001207
-  W2: 0.001651
-  W3: 0.003303
+  W3: 0.001207
+  W1: 0.001651
+  W2: 0.003303
   W4: 6.3e-05
   W5: 0.0021
   W6: 0.0026
@@ -259,4 +259,4 @@ experiment_type:
       y1_0: 22.84
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-27/10-34-25
+output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-27/12-30-59

@@ -675,43 +675,5 @@ def plot_l2(series_sys, series_data, folder):
     )
 
 
-def plot_matlab_ground_truth(prj_figs):
-    cfg = compose(config_name='config_run')
-    system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(cfg, path=prj_figs)
-    n_obs = cc.n_obs
-
-    show_obs = cfg.plot.show_obs
-
-    metr = uu.compute_metrics(system_gt["grid"], system_gt["theta"], mm_obs_gt["theta"], prj_figs, system=system_gt["theta"])
-    
-
-    if n_obs==1:
-        theory, bound = uu.compute_y_theory(system_gt["grid"], system_gt["theta"], mm_obs_gt["theta"])
-        plot_l2(system_gt, [*observers_gt, theory, bound], prj_figs)
-        plot_multiple_series([system_gt, *observers_gt], prj_figs)
-
-    else:
-        series_to_plot = [mm_obs_gt, *observers_gt] if show_obs else [mm_obs_gt]
-        plot_l2(system_gt, series_to_plot, prj_figs)
-        plot_multiple_series(series_to_plot, prj_figs)
-        matching = uu.extract_matching(system_gt, *observers_gt)
-        mu = uu.compute_mu(cfg, matching)
-        t, weights = uu.load_weights(cfg, "ground_truth")
-
-        observers_mu = [
-            {"t": t, "weight": weights[:, i], "mu": mu[:, i], "label": f"observer_{i}_gt"} 
-            for i in range(n_obs)
-        ]
-
-        plot_mu(observers_mu, prj_figs)
-        plot_weights(observers_mu, prj_figs)
-
-        # y1_matlab, gt1_matlab, gt2_matlab, y2_matlab = point_ground_truths(conf1)
-        # df = load_from_pickle(f"{src_dir}/data/vessel/{string}.pkl")
-        # pp.plot_timeseries_with_predictions(df, y1_matlab, gt1_matlab, gt2_matlab, y2_matlab, prj_figs, gt=True)
-
-    print("MATLAB ground truth completed.")
-    print("Metrics:", metr["total_L2RE_sys"])
-    return metr["total_L2RE_sys"]
 
 # if __name__ == "__main__":

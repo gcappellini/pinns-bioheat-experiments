@@ -738,7 +738,7 @@ def plot_and_compute_metrics(system_gt, series_to_plot, matching_args, conf, out
     return matching, metrics
 
 
-def check_pinns_and_wandb_upload(
+def check_and_wandb_upload(
     mm_obs_gt=None,
     mm_obs=None,
     system=None,
@@ -769,27 +769,33 @@ def check_pinns_and_wandb_upload(
     if not direct:
         # Indirect modeling path
         if n_obs == 1:
-            if not observers_gt or not observers:
-                raise ValueError("For `n_obs=1`, both `observers_gt` and `observers` must be provided.")
-            
-            series_to_plot_n1 = [system_gt, *observers_gt, *observers]
-            matching_args_n1 = (system_gt, *observers, mm_obs)
+            if observers_gt and not observers:
+                series_to_plot_n1 = [system_gt, *observers_gt]
+                matching_args_n1 = (system_gt, *observers_gt)
+            else:
+                series_to_plot_n1 = [system_gt, *observers_gt, *observers]
+                matching_args_n1 = (system_gt, *observers, mm_obs)
 
             _, metrics = plot_and_compute_metrics(system_gt, series_to_plot_n1, matching_args_n1, conf, output_dir, system_metrics=True)
             return metrics
 
         elif n_obs > 1:
-            if not mm_obs_gt or not mm_obs:
-                raise ValueError("For `n_obs>1`, both `mm_obs_gt` and `mm_obs` must be provided.")
+            if mm_obs_gt and not mm_obs:
+                series_to_plot_mm_obs = (
+                    [system_gt, mm_obs_gt, *observers_gt]
+                    if show_obs
+                    else [system_gt, mm_obs_gt]
+                    )
+                matching_args_mm_obs = (system_gt, *observers_gt, mm_obs_gt)
+            else:
+                series_to_plot_mm_obs = (
+                    [system_gt, mm_obs, mm_obs_gt, *observers_gt, *observers]
+                    if show_obs
+                    else [system_gt, mm_obs, mm_obs_gt]
+                )
+                matching_args_mm_obs = (system_gt, *observers, mm_obs)
 
-            series_to_plot_mm_obs = (
-                [system_gt, mm_obs, mm_obs_gt, *observers_gt, *observers]
-                if show_obs
-                else [system_gt, mm_obs, mm_obs_gt]
-            )
-
-            # Matching and metrics calculation
-            matching_args_mm_obs = (system_gt, *observers, mm_obs)
+            
 
             # Final metrics
             _, metrics = plot_and_compute_metrics(system_gt, series_to_plot_mm_obs, matching_args_mm_obs, conf, output_dir, system_metrics=True)
