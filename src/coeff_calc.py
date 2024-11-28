@@ -10,7 +10,8 @@ src_dir: str = os.path.dirname(current_file)
 conf_dir: str = os.path.join(src_dir, "configs")
 
 initialize('configs', version_base=None)
-cfg = compose(config_name='config_run')
+# cfg = compose(config_name='config_run')
+cfg = OmegaConf.load(f"{conf_dir}/config_run.yaml")
 
 
 L0: float = cfg.model_properties.L0
@@ -18,6 +19,8 @@ tauf: float = cfg.model_properties.tauf
 k: float = cfg.model_properties.k
 c: float = cfg.model_properties.c
 rho: float = cfg.model_properties.rho
+c_b: float = cfg.model_properties.c_b
+rho_b: float = cfg.model_properties.rho_b
 h: float = cfg.model_properties.h
 
 beta: float = cfg.model_properties.beta
@@ -52,7 +55,7 @@ W_index: int = cfg.model_parameters.W_index
 n_obs: int = cfg.model_parameters.n_obs
 
 obs = np.array([W0, W1, W2, W3, W4, W5, W6, W7])
-# obs = np.linspace(W0, W7, num=8, endpoint=True)
+# obs = np.linspace(W0, W2, num=8, endpoint=True)
 W_obs = float(obs[W_index])
 
 lamb: float = cfg.model_parameters.lam  # Access the lambda parameter
@@ -65,7 +68,7 @@ def rescale_t(t: float)->float:
 "coefficients a1, a2, a3, a4, a5"
 
 a1: float = round((L0**2/tauf)*((rho*c)/k), 7)
-a2: float = round(L0**2*rho*c/k, 7)
+a2: float = round(L0**2*rho_b*c_b/k, 7)
 cc: float = np.log(2)/(PD - 10**(-2)*x0)
 # cc = 16
 a3: float = round(pwr_fact*rho*L0**2*beta*SAR_0*np.exp(cc*x0)/k*dT, 7)
@@ -84,5 +87,6 @@ decay_rate_diff: float = (eta/a1+W_obs*a2/a1)/2
 
 if __name__ == "__main__":
 
-    np.set_printoptions(precision=2, suppress=False)
-    print(f"perfusion values:{obs}")
+    # np.set_printoptions(precision=2, suppress=False)
+    obs_1 = np.linspace(0.001207, 0.003303, num=8).round(6)
+    print(f"perfusion values:{obs_1}")

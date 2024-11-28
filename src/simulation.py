@@ -26,7 +26,7 @@ def run_ground_truth(config, out_dir):
         output_dir=output_dir_gt,
         observers_gt=observers_gt
     )
-    return output_dir_gt, config_matlab, system_gt, observers_gt, mm_obs_gt
+    return output_dir_gt, system_gt, observers_gt, mm_obs_gt
 
 
 def run_simulation_system(config, out_dir, system_gt):
@@ -59,6 +59,12 @@ def run_simulation_mm_obs(config, out_dir, output_dir_gt, system_gt, mm_obs_gt, 
     )
 
 
+def load_ground_truth(config, out_dir):
+    output_dir_gt, config_matlab = co.set_run(out_dir, config, "ground_truth")
+    system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config_matlab, path=output_dir_gt)
+    return output_dir_gt, system_gt, observers_gt, mm_obs_gt
+
+
 def main():
     """
     Main function to run the testing of the network, MATLAB ground truth, observer checks, and PINNs.
@@ -69,10 +75,9 @@ def main():
 
     # Ground Truth Simulation
     if dict_exp["ground_truth"]:
-        output_dir_gt, config_matlab, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, out_dir)
+        output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, out_dir)
     else:
-        output_dir_gt, config_matlab = co.set_run(out_dir, config, "ground_truth")
-        system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config_matlab, path=output_dir_gt)
+        output_dir_gt, system_gt, observers_gt, mm_obs_gt = load_ground_truth(config, out_dir)
 
     # Simulation System
     if dict_exp["simulation_system"]:

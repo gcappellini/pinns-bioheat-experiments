@@ -35,7 +35,7 @@ function [sol] = OneDimBH_3Obs
     end
     
     
-    filename2 = sprintf('%s/ground_truth/weights_l_%d_u_%d.txt', output_path, lambda, upsilon);
+    filename2 = sprintf('%s/ground_truth/weights_l_%.3f_u_%.3f.txt', output_path, lambda, upsilon);
     fileID = fopen(filename2,'w');
     
     for i = 1:101
@@ -50,7 +50,7 @@ function [sol] = OneDimBH_3Obs
     
     %-----------------
     function [c,f,s] = OneDimBHpde_3Obs(x,t,u,dudx)
-    global lambda om0 om1 om2 W_sys W0 W1 W2 a1 a2 a3 a4
+    global lambda om0 om1 om2 W_sys W0 W4 W7 a1 a2 a3 a4
     %la prima equazione è quella del sistema, a seguire gli osservatoris
     t
     c = [a1; a1; a1; a1; 1; 1; 1];
@@ -60,8 +60,8 @@ function [sol] = OneDimBH_3Obs
     
     s = [-W_sys*a2*u(1)+a3*exp(-a4*x); 
         -W0*a2*u(2)+a3*exp(-a4*x); 
-        -W1*a2*u(3)+a3*exp(-a4*x); 
-        -W2*a2*u(4)+a3*exp(-a4*x); 
+        -W4*a2*u(3)+a3*exp(-a4*x); 
+        -W7*a2*u(4)+a3*exp(-a4*x); 
         -lambda*u(5)*(1-(exp(-om0)/den));
         -lambda*u(6)*(1-(exp(-om1)/den)); 
         -lambda*u(7)*(1-(exp(-om2)/den))

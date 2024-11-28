@@ -459,12 +459,12 @@ def gen_obsdata(conf, path=None):
 
 
 def load_weights(conf, label, path=None):
-    n = conf.model_parameters.n_obs
+    n = cc.n_obs
     dir_name = path if path is not None else conf.output_dir
-    lamb = conf.model_parameters.lam
-    ups = conf.model_parameters.upsilon
+    lamb = cc.lamb
+    ups = cc.upsilon
 
-    data = np.loadtxt(f"{dir_name}/{label}/weights_l_{lamb}_u_{ups}.txt")
+    data = np.loadtxt(f"{dir_name}/{label}/weights_l_{lamb:.3f}_u_{ups:.3f}.txt")
     t, weights = data[:, 0:1], data[:, 1:1+n]
 
     return t, np.array(weights)
@@ -1011,9 +1011,9 @@ def solve_ivp(multi_obs, fold, conf, x_obs):
     """
     Solve the IVP for observer weights and plot the results.
     """
-    n_obs = conf.model_parameters.n_obs
-    lam = conf.model_parameters.lam
-    ups = conf.model_parameters.upsilon
+    n_obs = cc.n_obs
+    lam = cc.lamb
+    ups = cc.upsilon
     p0 = np.full((n_obs,), 1/n_obs)
 
     def f(t, p):
@@ -1032,7 +1032,7 @@ def solve_ivp(multi_obs, fold, conf, x_obs):
     weights[1:] = sol.y
     weights = weights.T
     
-    np.savetxt(f'{fold}/weights_l_{lam}_u_{ups}.txt', weights.round(n_digits), delimiter=' ')
+    np.savetxt(f"{fold}/weights_l_{lam:.3f}_u_{ups:.3f}.txt", weights.round(n_digits), delimiter=' ')
     # pp.plot_weights(weights[1:], weights[0], fold, conf)
     y_pred = mm_predict(multi_obs, x_obs, fold)
 

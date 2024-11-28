@@ -1,0 +1,76 @@
+=== METRICS REPORT ===
+
+Part 1: Observer PINNs vs Observer MATLAB
+
+L2RE:
+  Total: 0.0
+  Initial_condition: 0.0
+  Bc0: 0.0
+  Bc1: 0.0
+  Domain: 0.0
+
+MSE:
+  Total: 0.0
+  Initial_condition: 0.0
+  Bc0: 0.0
+  Bc1: 0.0
+  Domain: 0.0
+
+MAX:
+  Total: 1e-08
+  Initial_condition: 1e-08
+  Bc0: 0.0
+  Bc1: 1e-08
+  Domain: 0.0
+
+MEAN:
+  Total: 9.9009900990099e-11
+  Initial_condition: 9.900990099009901e-11
+  Bc0: 0.0
+  Bc1: 9.999999999999994e-09
+  Domain: 0.0
+
+LOSS:
+  Total: 0.0
+  Initial_condition: 0.0
+  Bc0: 0.0
+  Bc1: 0.0
+  Domain: 0.0
+
+Part 2: Observer PINNs vs System MATLAB
+
+L2RE:
+  Total: 1.4519228427772468
+  Initial_condition: 0.14739939927267753
+  Bc0: 0.247464676
+  Bc1: 0.0
+  Domain: 1.2880687458332503
+
+MSE:
+  Total: 0.0008785996829498978
+  Initial_condition: 0.02151146822370912
+  Bc0: 0.004720708982294169
+  Bc1: 0.0
+  Domain: 0.0006624114705015734
+
+MAX:
+  Total: 0.49470000000000003
+  Initial_condition: 0.49470000000000003
+  Bc0: 0.49470000000000003
+  Bc1: 1e-08
+  Domain: 0.28033456999999995
+
+MEAN:
+  Total: 0.01245473067542398
+  Initial_condition: 0.12046402079207923
+  Bc0: 0.024501453069306938
+  Bc1: 9.999999999999994e-09
+  Domain: 0.011404433713131315
+
+LOSS:
+  Total: 0.19049172679784657
+  Initial_condition: 0.00013530416861627772
+  Bc0: 2.9692608495440653e-05
+  Bc1: 0.0
+  Domain: 4.166476800468592e-06
+

@@ -20,6 +20,8 @@ k = config_data.model_properties.k;
 alfa = config_data.model_properties.alfa;
 rho = config_data.model_properties.rho;
 cp = config_data.model_properties.c;
+rho_b = config_data.model_properties.rho_b;
+c_b = config_data.model_properties.c_b;
 t_room = config_data.model_properties.Troom;
 t_y10 = config_data.model_properties.Ty10;
 t_y20 = config_data.model_properties.Ty20;
@@ -77,7 +79,7 @@ dT = t_max - t_room;
 
 % Compute constants a1, a2, a3
 a1 = (L0^2/tauf)*(rho*cp/k);
-a2 = L0^2*rho*cp/k;
+a2 = L0^2*rho_b*c_b/k;
 a3 = pwr_fact*rho*(L0^2)*beta*SAR_0*exp(cc*x0)/k*dT;
 a4 = cc*L0;
 a5 = (h*L0)/k;
