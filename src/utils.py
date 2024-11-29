@@ -386,7 +386,7 @@ def train_model(conf):
 
 
 def gen_testdata(conf, path=None):
-    n = conf.model_parameters.n_obs
+    n = cc.n_obs
     dir_name = path if path is not None else conf.output_dir
 
     file_path = f"{dir_name}/output_matlab_{n}Obs.txt"
@@ -649,7 +649,10 @@ def mu(o, tau_in, upsilon):
         true = f2(tau)
         scrt = calculate_mu(oss, true, upsilon)
         muu.append(scrt)
+
     muu = np.column_stack(muu)
+
+
     return muu
 
 
@@ -659,9 +662,9 @@ def calculate_mu(os, tr, upsilon):
     return scrt
 
 
-def compute_mu(conf, g):
-    n_obs = conf.model_parameters.n_obs
-    upsilon = conf.model_parameters.upsilon
+def compute_mu(g):
+    n_obs = cc.n_obs
+    upsilon = cc.upsilon
 
     rows_0 = g[g[:, 0] == 0.0]
     sys_0 = rows_0[:, 2:3]
@@ -671,6 +674,7 @@ def compute_mu(conf, g):
 
     for el in range(obss_0.shape[1]):
         mu_value = calculate_mu(obss_0[:, el], sys_0, upsilon)
+
         muu.append(mu_value)
     muu = np.column_stack(muu)#.reshape(len(muu),)
     return muu

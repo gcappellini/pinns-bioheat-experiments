@@ -14,13 +14,14 @@ initialize('configs', version_base=None)
 cfg = OmegaConf.load(f"{conf_dir}/config_run.yaml")
 
 
+
 L0: float = cfg.model_properties.L0
 tauf: float = cfg.model_properties.tauf
 k: float = cfg.model_properties.k
 c: float = cfg.model_properties.c
 rho: float = cfg.model_properties.rho
-c_b: float = cfg.model_properties.c_b
-rho_b: float = cfg.model_properties.rho_b
+c_b: float = c
+rho_b: float = rho
 h: float = cfg.model_properties.h
 
 beta: float = cfg.model_properties.beta
@@ -89,4 +90,4 @@ if __name__ == "__main__":
 
     # np.set_printoptions(precision=2, suppress=False)
     obs_1 = np.linspace(0.001207, 0.003303, num=8).round(6)
-    print(f"perfusion values:{obs_1}")
+    print(f"perfusion system:{W_sys}")

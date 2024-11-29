@@ -1,11 +1,9 @@
 model_properties:
   L0: 0.07
-  tauf: 3600.0
+  tauf: 1800.0
   k: 0.6
-  rho: 888.0
-  c: 2387.0
-  rho_b: 1043.0
-  c_b: 3825.0
+  rho: 1000.0
+  c: 4186.0
   W: 0.003303
   h: 10.0
   Troom: 21.5
@@ -13,7 +11,7 @@ model_properties:
   Ty10: 21.5
   Ty20: 32.0
   Ty30: 21.5
-  alfa: 1
+  alfa: 50
   activation: tanh
   initial_weights_regularizer: false
   initialization: Glorot uniform
@@ -33,16 +31,18 @@ model_properties:
   w_bc1: 1
   w_ic: 1
   beta: 0.9
-  pwr_fact: 0.012
+  pwr_fact: 0.0
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b1: 4.3424
-  b2: 0.5053
+  b1: 5.0
+  b2: 0.8
   direct: false
 model_parameters:
   lam: 1
-  upsilon: 10
+  upsilon: 1
+  W_min: ${model_parameters.W0}
+  W_max: ${model_parameters.W7}
   W0: 0.001207
   W1: 0.001506
   W2: 0.001806
@@ -51,9 +51,9 @@ model_parameters:
   W5: 0.002704
   W6: 0.003004
   W7: 0.003303
-  W_sys: 0.002405
+  W_sys: 0.002105
   W_index: 4
-  n_obs: 3
+  n_obs: 8
   gt1_0: 24.44
   gt2_0: 29.25
   x_y2: 0
@@ -65,4 +65,4 @@ model_parameters:
   - 2.0888912677764893
   - 27.680763244628906
   - 8.396754264831543
-output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-28/02-22-15
+output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-29/19-03-34

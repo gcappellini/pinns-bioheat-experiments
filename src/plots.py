@@ -188,9 +188,9 @@ def plot_weights(series_data, run_figs):
 
     conf = compose(config_name='config_run')
     plot_params = uu.get_plot_params(conf)
-    n_obs = conf.model_parameters.n_obs
-    lam = conf.model_parameters.lam
-    ups = conf.model_parameters.upsilon
+    n_obs = cc.n_obs
+    lam = cc.lamb
+    ups = cc.upsilon
 
     # Prepare the labels for each weight line
     legend_labels = [f"Weight $p_{i}$" for i in range(n_obs)]

@@ -11,7 +11,7 @@ model_properties:
   Ty10: 21.5
   Ty20: 32.0
   Ty30: 21.5
-  alfa: 10
+  alfa: 50
   activation: tanh
   initial_weights_regularizer: false
   initialization: Glorot uniform
@@ -35,12 +35,14 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b1: 4.3424
-  b2: 0.5053
+  b1: 5.0
+  b2: 0.8
   direct: false
 model_parameters:
-  lam: 1.0
-  upsilon: 1.0
+  lam: 1
+  upsilon: 1
+  W_min: ${model_parameters.W0}
+  W_max: ${model_parameters.W7}
   W0: 0.001207
   W1: 0.001506
   W2: 0.001806
@@ -49,8 +51,8 @@ model_parameters:
   W5: 0.002704
   W6: 0.003004
   W7: 0.003303
-  W_sys: 0.002405
-  W_index: 2
+  W_sys: 0.002105
+  W_index: 4
   n_obs: 8
   gt1_0: 24.44
   gt2_0: 29.25
@@ -259,4 +261,4 @@ experiment_type:
       y1_0: 22.84
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-28/01-52-59
+output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-29/18-11-58
