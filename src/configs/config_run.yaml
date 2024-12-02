@@ -16,7 +16,7 @@ model_properties:
   initial_weights_regularizer: false
   initialization: Glorot uniform
   optimizer: None
-  iters: 1500
+  iters: 1
   learning_rate: 0.001
   num_dense_layers: 4
   num_dense_nodes: 50
@@ -39,8 +39,8 @@ model_properties:
   b2: 0.8
   direct: false
 model_parameters:
-  lam: 500
-  upsilon: 500
+  lam: 1
+  upsilon: 1
   W_min: ${model_parameters.W0}
   W_max: ${model_parameters.W7}
   W0: 0.001207
@@ -222,7 +222,8 @@ plot:
 experiment:
   ground_truth: true
   simulation_system: false
-  simulation_mm_obs: false
+  simulation_mm_obs: true
+  measurements: '20240930_1'
 experiment_type:
   import_data: false
   save_pickle: false
@@ -261,4 +262,4 @@ experiment_type:
       y1_0: 22.84
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-29/19-03-34
+output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-12-02/21-00-17

@@ -6,9 +6,9 @@ import hydra
 import plots as pp
 import coeff_calc as cc
 from scipy import integrate
-import utils as uu
+from utils import gen_testdata, calculate_mu, extract_matching
 import time
-from common import set_run, generate_config_hash
+
 
 np.random.seed(237)
 
@@ -17,7 +17,6 @@ src_dir = os.path.dirname(current_file)
 conf_dir = os.path.join(src_dir, "configs")
 git_dir = os.path.dirname(src_dir)
 tests_dir = os.path.join(git_dir, "tests")
-models = os.path.join(git_dir, "models")
 os.makedirs(tests_dir, exist_ok=True)
 
 def prova_compute_mu(t, mu_par):
@@ -78,7 +77,6 @@ def load_mu(matlab, tx, upsi):
 
     return res/np.max(res)
 
-
 def solve_ivp(fold, matlab):
     """
     Solve the initial value problem (IVP) for observer weights.
@@ -133,26 +131,28 @@ def solve_ivp(fold, matlab):
 
 
 conf = OmegaConf.load(f"{conf_dir}/config_run.yaml")
-fold = f"{tests_dir}/transfer_learning"
+fold = f"{tests_dir}/simulation_mu_normalized"
 os.makedirs(fold, exist_ok=True)
 
-_, config_inverse = set_run(fold, conf, "simulation_mm_obs")
-config_inverse.model_properties.optimizer = "L-BFGS"
-config_hash = generate_config_hash(config_inverse.model_properties)
+mu_params = {"attenuation": 5.0,
+             "noise": 0.00005,
+             "offset": 0.001
+}
 
-confi_path = os.path.join(models, f"config_{config_hash}.yaml")
-restored_model = uu.restore_model(config_inverse, confi_path)
+matlab = gen_testdata(conf,  path=f"{tests_dir}/cooling_simulation_8obs/ground_truth")
+solve_ivp(fold, matlab)
 
-model_path_adam = os.path.join(fold, f"model_{config_hash_adam}.pt")
-model = uu.create_model(conf)
-conf.model_properties.optimizer = "adam"
-model = uu.compile_optimizer_and_losses(model, conf)
-callbacks = uu.create_callbacks(conf)
+# outputs = []
+# params = [(1, 1), (100, 150)]
 
-losshistory, _ = model.train(
-    iterations=conf.model_properties.iters,
-    callbacks=callbacks,
-    model_save_path=save_path,
-    display_every=conf.plot.display_every
-)
+# for (lam, upsilon) in params:
+#     start_time = time.time()
+#     print("Starting simulation %d %d" % (lam, upsilon))
+#     solve_ivp(lam, upsilon, fold, matlab)
 
+#     exec_time = time.time() - start_time
+#     print("--- %s seconds ---" % (round(exec_time, 3)))
+#     outputs.append([lam, upsilon, round(exec_time, 3)])
+
+
+# np.savetxt(f"{fold}/output.txt", np.array(outputs).round(3), delimiter=' ')

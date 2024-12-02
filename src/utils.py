@@ -31,8 +31,8 @@ os.makedirs(models, exist_ok=True)
 f1, f2, f3 = [None]*3
 n_digits = 6
 
-dde.optimizers.config.set_LBFGS_options(maxcor=100, ftol=1e-08, gtol=1e-08, maxiter=15000, maxfun=None, maxls=50)
-# dde.optimizers.config.set_LBFGS_options(maxcor=1, ftol=1e-02, gtol=1e-02, maxiter=1, maxfun=None, maxls=5)
+# dde.optimizers.config.set_LBFGS_options(maxcor=100, ftol=1e-08, gtol=1e-08, maxiter=15000, maxfun=None, maxls=50)
+dde.optimizers.config.set_LBFGS_options(maxcor=1, ftol=1e-02, gtol=1e-02, maxiter=1, maxfun=None, maxls=5)
 # If L-BFGS stops earlier than expected, set the default float type to ‘float64’:
 # dde.config.set_default_float("float64")
 
@@ -360,7 +360,7 @@ def train_and_save_model(conf, optimizer, config_hash, save_path):
 def train_model(conf):
     """Train a model, checking for existing LBFGS-trained models first."""
     # Step 0: Check for LBFGS-trained model
-    conf.model_properties.iters = 1500 if conf.model_properties.W==0.003303 else 5000
+    conf.model_properties.iters = 1500 if conf.model_properties.W==0.003303 else conf.model_properties.iters
     trained_model = check_for_trained_model(conf)
 
     if trained_model:
@@ -721,7 +721,7 @@ def plot_and_compute_metrics(system_gt, series_to_plot, matching_args, conf, out
     if not direct and n_obs>1:
         condition = output_dir.endswith("ground_truth")
         label_run = "ground_truth" if condition else "simulation_mm_obs"
-        mu = compute_mu(conf, matching) if condition else compute_mu(conf, matching)[1:]
+        mu = compute_mu(matching) if condition else compute_mu(matching)[1:]
         t, weights = load_weights(conf, label_run)
 
         observers_mu = [
@@ -1018,19 +1018,20 @@ def solve_ivp(multi_obs, fold, conf, x_obs):
     n_obs = cc.n_obs
     lam = cc.lamb
     ups = cc.upsilon
+
     p0 = np.full((n_obs,), 1/n_obs)
+
+    t_eval = np.linspace(0, 1, 100)
 
     def f(t, p):
         a = mu(multi_obs, t, ups)
-        e = np.exp(-1 * a)
-        d = np.inner(p, e)
-        f_list = []
-        for el in range(len(p)):
-            f_el = - lam * (1 - (e[:, el] / d)) * p[el]
-            f_list.append(f_el)
-        return np.array(f_list).reshape(len(f_list),)
+        e = np.exp(-a)
 
-    sol = integrate.solve_ivp(f, (0, 1), p0, t_eval=np.linspace(0, 1, 100))
+        weighted_sum = np.sum(p[:, None] * e, axis=0) 
+        f_matrix = -lam * (1 - (e / weighted_sum)) * p[:, None]
+        return np.sum(f_matrix, axis=1)
+
+    sol = integrate.solve_ivp(f, (0, 1), p0, t_eval=t_eval)
     weights = np.zeros((sol.y.shape[0] + 1, sol.y.shape[1]))
     weights[0] = sol.t
     weights[1:] = sol.y

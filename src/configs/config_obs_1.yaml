@@ -1,6 +1,6 @@
 model_properties:
   L0: 0.07
-  tauf: 3600.0
+  tauf: 1800.0
   k: 0.6
   rho: 1000.0
   c: 4186.0
@@ -16,7 +16,7 @@ model_properties:
   initial_weights_regularizer: false
   initialization: Glorot uniform
   optimizer: L-BFGS
-  iters: 5000
+  iters: 1
   learning_rate: 0.001
   num_dense_layers: 4
   num_dense_nodes: 50
@@ -35,12 +35,14 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b1: 4.3424
-  b2: 0.5053
+  b1: 5.0
+  b2: 0.8
   direct: false
 model_parameters:
-  lam: 1.0
-  upsilon: 1.0
+  lam: 1
+  upsilon: 1
+  W_min: ${model_parameters.W0}
+  W_max: ${model_parameters.W7}
   W0: 0.001207
   W1: 0.001506
   W2: 0.001806
@@ -49,9 +51,9 @@ model_parameters:
   W5: 0.002704
   W6: 0.003004
   W7: 0.003303
-  W_sys: 0.002405
+  W_sys: 0.002105
   W_index: 4
-  n_obs: 3
+  n_obs: 8
   gt1_0: 24.44
   gt2_0: 29.25
   x_y2: 0
@@ -221,6 +223,7 @@ experiment:
   ground_truth: true
   simulation_system: false
   simulation_mm_obs: true
+  measurements: '20240930_1'
 experiment_type:
   import_data: false
   save_pickle: false
@@ -259,4 +262,4 @@ experiment_type:
       y1_0: 22.84
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-11-29/13-44-50
+output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-12-02/21-00-17
