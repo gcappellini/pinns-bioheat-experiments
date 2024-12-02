@@ -184,7 +184,7 @@ def plot_loss_components(losshistory, nam):
     )
 
 
-def plot_weights(series_data, run_figs):
+def plot_weights(series_data, run_figs, strng=None):
 
     conf = compose(config_name='config_run')
     plot_params = uu.get_plot_params(conf)
@@ -233,13 +233,13 @@ def plot_weights(series_data, run_figs):
         size=(6, 5),               # Figure size
         colors=colors,
         linestyles=linestyles,
-        filename=f"{run_figs}/weights.png",  # Filename to save the plot
+        filename=f"{run_figs}/weights.png" if strng==None else f"{run_figs}/weights_{strng}.png",  # Filename to save the plot
         alphas=alphas,
         linewidths=linewidths
     )
 
 
-def plot_mu(series_data, run_figs):
+def plot_mu(series_data, run_figs, strng=None):
 
     conf = compose(config_name='config_run')
     plot_params = uu.get_plot_params(conf)
@@ -285,7 +285,7 @@ def plot_mu(series_data, run_figs):
         size=(6, 5),               # Figure size
         colors=colors,
         linestyles=linestyles,
-        filename=f"{run_figs}/obs_error.png",  # Filename to save the plot
+        filename=f"{run_figs}/obs_error.png" if strng==None else f"{run_figs}/obs_error_strng.png",  # Filename to save the plot
         alphas=alphas,
         linewidths=linewidths
     )

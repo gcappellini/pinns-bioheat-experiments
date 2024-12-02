@@ -7,6 +7,7 @@ import plots as pp
 import coeff_calc as cc
 from scipy import integrate
 from utils import gen_testdata, calculate_mu, extract_matching
+import time
 
 
 np.random.seed(237)
@@ -48,7 +49,7 @@ def prova_compute_mu(t, mu_par):
     return muu*(1-t)**5
 
 
-def load_mu(matlab, tx):
+def load_mu(matlab, tx, upsi):
     """
     Load mu values by finding the closest time(s) in matching_x0 to tx and computing differences.
 
@@ -65,7 +66,7 @@ def load_mu(matlab, tx):
 
     # Time and observer data
     t = matching_x0[:, 0]
-    mus = np.array([calculate_mu(matching_x0[:, 2 + i], matching_x0[:, 1], cc.upsilon) for i in range(cc.n_obs)])
+    mus = np.array([calculate_mu(matching_x0[:, 2 + i], matching_x0[:, 1], upsi) for i in range(cc.n_obs)])
 
     # Ensure tx is treated as an array
     tx = np.atleast_1d(tx)
@@ -98,7 +99,7 @@ def solve_ivp(fold, matlab):
 
     def f(t, p):
         # a = compute_mu(t, mu_par)  # Shape (n_obs, len(t))
-        a = load_mu(matlab, t)
+        a = load_mu(matlab, t, ups)
         e = np.exp(-a)     # Element-wise exponentiation
 
         weighted_sum = np.sum(p[:, None] * e, axis=0)  # Weighted sum for normalization
@@ -114,7 +115,7 @@ def solve_ivp(fold, matlab):
     weights[1:] = sol.y
 
     # mu = compute_mu(weights[0], mu_par)
-    mu = load_mu(matlab, weights[0])
+    mu = load_mu(matlab, weights[0], ups)
     
     np.savetxt(f"{fold}/weights_l_{lam:.3f}_u_{ups:.3f}.txt", weights.round(6), delimiter=' ')
     observers_mu = [
@@ -122,9 +123,10 @@ def solve_ivp(fold, matlab):
         for i in range(n_obs)
     ]
 
+    string = f"l{lam}_u{ups}"
     # Plot results for multiple observers
-    pp.plot_mu(observers_mu, fold)
-    pp.plot_weights(observers_mu, fold)
+    pp.plot_mu(observers_mu, fold, strng=string)
+    pp.plot_weights(observers_mu, fold, strng=string)
 
 
 conf = OmegaConf.load(f"{conf_dir}/config_run.yaml")
@@ -137,14 +139,19 @@ mu_params = {"attenuation": 5.0,
 }
 
 matlab = gen_testdata(conf,  path=f"{tests_dir}/cooling_simulation_8obs/ground_truth")
-
 solve_ivp(fold, matlab)
 
+# outputs = []
+# params = [(1, 50), (1, 150), (1, 200), (1, 500)]
+
+# for (lam, upsilon) in params:
+#     start_time = time.time()
+#     print("Starting simulation %d %d" % (lam, upsilon))
+#     solve_ivp(lam, upsilon, fold, matlab)
+
+#     exec_time = time.time() - start_time
+#     print("--- %s seconds ---" % (round(exec_time, 3)))
+#     outputs.append([lam, upsilon, round(exec_time, 3)])
 
 
-
-
-
-
-
-
+# np.savetxt(f"{fold}/output.txt", np.array(outputs).round(3), delimiter=' ')

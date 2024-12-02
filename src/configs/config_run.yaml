@@ -39,8 +39,8 @@ model_properties:
   b2: 0.8
   direct: false
 model_parameters:
-  lam: 1
-  upsilon: 1
+  lam: 500
+  upsilon: 500
   W_min: ${model_parameters.W0}
   W_max: ${model_parameters.W7}
   W0: 0.001207
