@@ -38,7 +38,9 @@ Ty30: float = cfg.model_properties.Ty30
 dT: float = (Tmax-Troom)
 
 alfa: float = cfg.model_properties.alfa
-b2: float = cfg.model_properties.b2
+b1: float = cfg.model_properties.b1
+# b2: float = cfg.model_properties.b2
+# b3: float = cfg.model_properties.b3
 
 x_gt1: float = cfg.model_parameters.x_gt1
 x_gt2: float = cfg.model_parameters.x_gt2
@@ -56,7 +58,6 @@ W_index: int = cfg.model_parameters.W_index
 n_obs: int = cfg.model_parameters.n_obs
 
 obs = np.array([W0, W1, W2, W3, W4, W5, W6, W7])
-# obs = np.linspace(W0, W2, num=8, endpoint=True)
 W_obs = float(obs[W_index])
 
 lamb: float = cfg.model_parameters.lam  # Access the lambda parameter
@@ -66,12 +67,15 @@ def rescale_t(t: float)->float:
 
     return Troom + t *(Tmax - Troom)
 
+def scale_t(t: float)->float:
+
+    return (t - Troom)/(Tmax - Troom)
+
 "coefficients a1, a2, a3, a4, a5"
 
 a1: float = round((L0**2/tauf)*((rho*c)/k), 7)
 a2: float = round(L0**2*rho_b*c_b/k, 7)
 cc: float = np.log(2)/(PD - 10**(-2)*x0)
-# cc = 16
 a3: float = round(pwr_fact*rho*L0**2*beta*SAR_0*np.exp(cc*x0)/k*dT, 7)
 a4: float = round(cc*L0, 7)
 a5: float = round(L0*h/k, 7)
@@ -86,8 +90,20 @@ c_0: float = (np.abs(W_obs*a2/a1 - W_sys*a2/a1)**2)/(eta/a1 + W_obs*a2/a1)**2
 
 decay_rate_diff: float = (eta/a1+W_obs*a2/a1)/2
 
-if __name__ == "__main__":
+theta10, theta20, theta30 = scale_t(Ty10), scale_t(Ty20), scale_t(Ty30)
 
-    # np.set_printoptions(precision=2, suppress=False)
-    obs_1 = np.linspace(0.001207, 0.003303, num=8).round(6)
-    print(f"perfusion system:{W_sys}")
+a = np.array([[K+1, 1],[1, np.exp(K)]])
+b = np.array([(-1/b1)*(a5*theta30-(a5+K)*theta20), theta10/(b1 - 1)])
+resu = np.linalg.solve(a,b).round(5)
+[b2, b3] = resu
+hat_theta_0 = b1*(b2+b3)
+
+cfg.model_properties.b2 = float(b2)
+cfg.model_properties.b3 = float(b3)
+
+OmegaConf.save(cfg, f"{conf_dir}/config_run.yaml")
+
+
+# if __name__ == "__main__":
+    
+

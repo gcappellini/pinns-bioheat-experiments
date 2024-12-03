@@ -8,6 +8,8 @@ import coeff_calc as cc
 from scipy import integrate
 import utils as uu
 import time
+import torch.nn as nn
+import deepxde as dde
 from common import set_run, generate_config_hash
 
 np.random.seed(237)
@@ -20,139 +22,112 @@ tests_dir = os.path.join(git_dir, "tests")
 models = os.path.join(git_dir, "models")
 os.makedirs(tests_dir, exist_ok=True)
 
-def prova_compute_mu(t, mu_par):
-    """
-    Compute mu with optional Gaussian noise.
-
-    Parameters:
-        t: Scalar or vector of time values.
-        noise_std: Standard deviation of the Gaussian noise to be added. Default is 0 (no noise).
-
-    Returns:
-        muu: Array of computed mu values with added noise.
-    """
-    upsilon = cc.upsilon
-    obs = cc.obs
-
-    att=mu_par["attenuation"]
-    noise_std=mu_par["noise"]
-    offset=mu_par["offset"]
-
-    # Compute mu for all t values simultaneously
-    abs_diff = np.abs(obs[:, None] - cc.W_sys)  # Shape: (n_obs, 1)
-    exp_t = np.exp(-att*t)  # If t is a scalar, exp_t is scalar; if t is a vector, shape is (len(t),)
-
-    muu = t*upsilon * abs_diff * exp_t  # Broadcasting to compute for all t and all obs
-
-    noise = np.random.normal(loc=0.0, scale=noise_std, size=muu.shape)
-    muu += noise + offset
-
-    return muu*(1-t)**5
-
-
-def load_mu(matlab, tx, upsi):
-    """
-    Load mu values by finding the closest time(s) in matching_x0 to tx and computing differences.
-
-    Parameters:
-        matlab: Tuple containing the data to process.
-        tx: Scalar or array of target times.
-
-    Returns:
-        mus[:, closest_indices]: Array of mu values corresponding to the closest times to tx.
-    """
-    # Extract matching data
-    matching = extract_matching(matlab[0], *matlab[1])
-    matching_x0 = matching[matching[:, 0] == 0][:, 1:]  # Time: matching_x0[:, 0], system: matching_x0[:, 1], observers
-
-    # Time and observer data
-    t = matching_x0[:, 0]
-    mus = np.array([calculate_mu(matching_x0[:, 2 + i], matching_x0[:, 1], upsi) for i in range(cc.n_obs)])
-
-    # Ensure tx is treated as an array
-    tx = np.atleast_1d(tx)
-
-    # Find the closest indices for each tx value
-    closest_indices = np.abs(t[:, None] - tx).argmin(axis=0)
-    res = mus[:, closest_indices]
-
-    return res/np.max(res)
-
-
-def solve_ivp(fold, matlab):
-    """
-    Solve the initial value problem (IVP) for observer weights.
-
-    Parameters:
-        fold (optional): Unused parameter (kept for compatibility).
-        t_span (tuple): Time interval for the solution (default is (0, 1)).
-        t_eval (array-like): Times at which to store the computed solution. Defaults to 100 points in t_span.
-        p0 (array-like): Initial weights. Defaults to uniform weights.
-
-    Returns:
-        sol: OdeResult object containing the solution to the IVP.
-    """
-    n_obs = cc.n_obs
-    lam = cc.lamb
-    ups = cc.upsilon
-
-    p0 = np.full((n_obs,), 1 / n_obs)  # Default: uniform weights
-
-    t_eval = np.linspace(0, 1, 100)  # Default: 100 points in the time span
-
-    def f(t, p):
-        # a = compute_mu(t, mu_par)  # Shape (n_obs, len(t))
-        a = load_mu(matlab, t, ups)
-        e = np.exp(-a)     # Element-wise exponentiation
-
-        weighted_sum = np.sum(p[:, None] * e, axis=0)  # Weighted sum for normalization
-
-        # Vectorized computation for all elements
-        f_matrix = -lam * (1 - (e / weighted_sum)) * p[:, None]
-        return np.sum(f_matrix, axis=1)  # Summing along the second axis
-
-    # Solve the IVP
-    sol = integrate.solve_ivp(f, (0,1), p0, t_eval=t_eval)
-    weights = np.zeros((sol.y.shape[0] + 1, sol.y.shape[1]))
-    weights[0] = sol.t
-    weights[1:] = sol.y
-
-    # mu = compute_mu(weights[0], mu_par)
-    mu = load_mu(matlab, weights[0], ups)
-    
-    np.savetxt(f"{fold}/weights_l_{lam:.3f}_u_{ups:.3f}.txt", weights.round(6), delimiter=' ')
-    observers_mu = [
-        {"t": weights[0], "weight": weights[i+1], "mu": mu[i], "label": f"observer_{i}"}
-        for i in range(n_obs)
-    ]
-
-    string = f"l{lam}_u{ups}"
-    # Plot results for multiple observers
-    pp.plot_mu(observers_mu, fold, strng=string)
-    pp.plot_weights(observers_mu, fold, strng=string)
-
-
-conf = OmegaConf.load(f"{conf_dir}/config_run.yaml")
 fold = f"{tests_dir}/transfer_learning"
 os.makedirs(fold, exist_ok=True)
 
-_, config_inverse = set_run(fold, conf, "simulation_mm_obs")
-config_inverse.model_properties.optimizer = "L-BFGS"
-config_hash = generate_config_hash(config_inverse.model_properties)
+iters=2000
 
-confi_path = os.path.join(models, f"config_{config_hash}.yaml")
-restored_model = uu.restore_model(config_inverse, confi_path)
+# Step 0: load model with n_ins=2
+direct_conf_hash = "6c0e220c6f51084cb665f0a93c5872bc"
+conf = OmegaConf.load(f"{models}/config_{direct_conf_hash}.yaml")
+restored_model_2_ins = uu.check_for_trained_model(conf)
 
-model_path_adam = os.path.join(fold, f"model_{config_hash_adam}.pt")
-model = uu.create_model(conf)
+# Step 1: augment input dimensionality to n_ins=3 to account for y2
+linears_2_ins = restored_model_2_ins.net.linears
+new_first_layer_3_ins = nn.Linear(in_features=3, out_features=50, bias=True)
+nn.init.xavier_uniform_(new_first_layer_3_ins.weight)
+linears_2_ins[0] = new_first_layer_3_ins
+
+# Step 2: create another model with net as before and new data, and train with adam
+conf.model_properties.n_ins=3
+data_3_ins = uu.create_model(conf)
+model_3_ins = dde.Model(data=data_3_ins.data, net=restored_model_2_ins.net)
 conf.model_properties.optimizer = "adam"
-model = uu.compile_optimizer_and_losses(model, conf)
+model_3_ins = uu.compile_optimizer_and_losses(model_3_ins, conf)
 callbacks = uu.create_callbacks(conf)
 
-losshistory, _ = model.train(
-    iterations=conf.model_properties.iters,
+losshistory, trainstate = model_3_ins.train(
+    iterations=iters,
     callbacks=callbacks,
-    model_save_path=save_path,
+    model_save_path=f"{fold}/model_3_ins_adam",
+    display_every=conf.plot.display_every
+)
+
+# Step 3: train with LBFGS
+conf.model_properties.optimizer = "L-BFGS"
+model_3_ins = uu.compile_optimizer_and_losses(model_3_ins, conf)
+callbacks = uu.create_callbacks(conf)
+
+losshistory, trainstate = model_3_ins.train(
+    iterations=iters,
+    callbacks=callbacks,
+    model_save_path=f"{fold}/model_3_ins_L-BFGS",
+    display_every=conf.plot.display_every
+)
+
+# Step 4: augment input dimensionality to n_ins=4 to account for y1
+linears_3_ins = model_3_ins.net.linears
+new_first_layer_4_ins = nn.Linear(in_features=4, out_features=50, bias=True)
+nn.init.xavier_uniform_(new_first_layer_4_ins.weight)
+linears_3_ins[0] = new_first_layer_4_ins
+
+# Step 5: create another model with net as before and new data, and train with adam
+conf.model_properties.n_ins=4
+data_4_ins = uu.create_model(conf)
+model_4_ins = dde.Model(data=data_4_ins.data, net=model_3_ins.net)
+conf.model_properties.optimizer = "adam"
+model_4_ins = uu.compile_optimizer_and_losses(model_4_ins, conf)
+callbacks = uu.create_callbacks(conf)
+
+losshistory, trainstate = model_4_ins.train(
+    iterations=iters,
+    callbacks=callbacks,
+    model_save_path=f"{fold}/model_4_ins_adam",
+    display_every=conf.plot.display_every
+)
+
+# Step 6: train with LBFGS
+conf.model_properties.optimizer = "L-BFGS"
+model_4_ins = uu.compile_optimizer_and_losses(model_4_ins, conf)
+callbacks = uu.create_callbacks(conf)
+
+losshistory, trainstate = model_4_ins.train(
+    iterations=iters,
+    callbacks=callbacks,
+    model_save_path=f"{fold}/model_4_ins_L-BFGS",
+    display_every=conf.plot.display_every
+)
+
+# Step 7: augment input dimensionality to n_ins=5 to account for y3
+linears_4_ins = model_4_ins.net.linears
+new_first_layer_5_ins = nn.Linear(in_features=5, out_features=50, bias=True)
+nn.init.xavier_uniform_(new_first_layer_5_ins.weight)
+linears_4_ins[0] = new_first_layer_5_ins
+
+# Step 8: create another model with net as before and new data, and train with adam
+conf.model_properties.n_ins=5
+data_5_ins = uu.create_model(conf)
+model_5_ins = dde.Model(data=data_5_ins.data, net=model_4_ins.net)
+conf.model_properties.optimizer = "adam"
+model_5_ins = uu.compile_optimizer_and_losses(model_5_ins, conf)
+callbacks = uu.create_callbacks(conf)
+
+losshistory, trainstate = model_5_ins.train(
+    iterations=iters,
+    callbacks=callbacks,
+    model_save_path=f"{fold}/model_5_ins_adam",
+    display_every=conf.plot.display_every
+)
+
+# Step 9: train with LBFGS
+conf.model_properties.optimizer = "L-BFGS"
+model_5_ins = uu.compile_optimizer_and_losses(model_5_ins, conf)
+callbacks = uu.create_callbacks(conf)
+
+losshistory, trainstate = model_5_ins.train(
+    iterations=iters,
+    callbacks=callbacks,
+    model_save_path=f"{fold}/model_5_ins_L-BFGS",
     display_every=conf.plot.display_every
 )
 

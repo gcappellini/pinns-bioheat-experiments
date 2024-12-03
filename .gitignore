@@ -197,14 +197,13 @@ tests/*
 !tests/cooling_simulation*
 !tests/cooling_meas_1
 !tests/cooling_meas_2
-!tests/inverse_problem*
+!tests/transfer_learning
 
 old/
 src/wandb
 src/outputs
 src/data/vessel/foto&video
 outputs/
-models/*
 multirun/
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,python

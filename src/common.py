@@ -43,10 +43,11 @@ def set_run(prj_figs, cfg, run):
     
     if run=="simulation_system":
         cfg.model_properties.W = cfg.model_parameters.W_sys
-        cfg.model_properties.direct = True
+        cfg.model_properties.n_ins = 2
+        cfg.model_properties.b1, cfg.model_properties.b2, cfg.model_properties.b3 = None, None, None
 
     if run=="simulation_mm_obs":
-        cfg.model_properties.direct = False
+        cfg.model_properties.n_ins = 3
 
     OmegaConf.save(cfg, f"{run_figs}/config.yaml")
     OmegaConf.save(cfg, f"{conf_dir}/config_{run}.yaml")

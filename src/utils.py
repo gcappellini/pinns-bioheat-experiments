@@ -31,8 +31,8 @@ os.makedirs(models, exist_ok=True)
 f1, f2, f3 = [None]*3
 n_digits = 6
 
-# dde.optimizers.config.set_LBFGS_options(maxcor=100, ftol=1e-08, gtol=1e-08, maxiter=15000, maxfun=None, maxls=50)
-dde.optimizers.config.set_LBFGS_options(maxcor=1, ftol=1e-02, gtol=1e-02, maxiter=1, maxfun=None, maxls=5)
+dde.optimizers.config.set_LBFGS_options(maxcor=100, ftol=1e-08, gtol=1e-08, maxiter=15000, maxfun=None, maxls=50)
+# dde.optimizers.config.set_LBFGS_options(maxcor=1, ftol=1e-02, gtol=1e-02, maxiter=1, maxfun=None, maxls=5)
 # If L-BFGS stops earlier than expected, set the default float type to ‘float64’:
 # dde.config.set_default_float("float64")
 
@@ -42,6 +42,7 @@ def get_initial_loss(model):
     model.compile("adam", lr=0.001)
     losshistory, _ = model.train(0)
     return losshistory.loss_train[0]
+
 
 def compute_metrics(grid, true, pred, run_figs, system=None):
     # Load loss weights from configuration
@@ -195,10 +196,9 @@ def create_model(config):
     """
     # Load configuration
     model_props = config.model_properties
-    model_pars = config.model_parameters
 
     # Extract shared parameters from the configuration
-    direct = model_props.direct
+    n_ins = model_props.n_ins
     activation = model_props.activation  
     initialization = model_props.initialization
     num_dense_layers = model_props.num_dense_layers
@@ -207,50 +207,62 @@ def create_model(config):
         model_props.num_domain, model_props.num_boundary,
         model_props.num_initial, model_props.num_test,
     )
+
     a1, a2, a3, a4, a5 = cc.a1, cc.a2, cc.a3, cc.a4, cc.a5
+    b1, b2, b3 = cc.b1, cc.b2, cc.b3
     K = cc.K
 
-    W = model_props.W if not direct else model_pars.W_sys
-    theta10 = scale_t(model_props.Ty10)
+    W = model_props.W
+
+    theta10, theta20, theta30 = cc.theta10, cc.theta20, cc.theta30
+
 
     def ic_fun(x):
         z = x if len(x.shape) == 1 else x[:, :1]
-        theta20 = scale_t(model_props.Ty20)
-        theta30 = scale_t(model_props.Ty30)
 
-        c_2 = a5 * (theta30 - theta20)
-        c_3 = theta20
-
-        if direct:
-            c_1 = -c_2 - c_3
+        if n_ins==2:
+            c_2 = a5 * (theta30 - theta20)
+            c_3 = theta20
+            c_1 = theta10 - c_2 - c_3
             return c_1 * z**2 + c_2 * z + c_3
         
         else:
-            c_1 = model_props.b2 - (c_2 - K * c_3) / K
-            return ((c_2 - K * c_3) / K + c_1 * np.exp(K * z)) * (1 - z) ** model_props.b1
+            return (b1 - z)*(b2 + b3 * np.exp(K*z))
+
 
     def bc0_fun(x, theta, _):
-        y3 = scale_t(model_props.Ty30)
         dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0)
-        if direct:
-            return dtheta_x + a5 * (y3 - theta)
+        
+        y3 = cc.theta30 if n_ins == 2 else x[:, 3:4] if n_ins == 5 else x[:, 2:3]
+        y2 = None if n_ins <= 2 else x[:, 1:2] if n_ins == 3 else x[:, 2:3]
+        
+        if n_ins == 2:
+            return dtheta_x - a5 * (theta - y3)
         else:
-            y2 = x[:, 1:2]
-            return dtheta_x - K * theta - (a5 - K) * y2 + a5 * 0
+            return dtheta_x - K * theta - (a5 - K) * y2 + a5 * y3
+
 
     def bc1_fun(x, theta, _):
-        return theta - theta10
+        y1 = theta10 if n_ins <=3 else x[:, 1:2]
+        return theta - y1
+
 
     def pde(x, theta):
-        dtheta_tau = dde.grad.jacobian(theta, x, i=0, j=1 if direct else 2)
+        time_index = n_ins -1
+        dtheta_tau = dde.grad.jacobian(theta, x, i=0, j=time_index)
         dtheta_xx = dde.grad.hessian(theta, x, i=0, j=0)
         source_term = -a3 * torch.exp(-a4 * x[:, :1])
         return a1 * dtheta_tau - dtheta_xx + W * a2 * theta + source_term
 
-    if direct:
-        geom = dde.geometry.Interval(0, 1)
-    else:
-        geom = dde.geometry.Rectangle([0, 0], [1, 1])
+
+    geom_mapping = {
+        2: dde.geometry.Interval(0, 1),
+        3: dde.geometry.Rectangle([0, 0], [1, 1]),
+        4: dde.geometry.Cuboid([0, 0, 0], [1, 1, 0.2]),
+        5: dde.geometry.Hypercube([0, 0, 0, 0], [1, 1, 0.2, 1])
+    }
+
+    geom = geom_mapping.get(n_ins, None)
 
     timedomain = dde.geometry.TimeDomain(0, 1.5)
     geomtime = dde.geometry.GeometryXTime(geom, timedomain)
@@ -271,8 +283,7 @@ def create_model(config):
     )
 
     # Define the network
-    input_dim = 2 if direct else 3
-    layer_size = [input_dim] + [num_dense_nodes] * num_dense_layers + [1]
+    layer_size = [n_ins] + [num_dense_nodes] * num_dense_layers + [1]
     net = dde.nn.FNN(layer_size, activation, initialization)
 
     # Compile the model
@@ -360,7 +371,6 @@ def train_and_save_model(conf, optimizer, config_hash, save_path):
 def train_model(conf):
     """Train a model, checking for existing LBFGS-trained models first."""
     # Step 0: Check for LBFGS-trained model
-    conf.model_properties.iters = 1500 if conf.model_properties.W==0.003303 else conf.model_properties.iters
     trained_model = check_for_trained_model(conf)
 
     if trained_model:
@@ -371,16 +381,34 @@ def train_model(conf):
     conf.model_properties.optimizer = "adam"
     config_hash_adam = co.generate_config_hash(conf.model_properties)
     model_path_adam = os.path.join(models, f"model_{config_hash_adam}.pt")
-    model, _ = train_and_save_model(conf, "adam", config_hash_adam, model_path_adam)
+    model, losshistory_adam = train_and_save_model(conf, "adam", config_hash_adam, model_path_adam)
+    loss_train_adam, loss_test_adam = losshistory_adam.loss_train, losshistory_adam.loss_test
 
     # Step 2: Train with LBFGS optimizer
     conf.model_properties.optimizer = "L-BFGS"
     config_hash_lbfgs = co.generate_config_hash(conf.model_properties)
     model_path_lbfgs = os.path.join(models, f"model_{config_hash_lbfgs}.pt")
-    model, losshistory = train_and_save_model(conf, "L-BFGS", config_hash_lbfgs, model_path_lbfgs)
+    model, losshistory_lbfgs = train_and_save_model(conf, "L-BFGS", config_hash_lbfgs, model_path_lbfgs)
+    loss_train_lbfgs, loss_test_lbfgs = losshistory_lbfgs.loss_train, losshistory_lbfgs.loss_test
 
+    loss_train = []
+    loss_test = []
+    steps = []
+
+    for el in range(len(loss_train_adam)):
+        loss_train.append(loss_train_adam[el])
+        loss_test.append(loss_test_adam[el])
+    
+    for il in range(len(loss_train_lbfgs)):
+        loss_train.append(loss_train_lbfgs[il])
+        loss_test.append(loss_test_lbfgs[il])
+
+    steps_adam = losshistory_adam.steps
+    steps_lbfgs = losshistory_lbfgs.steps
+    steps_lbfgs = [steps_lbfgs[el] + steps_adam[-1] for el in range(len(steps_lbfgs))]
+    steps = steps_adam + steps_lbfgs
     # Plot loss components
-    pp.plot_loss_components(losshistory, config_hash_lbfgs)
+    pp.plot_loss_components(np.array(loss_train), np.array(loss_test), np.array(steps), config_hash_lbfgs)
 
     return model
 
@@ -427,35 +455,37 @@ def gen_testdata(conf, path=None):
     
     return system_gt, observers_gt, mm_obs_gt
 
+
 def gen_obsdata(conf, path=None):
     global f1, f2, f3
 
+    # Generate ground truth data
     system_gt, _, _ = gen_testdata(conf, path)
+    n_ins = conf.model_properties.n_ins
 
-    g = np.hstack((system_gt["grid"], system_gt["theta"].reshape(len(system_gt["grid"]),1)))
+    # Prepare grid and theta data
+    g = np.hstack((system_gt["grid"], system_gt["theta"].reshape(len(system_gt["grid"]), 1)))
 
-    # g = np.hstack((X, y_sys))
+    # Extract unique instants
     instants = np.unique(g[:, 1])
-    
-    rows_1 = g[g[:, 0] == 1.0]
-    rows_0 = g[g[:, 0] == 0.0]
 
-    # y1_dummy = rows_1[:, 2].reshape(len(instants),)
-    # y10 = scale_t(conf.model_properties.Ty10)
-    # y1 = np.full_like(y1_dummy, y10)
-    # f1 = interp1d(instants, y1, kind='previous')
+    # Filter rows based on the first column value
+    rows = {value: g[g[:, 0] == value][:, 2].reshape(len(instants),) for value in [0.0, 1.0]}
 
-    y2 = rows_0[:, 2].reshape(len(instants),)
-    f2 = interp1d(instants, y2, kind='previous')
+    # Define interpolation functions
+    f1 = interp1d(instants, rows[1.0], kind="previous")
+    f2 = interp1d(instants, rows[0.0], kind="previous")
+    f3 = interp1d(instants, np.full_like(rows[0.0], cc.theta30), kind="previous")
 
-    # y30 = scale_t(conf.model_properties.Ty30)
-    # y3 = np.full_like(y2, y30)
-    # f3 = interp1d(instants, y3, kind='previous')
+    # Mapping of inputs to feature configurations
+    input_mapping = {
+        3: lambda: np.vstack((g[:, 0], f2(g[:, 1]), g[:, 1])).T,
+        4: lambda: np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), g[:, 1])).T,
+        5: lambda: np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
+    }
 
-    # Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
-    # Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), g[:, 1])).T
-    Xobs = np.vstack((g[:, 0], f2(g[:, 1]), g[:, 1])).T
-    return Xobs
+    # Generate and return observations based on the number of inputs
+    return input_mapping.get(n_ins, lambda: None)()
 
 
 def load_weights(conf, label, path=None):
@@ -561,38 +591,43 @@ def import_testdata(name):
     return np.hstack((vstack_array,boluses_arr))
 
 
-def import_obsdata(nam, extended = True):
+def import_obsdata(nam, extended=True):
+    """
+    Import observation data and optionally generate an extended dataset.
+
+    Args:
+        nam: The name of the dataset to import.
+        extended (bool): Whether to generate an extended dataset or use the original.
+
+    Returns:
+        np.ndarray: Observation data.
+    """
     global f1, f2, f3
+
+    # Import test data
     g = import_testdata(nam)
     instants = np.unique(g[:, 1])
 
+    # Get positions for filtering rows
     positions = get_tc_positions()
+    rows = {pos: g[g[:, 0] == pos] for pos in [positions[0], positions[-1]]}
 
-    rows_1 = g[g[:, 0] == positions[-1]]
-    rows_0 = g[g[:, 0] == positions[0]]
+    # Interpolation functions
+    y2 = rows[positions[0]][:, -2].reshape(len(instants),)
+    f2 = interp1d(instants, y2, kind="previous")
 
-    # y1 = rows_1[:, -2].reshape(len(instants),)
-    # f1 = interp1d(instants, y1, kind='previous')
-
-    y2 = rows_0[:, -2].reshape(len(instants),)
-    f2 = interp1d(instants, y2, kind='previous')
-
-    # y3 = rows_0[:, -1].reshape(len(instants),)
-    # y3 = np.zeros_like(y2)
-    # f3 = interp1d(instants, y3, kind='previous')
-
+    # Prepare extended or regular dataset
     if extended:
+        # Create grid for extended data
         x = np.linspace(0, 1, 101)
         t = np.linspace(0, 1, 101)
-
         X, T = np.meshgrid(x, t)
         T_clipped = np.clip(T, None, 0.9956)
-        # Xobs = np.vstack((np.ravel(X), f1(np.ravel(T_clipped)), f2(np.ravel(T_clipped)), f3(np.ravel(T_clipped)), np.ravel(T))).T
-        # Xobs = np.vstack((np.ravel(X), f1(np.ravel(T_clipped)), f2(np.ravel(T_clipped)), np.ravel(T))).T
+
+        # Build extended dataset
         Xobs = np.vstack((np.ravel(X), f2(np.ravel(T_clipped)), np.ravel(T))).T
     else:
-        # Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
-        # Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), g[:, 1])).T
+        # Build regular dataset
         Xobs = np.vstack((g[:, 0], f2(g[:, 1]), g[:, 1])).T
 
     return Xobs
@@ -685,7 +720,7 @@ def mm_predict(multi_obs, obs_grid, folder):
 
     ups = cc.upsilon
     lam = cc.lamb
-    a = np.loadtxt(f'{folder}/weights_l_{lam}_u_{ups}.txt')
+    a = np.loadtxt(f'{folder}/weights_l_{lam:.3f}_u_{ups:.3f}.txt')
     weights = a[1:]
 
     num_time_steps = weights.shape[1]
@@ -709,7 +744,7 @@ def mm_predict(multi_obs, obs_grid, folder):
 
 def plot_and_compute_metrics(system_gt, series_to_plot, matching_args, conf, output_dir, system_metrics=False, comparison_3d=True):
     """Helper function for plotting and computing metrics."""
-    direct, n_obs = conf.model_properties.direct, conf.model_parameters.n_obs
+    n_ins, n_obs = conf.model_properties.n_ins, conf.model_parameters.n_obs
     pp.plot_multiple_series(series_to_plot, output_dir)
     pp.plot_l2(system_gt, series_to_plot[1:], output_dir)
 
@@ -718,7 +753,7 @@ def plot_and_compute_metrics(system_gt, series_to_plot, matching_args, conf, out
     if comparison_3d:
         pp.plot_validation_3d(matching[:, :2], matching[:, 2], matching[:, -1], output_dir, system=True)
 
-    if not direct and n_obs>1:
+    if n_ins>2 and n_obs>1:
         condition = output_dir.endswith("ground_truth")
         label_run = "ground_truth" if condition else "simulation_mm_obs"
         mu = compute_mu(matching) if condition else compute_mu(matching)[1:]
@@ -760,19 +795,19 @@ def check_and_wandb_upload(
     if conf is None:
         raise ValueError("Configuration (`conf`) is required.")
 
-    direct = conf.model_properties.direct if conf and conf.model_properties else False
+    n_ins = conf.model_properties.n_ins if conf and conf.model_properties else False
     n_obs = conf.model_parameters.n_obs if conf and conf.model_parameters else 0
     show_obs = conf.plot.show_obs if conf and conf.plot else False
 
     if output_dir is None:
         raise ValueError("Output directory (`output_dir`) is required.")
 
-    if direct:
-        series_to_plot_direct = [system, system_gt]
+    if n_ins==2 and system is not None:
+        series_to_plot_direct = [system_gt, system]
         _, metrics_direct = plot_and_compute_metrics(system_gt, series_to_plot_direct, (system_gt, system), conf, output_dir, system_metrics=True)
         return metrics_direct
 
-    if not direct:
+    if n_ins>2:
         # Indirect modeling path
         if n_obs == 1:
             if observers_gt and not observers:

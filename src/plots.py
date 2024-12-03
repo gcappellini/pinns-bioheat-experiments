@@ -146,29 +146,26 @@ def save_loss_components(iters, y_values, legend_labels, nam):
 
 
 # Main plot functions
-def plot_loss_components(losshistory, nam):
+def plot_loss_components(loss_train, loss_test, iters, nam):
     # Prepare the loss data
-    loss_train = np.array(losshistory.loss_train)
-    loss_test = np.array(losshistory.loss_test).sum(axis=1).ravel()
     train = loss_train.sum(axis=1).ravel()
+    test = loss_test.sum(axis=1).ravel()
 
     # Extract individual loss components
     loss_res, loss_bc0, loss_bc1, loss_ic = loss_train[:, 0], loss_train[:, 1], loss_train[:, 2], loss_train[:, 3]
     
     # Combine all loss components into a list/2D array for plotting
-    y_values = [loss_res, loss_bc0, loss_bc1, loss_ic, loss_test, train]
+    loss_terms = np.vstack((loss_res, loss_bc0, loss_bc1, loss_ic, test, train))
     
     # Labels for the legend
     legend_labels = [r'$\mathcal{L}_{res}$', r'$\mathcal{L}_{bc0}$', r'$\mathcal{L}_{bc1}$', r'$\mathcal{L}_{ic}$', 'test loss', 'train loss']
     
     # Get iterations (x-axis)
-    iters = losshistory.steps
-    loss_terms = np.array(y_values)
-    iterations = np.array([iters]*len(y_values))
+    iterations = np.array([iters]*len(loss_terms))
     conf = compose(config_name='config_run')
     colors = conf.plot.colors.losses
 
-    save_loss_components(iters, y_values, legend_labels, nam)
+    save_loss_components(iters, loss_terms, legend_labels, nam)
 
     # Call the generic plotting function
     plot_generic(
