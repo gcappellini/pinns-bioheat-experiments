@@ -12,7 +12,7 @@ import coeff_calc as cc
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-# import matlab.engine
+import matlab.engine
 from hydra import initialize, compose
 
 
@@ -742,34 +742,48 @@ def mm_predict(multi_obs, obs_grid, folder):
     return np.array(predictions)
 
 
+def plot_observer_results(mu, t, weights, output_dir, suffix=None):
+    observers_mu = [
+        {"t": t, "weight": weights[:, i], "mu": mu[:, i], "label": f"observer_{i}{suffix}"}
+        for i in range(cc.n_obs)
+    ]
+    pp.plot_mu(observers_mu, output_dir)
+    pp.plot_weights(observers_mu, output_dir)
+
 def plot_and_compute_metrics(system_gt, series_to_plot, matching_args, conf, output_dir, system_metrics=False, comparison_3d=True):
-    """Helper function for plotting and computing metrics."""
+    """
+    Helper function for plotting and computing metrics.
+    """
     n_ins, n_obs = conf.model_properties.n_ins, conf.model_parameters.n_obs
+
+    # Plot general series and L2 errors
     pp.plot_multiple_series(series_to_plot, output_dir)
     pp.plot_l2(system_gt, series_to_plot[1:], output_dir)
 
+    # Extract matching data
     matching = extract_matching(*matching_args)
 
+    # 3D comparison plots
     if comparison_3d:
         pp.plot_validation_3d(matching[:, :2], matching[:, 2], matching[:, -1], output_dir, system=True)
 
-    if n_ins>2 and n_obs>1:
-        condition = output_dir.endswith("ground_truth")
-        label_run = "ground_truth" if condition else "simulation_mm_obs"
-        mu = compute_mu(matching) if condition else compute_mu(matching)[1:]
+    # Ground truth plots
+    if output_dir.endswith("ground_truth"):
+        label_run = "ground_truth"
+        mu = compute_mu(matching)
         t, weights = load_weights(conf, label_run)
+        plot_observer_results(mu, t, weights, output_dir, suffix="_gt")
 
-        observers_mu = [
-            {"t": t, "weight": weights[:, i], "mu": mu[:, i], "label": f"observer_{i}_gt" if condition else f"observer_{i}"}
-            for i in range(n_obs)
-        ]
+    # Multi-observer simulation plots
+    if n_ins > 2 and n_obs > 1:
+        label_run = "simulation_mm_obs"
+        mu = compute_mu(matching)[1:]
+        t, weights = load_weights(conf, label_run)
+        plot_observer_results(mu, t, weights, output_dir)
 
-        # Plot results for multiple observers
-        pp.plot_mu(observers_mu, output_dir)
-        pp.plot_weights(observers_mu, output_dir)
-
+    # Compute and return metrics
     metrics = compute_metrics(
-        matching[:, 0:2],
+        matching[:, :2],
         matching[:, 2] if not system_metrics else matching[:, -1],
         matching[:, -1],
         output_dir,
@@ -806,8 +820,8 @@ def check_and_wandb_upload(
         series_to_plot_direct = [system_gt, system]
         _, metrics_direct = plot_and_compute_metrics(system_gt, series_to_plot_direct, (system_gt, system), conf, output_dir, system_metrics=True)
         return metrics_direct
-
-    if n_ins>2:
+    
+    else:
         # Indirect modeling path
         if n_obs == 1:
             if observers_gt and not observers:
@@ -842,7 +856,6 @@ def check_and_wandb_upload(
             _, metrics = plot_and_compute_metrics(system_gt, series_to_plot_mm_obs, matching_args_mm_obs, conf, output_dir, system_metrics=True)
             return metrics
 
-    return None
 
 
 def get_pred(model, X, output_dir, label):

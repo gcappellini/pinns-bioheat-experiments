@@ -221,7 +221,7 @@ plot:
       - 0.7
   show_obs: false
 experiment:
-  ground_truth: true
+  ground_truth: false
   measurements: '20240930_1'
 experiment_type:
   import_data: false
@@ -261,4 +261,4 @@ experiment_type:
       y1_0: 22.84
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /app/guglielmo/pinns-bioheat-experiments/multirun/2024-12-04/10-01-19/0
+output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/tests/cooling_simulation
