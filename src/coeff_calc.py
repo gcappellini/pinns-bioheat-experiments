@@ -92,8 +92,8 @@ decay_rate_diff: float = (eta/a1+W_obs*a2/a1)/2
 
 theta10, theta20, theta30 = scale_t(Ty10), scale_t(Ty20), scale_t(Ty30)
 
-a = np.array([[K+1, 1],[1, np.exp(K)]])
-b = np.array([(-1/b1)*(a5*theta30-(a5+K)*theta20), theta10/(b1 - 1)])
+a = np.array([[-1-K*b1, -1],[b1-1, (b1-1)*np.exp(K)]])
+b = np.array([(a5*theta30-(a5+K)*theta20), theta10])
 resu = np.linalg.solve(a,b).round(5)
 [b2, b3] = resu
 hat_theta_0 = b1*(b2+b3)
@@ -104,6 +104,7 @@ cfg.model_properties.b3 = float(b3)
 OmegaConf.save(cfg, f"{conf_dir}/config_run.yaml")
 
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
+    print(b1, b2, b3)
     
 

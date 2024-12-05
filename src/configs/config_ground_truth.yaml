@@ -36,8 +36,8 @@ model_properties:
   PD: 0.025
   x0: 0.001
   b1: 5.0
-  b2: 0.20881
-  b3: -0.00631
+  b2: 0.25266
+  b3: -0.00763
   n_ins: 2
 model_parameters:
   lam: 1
@@ -66,4 +66,4 @@ model_parameters:
   - 2.0888912677764893
   - 27.680763244628906
   - 8.396754264831543
-output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/tests/cooling_simulation
+output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-12-05/10-27-41
