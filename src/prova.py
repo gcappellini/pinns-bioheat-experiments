@@ -28,7 +28,7 @@ os.makedirs(fold, exist_ok=True)
 iters=2000
 
 # Step 0: load model with n_ins=2
-direct_conf_hash = "6c0e220c6f51084cb665f0a93c5872bc"
+direct_conf_hash = "b65bafeed4492a933f606bf30be42501"
 conf = OmegaConf.load(f"{models}/config_{direct_conf_hash}.yaml")
 restored_model_2_ins = uu.check_for_trained_model(conf)
 

@@ -75,18 +75,18 @@ def main():
     n_ins = config.model_properties.n_ins
 
     # Ground Truth Simulation
-    if dict_exp["ground_truth"]:
+    if dict_exp["ground_truth"]:# and n_ins!=2:
         output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, out_dir)
     else:
-        output_dir_gt, system_gt, observers_gt, mm_obs_gt = load_ground_truth(config, f"{tests_dir}/cooling_simulation")
+        output_dir_gt, system_gt, observers_gt, mm_obs_gt = load_ground_truth(config, out_dir)#f"{tests_dir}/cooling_simulation")
 
-    # Simulation System
-    if n_ins==2:
-        run_simulation_system(config, out_dir, system_gt)
+    # # Simulation System
+    # if n_ins==2:
+    #     run_simulation_system(config, out_dir, system_gt)
 
-    # Simulation Multi-Observer
-    else:
-        run_simulation_mm_obs(config, out_dir, output_dir_gt, system_gt, mm_obs_gt, observers_gt)
+    # # Simulation Multi-Observer
+    # else:
+    #     run_simulation_mm_obs(config, out_dir, output_dir_gt, system_gt, mm_obs_gt, observers_gt)
 
 
 if __name__ == "__main__":

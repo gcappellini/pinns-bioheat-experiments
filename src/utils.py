@@ -768,7 +768,7 @@ def plot_and_compute_metrics(system_gt, series_to_plot, matching_args, conf, out
         pp.plot_validation_3d(matching[:, :2], matching[:, 2], matching[:, -1], output_dir, system=True)
 
     # Ground truth plots
-    if output_dir.endswith("ground_truth"):
+    if output_dir.endswith("ground_truth") and n_obs>1:
         label_run = "ground_truth"
         mu = compute_mu(matching)
         t, weights = load_weights(conf, label_run)

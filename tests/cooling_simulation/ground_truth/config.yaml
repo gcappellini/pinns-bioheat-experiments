@@ -15,7 +15,7 @@ model_properties:
   activation: tanh
   initial_weights_regularizer: false
   initialization: Glorot uniform
-  optimizer: None
+  optimizer: L-BFGS
   iters: 10000
   learning_rate: 0.001
   num_dense_layers: 4
@@ -38,7 +38,7 @@ model_properties:
   b1: 5.0
   b2: 0.25266
   b3: -0.00763
-  n_ins: 2
+  n_ins: 3
 model_parameters:
   lam: 1
   upsilon: 1
@@ -52,7 +52,7 @@ model_parameters:
   W5: 0.002704
   W6: 0.003004
   W7: 0.003303
-  W_sys: 0.002105
+  W_sys: 0.001207
   W_index: 4
   n_obs: 8
   gt1_0: 24.44
@@ -66,4 +66,4 @@ model_parameters:
   - 2.0888912677764893
   - 27.680763244628906
   - 8.396754264831543
-output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-12-05/10-26-48
+output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-12-09/11-49-03
