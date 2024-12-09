@@ -80,9 +80,9 @@ def main():
     else:
         output_dir_gt, system_gt, observers_gt, mm_obs_gt = load_ground_truth(config, out_dir)#f"{tests_dir}/cooling_simulation")
 
-    # # Simulation System
-    # if n_ins==2:
-    #     run_simulation_system(config, out_dir, system_gt)
+    # Simulation System
+    if n_ins==2:
+        run_simulation_system(config, out_dir, system_gt)
 
     # # Simulation Multi-Observer
     # else:

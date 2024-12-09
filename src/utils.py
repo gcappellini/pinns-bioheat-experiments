@@ -31,8 +31,6 @@ os.makedirs(models, exist_ok=True)
 f1, f2, f3 = [None]*3
 n_digits = 6
 
-dde.optimizers.config.set_LBFGS_options(maxcor=100, ftol=1e-08, gtol=1e-08, maxiter=15000, maxfun=None, maxls=50)
-# dde.optimizers.config.set_LBFGS_options(maxcor=1, ftol=1e-02, gtol=1e-02, maxiter=1, maxfun=None, maxls=5)
 # If L-BFGS stops earlier than expected, set the default float type to ‘float64’:
 # dde.config.set_default_float("float64")
 
@@ -388,6 +386,8 @@ def train_model(conf):
     conf.model_properties.optimizer = "L-BFGS"
     config_hash_lbfgs = co.generate_config_hash(conf.model_properties)
     model_path_lbfgs = os.path.join(models, f"model_{config_hash_lbfgs}.pt")
+    iters_lbfgs = conf.model_properties.iters_lbfgs
+    dde.optimizers.config.set_LBFGS_options(maxcor=100, ftol=1e-08, gtol=1e-08, maxiter=iters_lbfgs, maxfun=None, maxls=50)
     model, losshistory_lbfgs = train_and_save_model(conf, "L-BFGS", config_hash_lbfgs, model_path_lbfgs)
     loss_train_lbfgs, loss_test_lbfgs = losshistory_lbfgs.loss_train, losshistory_lbfgs.loss_test
 
