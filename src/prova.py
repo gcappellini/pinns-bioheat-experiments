@@ -39,7 +39,7 @@ nn.init.xavier_uniform_(new_first_layer_3_ins.weight)
 linears_2_ins[0] = new_first_layer_3_ins
 
 # Step 2: create another model with net as before and new data, and train with adam
-iters_adam=200
+iters_adam=2000
 conf.model_properties.n_ins=3
 data_3_ins = uu.create_model(conf)
 model_3_ins_W0 = dde.Model(data=data_3_ins.data, net=model_2_ins_W0.net)
@@ -48,12 +48,12 @@ conf.model_properties.iters = iters_adam
 model_3_ins_W0 = uu.compile_optimizer_and_losses(model_3_ins_W0, conf)
 callbacks = uu.create_callbacks(conf)
 
-# losshistory, trainstate = model_3_ins_W0.train(
-#     iterations=iters_adam,
-#     callbacks=callbacks,
-#     model_save_path=f"{fold}/model_3_ins_adam",
-#     display_every=conf.plot.display_every
-# )
+losshistory, trainstate = model_3_ins_W0.train(
+    iterations=iters_adam,
+    callbacks=callbacks,
+    model_save_path=f"{fold}/model_3_ins_adam",
+    display_every=conf.plot.display_every
+)
 
 # Step 3: train with LBFGS
 iters_lbfgs = 5000
@@ -69,17 +69,17 @@ dde.optimizers.config.set_LBFGS_options(maxcor=100,
 model_3_ins_W0 = uu.compile_optimizer_and_losses(model_3_ins_W0, conf)
 callbacks = uu.create_callbacks(conf)
 
-# losshistory_lbfgs_3_ins_W0, trainstate = model_3_ins_W0.train(
-#     # iterations=iters,
-#     callbacks=callbacks,
-#     model_save_path=f"{fold}/model_3_ins_L-BFGS",
-#     display_every=conf.plot.display_every
-# )
-# final_train, final_test = losshistory_lbfgs_3_ins_W0.loss_train, losshistory_lbfgs_3_ins_W0.loss_test
-# train, test = np.array(final_train).sum(axis=1).ravel(), np.array(final_test).sum(axis=1).ravel()
-# print(train[-1], test[-1])
+losshistory_lbfgs_3_ins_W0, trainstate = model_3_ins_W0.train(
+    # iterations=iters,
+    callbacks=callbacks,
+    model_save_path=f"{fold}/model_3_ins_L-BFGS",
+    display_every=conf.plot.display_every
+)
+final_train, final_test = losshistory_lbfgs_3_ins_W0.loss_train, losshistory_lbfgs_3_ins_W0.loss_test
+train, test = np.array(final_train).sum(axis=1).ravel(), np.array(final_test).sum(axis=1).ravel()
+print(train[-1], test[-1])
 
-model_3_ins_W0.restore(f"{fold}/model_3_ins_L-BFGS-5853.pt")
+# model_3_ins_W0.restore(f"{fold}/model_3_ins_L-BFGS-5853.pt")
 
 system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(conf, f"{tests_dir}/cooling_simulation/ground_truth")
 Xobs = uu.gen_obsdata(conf, f"{tests_dir}/cooling_simulation/ground_truth")

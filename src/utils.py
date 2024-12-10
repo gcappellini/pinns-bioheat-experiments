@@ -231,13 +231,15 @@ def create_model(config):
     def bc0_fun(x, theta, _):
         dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0)
         
-        y3 = cc.theta30 if n_ins == 2 else x[:, 3:4] if n_ins == 5 else x[:, 2:3]
-        y2 = None if n_ins <= 2 else x[:, 1:2] if n_ins == 3 else x[:, 2:3]
+        y3 = cc.theta30 #if n_ins == 2 else x[:, 3:4] if n_ins == 5 else x[:, 2:3]
+        y2 = None if n_ins == 2 else x[:, 1:2] if n_ins==3 else x[:, 2:3]# else x[:, 2:3]
         
+        flusso = a5 * (y3 - theta) if n_ins==2 else a5 * (y3 - y2)
+
         if n_ins == 2:
-            return dtheta_x + a5 * (y3 - theta)
+            return dtheta_x + flusso
         else:
-            return dtheta_x - K * theta + (K - a5) * y2 + a5 * y3
+            return dtheta_x + flusso - K * (theta - y2)
 
     def bc1_fun(x, theta, _):
         y1 = theta10 if n_ins <=3 else x[:, 1:2]
@@ -255,8 +257,8 @@ def create_model(config):
     geom_mapping = {
         2: dde.geometry.Interval(0, 1),
         3: dde.geometry.Rectangle([0, 0], [1, 1]),
-        4: dde.geometry.Cuboid([0, 0, 0], [1, 1, 0.2]),
-        5: dde.geometry.Hypercube([0, 0, 0, 0], [1, 1, 0.2, 1])
+        4: dde.geometry.Cuboid([0, 0, 0], [1, 0.2, 1]),
+        5: dde.geometry.Hypercube([0, 0, 0, 0], [1, 0.2, 1, 1])
     }
 
     geom = geom_mapping.get(n_ins, None)
@@ -346,9 +348,9 @@ def check_for_trained_model(conf):
     return model
 
 
-def train_and_save_model(conf, optimizer, config_hash, save_path):
+def train_and_save_model(conf, optimizer, config_hash, save_path, pre_trained_model=None):
     """Helper function to train and save a model."""
-    model = create_model(conf)
+    model = create_model(conf) if pre_trained_model is None else pre_trained_model
     conf.model_properties.optimizer = optimizer
     model = compile_optimizer_and_losses(model, conf)
     callbacks = create_callbacks(conf)
@@ -377,38 +379,39 @@ def train_model(conf):
 
     # Step 1: Train with Adam optimizer
     conf.model_properties.optimizer = "adam"
-    config_hash_adam = co.generate_config_hash(conf.model_properties)
-    model_path_adam = os.path.join(models, f"model_{config_hash_adam}.pt")
-    model, losshistory_adam = train_and_save_model(conf, "adam", config_hash_adam, model_path_adam)
-    loss_train_adam, loss_test_adam = losshistory_adam.loss_train, losshistory_adam.loss_test
+    config_hash = co.generate_config_hash(conf.model_properties)
+    model_path_adam = os.path.join(models, f"model_{config_hash}.pt")
+    model, losshistory = train_and_save_model(conf, "adam", config_hash, model_path_adam)
+    # loss_train_adam, loss_test_adam = losshistory_adam.loss_train, losshistory_adam.loss_test
 
-    # Step 2: Train with LBFGS optimizer
-    conf.model_properties.optimizer = "L-BFGS"
-    config_hash_lbfgs = co.generate_config_hash(conf.model_properties)
-    model_path_lbfgs = os.path.join(models, f"model_{config_hash_lbfgs}.pt")
-    iters_lbfgs = conf.model_properties.iters_lbfgs
-    dde.optimizers.config.set_LBFGS_options(maxcor=100, ftol=1e-08, gtol=1e-08, maxiter=iters_lbfgs, maxfun=None, maxls=50)
-    model, losshistory_lbfgs = train_and_save_model(conf, "L-BFGS", config_hash_lbfgs, model_path_lbfgs)
-    loss_train_lbfgs, loss_test_lbfgs = losshistory_lbfgs.loss_train, losshistory_lbfgs.loss_test
+    if conf.model_properties.iters_lbfgs>0:
+        # Step 2: Train with LBFGS optimizer
+        conf.model_properties.optimizer = "L-BFGS"
+        config_hash = co.generate_config_hash(conf.model_properties)
+        model_path_lbfgs = os.path.join(models, f"model_{config_hash}.pt")
+        iters_lbfgs = conf.model_properties.iters_lbfgs
+        dde.optimizers.config.set_LBFGS_options(maxcor=100, ftol=1e-08, gtol=1e-08, maxiter=iters_lbfgs, maxfun=None, maxls=50)
+        model, losshistory = train_and_save_model(conf, "L-BFGS", config_hash, model_path_lbfgs, pre_trained_model=model)
+        # loss_train_lbfgs, loss_test_lbfgs = losshistory_lbfgs.loss_train, losshistory_lbfgs.loss_test
 
-    loss_train = []
-    loss_test = []
-    steps = []
+    # loss_train = []
+    # loss_test = []
+    # steps = []
 
-    for el in range(len(loss_train_adam)):
-        loss_train.append(loss_train_adam[el])
-        loss_test.append(loss_test_adam[el])
+    # for el in range(len(loss_train_adam)):
+    #     loss_train.append(loss_train_adam[el])
+    #     loss_test.append(loss_test_adam[el])
     
-    for il in range(len(loss_train_lbfgs)):
-        loss_train.append(loss_train_lbfgs[il])
-        loss_test.append(loss_test_lbfgs[il])
+    # for il in range(len(loss_train_lbfgs)):
+    #     loss_train.append(loss_train_lbfgs[il])
+    #     loss_test.append(loss_test_lbfgs[il])
 
-    steps_adam = losshistory_adam.steps
-    steps_lbfgs = losshistory_lbfgs.steps
-    steps_lbfgs = [steps_lbfgs[el] + steps_adam[-1] for el in range(len(steps_lbfgs))]
-    steps = steps_adam + steps_lbfgs
+    # steps_adam = losshistory_adam.steps
+    # steps_lbfgs = losshistory_lbfgs.steps
+    # steps_lbfgs = [steps_lbfgs[el] + steps_adam[-1] for el in range(len(steps_lbfgs))]
+    # steps = steps_adam + steps_lbfgs
     # Plot loss components
-    pp.plot_loss_components(np.array(loss_train), np.array(loss_test), np.array(steps), config_hash_lbfgs)
+    pp.plot_loss_components(np.array(losshistory.loss_train), np.array(losshistory.loss_test), np.array(losshistory.steps), config_hash)
 
     return model
 
