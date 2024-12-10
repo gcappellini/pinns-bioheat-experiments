@@ -92,8 +92,8 @@ decay_rate_diff: float = (eta/a1+W_obs*a2/a1)/2
 
 theta10, theta20, theta30 = scale_t(Ty10), scale_t(Ty20), scale_t(Ty30)
 
-a = np.array([[-1-K*b1, -1],[b1-1, (b1-1)*np.exp(K)]])
-b = np.array([(a5*theta30-(a5+K)*theta20), theta10])
+a = np.array([[1+K*b1, 1],[b1-1, (b1-1)*np.exp(K)]])
+b = np.array([(a5*theta30+(K-a5)*theta20), theta10])
 resu = np.linalg.solve(a,b).round(5)
 [b2, b3] = resu
 hat_theta_0 = b1*(b2+b3)

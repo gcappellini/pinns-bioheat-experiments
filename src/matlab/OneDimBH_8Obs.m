@@ -99,9 +99,9 @@ function [sol] = OneDimBH_8Obs
     
     function [pl,ql,pr,qr] = OneDimBHbc(xl,ul,xr,ur,t)
     global K om0 om1 om2 om3 om4 om5 om6 om7 upsilon a5
-    [~, ~, theta_y1, ~, ~] = ic_bc(xr);
-    [~, ~, ~, ~, theta_y3] = ic_bc(xl);
-    flusso = a5*(theta_y3-ul(1));
+    [~, ~, y1, ~, ~] = ic_bc(xr);
+    [~, ~, ~, ~, y3] = ic_bc(xl);
+    flusso = a5*(y3-ul(1));
     
     pl = [flusso;
         flusso+K*(ul(1)-ul(2));
@@ -114,15 +114,15 @@ function [sol] = OneDimBH_8Obs
         flusso+K*(ul(1)-ul(9));
         0;0;0;0;0;0;0;0];
     ql = [1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1];
-    pr = [ur(1) - theta_y1; 
-        ur(2) - theta_y1; 
-        ur(3) - theta_y1; 
-        ur(4) - theta_y1; 
-        ur(5) - theta_y1; 
-        ur(6) - theta_y1; 
-        ur(7) - theta_y1; 
-        ur(8) - theta_y1;
-        ur(9) - theta_y1; 0;0;0;0;0;0;0;0];
+    pr = [ur(1) - y1; 
+        ur(2) - y1; 
+        ur(3) - y1; 
+        ur(4) - y1; 
+        ur(5) - y1; 
+        ur(6) - y1; 
+        ur(7) - y1; 
+        ur(8) - y1;
+        ur(9) - y1; 0;0;0;0;0;0;0;0];
     
     qr = [0;0;0;0;0;0;0;0;0;1;1;1;1;1;1;1;1];
     om0=upsilon*((ul(2)-ul(1)))^2;

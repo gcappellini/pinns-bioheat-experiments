@@ -222,7 +222,7 @@ plot:
       - 0.7
   show_obs: false
 experiment:
-  ground_truth: true
+  ground_truth: false
   measurements: '20240930_1'
 experiment_type:
   import_data: false

@@ -235,10 +235,9 @@ def create_model(config):
         y2 = None if n_ins <= 2 else x[:, 1:2] if n_ins == 3 else x[:, 2:3]
         
         if n_ins == 2:
-            return dtheta_x - a5 * (theta - y3)
+            return dtheta_x + a5 * (y3 - theta)
         else:
-            return dtheta_x - K * theta - (a5 - K) * y2 + a5 * y3
-
+            return dtheta_x - K * theta + (K - a5) * y2 + a5 * y3
 
     def bc1_fun(x, theta, _):
         y1 = theta10 if n_ins <=3 else x[:, 1:2]
@@ -312,6 +311,7 @@ def compile_optimizer_and_losses(model, conf):
         model.compile(optimizer)
 
     return model
+
 
 
 def create_callbacks(config):

@@ -1,9 +1,9 @@
-function [theta0, thetahat0, theta_y1, theta_y2, theta_y3] = ic_bc(x)
+function [theta0, thetahat0, y1, y2, y3] = ic_bc(x)
     thetahat0 = obs_ic(x);
     theta0 = sys_ic(x);
-    theta_y1 = theta_1();
-    theta_y2 = theta_2();
-    theta_y3 = theta_3();
+    y1 = theta_1();
+    y2 = theta_2();
+    y3 = theta_3();
 
 function theta0 = sys_ic(x)
     global a5 theta30 theta20
@@ -20,18 +20,18 @@ function thetahat0 = obs_ic(x)
 
     thetahat0 = (b1 - x)*(b2 + b3 * exp(K*x));
 
-function theta_y1 = theta_1()
+function y1 = theta_1()
     global theta10
 
-    theta_y1=theta10;
+    y1=theta10;
     
-function theta_y2 = theta_2()
+function y2 = theta_2()
     global theta20
 
-    theta_y2=theta20;
+    y2=theta20;
 
-function theta_y3 = theta_3()
+function y3 = theta_3()
     global theta30
 
-    theta_y3 = theta30;
+    y3 = theta30;
 

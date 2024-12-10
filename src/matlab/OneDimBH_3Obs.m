@@ -78,10 +78,10 @@ function [sol] = OneDimBH_3Obs
     
     function [pl,ql,pr,qr] = OneDimBHbc_3Obs(xl,ul,xr,ur,t)
     global K om0 om1 om2 upsilon a5
-    [~, ~, theta_y1, ~, ~] = ic_bc(xr);
-    [~, ~, ~, ~, theta_y3] = ic_bc(xl);
+    [~, ~, y1, ~, ~] = ic_bc(xr);
+    [~, ~, ~, ~, y3] = ic_bc(xl);
 
-    flusso = a5*(theta_y3-ul(1));
+    flusso = a5*(y3-ul(1));
     
     pl = [flusso;
         flusso-K*(ul(2)-ul(1));
@@ -89,10 +89,10 @@ function [sol] = OneDimBH_3Obs
         flusso-K*(ul(4)-ul(1));
         0;0;0];
     ql = [1;1;1;1;1;1;1];
-    pr = [ur(1) - theta_y1; 
-        ur(2) - theta_y1; 
-        ur(3) - theta_y1; 
-        ur(4) - theta_y1; 
+    pr = [ur(1) - y1; 
+        ur(2) - y1; 
+        ur(3) - y1; 
+        ur(4) - y1; 
         0;0;0];
     
     qr = [0;0;0;0; 1;1;1];
