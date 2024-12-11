@@ -1136,12 +1136,8 @@ def calculate_l2(e, true, pred):
     delta_x = 0.01 if len(x)==1 else x[1]- x[0]
     for el in t:
         tot_el = tot[tot[:, 1] == el]
-        el_true = tot_el[:, 2]
-        el_pred = tot_el[:, 3]
-        el_err = el_true - el_pred
-        l2_el = np.sum(el_err**2)*delta_x
-        # l2_el = dde.metrics.l2_relative_error(tot_el[:, 2], tot_el[:, 3])
-        
+        el_err = tot_el[:, 1] - tot_el[:, 2]  # true - pred
+        l2_el = np.sum(el_err**2) * delta_x
         l2.append(np.sqrt(l2_el))
     return np.array(l2)
 

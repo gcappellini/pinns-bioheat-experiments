@@ -1,6 +1,7 @@
 from utils import scale_t, run_matlab_ground_truth, gen_testdata, calculate_l2
 import os
 import numpy as np
+from numpy.linalg import norm
 from omegaconf import OmegaConf
 np.random.seed(237)
 import matplotlib.pyplot as plt
@@ -22,7 +23,7 @@ os.makedirs(tests_dir, exist_ok=True)
 conf = OmegaConf.load(f"{conf_dir}/config_run.yaml")
 fold = f"{tests_dir}/optimization_ic"
 os.makedirs(fold, exist_ok=True)
-possible_b1 = np.linspace(0, 10, num=100).round(2)
+possible_b1 = np.linspace(0, 10, num=100).round(3)
 possible_b1 = possible_b1[possible_b1 != 1]
 
 props = conf.model_properties
@@ -42,6 +43,7 @@ for el in range(len(possible_b1)):
     resu = np.linalg.solve(a,b).round(5)
     [b2, b3] = resu
     hat_theta_0 = b1*(b2+b3)
+    print(f"Iteration {el}: b1={b1}, thetahat_0={hat_theta_0}")
     props.b2, props.b3 = float(b2), float(b3)
     out_dir = f"{fold}/{el}"
     os.makedirs(out_dir, exist_ok=True)
@@ -49,7 +51,7 @@ for el in range(len(possible_b1)):
     run_matlab_ground_truth()
     system_gt, observers_gt, mm_obs_gt = gen_testdata(conf, path=output_dir_gt)
     metric = calculate_l2(system_gt["grid"], system_gt["theta"], mm_obs_gt["theta"])
-    iters_history[el] = {"b1": b1, "theta_hat_0": b1*(b2+b3), "fitness": metric}
+    iters_history[el] = {"b1": b1, "theta_hat_0": hat_theta_0, "fitness": norm(metric)}
 
 sorted_iters_history = dict(
     sorted(iters_history.items(), key=lambda item: item[1]["fitness"], reverse=True)
@@ -78,7 +80,7 @@ plt.legend()
 plt.tight_layout()
 
 # Save the convergence plot
-plt.savefig(f"{out_dir}/convergence_plot.png")
+plt.savefig(f"{fold}/convergence_plot.png")
 
 
 # Extract b1 and b2 values for each iteration
@@ -94,17 +96,17 @@ plt.title('Convergence of b1')
 plt.grid(True)
 plt.legend()
 plt.tight_layout()
-plt.savefig(f"{out_dir}/b1_convergence_plot.png")
+plt.savefig(f"{fold}/b1_convergence_plot.png")
 # plt.show()
 
 # Plot the convergence of b2
 plt.figure(figsize=(8, 6))
 plt.plot(iterations, theta_hat_0_values, marker='o', color='g', label='b2')
 plt.xlabel('Iteration')
-plt.ylabel(r'$\hat \theta_0 (0)$ Value')
-plt.title('Initial observation error')
+plt.ylabel(r'$\hat \theta_0 (0)$')
+plt.title(r'$\hat \theta_0 (0)$')
 plt.grid(True)
 plt.legend()
 plt.tight_layout()
-plt.savefig(f"{out_dir}/initial_obs_error.png")
+plt.savefig(f"{fold}/theta_hat_0.png")
 # plt.show()
