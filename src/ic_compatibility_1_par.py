@@ -28,46 +28,75 @@ possible_b1 = possible_b1[possible_b1 != 1]
 
 props = conf.model_properties
 
-y1_0, y2_0, y3_0 = scale_t(props.Ty10), scale_t(props.Ty20), scale_t(props.Ty30)
-a5 = 1.1666667
-alfa, L0 = props.alfa, props.L0
-K = alfa*L0
-
 iters_history = {}
 
-for el in range(len(possible_b1)):
-    b1 = float(possible_b1[el])
+
+
+# Helper function to compute the fitness for a given b1
+def compute_fitness(b1, props, conf, fold):
+    global ITERATION
+    y1_0, y2_0, y3_0 = scale_t(props.Ty10), scale_t(props.Ty20), scale_t(props.Ty30)
+    a5 = 1.1666667
+    alfa, L0 = props.alfa, props.L0
+    K = alfa*L0
+    # Update properties
     props.b1 = b1
-    a = np.array([[1+K*b1, 1],[b1-1, (b1-1)*np.exp(K)]])
-    b = np.array([(a5*y3_0+(K-a5)*y2_0), y1_0])
-    resu = np.linalg.solve(a,b).round(5)
+    a = np.array([[1 + K * b1, 1], [b1 - 1, (b1 - 1) * np.exp(K)]])
+    b = np.array([(a5 * y3_0 + (K - a5) * y2_0), y1_0])
+    
+    try:
+        resu = np.linalg.solve(a, b)
+    except np.linalg.LinAlgError:
+        return np.inf  # Return a large fitness value if the system is unsolvable
+    
     [b2, b3] = resu
-    hat_theta_0 = b1*(b2+b3)
-    print(f"Iteration {el}: b1={b1}, thetahat_0={hat_theta_0}")
     props.b2, props.b3 = float(b2), float(b3)
-    out_dir = f"{fold}/{el}"
-    os.makedirs(out_dir, exist_ok=True)
-    output_dir_gt, config_matlab = set_run(out_dir, conf, "ground_truth")
+    hat_theta_0 = b1 * (b2 + b3)
+    print(f"Iteration {ITERATION}: b1={b1}, thetahat_0={hat_theta_0}")
+    
+    # Generate test data and compute L2 norm
+    output_dir_gt, config_matlab = set_run(fold, conf, "ground_truth")
     run_matlab_ground_truth()
     system_gt, observers_gt, mm_obs_gt = gen_testdata(conf, path=output_dir_gt)
     metric = calculate_l2(system_gt["grid"], system_gt["theta"], mm_obs_gt["theta"])
-    iters_history[el] = {"b1": b1, "theta_hat_0": hat_theta_0, "fitness": norm(metric)}
+    fitness = norm(metric)
+    iters_history[ITERATION] = {"b1": b1, "thetahat_0": hat_theta_0, "metric": fitness}
+    ITERATION += 1
+    
+    return fitness
 
-sorted_iters_history = dict(
-    sorted(iters_history.items(), key=lambda item: item[1]["fitness"], reverse=True)
+# Define the objective function for optimization
+def objective_function(b1, props, conf, fold):
+    # Ensure b1 is a scalar
+    b1 = float(b1)
+    if np.isclose(b1, 1.0):
+        return np.inf  # Penalize invalid b1 values
+    return compute_fitness(b1, props, conf, fold)
+
+# Optimization setup
+ITERATION = 0
+bounds = [(0, 10)]  # Bound b1 between 0 and 10
+initial_guess = [5.0]  # Start the search at b1 = 5.0
+
+# Run the optimizer
+result = minimize(
+    objective_function,
+    x0=initial_guess,
+    args=(props, conf, fold),
+    method="L-BFGS-B",
+    bounds=bounds
 )
 
-file_path = os.path.join(out_dir, 'results_ic.txt')
+# Output results
+optimal_b1 = result.x[0]
+optimal_fitness = result.fun
 
-
-with open(file_path, 'w') as file:    
-    for iteration, data in sorted_iters_history.items():
-        file.write(f"{iteration}, {data['b1']}, {data['theta_hat_0']}, {data['fitness']}\n")
-
+print(f"Optimal b1: {optimal_b1}, Fitness: {optimal_fitness}")
 
 iterations = list(iters_history.keys())  # Get iteration numbers (or use a sequence of values)
-fitness_values = [data["fitness"] for data in iters_history.values()]
+fitness_values = [data["metric"] for data in iters_history.values()]
 
+# pp.plot_generic(iterations, fitness_values, 'Convergence Plot', 'Iteration', 'Fitness value', f"{output_dir}/convergence_plot.png")
 
 # Plot the convergence
 plt.figure(figsize=(8, 6))
@@ -85,7 +114,7 @@ plt.savefig(f"{fold}/convergence_plot.png")
 
 # Extract b1 and b2 values for each iteration
 b1_values = [data["b1"] for data in iters_history.values()]
-theta_hat_0_values = [data["theta_hat_0"] for data in iters_history.values()]
+b2_values = [data["thetahat_0"] for data in iters_history.values()]
 
 # Plot the convergence of b1
 plt.figure(figsize=(8, 6))
@@ -101,12 +130,21 @@ plt.savefig(f"{fold}/b1_convergence_plot.png")
 
 # Plot the convergence of b2
 plt.figure(figsize=(8, 6))
-plt.plot(iterations, theta_hat_0_values, marker='o', color='g', label='b2')
+plt.plot(iterations, b2_values, marker='o', color='g', label='b2')
 plt.xlabel('Iteration')
-plt.ylabel(r'$\hat \theta_0 (0)$')
-plt.title(r'$\hat \theta_0 (0)$')
+plt.ylabel(r'$\hat \theta_0$ Value')
+plt.title(r'Convergence of $\hat \theta_0$')
 plt.grid(True)
 plt.legend()
 plt.tight_layout()
-plt.savefig(f"{fold}/theta_hat_0.png")
-# plt.show()
+plt.savefig(f"{fold}/thetahat_0_convergence_plot.png")
+
+
+file_path = os.path.join(fold, 'results_ic.txt')
+with open(file_path, 'w') as file:
+    file.write("Optimization Results:\n")
+    file.write(f"Optimal values of x and y: {result.x}\n")
+    file.write(f"Minimum value of the function: {result.fun}\n")
+    file.write(f"Gradients at optimal point (computed automatically): {result.jac}\n")
+    file.write(f"Number of function evaluations: {result.nfev}\n")
+    file.write(f"Number of gradient evaluations: {result.njev}\n")
