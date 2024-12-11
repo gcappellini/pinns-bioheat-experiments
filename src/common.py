@@ -39,6 +39,7 @@ def set_run(prj_figs, cfg, run):
     os.makedirs(run_figs, exist_ok=True)
 
     if run=="ground_truth":
+        cfg.output_dir = prj_figs
         cfg = filter_config_for_matlab(cfg)
     
     if run=="simulation_system":
@@ -46,8 +47,6 @@ def set_run(prj_figs, cfg, run):
         cfg.model_properties.n_ins = 2
         cfg.model_properties.b1, cfg.model_properties.b2, cfg.model_properties.b3 = None, None, None
 
-    if run=="simulation_mm_obs":
-        cfg.model_properties.n_ins = 3
 
     OmegaConf.save(cfg, f"{run_figs}/config.yaml")
     OmegaConf.save(cfg, f"{conf_dir}/config_{run}.yaml")

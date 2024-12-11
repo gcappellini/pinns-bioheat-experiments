@@ -106,5 +106,6 @@ OmegaConf.save(cfg, f"{conf_dir}/config_run.yaml")
 
 if __name__ == "__main__":
     print(b1, b2, b3)
+    print(a5)
     
 
