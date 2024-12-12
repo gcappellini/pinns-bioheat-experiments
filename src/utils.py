@@ -180,7 +180,7 @@ def boundary_1(x, on_boundary):
 
 
 def output_transform(x, y):
-    return x[:, 0:1] * y
+    return (x[:, 0:1] - 1) * y
 
 
 def create_model(config):
@@ -274,7 +274,8 @@ def create_model(config):
     data = dde.data.TimePDE(
         geomtime,
         lambda x, theta: pde(x, theta),
-        [bc_0, bc_1, ic],
+        # [bc_0, bc_1, ic],
+        [bc_0, ic],
         num_domain=num_domain,
         num_boundary=num_boundary,
         num_initial=num_initial,
@@ -285,6 +286,7 @@ def create_model(config):
     layer_size = [n_ins] + [num_dense_nodes] * num_dense_layers + [1]
     net = dde.nn.FNN(layer_size, activation, initialization)
 
+    net.apply_output_transform(output_transform)
     # Compile the model
     model = dde.Model(data, net)
 
@@ -294,7 +296,8 @@ def compile_optimizer_and_losses(model, conf):
     model_props = conf.model_properties
     initial_weights_regularizer = model_props.initial_weights_regularizer
     learning_rate = model_props.learning_rate
-    loss_weights = [model_props.w_res, model_props.w_bc0, model_props.w_bc1, model_props.w_ic]
+    # loss_weights = [model_props.w_res, model_props.w_bc0, model_props.w_bc1, model_props.w_ic]
+    loss_weights = [model_props.w_res, model_props.w_bc0, model_props.w_ic]
     optimizer = conf.model_properties.optimizer
 
     if optimizer == "adam":
@@ -863,12 +866,11 @@ def check_and_wandb_upload(
 
 def get_pred(model, X, output_dir, label):
 
-    preds = [X[:, 0], X[:, -1]]
     y_sys_pinns = model.predict(X)
     data_to_save = np.column_stack((X[:, 0].round(n_digits), X[:, -1].round(n_digits), y_sys_pinns.round(n_digits)))
     np.savetxt(f'{output_dir}/prediction_{label}.txt', data_to_save, fmt='%.2f %.2f %.6f', delimiter=' ') 
 
-    preds = np.array(data_to_save).reshape(len(preds[0]), 3).round(n_digits)
+    preds = np.array(data_to_save).reshape(len(X[:, 0]), 3).round(n_digits)
     preds_dict = {"grid": preds[:, :2], "theta": preds[:, 2], "label": label}
     return preds_dict
 
