@@ -15,7 +15,7 @@ model_properties:
   activation: tanh
   initial_weights_regularizer: false
   initialization: Glorot uniform
-  optimizer: None
+  optimizer: L-BFGS
   iters: 1001
   iters_lbfgs: 5000
   learning_rate: 0.001

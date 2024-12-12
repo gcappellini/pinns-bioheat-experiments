@@ -1,5 +1,6 @@
 import deepxde as dde
 import numpy as np
+from numpy.linalg import norm
 import os
 import torch
 import wandb

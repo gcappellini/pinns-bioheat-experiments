@@ -3,11 +3,11 @@
 Part 1: Observer PINNs vs Observer MATLAB
 
 L2RE:
-  Total: 0.0
-  Initial_condition: 0.0
-  Bc0: 0.0
-  Bc1: 0.0
-  Domain: 0.0
+  Total: 46.14241490057068
+  Initial_condition: 0.3664742938185986
+  Bc0: 4.461624779999998
+  Bc1: 5.050000000000001
+  Domain: 45.24874452010936
 
 MSE:
   Total: 0.0
@@ -40,11 +40,11 @@ LOSS:
 Part 2: Observer PINNs vs System MATLAB
 
 L2RE:
-  Total: 3.6167200944477593
-  Initial_condition: 0.12687818989720293
-  Bc0: 0.6055442919999998
-  Bc1: 0.0
-  Domain: 3.4414193131360364
+  Total: 46.14241490057068
+  Initial_condition: 0.3664742938185986
+  Bc0: 4.461624779999998
+  Bc1: 5.050000000000001
+  Domain: 45.24874452010936
 
 MSE:
   Total: 0.002274956832277231

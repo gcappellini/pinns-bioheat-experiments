@@ -78,7 +78,7 @@ def main():
     if dict_exp["ground_truth"]:# and n_ins!=2:
         output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, out_dir)
     else:
-        output_dir_gt, system_gt, observers_gt, mm_obs_gt = load_ground_truth(config, out_dir)#f"{tests_dir}/cooling_simulation")
+        output_dir_gt, system_gt, observers_gt, mm_obs_gt = load_ground_truth(config, f"{tests_dir}/cooling_simulation")
 
     # Simulation System
     if n_ins==2:
