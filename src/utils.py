@@ -1136,12 +1136,12 @@ def calculate_l2(e, true, pred):
     tot = np.hstack((e, true, pred))
     t = np.unique(tot[:, 1])
     x = np.unique(tot[:, 0])
+
     delta_x = 0.01 if len(x)==1 else x[1]- x[0]
     for el in t:
         tot_el = tot[tot[:, 1] == el]
-        el_err = tot_el[:, 1] - tot_el[:, 2]  # true - pred
-        l2_el = np.sum(el_err**2) * delta_x
-        l2.append(np.sqrt(l2_el))
+        el_err = np.array([norm(ts - val) for ts, val in zip(tot_el[:, 2], tot_el[:, 3])])
+        l2.append(el_err)
     return np.array(l2)
 
 

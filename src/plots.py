@@ -636,9 +636,9 @@ def plot_l2(series_sys, series_data, folder):
         if label in ('theory', 'bound'):
             l2 = values
         else:
-            # l2 = uu.calculate_l2(e, theta_system, values)
-            l2 = np.array([norm(ts - val) for ts, val in zip(theta_system, values)])
-        l2 = l2.reshape(len(l2), 1)
+            l2 = uu.calculate_l2(e, theta_system, values)
+            # l2 = np.array([norm(ts - val) for ts, val in zip(theta_system, values)])
+        # l2 = l2.reshape(len(l2), 1)
 
         # t_vals = [t_pred for _ in range(n_obs + 1)]
         t_vals.append(t_pred)
