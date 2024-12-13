@@ -214,6 +214,8 @@ def create_model(config):
 
     theta10, theta20, theta30 = cc.theta10, cc.theta20, cc.theta30
 
+    time_index = n_ins -1
+
 
     def ic_fun(x):
         z = x if len(x.shape) == 1 else x[:, :1]
@@ -225,7 +227,7 @@ def create_model(config):
             return c_1 * z**2 + c_2 * z + c_3
         
         else:
-            # return (b1 - z)*(b2 + b3 * np.exp(K*z))
+        
             return (b1 - z)*(b2 + b3 * torch.exp(K*z))
 
 
@@ -233,7 +235,7 @@ def create_model(config):
         dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0)
         
         y3 = cc.theta30 #if n_ins == 2 else x[:, 3:4] if n_ins == 5 else x[:, 2:3]
-        y2 = None if n_ins == 2 else x[:, 1:2] if n_ins==3 else x[:, 2:3]# else x[:, 2:3]
+        y2 = None if n_ins == 2 else x[:, 1:2] if n_ins==3 else x[:, 2:3]
         
         flusso = a5 * (y3 - theta) if n_ins==2 else a5 * (y3 - y2)
 
@@ -250,10 +252,10 @@ def create_model(config):
         y1 = cc.theta10 if cc.n_ins<=3 else x[:, 1:2]
         ic = ic_fun(x)
         
-        return x[:, 1:2] * (x[:, 0:1] - 1) * y + y1 + ic
+        return x[:, time_index:] * (x[:, 0:1] - 1) * y + y1 + ic
     
     def pde(x, theta):
-        time_index = n_ins -1
+        
         dtheta_tau = dde.grad.jacobian(theta, x, i=0, j=time_index)
         dtheta_xx = dde.grad.hessian(theta, x, i=0, j=0)
         source_term = -a3 * torch.exp(-a4 * x[:, :1])
@@ -1006,7 +1008,21 @@ def get_plot_params(conf):
         "alpha": entities.multi_observer.alpha
     }
 
+    train_loss_params = {
+        "color": entities.train_loss.color,
+        "label": entities.train_loss.label,
+        "linestyle": entities.train_loss.linestyle,
+        "linewidth": entities.train_loss.linewidth,
+        "alpha": entities.train_loss.alpha
+    }
 
+    test_loss_params = {
+        "color": entities.test_loss.color,
+        "label": entities.test_loss.label,
+        "linestyle": entities.test_loss.linestyle,
+        "linewidth": entities.test_loss.linewidth,
+        "alpha": entities.test_loss.alpha
+    }
 
     # Ground truth parameters
     system_gt_params = {
@@ -1065,6 +1081,8 @@ def get_plot_params(conf):
         "multi_observer": multi_observer_params,
         "system_gt": system_gt_params,
         "multi_observer_gt": multi_observer_gt_params,
+        "train_loss": train_loss_params,
+        "test_loss": test_loss_params,
         **observer_params,
         **observer_gt_params,
         "markers": markers

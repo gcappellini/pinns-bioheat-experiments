@@ -16,14 +16,14 @@ model_properties:
   initial_weights_regularizer: false
   initialization: Glorot uniform
   optimizer: None
-  iters: 998
+  iters: 1000
   iters_lbfgs: 5000
   learning_rate: 0.001
   num_dense_layers: 4
   num_dense_nodes: 50
   num_domain: 16348
   num_boundary: 4000
-  num_initial: 2000
+  num_initial: 0
   num_test: 1000
   resampling: true
   resampler_period: 100

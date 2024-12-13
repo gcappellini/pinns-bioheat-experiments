@@ -664,7 +664,7 @@ def plot_l2(series_sys, series_data, folder):
         y=ll2,       # Multiple L2 error lines to plot
         title="Prediction error norm",
         xlabel=xlabel,
-        ylabel=r"$L2$ norm",
+        ylabel=r"$L^2$ norm",
         legend_labels=legend_labels,  # Labels for the legend
         size=(6, 5),
         filename=f"{folder}/l2_combined.png",
