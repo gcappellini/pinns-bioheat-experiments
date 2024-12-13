@@ -225,7 +225,8 @@ def create_model(config):
             return c_1 * z**2 + c_2 * z + c_3
         
         else:
-            return (b1 - z)*(b2 + b3 * np.exp(K*z))
+            # return (b1 - z)*(b2 + b3 * np.exp(K*z))
+            return (b1 - z)*(b2 + b3 * torch.exp(K*z))
 
 
     def bc0_fun(x, theta, _):
