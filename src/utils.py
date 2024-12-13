@@ -180,8 +180,7 @@ def boundary_1(x, on_boundary):
     return on_boundary and np.isclose(x[0], 1)
 
 
-def output_transform(x, y):
-    return (x[:, 0:1] - 1) * y
+
 
 
 def create_model(config):
@@ -246,7 +245,12 @@ def create_model(config):
         y1 = theta10 if n_ins <=3 else x[:, 1:2]
         return theta - y1
 
-
+    def output_transform(x, y):
+        y1 = cc.theta10 if cc.n_ins<=3 else x[:, 1:2]
+        ic = ic_fun(x)
+        
+        return x[:, 1:2] * (x[:, 0:1] - 1) * y + y1 + ic
+    
     def pde(x, theta):
         time_index = n_ins -1
         dtheta_tau = dde.grad.jacobian(theta, x, i=0, j=time_index)
@@ -276,7 +280,7 @@ def create_model(config):
         geomtime,
         lambda x, theta: pde(x, theta),
         # [bc_0, bc_1, ic],
-        [bc_0, ic],
+        [bc_0],
         num_domain=num_domain,
         num_boundary=num_boundary,
         num_initial=num_initial,
@@ -298,7 +302,7 @@ def compile_optimizer_and_losses(model, conf):
     initial_weights_regularizer = model_props.initial_weights_regularizer
     learning_rate = model_props.learning_rate
     # loss_weights = [model_props.w_res, model_props.w_bc0, model_props.w_bc1, model_props.w_ic]
-    loss_weights = [model_props.w_res, model_props.w_bc0, model_props.w_ic]
+    loss_weights = [model_props.w_res, model_props.w_bc0]
     optimizer = conf.model_properties.optimizer
 
     if optimizer == "adam":
@@ -1135,12 +1139,10 @@ def calculate_l2(e, true, pred):
     pred = pred.reshape(len(e), 1)
     tot = np.hstack((e, true, pred))
     t = np.unique(tot[:, 1])
-    x = np.unique(tot[:, 0])
 
-    delta_x = 0.01 if len(x)==1 else x[1]- x[0]
     for el in t:
         tot_el = tot[tot[:, 1] == el]
-        el_err = np.array([norm(ts - val) for ts, val in zip(tot_el[:, 2], tot_el[:, 3])])
+        el_err = norm(np.abs(tot_el[:, 2] - tot_el[:, 3]))
         l2.append(el_err)
     return np.array(l2)
 

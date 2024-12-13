@@ -13,7 +13,7 @@ initialize('configs', version_base=None)
 # cfg = compose(config_name='config_run')
 cfg = OmegaConf.load(f"{conf_dir}/config_run.yaml")
 
-
+n_ins: int = cfg.model_properties.n_ins
 
 L0: float = cfg.model_properties.L0
 tauf: float = cfg.model_properties.tauf
