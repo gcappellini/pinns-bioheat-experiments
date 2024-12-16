@@ -181,8 +181,6 @@ def boundary_1(x, on_boundary):
 
 
 
-
-
 def create_model(config):
     """
     Generalized function to create and configure a PDE solver model using DeepXDE.
@@ -248,11 +246,21 @@ def create_model(config):
         y1 = theta10 if n_ins <=3 else x[:, 1:2]
         return theta - y1
 
+
     def output_transform(x, y):
         y1 = cc.theta10 if cc.n_ins<=3 else x[:, 1:2]
         ic = ic_fun(x)
         
         return x[:, time_index:] * (x[:, 0:1] - 1) * y + y1 + ic
+    
+
+    def rff_transform(inputs):
+        # print(inputs.shape, cc.b.shape)
+        b = torch.Tensor(cc.b).to(device=dev)
+        vp = 2 * np.pi * inputs @ b.T
+        # print(vp.shape)
+        return torch.cat((torch.cos(vp), torch.sin(vp)), dim=-1)
+        
     
     def pde(x, theta):
         
@@ -291,10 +299,11 @@ def create_model(config):
     )
 
     # Define the network
-    layer_size = [n_ins] + [num_dense_nodes] * num_dense_layers + [1]
+    layer_size = [num_dense_nodes] + [num_dense_nodes] * num_dense_layers + [1]
     net = dde.nn.FNN(layer_size, activation, initialization)
 
     net.apply_output_transform(output_transform)
+    net.apply_feature_transform(rff_transform)
     # Compile the model
     model = dde.Model(data, net)
 
@@ -393,7 +402,6 @@ def train_model(conf):
     config_hash = co.generate_config_hash(conf.model_properties)
     model_path_adam = os.path.join(models, f"model_{config_hash}.pt")
     model, losshistory = train_and_save_model(conf, "adam", config_hash, model_path_adam)
-    # loss_train_adam, loss_test_adam = losshistory_adam.loss_train, losshistory_adam.loss_test
 
     if conf.model_properties.iters_lbfgs>0:
         # Step 2: Train with LBFGS optimizer
@@ -403,25 +411,7 @@ def train_model(conf):
         iters_lbfgs = conf.model_properties.iters_lbfgs
         dde.optimizers.config.set_LBFGS_options(maxcor=100, ftol=1e-08, gtol=1e-08, maxiter=iters_lbfgs, maxfun=None, maxls=50)
         model, losshistory = train_and_save_model(conf, "L-BFGS", config_hash, model_path_lbfgs, pre_trained_model=model)
-        # loss_train_lbfgs, loss_test_lbfgs = losshistory_lbfgs.loss_train, losshistory_lbfgs.loss_test
 
-    # loss_train = []
-    # loss_test = []
-    # steps = []
-
-    # for el in range(len(loss_train_adam)):
-    #     loss_train.append(loss_train_adam[el])
-    #     loss_test.append(loss_test_adam[el])
-    
-    # for il in range(len(loss_train_lbfgs)):
-    #     loss_train.append(loss_train_lbfgs[il])
-    #     loss_test.append(loss_test_lbfgs[il])
-
-    # steps_adam = losshistory_adam.steps
-    # steps_lbfgs = losshistory_lbfgs.steps
-    # steps_lbfgs = [steps_lbfgs[el] + steps_adam[-1] for el in range(len(steps_lbfgs))]
-    # steps = steps_adam + steps_lbfgs
-    # Plot loss components
     pp.plot_loss_components(np.array(losshistory.loss_train), np.array(losshistory.loss_test), np.array(losshistory.steps), config_hash)
 
     return model
@@ -1289,12 +1279,6 @@ def rescale_df(df):
     for ei in ['y1', 'gt1', 'gt2', 'y2', 'y3']:
         new_df[ei] = rescale_t(df[ei])    
     return new_df
-
-
-def SAR(x):
-    if not torch.is_tensor(x):
-        x = torch.Tensor(x)
-    return cc.beta*torch.exp(-cc.cc*(x-cc.x0))*cc.SAR_0
 
 
 def point_predictions(preds):

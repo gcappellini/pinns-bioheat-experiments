@@ -6,6 +6,8 @@ from hydra import initialize, compose
 
 current_file: str = os.path.abspath(__file__)
 src_dir: str = os.path.dirname(current_file)
+git_dir = os.path.dirname(src_dir)
+models: str = os.path.join(git_dir, "models")
 
 conf_dir: str = os.path.join(src_dir, "configs")
 
@@ -101,11 +103,17 @@ hat_theta_0 = b1*(b2+b3)
 cfg.model_properties.b2 = float(b2)
 cfg.model_properties.b3 = float(b3)
 
+out_size = int(cfg.model_properties.num_dense_nodes/2)
+sigma = cfg.model_properties.sigma
+np_seed = cfg.model_properties.np_seed
+
+rng = np.random.default_rng(seed=np_seed)
+b = rng.normal(loc=0.0, scale= sigma, size=(out_size, n_ins))
+
 OmegaConf.save(cfg, f"{conf_dir}/config_run.yaml")
 
 
 if __name__ == "__main__":
-    print(b1, b2, b3)
-    print(a5)
+    print(b.shape)
     
 
