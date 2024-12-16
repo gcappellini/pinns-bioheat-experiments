@@ -230,6 +230,7 @@ def create_model(config):
 
 
     def bc0_fun(x, theta, _):
+        
         dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0)
         
         y3 = cc.theta30 #if n_ins == 2 else x[:, 3:4] if n_ins == 5 else x[:, 2:3]
@@ -267,6 +268,7 @@ def create_model(config):
         dtheta_tau = dde.grad.jacobian(theta, x, i=0, j=time_index)
         dtheta_xx = dde.grad.hessian(theta, x, i=0, j=0)
         source_term = -a3 * torch.exp(-a4 * x[:, :1])
+
         return a1 * dtheta_tau - dtheta_xx + W * a2 * theta + source_term
 
 
@@ -299,11 +301,11 @@ def create_model(config):
     )
 
     # Define the network
-    layer_size = [num_dense_nodes] + [num_dense_nodes] * num_dense_layers + [1]
+    layer_size = [n_ins] + [num_dense_nodes] * num_dense_layers + [1]
     net = dde.nn.FNN(layer_size, activation, initialization)
 
     net.apply_output_transform(output_transform)
-    net.apply_feature_transform(rff_transform)
+    # net.apply_feature_transform(rff_transform)
     # Compile the model
     model = dde.Model(data, net)
 
