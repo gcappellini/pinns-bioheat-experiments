@@ -16,19 +16,19 @@ model_properties:
   initial_weights_regularizer: false
   initialization: Glorot uniform
   optimizer: None
-  iters: 1000
-  iters_lbfgs: 5000
+  iters: 3000
+  iters_lbfgs: 15000
   learning_rate: 0.001
   num_dense_layers: 4
   num_dense_nodes: 50
   num_domain: 16348
-  num_boundary: 4000
+  num_boundary: 0
   num_initial: 0
   num_test: 1000
   resampling: true
   resampler_period: 100
   w_res: 1
-  w_bc0: 1
+  w_bc0: 10
   w_bc1: 1
   w_ic: 1
   beta: 0.9
@@ -40,6 +40,8 @@ model_properties:
   b2: null
   b3: null
   n_ins: 2
+  sigma: 1
+  np_seed: 500
 model_parameters:
   lam: 1
   upsilon: 1
@@ -104,6 +106,44 @@ plot:
       linestyle: ':'
       linewidth: 1.2
       alpha: 1.0
+    loss_terms:
+      color:
+      - '#9ACD32'
+      - '#FF6347'
+      - '#FFD700'
+      - '#FF1493'
+      label:
+      - Residual
+      - BC X=0
+      - BC X=1
+      - IC
+      linestyle:
+      - '-'
+      - --
+      - '-'
+      - --
+      linewidth:
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      alpha:
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+    train_loss:
+      color: '#D2691E'
+      label: Train Loss
+      linestyle: '-'
+      linewidth: 1.0
+      alpha: 1.0
+    test_loss:
+      color: '#D2691E'
+      label: Test Loss
+      linestyle: ':'
+      linewidth: 1.0
+      alpha: 0.8
     observers:
       color:
       - C0

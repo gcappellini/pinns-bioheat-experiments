@@ -180,7 +180,6 @@ def boundary_1(x, on_boundary):
     return on_boundary and np.isclose(x[0], 1)
 
 
-
 def create_model(config):
     """
     Generalized function to create and configure a PDE solver model using DeepXDE.
@@ -216,6 +215,13 @@ def create_model(config):
 
 
     def ic_fun(x):
+
+                # Convert float input to a tensor
+        if isinstance(x, (float, int)):
+            x = torch.tensor([x], dtype=torch.float32)
+        elif isinstance(x, list):  # If input is a list, convert to tensor
+            x = torch.tensor(x, dtype=torch.float32)
+
         z = x if len(x.shape) == 1 else x[:, :1]
 
         if n_ins==2:
@@ -250,9 +256,13 @@ def create_model(config):
 
     def output_transform(x, y):
         y1 = cc.theta10 if cc.n_ins<=3 else x[:, 1:2]
-        ic = ic_fun(x)
+        y2 = cc.theta20 if cc.n_ins<=2 else x[:, 1:2] if cc.n_ins==3 else x[:, 2:3]
+        y3 = cc.theta30 if cc.n_ins<=4 else x[:, 3:4]
+        ic = torch.where(x[:, 0:1]==0, ic_fun(x), ic_fun(x)/x[:, 0:1])
+        # bc0 = torch.where(cc.n_ins==2, y[:, 1:2] + a5*(y3 - y[:, 0:1]), y[:, 1:2] + a5*(y3 - y2) - K * (y[:, 0:1] - y2))
+        bc0 = y[:, 1:2] + a5*(y3 - y[:, 0:1])
         
-        return x[:, time_index:] * (x[:, 0:1] - 1) * y + y1 + ic
+        return x[:, 0:1]*(x[:, time_index:] * (x[:, 0:1] - 1) * y[:, 0:1] + y1 + ic) #+ ic_fun(0.0) + bc0
     
 
     def rff_transform(inputs):
@@ -267,9 +277,16 @@ def create_model(config):
         
         dtheta_tau = dde.grad.jacobian(theta, x, i=0, j=time_index)
         dtheta_xx = dde.grad.hessian(theta, x, i=0, j=0)
-        source_term = -a3 * torch.exp(-a4 * x[:, :1])
+        dtheta_dx = dde.grad.jacobian(theta, x, i=0, j=0)
 
-        return a1 * dtheta_tau - dtheta_xx + W * a2 * theta + source_term
+        source_term = -a3 * torch.exp(-a4 * x[:, :1])
+        pde1 = a1 * dtheta_tau - dtheta_xx + W * a2 * theta[:, 0:1] + source_term
+
+        # pde2 = theta[:, 1:2] - dtheta_dx
+
+        # print(pde1.shape, pde2.shape)
+
+        return [pde1, pde1]
 
 
     geom_mapping = {
@@ -287,21 +304,24 @@ def create_model(config):
     ic = dde.icbc.IC(geomtime, ic_fun, lambda _, on_initial: on_initial)
     bc_1 = dde.icbc.OperatorBC(geomtime, bc1_fun, boundary_1)
     bc_0 = dde.icbc.OperatorBC(geomtime, bc0_fun, boundary_0)
+    # derivative_output = dde.icbc.OperatorBC(geomtime, derivative_constraint, boundary_fake)
 
     # Data object
-    data = dde.data.TimePDE(
+    data = dde.data.PDE(
         geomtime,
-        lambda x, theta: pde(x, theta),
+        pde,
+        # lambda x, theta: pde(x, theta),
         # [bc_0, bc_1, ic],
-        [bc_0],
+        [],
+        # [derivative_output],
         num_domain=num_domain,
         num_boundary=num_boundary,
-        num_initial=num_initial,
+        # num_initial=num_initial,
         num_test=num_test,
     )
 
     # Define the network
-    layer_size = [n_ins] + [num_dense_nodes] * num_dense_layers + [1]
+    layer_size = [n_ins] + [num_dense_nodes] * num_dense_layers + [2]
     net = dde.nn.FNN(layer_size, activation, initialization)
 
     net.apply_output_transform(output_transform)
@@ -316,7 +336,7 @@ def compile_optimizer_and_losses(model, conf):
     initial_weights_regularizer = model_props.initial_weights_regularizer
     learning_rate = model_props.learning_rate
     # loss_weights = [model_props.w_res, model_props.w_bc0, model_props.w_bc1, model_props.w_ic]
-    loss_weights = [model_props.w_res, model_props.w_bc0]
+    # loss_weights = [model_props.w_res, model_props.w_bc0]
     optimizer = conf.model_properties.optimizer
 
     if optimizer == "adam":
@@ -326,9 +346,9 @@ def compile_optimizer_and_losses(model, conf):
                 lw * len(initial_losses) / il
                 for lw, il in zip(loss_weights, initial_losses)
             ]
-            model.compile(optimizer, lr=learning_rate, loss_weights=loss_weights)
+            model.compile(optimizer, lr=learning_rate)#, loss_weights=loss_weights)
         else:
-            model.compile(optimizer, lr=learning_rate, loss_weights=loss_weights)
+            model.compile(optimizer, lr=learning_rate)#, loss_weights=loss_weights)
         return model
 
     else:
@@ -414,7 +434,7 @@ def train_model(conf):
         dde.optimizers.config.set_LBFGS_options(maxcor=100, ftol=1e-08, gtol=1e-08, maxiter=iters_lbfgs, maxfun=None, maxls=50)
         model, losshistory = train_and_save_model(conf, "L-BFGS", config_hash, model_path_lbfgs, pre_trained_model=model)
 
-    pp.plot_loss_components(np.array(losshistory.loss_train), np.array(losshistory.loss_test), np.array(losshistory.steps), config_hash)
+    # pp.plot_loss_components(np.array(losshistory.loss_train), np.array(losshistory.loss_test), np.array(losshistory.steps), config_hash)
 
     return model
 

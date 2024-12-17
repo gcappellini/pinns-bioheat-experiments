@@ -154,10 +154,11 @@ def plot_loss_components(loss_train, loss_test, iters, nam):
 
     # Extract individual loss components
     # loss_res, loss_bc0, loss_bc1, loss_ic = loss_train[:, 0], loss_train[:, 1], loss_train[:, 2], loss_train[:, 3]
-    loss_res, loss_bc0 = loss_train[:, 0], loss_train[:, 1]
+    # loss_res, loss_bc0 = loss_train[:, 0], loss_train[:, 1]
+    loss_res = loss_train[:, 0]
     # Combine all loss components into a list/2D array for plotting
     # loss_terms = np.vstack((loss_res, loss_bc0, loss_bc1, loss_ic, test, train))
-    loss_terms = np.vstack((loss_res, loss_bc0, test, train))
+    loss_terms = np.vstack((loss_res, test, train))
     
     # Labels for the legend
     # legend_labels = [r'$\mathcal{L}_{res}$', r'$\mathcal{L}_{bc0}$', r'$\mathcal{L}_{bc1}$', r'$\mathcal{L}_{ic}$', 'test loss', 'train loss']

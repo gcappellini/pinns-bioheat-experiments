@@ -22,7 +22,7 @@ model_properties:
   num_dense_layers: 4
   num_dense_nodes: 50
   num_domain: 16348
-  num_boundary: 4000
+  num_boundary: 0
   num_initial: 0
   num_test: 1000
   resampling: true
@@ -39,7 +39,7 @@ model_properties:
   b1: 5.0
   b2: 0.10227
   b3: -0.00309
-  n_ins: 3
+  n_ins: 2
   sigma: 1
   np_seed: 500
 model_parameters:
@@ -302,4 +302,4 @@ experiment_type:
       y1_0: 22.84
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-12-16/16-46-22
+output_dir: /Users/guglielmocappellini/Desktop/phd/code/pinns-bioheat-experiments/outputs/2024-12-17/12-26-26
