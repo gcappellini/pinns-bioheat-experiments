@@ -2,7 +2,6 @@ setuptools
 matplotlib
 sympy
 tqdm
-matplotlib
 numpy
 scikit-learn
 scikit-optimize 
