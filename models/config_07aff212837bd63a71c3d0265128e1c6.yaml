@@ -15,7 +15,7 @@ model_properties:
   activation: tanh
   initial_weights_regularizer: false
   initialization: Glorot uniform
-  optimizer: None
+  optimizer: adam
   iters: 3004
   iters_lbfgs: 15000
   learning_rate: 0.001
@@ -36,9 +36,9 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b1: 5.0
-  b2: 0.10227
-  b3: -0.00309
+  b1: null
+  b2: null
+  b3: null
   n_ins: 2
   sigma: 1
   np_seed: 500
@@ -302,4 +302,4 @@ experiment_type:
       y1_0: 22.84
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2024-12-17/20-33-21
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/cooling_simulation

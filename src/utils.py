@@ -258,11 +258,16 @@ def create_model(config):
         y1 = cc.theta10 if cc.n_ins<=3 else x[:, 1:2]
         y2 = cc.theta20 if cc.n_ins<=2 else x[:, 1:2] if cc.n_ins==3 else x[:, 2:3]
         y3 = cc.theta30 if cc.n_ins<=4 else x[:, 3:4]
-        ic = torch.where(x[:, 0:1]==0, ic_fun(x), ic_fun(x)/x[:, 0:1])
+        ic = ic_fun(x)
         # bc0 = torch.where(cc.n_ins==2, y[:, 1:2] + a5*(y3 - y[:, 0:1]), y[:, 1:2] + a5*(y3 - y2) - K * (y[:, 0:1] - y2))
         bc0 = y[:, 1:2] + a5*(y3 - y[:, 0:1])
         
-        return x[:, 0:1]*(x[:, time_index:] * (x[:, 0:1] - 1) * y[:, 0:1] + y1 + ic) #+ ic_fun(0.0) + bc0
+        # Compute the modified first component of y
+        y1_new = x[:, 0:1] * (x[:, time_index:] * (x[:, 0:1] - 1) * y[:, 0:1] + y1 + ic) - ic_fun(0.0) + bc0
+        
+        # Stack the modified y1 and unchanged y2 along the correct axis (dim=1)
+        output = torch.cat([y1_new, y[:, 1:2]], dim=1)  # Stack along dim=1 to keep the original shape
+        return output
     
 
     def rff_transform(inputs):
@@ -276,17 +281,15 @@ def create_model(config):
     def pde(x, theta):
         
         dtheta_tau = dde.grad.jacobian(theta, x, i=0, j=time_index)
-        dtheta_xx = dde.grad.hessian(theta, x, i=0, j=0)
         dtheta_dx = dde.grad.jacobian(theta, x, i=0, j=0)
+        # dtheta_xx = dde.grad.hessian(theta, x, i=0, j=0)
+        dtheta_dxx = dde.grad.jacobian(dtheta_dx, x, i=0, j=0)
 
         source_term = -a3 * torch.exp(-a4 * x[:, :1])
-        pde1 = a1 * dtheta_tau - dtheta_xx + W * a2 * theta[:, 0:1] + source_term
+        pde1 = a1 * dtheta_tau - dtheta_dxx + W * a2 * theta[:, 0:1] + source_term
+        pde2 = - dtheta_dx + theta[:, 1:]
 
-        # pde2 = theta[:, 1:2] - dtheta_dx
-
-        # print(pde1.shape, pde2.shape)
-
-        return [pde1, pde1]
+        return [pde1, pde2]
 
 
     geom_mapping = {
