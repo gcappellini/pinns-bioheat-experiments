@@ -1,27 +1,16 @@
-FROM python:3
+FROM python:3.12
+WORKDIR /usr/local/app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    libpython3-dev \
-    python3-setuptools \
-    && rm -rf /var/lib/apt/lists/*
+# Install the application dependencies
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Upgrade pip
-RUN python3 -m pip install --upgrade pip
+# Copy in the source code
+COPY src ./src
+EXPOSE 5000
 
-# Copy requirements.txt and install Python dependencies
-COPY requirements.txt /working_dir/requirements.txt
-# RUN python3 -m pip install -r /working_dir/requirements.txt
+# Setup an app user so the container doesn't run as the root user
+RUN useradd app
+USER app
 
-# Set environment variable for DeepXDE backend
-ENV DDE_BACKEND="pytorch"
-
-# Create and set the working directory
-RUN mkdir -p /working_dir
-WORKDIR /working_dir
-
-# Copy project files into the container
-COPY . /working_dir
-
-# Default command to keep the container running
-CMD ["bash"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]

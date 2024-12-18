@@ -235,19 +235,22 @@ def create_model(config):
             return (b1 - z)*(b2 + b3 * torch.exp(K*z))
 
 
-    def bc0_fun(x, theta, _):
+    def bc0_fun(x, y, d_theta_dx=None):
+        theta = y[:, 0:1]
+        dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0) #if d_theta_dx is None else d_theta_dx
+        # dtheta_x = y[:, 1:2]
         
-        dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0)
-        
-        y3 = cc.theta30 #if n_ins == 2 else x[:, 3:4] if n_ins == 5 else x[:, 2:3]
-        y2 = None if n_ins == 2 else x[:, 1:2] if n_ins==3 else x[:, 2:3]
+        y3 = cc.theta30 if cc.n_ins<=4 else x[:, 3:4]
+        y2 = cc.theta20 if cc.n_ins<=2 else x[:, 1:2] if cc.n_ins==3 else x[:, 2:3]
         
         flusso = a5 * (y3 - theta) if n_ins==2 else a5 * (y3 - y2)
 
         if n_ins == 2:
+            print(dtheta_x.shape, flusso.shape)
             return dtheta_x + flusso
         else:
             return dtheta_x + flusso - K * (theta - y2)
+
 
     def bc1_fun(x, theta, _):
         y1 = theta10 if n_ins <=3 else x[:, 1:2]
@@ -255,18 +258,27 @@ def create_model(config):
 
 
     def output_transform(x, y):
+
+        x1 = x[:, 0:1]
         y1 = cc.theta10 if cc.n_ins<=3 else x[:, 1:2]
         y2 = cc.theta20 if cc.n_ins<=2 else x[:, 1:2] if cc.n_ins==3 else x[:, 2:3]
         y3 = cc.theta30 if cc.n_ins<=4 else x[:, 3:4]
+        t = x[:, time_index]
+
+        theta = y[:, 0:1]
+        dtheta_dx = y[:, 1:]
+
         ic = ic_fun(x)
-        # bc0 = torch.where(cc.n_ins==2, y[:, 1:2] + a5*(y3 - y[:, 0:1]), y[:, 1:2] + a5*(y3 - y2) - K * (y[:, 0:1] - y2))
-        bc0 = y[:, 1:2] + a5*(y3 - y[:, 0:1])
+        bc1 = y1
+        # bc0 = bc0_fun(x, theta, dtheta_dx=dtheta_dx)
+
         
         # Compute the modified first component of y
-        y1_new = x[:, 0:1] * (x[:, time_index:] * (x[:, 0:1] - 1) * y[:, 0:1] + y1 + ic) - ic_fun(0.0) + bc0
+        y1_new = t * (1 - x1) * theta + ic + bc1
+        y2_new = x1 * dtheta_dx + a5 * (y3 - theta)
         
         # Stack the modified y1 and unchanged y2 along the correct axis (dim=1)
-        output = torch.cat([y1_new, y[:, 1:2]], dim=1)  # Stack along dim=1 to keep the original shape
+        output = torch.cat([y1_new, y2_new], dim=1)  # Stack along dim=1 to keep the original shape
         return output
     
 
@@ -307,7 +319,6 @@ def create_model(config):
     ic = dde.icbc.IC(geomtime, ic_fun, lambda _, on_initial: on_initial)
     bc_1 = dde.icbc.OperatorBC(geomtime, bc1_fun, boundary_1)
     bc_0 = dde.icbc.OperatorBC(geomtime, bc0_fun, boundary_0)
-    # derivative_output = dde.icbc.OperatorBC(geomtime, derivative_constraint, boundary_fake)
 
     # Data object
     data = dde.data.PDE(
@@ -316,7 +327,6 @@ def create_model(config):
         # lambda x, theta: pde(x, theta),
         # [bc_0, bc_1, ic],
         [],
-        # [derivative_output],
         num_domain=num_domain,
         num_boundary=num_boundary,
         # num_initial=num_initial,
@@ -339,7 +349,7 @@ def compile_optimizer_and_losses(model, conf):
     initial_weights_regularizer = model_props.initial_weights_regularizer
     learning_rate = model_props.learning_rate
     # loss_weights = [model_props.w_res, model_props.w_bc0, model_props.w_bc1, model_props.w_ic]
-    # loss_weights = [model_props.w_res, model_props.w_bc0]
+    loss_weights = [model_props.w_res, model_props.w_res2]#, model_props.w_bc0]
     optimizer = conf.model_properties.optimizer
 
     if optimizer == "adam":
@@ -349,9 +359,9 @@ def compile_optimizer_and_losses(model, conf):
                 lw * len(initial_losses) / il
                 for lw, il in zip(loss_weights, initial_losses)
             ]
-            model.compile(optimizer, lr=learning_rate)#, loss_weights=loss_weights)
+            model.compile(optimizer, lr=learning_rate, loss_weights=loss_weights)
         else:
-            model.compile(optimizer, lr=learning_rate)#, loss_weights=loss_weights)
+            model.compile(optimizer, lr=learning_rate, loss_weights=loss_weights)
         return model
 
     else:
@@ -437,7 +447,7 @@ def train_model(conf):
         dde.optimizers.config.set_LBFGS_options(maxcor=100, ftol=1e-08, gtol=1e-08, maxiter=iters_lbfgs, maxfun=None, maxls=50)
         model, losshistory = train_and_save_model(conf, "L-BFGS", config_hash, model_path_lbfgs, pre_trained_model=model)
 
-    # pp.plot_loss_components(np.array(losshistory.loss_train), np.array(losshistory.loss_test), np.array(losshistory.steps), config_hash)
+    pp.plot_loss_components(np.array(losshistory.loss_train), np.array(losshistory.loss_test), np.array(losshistory.steps), config_hash)
 
     return model
 
@@ -709,7 +719,7 @@ def mu(o, tau_in, upsilon):
     muu = []
 
     for el in o:
-        oss = el.predict(xo)
+        oss = el.predict(xo)[:, 0]
         true = f2(tau)
         scrt = calculate_mu(oss, true, upsilon)
         muu.append(scrt)
@@ -762,7 +772,7 @@ def mm_predict(multi_obs, obs_grid, folder):
         w = weights[closest_idx]
 
         # Predict using the multi_obs predictors for the current row
-        o_preds = np.array([multi_obs[i].predict(row.reshape(1, -1)) for i in range(len(multi_obs))]).flatten()
+        o_preds = np.array([multi_obs[i].predict(row.reshape(1, -1))[:, 0] for i in range(len(multi_obs))]).flatten()
 
         # Combine the predictions using the weights for the current row
         prediction = np.dot(w[1:], o_preds)
@@ -889,7 +899,7 @@ def check_and_wandb_upload(
 
 def get_pred(model, X, output_dir, label):
 
-    y_sys_pinns = model.predict(X)
+    y_sys_pinns = model.predict(X)[:, 0]
     data_to_save = np.column_stack((X[:, 0].round(n_digits), X[:, -1].round(n_digits), y_sys_pinns.round(n_digits)))
     np.savetxt(f'{output_dir}/prediction_{label}.txt', data_to_save, fmt='%.2f %.2f %.6f', delimiter=' ') 
 
@@ -918,7 +928,7 @@ def get_observers_preds(multi_obs, x_obs, output_dir, conf):
 
     # Process for a single observer
     if n_obs == 1:
-        obs_pred = multi_obs.predict(x_obs).reshape(-1)
+        obs_pred = multi_obs.predict(x_obs)[:, 0].reshape(-1)
         data_to_save = np.column_stack((x_obs[:, 0], x_obs[:, -1], obs_pred)).round(n_digits)
         np.savetxt(f'{output_dir}/prediction_obs_{cc.W_index}.txt', data_to_save, fmt='%.3f %.3f %.6f', delimiter=' ')
 
@@ -937,7 +947,7 @@ def get_observers_preds(multi_obs, x_obs, output_dir, conf):
 
     # Process for multiple observers
     for el in range(n_obs):
-        obs_pred = multi_obs[el].predict(x_obs).reshape(-1)
+        obs_pred = multi_obs[el].predict(x_obs)[:, 0].reshape(-1)
         preds.append(obs_pred)
 
     # Save and configure multi-observer predictions
