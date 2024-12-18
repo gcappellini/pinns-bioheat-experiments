@@ -12,7 +12,7 @@ model_properties:
   Ty20: 30.0
   Ty30: 21.5
   alfa: 50
-  activation: tanh
+  activation: LAAF-10 tanh
   initial_weights_regularizer: true
   initialization: Glorot uniform
   optimizer: None
