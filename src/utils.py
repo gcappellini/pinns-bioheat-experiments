@@ -257,10 +257,23 @@ def create_model(config):
         return theta - y1
 
 
+    def h_constraint(x, y):
+        
+        hc_term = torch.zeros_like(x[:, 0:1]) 
+        x1 = x[:, 0:1]
+        t = x[:, time_index]
+        y1 = cc.theta10 if cc.n_ins<=3 else x[:, 1:2]
+        
+        print(t.shape, hc_term.shape)
+        hc_term[t == 0] = ic_fun(x1)
+        hc_term[x1 == 1] = y1
+
+        return hc_term
+
+
     def output_transform(x, y):
 
         x1 = x[:, 0:1]
-        y1 = cc.theta10 if cc.n_ins<=3 else x[:, 1:2]
         y2 = cc.theta20 if cc.n_ins<=2 else x[:, 1:2] if cc.n_ins==3 else x[:, 2:3]
         y3 = cc.theta30 if cc.n_ins<=4 else x[:, 3:4]
         t = x[:, time_index]
@@ -268,14 +281,9 @@ def create_model(config):
         theta = y[:, 0:1]
         dtheta_dx = y[:, 1:]
 
-        ic = ic_fun(x)
-        bc1 = y1
-        # bc0 = bc0_fun(x, theta, dtheta_dx=dtheta_dx)
-
-        
         # Compute the modified first component of y
-        y1_new = t * (1 - x1) * theta + ic + bc1
-        y2_new = x1 * dtheta_dx + a5 * (y3 - theta)
+        y1_new = t * (1 - x1) * theta + h_constraint(x, t)
+        y2_new = x1 * dtheta_dx + a5 * (y3 - y1_new)
         
         # Stack the modified y1 and unchanged y2 along the correct axis (dim=1)
         output = torch.cat([y1_new, y2_new], dim=1)  # Stack along dim=1 to keep the original shape
