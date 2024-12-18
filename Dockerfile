@@ -1,15 +1,18 @@
-FROM sonoisa/deep-learning-coding:pytorch1.12.0_tensorflow2.9.1
+# FROM sonoisa/deep-learning-coding:pytorch1.12.0_tensorflow2.9.1
+# WORKDIR /app
+# COPY . .
+# RUN pip install --upgrade pip
+# RUN pip install -r requirements.txt
+# ENV DDE_BACKEND="pytorch"
+# CMD ["bash"]
 
-# Create and set the working directory
-RUN mkdir -p /working_dir
-WORKDIR /working_dir
+ARG MATLAB_RELEASE=R2023b
 
-COPY . /working_dir
+# Build MATLAB image
+FROM mathworks/matlab:$MATLAB_RELEASE
 
-RUN yarn install --production
+# Declare global
+ARG MATLAB_RELEASE
 
-# Set environment variable for DeepXDE backend
-ENV DDE_BACKEND="pytorch"
-
-# Default command to keep the container running
-CMD ["bash"]
+# Install MATLAB Engine API for Python
+RUN /bin/sh -c 'cd /opt/matlab/$MATLAB_RELEASE/extern/engines/python && sudo python setup.py install'

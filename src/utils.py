@@ -784,7 +784,7 @@ def plot_and_compute_metrics(system_gt, series_to_plot, matching_args, conf, out
         plot_observer_results(mu, t, weights, output_dir, suffix="_gt")
 
     # Multi-observer simulation plots
-    if n_ins > 2 and n_obs > 1:
+    if output_dir.endswith("simulation_mm_obs") and n_obs > 1:
         label_run = "simulation_mm_obs"
         mu = compute_mu(matching)[1:]
         t, weights = load_weights(conf, label_run)

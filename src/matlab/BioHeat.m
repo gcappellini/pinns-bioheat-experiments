@@ -4,7 +4,7 @@ close all
 global K lambda upsilon W_obs W_sys W0 W1 W2 W3 W4 W5 W6 W7 b1 b2 b3 theta10 theta20 theta30 theta_gt10 theta_gt20 X_gt1 X_gt2 om0 om1 om2  om3 om4  om5 om6 om7 a1 a2 a3 a4 a5 str_exp path_exp output_path
 
 % Replace the following with the path to readyaml (find link on the internet)
-addpath('/Users/guglielmocappellini/Desktop/phd/code/readyaml')
+addpath('/Users/guglielmocappellini/Desktop/research/code/readyaml')
 
 src_dir = fileparts(cd);
 git_dir = fileparts(src_dir);
