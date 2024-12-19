@@ -180,6 +180,34 @@ def boundary_1(x, on_boundary):
     return on_boundary and np.isclose(x[0], 1)
 
 
+def create_X_anchor(n_ins, num_points=cc.n_anchor_points):
+    # Create the time component ranging from 0 to 1
+    time = np.linspace(0, 1, num_points)
+    
+    # Create the space component ranging from 0 to 0.3
+    space = np.linspace(0, 0.3, num_points)
+
+    if n_ins == 2:
+        # Create the second component ranging from 0 to 0.6
+        X_anchor = np.array(np.meshgrid(space, time)).T.reshape(-1, n_ins)
+
+    if n_ins == 3:
+        # Create the second component ranging from 0 to 0.6
+        y_2 = np.linspace(0, 0.6, num_points)
+        X_anchor = np.array(np.meshgrid(space, y_2, time)).T.reshape(-1, n_ins)
+    
+    elif n_ins == 4:
+        # Create the second component ranging from 0 to 0.2
+        y_1 = np.linspace(0, 0.2, num_points)
+        # Create the third component ranging from 0 to 0.6
+        y_2 = np.linspace(0, 0.6, num_points)
+        X_anchor = np.array(np.meshgrid(space, y_1, y_2, time)).T.reshape(-1, n_ins)
+    
+    else:
+        raise ValueError("Unsupported n_ins value. Only n_ins=2,3,4 are supported.")
+    
+    return X_anchor
+
 
 def create_model(config):
     """
@@ -259,7 +287,7 @@ def create_model(config):
         t = x[:, time_index:]
         x1 = x[:, 0:1]
         
-        return t * (x1 - 1) * y + h_constraint(x1, t)
+        return t * (x1 - 1) * y + ic_fun(x) + bc1_hc(t)
 
     def h_constraint(x, t):
         # Define the hard constraint function
@@ -310,6 +338,7 @@ def create_model(config):
         num_boundary=num_boundary,
         num_initial=num_initial,
         num_test=num_test,
+        anchors=None,
     )
 
     # Define the network

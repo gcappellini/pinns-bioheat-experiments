@@ -16,7 +16,7 @@ model_properties:
   initial_weights_regularizer: false
   initialization: Glorot uniform
   optimizer: None
-  iters: 3000
+  iters: 3001
   iters_lbfgs: 15000
   learning_rate: 0.001
   num_dense_layers: 4
@@ -42,6 +42,7 @@ model_properties:
   n_ins: 3
   sigma: 1
   np_seed: 500
+  n_anchor_points: 100
 model_parameters:
   lam: 1
   upsilon: 1
@@ -302,4 +303,4 @@ experiment_type:
       y1_0: 22.84
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2024-12-19/03-21-03
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2024-12-19/03-37-19
