@@ -21,8 +21,8 @@ model_properties:
   learning_rate: 0.001
   num_dense_layers: 4
   num_dense_nodes: 50
-  num_domain: 16350
-  num_boundary: 4000
+  num_domain: 2500
+  num_boundary: 1000
   num_initial: 0
   num_test: 1000
   resampling: true
@@ -42,6 +42,7 @@ model_properties:
   n_ins: 3
   sigma: 1
   np_seed: 500
+  n_anchor_points: 5
 model_parameters:
   lam: 1
   upsilon: 1
@@ -302,4 +303,4 @@ experiment_type:
       y1_0: 22.84
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/cooling_simulation
+output_dir: /home/guglielmo/pinns-bioheat-experiments/tests/cooling_simulation

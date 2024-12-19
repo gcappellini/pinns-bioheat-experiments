@@ -13,7 +13,7 @@ import coeff_calc as cc
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-import matlab.engine
+# import matlab.engine
 from hydra import initialize, compose
 
 
@@ -314,7 +314,7 @@ def create_model(config):
 
     geom_mapping = {
         2: dde.geometry.Interval(0, 1),
-        3: dde.geometry.Rectangle([0, 0], [1, 1]),
+        3: dde.geometry.Rectangle([-0.5, 0], [1, 1]),
         4: dde.geometry.Cuboid([0, 0, 0], [1, 0.2, 1]),
         5: dde.geometry.Hypercube([0, 0, 0, 0], [1, 0.2, 1, 1])
     }
