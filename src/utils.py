@@ -237,8 +237,8 @@ def create_model(config):
 
     def bc0_fun(x, y, d_theta_dx=None):
         theta = y[:, 0:1]
-        dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0) #if d_theta_dx is None else d_theta_dx
-        # dtheta_x = y[:, 1:2]
+        # dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0) #if d_theta_dx is None else d_theta_dx
+        dtheta_x = y[:, 1:2]
         
         y3 = cc.theta30 if cc.n_ins<=4 else x[:, 3:4]
         y2 = cc.theta20 if cc.n_ins<=2 else x[:, 1:2] if cc.n_ins==3 else x[:, 2:3]
@@ -246,7 +246,7 @@ def create_model(config):
         flusso = a5 * (y3 - theta) if n_ins==2 else a5 * (y3 - y2)
 
         if n_ins == 2:
-            print(dtheta_x.shape, flusso.shape)
+            # print(dtheta_x.shape, flusso.shape)
             return dtheta_x + flusso
         else:
             return dtheta_x + flusso - K * (theta - y2)
@@ -279,7 +279,8 @@ def create_model(config):
 
         # Compute the modified first component of y
         y1_new = t * (1 - x1) * theta + h_constraint(x1, t)
-        y2_new = x1 * dtheta_dx + a5 * (y3 - y1_new)
+        # y2_new = x1 * dtheta_dx + a5 * (y3 - y1_new)
+        y2_new = dtheta_dx
         
         # Stack the modified y1 and unchanged y2 along the correct axis (dim=1)
         output = torch.cat([y1_new, y2_new], dim=1)  # Stack along dim=1 to keep the original shape
@@ -352,15 +353,19 @@ def compile_optimizer_and_losses(model, conf):
     model_props = conf.model_properties
     initial_weights_regularizer = model_props.initial_weights_regularizer
     learning_rate = model_props.learning_rate
-    # loss_weights = [model_props.w_res, model_props.w_bc0, model_props.w_bc1, model_props.w_ic]
-    loss_weights = [model_props.w_res, model_props.w_res2]#, model_props.w_bc0]
-    optimizer = conf.model_properties.optimizer
+    initial_losses = get_initial_loss(model)
+    n_losses = len(initial_losses)
+    
+    # Dynamically extract loss weights from the configuration
+    tot_loss_weights = [model_props.w_res, model_props.w_res2, model_props.w_bc0, model_props.w_bc1, model_props.w_ic]
+    loss_weights = tot_loss_weights[:n_losses]
+    optimizer = model_props.optimizer
 
     if optimizer == "adam":
         if initial_weights_regularizer:
-            initial_losses = get_initial_loss(model)
+            
             loss_weights = [
-                lw * len(initial_losses) / il
+                lw / il
                 for lw, il in zip(loss_weights, initial_losses)
             ]
             model.compile(optimizer, lr=learning_rate, loss_weights=loss_weights)

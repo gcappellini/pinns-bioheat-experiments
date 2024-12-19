@@ -146,25 +146,22 @@ def save_loss_components(iters, y_values, legend_labels, nam):
             file.write("-" * 50 + "\n")
 
 
-# Main plot functions
 def plot_loss_components(loss_train, loss_test, iters, nam):
     # Prepare the loss data
     train = loss_train.sum(axis=1).ravel()
     test = loss_test.sum(axis=1).ravel()
 
-    # Extract individual loss components
-    # loss_res, loss_bc0, loss_bc1, loss_ic = loss_train[:, 0], loss_train[:, 1], loss_train[:, 2], loss_train[:, 3]
-    loss_res, loss_res2 = loss_train[:, 0], loss_train[:, 1]#, loss_train[:, 2]
-
+    # Extract individual loss components dynamically
+    loss_components = [loss_train[:, i] for i in range(loss_train.shape[1])]
+    
     # Combine all loss components into a list/2D array for plotting
-    # loss_terms = np.vstack((loss_res, loss_bc0, loss_bc1, loss_ic, test, train))
-    loss_terms = np.vstack((loss_res, loss_res2, test, train))
+    loss_terms = np.vstack(loss_components + [test, train])
     
     # Labels for the legend
-    # legend_labels = [r'$\mathcal{L}_{res}$', r'$\mathcal{L}_{bc0}$', r'$\mathcal{L}_{bc1}$', r'$\mathcal{L}_{ic}$', 'test loss', 'train loss']
-    legend_labels = [r'$\mathcal{L}_{res}$', r'$\mathcal{L}_{res2}$', 'test loss', 'train loss']
+    legend_labels = [f'$\mathcal{{L}}_{{res{i}}}$' for i in range(1, len(loss_components) + 1)] + ['test loss', 'train loss']
+    
     # Get iterations (x-axis)
-    iterations = np.array([iters]*len(loss_terms))
+    iterations = np.array([iters] * len(loss_terms[0]))
     conf = compose(config_name='config_run')
     colors = conf.plot.colors.losses
 
