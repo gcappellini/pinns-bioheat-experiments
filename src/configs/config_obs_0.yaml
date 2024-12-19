@@ -21,7 +21,7 @@ model_properties:
   learning_rate: 0.001
   num_dense_layers: 4
   num_dense_nodes: 50
-  num_domain: 2500
+  num_domain: 1800
   num_boundary: 1000
   num_initial: 0
   num_test: 1000

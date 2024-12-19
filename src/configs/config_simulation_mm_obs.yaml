@@ -21,7 +21,7 @@ model_properties:
   learning_rate: 0.001
   num_dense_layers: 4
   num_dense_nodes: 50
-  num_domain: 2500
+  num_domain: 1800
   num_boundary: 1000
   num_initial: 0
   num_test: 1000
@@ -57,7 +57,7 @@ model_parameters:
   W6: 0.003004
   W7: 0.003303
   W_sys: 0.001207
-  W_index: 0
+  W_index: 7
   n_obs: 1
   gt1_0: 24.44
   gt2_0: 29.25
