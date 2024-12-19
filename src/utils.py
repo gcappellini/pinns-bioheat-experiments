@@ -327,6 +327,7 @@ def create_model(config):
     ic = dde.icbc.IC(geomtime, ic_fun, lambda _, on_initial: on_initial)
     bc_1 = dde.icbc.OperatorBC(geomtime, bc1_fun, boundary_1)
     bc_0 = dde.icbc.OperatorBC(geomtime, bc0_fun, boundary_0)
+    X_anchor = create_X_anchor(n_ins)
 
     # Data object
     data = dde.data.TimePDE(
@@ -338,7 +339,7 @@ def create_model(config):
         num_boundary=num_boundary,
         num_initial=num_initial,
         num_test=num_test,
-        anchors=None,
+        anchors=X_anchor,
     )
 
     # Define the network
