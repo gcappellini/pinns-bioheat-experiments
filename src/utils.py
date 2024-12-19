@@ -247,15 +247,24 @@ def create_model(config):
         y1 = theta10 if n_ins <=3 else x[:, 1:2]
         return theta - y1
 
+    def bc1_hc(t):
+        y1 = theta10 if n_ins <=3 else t
+        return y1
+
 
     def output_transform(x, y):
         y1 = cc.theta10 if n_ins<=3 else x[:, 1:2]
         y2 = cc.theta20 if n_ins<=2 else x[:, 1:2] if n_ins==3 else x[:, 2:3]
         y3 = cc.theta30 if n_ins<=4 else x[:, 3:4]
+        t = x[:, time_index:]
+        x1 = x[:, 0:1]
         
-        ic = ic_fun(x)
-        
-        return x[:, time_index:] * (x[:, 0:1] - 1) * y + y1 + ic
+        return t * (x1 - 1) * y + h_constraint(x1, t)
+
+    def h_constraint(x, t):
+        # Define the hard constraint function
+        hc = ic_fun(x) * (t == 0).float() + bc1_hc(t) * (x == 1).float()
+        return hc
     
 
     def rff_transform(inputs):

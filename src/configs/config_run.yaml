@@ -13,7 +13,7 @@ model_properties:
   Ty30: 21.5
   alfa: 50
   activation: tanh
-  initial_weights_regularizer: true
+  initial_weights_regularizer: false
   initialization: Glorot uniform
   optimizer: None
   iters: 3000
@@ -55,9 +55,9 @@ model_parameters:
   W5: 0.002704
   W6: 0.003004
   W7: 0.003303
-  W_sys: 0.002105
-  W_index: 3
-  n_obs: 8
+  W_sys: 0.001207
+  W_index: 0
+  n_obs: 1
   gt1_0: 24.44
   gt2_0: 29.25
   x_y2: 0
@@ -262,7 +262,7 @@ plot:
       - 0.7
   show_obs: false
 experiment:
-  ground_truth: true
+  ground_truth: false
   measurements: '20240930_1'
 experiment_type:
   import_data: false
@@ -302,4 +302,4 @@ experiment_type:
       y1_0: 22.84
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/cooling_simulation
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2024-12-19/03-21-03
