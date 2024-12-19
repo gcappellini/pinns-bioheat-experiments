@@ -256,19 +256,15 @@ def create_model(config):
         y1 = theta10 if n_ins <=3 else x[:, 1:2]
         return theta - y1
 
+    def bc1_hc(t):
+        y1 = theta10 if n_ins <=3 else t
+        return y1
 
-    def h_constraint(x, y):
-        
-        hc_term = torch.zeros_like(x[:, 0:1]) 
-        x1 = x[:, 0:1]
-        t = x[:, time_index]
-        y1 = cc.theta10 if cc.n_ins<=3 else x[:, 1:2]
-        
-        print(t.shape, hc_term.shape)
-        hc_term[t == 0] = ic_fun(x1)
-        hc_term[x1 == 1] = y1
 
-        return hc_term
+    def h_constraint(x, t):
+        # Define the hard constraint function
+        hc = ic_fun(x) * (t == 0).float() + bc1_hc(t) * (x == 1).float()
+        return hc
 
 
     def output_transform(x, y):
@@ -282,7 +278,7 @@ def create_model(config):
         dtheta_dx = y[:, 1:]
 
         # Compute the modified first component of y
-        y1_new = t * (1 - x1) * theta + h_constraint(x, t)
+        y1_new = t * (1 - x1) * theta + h_constraint(x1, t)
         y2_new = x1 * dtheta_dx + a5 * (y3 - y1_new)
         
         # Stack the modified y1 and unchanged y2 along the correct axis (dim=1)

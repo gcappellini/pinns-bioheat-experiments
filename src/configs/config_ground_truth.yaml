@@ -16,7 +16,7 @@ model_properties:
   initial_weights_regularizer: false
   initialization: Glorot uniform
   optimizer: None
-  iters: 3010
+  iters: 3011
   iters_lbfgs: 15000
   learning_rate: 0.001
   num_dense_layers: 4
