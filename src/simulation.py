@@ -16,10 +16,12 @@ os.makedirs(tests_dir, exist_ok=True)
 
 def run_ground_truth(config, out_dir):
     """Run MATLAB ground truth simulation, load data, and plot results."""
-    output_dir_gt, config_matlab = co.set_run(out_dir, config, "ground_truth")
+    label = "ground_truth"
+    output_dir_gt, config_matlab = co.set_run(out_dir, config, label)
     uu.run_matlab_ground_truth()
     system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config_matlab, path=output_dir_gt)
     uu.check_and_wandb_upload(
+        label=label,
         mm_obs_gt=mm_obs_gt,
         system_gt=system_gt,
         conf=config,
@@ -31,10 +33,12 @@ def run_ground_truth(config, out_dir):
 
 def run_simulation_system(config, out_dir, system_gt):
     """Run simulation for the system and plot results."""
-    output_dir_system, cfg_system = co.set_run(out_dir, config, "simulation_system")
+    label = "simulation_system"
+    output_dir_system, cfg_system = co.set_run(out_dir, config, label)
     pinns_sys = uu.train_model(cfg_system)
-    system = uu.get_pred(pinns_sys, system_gt["grid"], output_dir_system, "system")
+    system = uu.get_pred(pinns_sys, system_gt["grid"], output_dir_system, label)
     uu.check_and_wandb_upload(
+        label=label,
         system_gt=system_gt,
         system=system,
         conf=cfg_system,
@@ -44,11 +48,13 @@ def run_simulation_system(config, out_dir, system_gt):
 
 def run_simulation_mm_obs(config, out_dir, output_dir_gt, system_gt, mm_obs_gt, observers_gt):
     """Run multi-observer simulation, load data, and plot results."""
-    output_dir_inverse, config_inverse = co.set_run(out_dir, config, "simulation_mm_obs")
-    multi_obs = uu.execute(config_inverse, "simulation_mm_obs")
+    label = "simulation_mm_obs"
+    output_dir_inverse, config_inverse = co.set_run(out_dir, config, label)
+    multi_obs = uu.execute(config_inverse, label)
     x_obs = uu.gen_obsdata(config_inverse, path=output_dir_gt)
     observers, mm_obs = uu.get_observers_preds(multi_obs, x_obs, output_dir_inverse, config_inverse)
     uu.check_and_wandb_upload(
+        label=label,
         mm_obs_gt=mm_obs_gt,
         mm_obs=mm_obs,
         system_gt=system_gt,
@@ -57,6 +63,25 @@ def run_simulation_mm_obs(config, out_dir, output_dir_gt, system_gt, mm_obs_gt, 
         observers=observers,
         observers_gt=observers_gt
     )
+
+
+def run_measurement_mm_obs(config, out_dir):
+    """Run multi-observer simulation, load data, and plot results."""
+    label = config.experiment.meas_set
+    output_dir_meas, config_meas = co.set_run(out_dir, config, label)
+    multi_obs = uu.execute(config_meas, label)
+    system_meas, _ = uu.import_testdata(config_meas)
+    x_obs = uu.import_obsdata(config_meas)
+    observers, mm_obs = uu.get_observers_preds(multi_obs, x_obs, output_dir_meas, config_meas)
+    uu.check_and_wandb_upload(
+        label=label,
+        mm_obs=mm_obs,
+        system_meas=system_meas,
+        conf=config_meas,
+        output_dir=output_dir_meas,
+        observers=observers
+    )
+    uu.check_measurements(observers, mm_obs, output_dir_meas, config_meas)
 
 
 def load_ground_truth(config, out_dir):
@@ -75,18 +100,22 @@ def main():
     n_ins = config.model_properties.n_ins
 
     # Ground Truth Simulation
-    if dict_exp["ground_truth"]:# and n_ins!=2:
+    if dict_exp["ground_truth"]:
         output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, out_dir)
     else:
         output_dir_gt, system_gt, observers_gt, mm_obs_gt = load_ground_truth(config, f"{tests_dir}/cooling_simulation")
 
-    # Simulation System
-    if n_ins==2:
-        run_simulation_system(config, out_dir, system_gt)
+    if dict_exp["simulation"]:
+        # Simulation System
+        if n_ins==2:
+            run_simulation_system(config, out_dir, system_gt)
 
-    # Simulation Multi-Observer
-    else:
-        run_simulation_mm_obs(config, out_dir, output_dir_gt, system_gt, mm_obs_gt, observers_gt)
+        # Simulation Multi-Observer
+        else:
+            run_simulation_mm_obs(config, out_dir, output_dir_gt, system_gt, mm_obs_gt, observers_gt)
+    
+    if dict_exp["measurement"]:
+        run_measurement_mm_obs(config, out_dir, output_dir_gt, system_gt, mm_obs_gt, observers_gt)
 
 
 if __name__ == "__main__":

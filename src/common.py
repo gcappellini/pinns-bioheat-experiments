@@ -38,15 +38,20 @@ def set_run(prj_figs, cfg, run):
     run_figs = os.path.join(prj_figs, run)
     os.makedirs(run_figs, exist_ok=True)
 
-    if run=="ground_truth":
+    props = cfg.model_properties
+    pars = cfg.model_parameters
+
+    if run == "ground_truth":
         cfg.output_dir = prj_figs
         cfg = filter_config_for_matlab(cfg)
-    
-    if run=="simulation_system":
-        cfg.model_properties.W = cfg.model_parameters.W_sys
-        cfg.model_properties.n_ins = 2
-        cfg.model_properties.b1, cfg.model_properties.b2, cfg.model_properties.b3 = None, None, None
-
+    elif run == "simulation_system":
+        props.W = pars.W_sys
+        props.n_ins = 2
+        props.b1, props.b2, props.b3 = None, None, None
+    elif run.startswith("meas_cool"):
+        props.h, props.pwr_fact = 10, 0.0
+        meas_settings = getattr(cfg.experiment_type, run)
+        props.Ty10, props.Ty20, props.Ty30 = meas_settings.y1_0, meas_settings.y2_0, meas_settings.y3_0
 
     OmegaConf.save(cfg, f"{run_figs}/config.yaml")
     OmegaConf.save(cfg, f"{conf_dir}/config_{run}.yaml")

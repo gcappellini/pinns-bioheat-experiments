@@ -604,33 +604,25 @@ def get_tc_positions():
     return [x_y2, round(x_gt2, 2), round(x_gt1, 2), x_y1] 
 
 
-def import_testdata(name):
+def import_testdata(conf):
+    name = conf.experiment.meas_set
     df = load_from_pickle(f"{src_dir}/data/vessel/{name}.pkl")
 
     positions = get_tc_positions()
-    dfs = []
-    boluses = []
-    for time_value in df['tau']:
+    taus = df['tau'].unique()
+    bolus = df[df['tau'].isin(taus)][['y3']].values.flatten()
+    out_bolus = np.vstack((taus, bolus)).T
 
-        # Extract 'theta' values for the current 'time' from df_result
-        theta_values = df[df['tau'] == time_value][
-            ['y2', 'gt2', 'gt1', 'y1']].values.flatten()
+    theta_values = df[['tau', 'y2', 'gt2', 'gt1', 'y1']].values
+    time_arrays = [np.column_stack((positions, [time_value] * 4, theta_values[i, 1:])) for i, time_value in enumerate(theta_values[:, 0])]
+    vstack_array = np.vstack(time_arrays)
 
-        time_array = np.array([positions, [time_value] * 4, theta_values]).T
-        bol_value = df[df['tau'] == time_value][['y3']].values.flatten()
+    system_meas = {"grid": vstack_array[:, :2], "theta": vstack_array[:, -1], "label": "system_meas"}
 
-        bolus_array = np.array([bol_value]*4)
-        
-        boluses.append(bolus_array)
-        dfs.append(time_array)
-
-    vstack_array = np.vstack(dfs)
-    boluses_arr = np.vstack(boluses)
-
-    return np.hstack((vstack_array,boluses_arr))
+    return system_meas, out_bolus
 
 
-def import_obsdata(nam, extended=True):
+def import_obsdata(nam):
     """
     Import observation data and optionally generate an extended dataset.
 
@@ -644,31 +636,26 @@ def import_obsdata(nam, extended=True):
     global f1, f2, f3
 
     # Import test data
-    g = import_testdata(nam)
-    instants = np.unique(g[:, 1])
+    system_meas, out_bolus = import_testdata(nam)
+    g = np.hstack((system_meas["grid"], system_meas["theta"].reshape(len(system_meas["grid"]), 1)))
+    instants = out_bolus[:, 0]
 
     # Get positions for filtering rows
     positions = get_tc_positions()
     rows = {pos: g[g[:, 0] == pos] for pos in [positions[0], positions[-1]]}
+    
 
     # Interpolation functions
-    y2 = rows[positions[0]][:, -2].reshape(len(instants),)
-    f2 = interp1d(instants, y2, kind="previous")
+    y1 = rows[positions[-1]][:, -1].reshape(len(instants),)
+    f1 = interp1d(instants, y1, kind='previous')
 
-    # Prepare extended or regular dataset
-    if extended:
-        # Create grid for extended data
-        x = np.linspace(0, 1, 101)
-        t = np.linspace(0, 1, 101)
-        X, T = np.meshgrid(x, t)
-        T_clipped = np.clip(T, None, 0.9956)
+    y2 = rows[positions[0]][:, -1].reshape(len(instants),)
+    f2 = interp1d(instants, y2, kind='previous')
 
-        # Build extended dataset
-        Xobs = np.vstack((np.ravel(X), f2(np.ravel(T_clipped)), np.ravel(T))).T
-    else:
-        # Build regular dataset
-        Xobs = np.vstack((g[:, 0], f2(g[:, 1]), g[:, 1])).T
+    y3 = out_bolus[:, 1].reshape(len(instants),)
+    f3 = interp1d(instants, y3, kind='previous')
 
+    Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
     return Xobs
 
 
@@ -686,10 +673,6 @@ def execute(config, label):
     # Define output directories
     out_dir = config.output_dir
     simul_dir = os.path.join(out_dir, label)
-
-    # if label == "simulation_direct":
-    #     output_model = train_model(config)
-    #     return output_model
 
     n_obs, obs = cc.n_obs, cc.obs
 
@@ -714,20 +697,13 @@ def execute(config, label):
 def mu(o, tau_in, upsilon):
     global f1, f2, f3
 
-    tau = np.where(tau_in<0.9944, tau_in, 0.9944)
-    xo = np.vstack((np.zeros_like(tau), f2(tau), tau)).T
-    muu = []
+    tau = np.where(tau_in < 0.9944, tau_in, 0.9944)
+    f2_tau = f2(tau)
+    xo = np.vstack((np.zeros_like(tau), f2_tau, tau)).T
 
-    for el in o:
-        oss = el.predict(xo)
-        true = f2(tau)
-        scrt = calculate_mu(oss, true, upsilon)
-        muu.append(scrt)
+    muu = [calculate_mu(el.predict(xo), f2_tau, upsilon) for el in o]
 
-    muu = np.column_stack(muu)
-
-
-    return muu
+    return np.column_stack(muu)
 
 
 def calculate_mu(os, tr, upsilon):
@@ -752,7 +728,6 @@ def compute_mu(g):
         muu.append(mu_value)
     muu = np.column_stack(muu)#.reshape(len(muu),)
     return muu
-
 
 
 def mm_predict(multi_obs, obs_grid, folder):
@@ -789,7 +764,8 @@ def plot_observer_results(mu, t, weights, output_dir, suffix=''):
     pp.plot_mu(observers_mu, output_dir)
     pp.plot_weights(observers_mu, output_dir)
 
-def plot_and_compute_metrics(system_gt, series_to_plot, matching_args, conf, output_dir, system_metrics=False, comparison_3d=True):
+
+def plot_and_compute_metrics(label, system_gt, series_to_plot, matching_args, conf, output_dir, system_metrics=False, comparison_3d=True):
     """
     Helper function for plotting and computing metrics.
     """
@@ -807,17 +783,23 @@ def plot_and_compute_metrics(system_gt, series_to_plot, matching_args, conf, out
         pp.plot_validation_3d(matching[:, :2], matching[:, 2], matching[:, -1], output_dir, system=True)
 
     # Ground truth plots
-    if output_dir.endswith("ground_truth") and n_obs>1:
-        label_run = "ground_truth"
+    if label=="ground_truth" and n_obs>1:
+
         mu = compute_mu(matching)
-        t, weights = load_weights(conf, label_run)
+        t, weights = load_weights(conf, label)
         plot_observer_results(mu, t, weights, output_dir, suffix="_gt")
 
     # Multi-observer simulation plots
-    if output_dir.endswith("simulation_mm_obs") and n_obs > 1:
-        label_run = "simulation_mm_obs"
+    if label=="simulation_mm_obs" and n_obs > 1:
+
         mu = compute_mu(matching)[1:]
-        t, weights = load_weights(conf, label_run)
+        t, weights = load_weights(conf, label)
+        plot_observer_results(mu, t, weights, output_dir)
+    
+    if label.startswith("meas_") and n_obs > 1:
+
+        mu = compute_mu(matching)[1:]
+        t, weights = load_weights(conf, label)
         plot_observer_results(mu, t, weights, output_dir)
 
     # Compute and return metrics
@@ -833,14 +815,16 @@ def plot_and_compute_metrics(system_gt, series_to_plot, matching_args, conf, out
 
 
 def check_and_wandb_upload(
+    label,
     mm_obs_gt=None,
     mm_obs=None,
     system=None,
     system_gt=None,
+    system_meas=None,
     conf=None,
     output_dir=None,
     observers_gt=None,
-    observers=None,
+    observers=None
 ):
     """
     Check observers and optionally upload results to wandb.
@@ -855,46 +839,54 @@ def check_and_wandb_upload(
     if output_dir is None:
         raise ValueError("Output directory (`output_dir`) is required.")
 
-    if n_ins==2 and system is not None:
+    if label=="simulation_system":
         series_to_plot_direct = [system_gt, system]
-        _, metrics_direct = plot_and_compute_metrics(system_gt, series_to_plot_direct, (system_gt, system), conf, output_dir, system_metrics=True)
+        _, metrics_direct = plot_and_compute_metrics(label, system_gt, series_to_plot_direct, (system_gt, system), conf, output_dir, system_metrics=True)
         return metrics_direct
     
-    else:
-        # Indirect modeling path
+    elif label=="ground_truth":
         if n_obs == 1:
-            if observers_gt and not observers:
-                series_to_plot_n1 = [system_gt, *observers_gt]
-                matching_args_n1 = (system_gt, *observers_gt)
-            else:
-                series_to_plot_n1 = [system_gt, *observers_gt, *observers]
-                matching_args_n1 = (system_gt, *observers, mm_obs)
-
-            _, metrics = plot_and_compute_metrics(system_gt, series_to_plot_n1, matching_args_n1, conf, output_dir, system_metrics=True)
+            series_to_plot_n1 = [system_gt, *observers_gt]
+            matching_args_n1 = (system_gt, *observers_gt)
+            _, metrics = plot_and_compute_metrics(label, system_gt, series_to_plot_n1, matching_args_n1, conf, output_dir, system_metrics=True)
             return metrics
 
         elif n_obs > 1:
-            if mm_obs_gt and not mm_obs:
-                series_to_plot_mm_obs = (
-                    [system_gt, mm_obs_gt, *observers_gt]
-                    if show_obs
-                    else [system_gt, mm_obs_gt]
-                    )
-                matching_args_mm_obs = (system_gt, *observers_gt, mm_obs_gt)
-            else:
-                series_to_plot_mm_obs = (
-                    [system_gt, mm_obs, mm_obs_gt, *observers_gt, *observers]
-                    if show_obs
-                    else [system_gt, mm_obs, mm_obs_gt]
+            series_to_plot_mm_obs = (
+                [system_gt, mm_obs_gt, *observers_gt]
+                if show_obs
+                else [system_gt, mm_obs_gt]
                 )
-                matching_args_mm_obs = (system_gt, *observers, mm_obs)
+            matching_args_mm_obs = (system_gt, *observers_gt, mm_obs_gt)
 
-            
-
-            # Final metrics
-            _, metrics = plot_and_compute_metrics(system_gt, series_to_plot_mm_obs, matching_args_mm_obs, conf, output_dir, system_metrics=True)
+            _, metrics = plot_and_compute_metrics(label, system_gt, series_to_plot_mm_obs, matching_args_mm_obs, conf, output_dir, system_metrics=True)
             return metrics
-
+    
+    elif label=="simulation_mm_obs":
+        if n_obs == 1:
+            series_to_plot_n1 = [system_gt, *observers_gt, *observers]
+            matching_args_n1 = (system_gt, *observers, mm_obs)
+            _, metrics = plot_and_compute_metrics(label, system_gt, series_to_plot_n1, matching_args_n1, conf, output_dir, system_metrics=True)
+            return metrics
+        elif n_obs > 1:
+            series_to_plot_mm_obs = (
+                [system_gt, mm_obs, mm_obs_gt, *observers_gt, *observers]
+                if show_obs
+                else [system_gt, mm_obs, mm_obs_gt]
+            )
+            matching_args_mm_obs = (system_gt, *observers, mm_obs)
+            _, metrics = plot_and_compute_metrics(label, system_gt, series_to_plot_mm_obs, matching_args_mm_obs, conf, output_dir, system_metrics=True)
+            return metrics
+    
+    elif label.startswith("meas"):
+        series_to_plot_meas = (
+            [system_meas, mm_obs, *observers]
+            if show_obs
+            else [system_meas, mm_obs]
+        )
+        matching_args_meas = (system_meas, *observers, mm_obs)
+        _, metrics = plot_and_compute_metrics(label, system_meas, series_to_plot_meas, matching_args_meas, conf, output_dir, system_metrics=True)
+        return metrics
 
 
 def get_pred(model, X, output_dir, label):
@@ -994,109 +986,38 @@ def get_plot_params(conf):
     :param conf: Configuration object loaded from YAML.
     :return: Dictionary containing plot parameters for each entity.
     """
-    # exp_name = conf.experiment.name
+    def create_params(entity, default_marker=None):
+        return {
+            "color": entity.color,
+            "label": entity.label,
+            "linestyle": entity.linestyle,
+            "linewidth": entity.linewidth,
+            "alpha": entity.alpha,
+            "marker": getattr(entity, "marker", default_marker)
+        }
 
-    # Load entity-specific configurations from the config
     entities = conf.plot.entities
 
     # System parameters
-    system_params = {
-        "color": entities.system.color,
-        "label": entities.system.label,
-        "linestyle": entities.system.linestyle,
-        "linewidth": entities.system.linewidth,
-        "alpha": entities.system.alpha
-    }
-
-    theory_params = {
-        "color": entities.theory.color,
-        "label": entities.theory.label,
-        "linestyle": entities.theory.linestyle,
-        "linewidth": entities.theory.linewidth,
-        "alpha": entities.theory.alpha
-    }
-
-    bound_params = {
-        "color": entities.bound.color,
-        "label": entities.bound.label,
-        "linestyle": entities.bound.linestyle,
-        "linewidth": entities.bound.linewidth,
-        "alpha": entities.bound.alpha
-    }
-
-    # Multi-observer parameters
-    multi_observer_params = {
-        "color": entities.multi_observer.color,
-        "label": entities.multi_observer.label,
-        "linestyle": entities.multi_observer.linestyle,
-        "linewidth": entities.multi_observer.linewidth,
-        "alpha": entities.multi_observer.alpha
-    }
-
-    train_loss_params = {
-        "color": entities.train_loss.color,
-        "label": entities.train_loss.label,
-        "linestyle": entities.train_loss.linestyle,
-        "linewidth": entities.train_loss.linewidth,
-        "alpha": entities.train_loss.alpha
-    }
-
-    test_loss_params = {
-        "color": entities.test_loss.color,
-        "label": entities.test_loss.label,
-        "linestyle": entities.test_loss.linestyle,
-        "linewidth": entities.test_loss.linewidth,
-        "alpha": entities.test_loss.alpha
-    }
-
-    # Ground truth parameters
-    system_gt_params = {
-        "color": entities.system_gt.color,
-        "label": entities.system_gt.label,
-        "linestyle": entities.system_gt.linestyle,
-        "linewidth": entities.system_gt.linewidth,
-        "alpha": entities.system_gt.alpha
-    }
-
-    multi_observer_gt_params = {
-        "color": entities.multi_observer_gt.color,
-        "label": entities.multi_observer_gt.label,
-        "linestyle": entities.multi_observer_gt.linestyle,
-        "linewidth": entities.multi_observer_gt.linewidth,
-        "alpha": entities.multi_observer_gt.alpha
-    }
+    system_params = create_params(entities.system)
+    theory_params = create_params(entities.theory)
+    bound_params = create_params(entities.bound)
+    multi_observer_params = create_params(entities.multi_observer)
+    train_loss_params = create_params(entities.train_loss)
+    test_loss_params = create_params(entities.test_loss)
+    system_gt_params = create_params(entities.system_gt)
+    system_meas_params = create_params(entities.system_meas, default_marker=None)
+    multi_observer_gt_params = create_params(entities.multi_observer_gt)
 
     # Observers parameters (dynamically adjust for number of observers)
     n_obs = conf.model_parameters.n_obs
-
-    # Prepare observer(s) parameters
     observer_params = {}
     observer_gt_params = {}
 
     for j in range(n_obs):
-
-        i=cc.W_index if n_obs==1 else j
-
-        observer_params[f"observer_{i}"] = {
-            "color": entities.observers.color[i],
-            "label": entities.observers.label[i],
-            "linestyle": entities.observers.linestyle[i],
-            "linewidth": entities.observers.linewidth[i],
-            "alpha": entities.observers.alpha[i]
-        }
-
-        observer_gt_params[f"observer_{i}_gt"] = {
-            "color": entities.observers_gt.color[i],
-            "label": entities.observers_gt.label[i],
-            "linestyle": entities.observers_gt.linestyle[i],
-            "linewidth": entities.observers_gt.linewidth[i],
-            "alpha": entities.observers_gt.alpha[i]
-        }
-
-    # Adjust markers if experiment name starts with "meas_"
-    markers = [None] * n_obs
-    # if exp_name[1].startswith("meas_"):
-    #     markers[0] = "*"
+        i = cc.W_index if n_obs == 1 else j
+        observer_params[f"observer_{i}"] = create_params(entities.observers[i])
+        observer_gt_params[f"observer_{i}_gt"] = create_params(entities.observers_gt[i])
 
     # Return combined parameters
     return {
@@ -1105,12 +1026,12 @@ def get_plot_params(conf):
         "bound": bound_params,
         "multi_observer": multi_observer_params,
         "system_gt": system_gt_params,
+        "system_meas": system_meas_params,
         "multi_observer_gt": multi_observer_gt_params,
         "train_loss": train_loss_params,
         "test_loss": test_loss_params,
         **observer_params,
-        **observer_gt_params,
-        "markers": markers
+        **observer_gt_params
     }
 
 def solve_ivp(multi_obs, fold, conf, x_obs):
@@ -1315,11 +1236,12 @@ def rescale_df(df):
     return new_df
 
 
-def point_predictions(preds):
+def point_predictions(pred_dict):
     """
     Generates and scales predictions from the multi-observer model.
     """
     positions = get_tc_positions()
+    preds = np.hstack(pred_dict["grid"], pred_dict["theta"].reshape(len(pred_dict["grid"]), 1))
     
     # Extract predictions based on positions
     y2_pred_sc = preds[preds[:, 0] == positions[0]][:, -1]
@@ -1423,3 +1345,9 @@ def extract_matching(d_true, *d_preds):
     # Convert match list to a numpy array
     return np.array(match)
 
+def check_measurements(mm_obs, output_dir, conf):
+    name_exp = conf.experiment.meas_set
+
+    y1_pred, gt1_pred, gt2_pred, y2_pred = point_predictions(mm_obs)
+    df = load_from_pickle(f"{src_dir}/data/vessel/{name_exp}.pkl")
+    pp.plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, output_dir)

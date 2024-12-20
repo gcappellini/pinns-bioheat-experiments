@@ -31,18 +31,5 @@ os.makedirs(fold, exist_ok=True)
 
 conf = OmegaConf.load(f"{conf_dir}/config_run.yaml")
 
-output_dir_gt, system_gt, observers_gt, mm_obs_gt = load_ground_truth(conf, f"{tests_dir}/cooling_simulation")
-
-l2_err = uu.calculate_l2(system_gt["grid"], system_gt["theta"], mm_obs_gt["theta"])
-print(l2_err.shape, system_gt["theta"].shape)
-print(l2_err)
-
-def ic_fun(x):
-    z = x if len(x.shape) == 1 else x[:, :1]
-
-        # return (b1 - z)*(b2 + b3 * np.exp(K*z))
-    return (cc.b1 - z)*(cc.b2 + cc.b3 * torch.exp(cc.K*z))
-
-
-xx = torch.linspace(0, 1, steps=10)
-print(ic_fun(xx))
+out = uu.import_obsdata(conf)
+print(out)
