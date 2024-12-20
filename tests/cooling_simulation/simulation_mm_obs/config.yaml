@@ -13,7 +13,7 @@ model_properties:
   Ty30: 21.5
   alfa: 50
   activation: tanh
-  initial_weights_regularizer: true
+  initial_weights_regularizer: false
   initialization: Glorot uniform
   optimizer: None
   iters: 3000
@@ -21,8 +21,8 @@ model_properties:
   learning_rate: 0.001
   num_dense_layers: 4
   num_dense_nodes: 50
-  num_domain: 16350
-  num_boundary: 4000
+  num_domain: 1800
+  num_boundary: 1000
   num_initial: 0
   num_test: 1000
   resampling: true
@@ -41,7 +41,9 @@ model_properties:
   b3: -0.00309
   n_ins: 3
   sigma: 1
+  x1_min: 0
   np_seed: 500
+  n_anchor_points: 5
 model_parameters:
   lam: 1
   upsilon: 1
@@ -56,7 +58,7 @@ model_parameters:
   W6: 0.003004
   W7: 0.003303
   W_sys: 0.002105
-  W_index: 3
+  W_index: 7
   n_obs: 8
   gt1_0: 24.44
   gt2_0: 29.25

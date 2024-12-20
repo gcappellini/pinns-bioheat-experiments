@@ -13,7 +13,7 @@ import coeff_calc as cc
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-# import matlab.engine
+import matlab.engine
 from hydra import initialize, compose
 
 
@@ -275,10 +275,6 @@ def create_model(config):
         y1 = theta10 if n_ins <=3 else x[:, 1:2]
         return theta - y1
 
-    def bc1_hc(t):
-        y1 = theta10 if n_ins <=3 else t
-        return y1
-
 
     def output_transform(x, y):
         y1 = cc.theta10 if n_ins<=3 else x[:, 1:2]
@@ -287,12 +283,7 @@ def create_model(config):
         t = x[:, time_index:]
         x1 = x[:, 0:1]
         
-        return t * (x1 - 1) * y + ic_fun(x) + bc1_hc(t)
-
-    def h_constraint(x, t):
-        # Define the hard constraint function
-        hc = ic_fun(x) * (t == 0).float() + bc1_hc(t) * (x == 1).float()
-        return hc
+        return t * (x1 - 1) * y + ic_fun(x) + y1
     
 
     def rff_transform(inputs):
@@ -314,7 +305,7 @@ def create_model(config):
 
     geom_mapping = {
         2: dde.geometry.Interval(0, 1),
-        3: dde.geometry.Rectangle([-0.5, 0], [1, 1]),
+        3: dde.geometry.Rectangle([cc.x1_min, 0], [1, 1]),
         4: dde.geometry.Cuboid([0, 0, 0], [1, 0.2, 1]),
         5: dde.geometry.Hypercube([0, 0, 0, 0], [1, 0.2, 1, 1])
     }
@@ -324,8 +315,8 @@ def create_model(config):
     timedomain = dde.geometry.TimeDomain(0, 1.5)
     geomtime = dde.geometry.GeometryXTime(geom, timedomain)
 
-    ic = dde.icbc.IC(geomtime, ic_fun, lambda _, on_initial: on_initial)
-    bc_1 = dde.icbc.OperatorBC(geomtime, bc1_fun, boundary_1)
+    # ic = dde.icbc.IC(geomtime, ic_fun, lambda _, on_initial: on_initial)
+    # bc_1 = dde.icbc.OperatorBC(geomtime, bc1_fun, boundary_1)
     bc_0 = dde.icbc.OperatorBC(geomtime, bc0_fun, boundary_0)
     X_anchor = create_X_anchor(n_ins)
 
@@ -790,7 +781,7 @@ def mm_predict(multi_obs, obs_grid, folder):
     return np.array(predictions)
 
 
-def plot_observer_results(mu, t, weights, output_dir, suffix=None):
+def plot_observer_results(mu, t, weights, output_dir, suffix=''):
     observers_mu = [
         {"t": t, "weight": weights[:, i], "mu": mu[:, i], "label": f"observer_{i}{suffix}"}
         for i in range(cc.n_obs)
@@ -1148,8 +1139,7 @@ def solve_ivp(multi_obs, fold, conf, x_obs):
     weights[1:] = sol.y
     weights = weights.T
     
-    np.savetxt(f"{fold}/weights_l_{lam:.3f}_u_{ups:.3f}.txt", weights.round(n_digits), delimiter=' ')
-    # pp.plot_weights(weights[1:], weights[0], fold, conf)
+    np.savetxt(f"{fold}/weights_l_{lam:.3f}_u_{ups:.3f}.txt", weights, delimiter=' ')
     y_pred = mm_predict(multi_obs, x_obs, fold)
 
     return y_pred
