@@ -533,7 +533,7 @@ def load_weights(conf, label, path=None):
     lamb = cc.lamb
     ups = cc.upsilon
 
-    data = np.loadtxt(f"{dir_name}/{label}/weights_l_{lamb:.3f}_u_{ups:.3f}.txt")
+    data = np.loadtxt(f"{dir_name}/weights_l_{lamb:.3f}_u_{ups:.3f}.txt")
     t, weights = data[:, 0:1], data[:, 1:1+n]
 
     return t, np.array(weights)
@@ -699,10 +699,19 @@ def mu(o, tau_in, upsilon):
     global f1, f2, f3
 
     tau = np.where(tau_in < 0.9944, tau_in, 0.9944)
-    f2_tau = f2(tau)
-    xo = np.vstack((np.zeros_like(tau), f2_tau, tau)).T
 
-    muu = [calculate_mu(el.predict(xo), f2_tau, upsilon) for el in o]
+        # Mapping of inputs to feature configurations
+    input_mapping = {
+        3: lambda: np.vstack((np.zeros_like(tau), f2(tau), tau)).T,
+        4: lambda: np.vstack((np.zeros_like(tau), f1(tau), f2(tau), tau)).T,
+        5: lambda: np.vstack((np.zeros_like(tau), f1(tau), f2(tau), f3(tau), tau)).T
+    }
+
+    # Generate and return observations based on the number of inputs
+    n_inputs = o[0].net.linears[0].in_features
+    xo = input_mapping.get(n_inputs, lambda: None)()
+
+    muu = [calculate_mu(el.predict(xo), f2(tau), upsilon) for el in o]
 
     return np.column_stack(muu)
 
@@ -943,11 +952,6 @@ def get_observers_preds(multi_obs, x_obs, output_dir, conf):
         obs_pred = multi_obs[el].predict(x_obs).reshape(-1)
         preds.append(obs_pred)
 
-    # Save and configure multi-observer predictions
-    conf.model_properties.W = None
-    run_figs, _ = co.set_run(output_dir, conf, "mm_obs")
-    OmegaConf.save(conf, f"{run_figs}/config.yaml")
-
     mm_pred = solve_ivp(multi_obs, output_dir, conf, x_obs)
     preds.append(mm_pred)
 
@@ -1012,13 +1016,28 @@ def get_plot_params(conf):
 
     # Observers parameters (dynamically adjust for number of observers)
     n_obs = conf.model_parameters.n_obs
+    observers = create_params(entities.observers)
+    observers_gt = create_params(entities.observers_gt)
     observer_params = {}
     observer_gt_params = {}
 
-    for j in range(n_obs):
-        i = cc.W_index if n_obs == 1 else j
-        observer_params[f"observer_{i}"] = create_params(entities.observers[i])
-        observer_gt_params[f"observer_{i}_gt"] = create_params(entities.observers_gt[i])
+    for i in range(n_obs):
+        j = cc.W_index if n_obs == 1 else i
+        observer_params[f"observer_{i}"] = {
+            "color": entities.observers.color[i],
+            "label": entities.observers.label[i],
+            "linestyle": entities.observers.linestyle[i],
+            "linewidth": entities.observers.linewidth[i],
+            "alpha": entities.observers.alpha[i]
+        }
+
+        observer_gt_params[f"observer_{i}_gt"] = {
+            "color": entities.observers_gt.color[i],
+            "label": entities.observers_gt.label[i],
+            "linestyle": entities.observers_gt.linestyle[i],
+            "linewidth": entities.observers_gt.linewidth[i],
+            "alpha": entities.observers_gt.alpha[i]
+        }
 
     # Return combined parameters
     return {
