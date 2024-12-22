@@ -382,7 +382,7 @@ def restore_model(conf, model_path):
     """Restore a trained model from a file."""
     model = create_model(conf)  # Ensure the model structure is created
     model = compile_optimizer_and_losses(model, conf)
-    model.restore(model_path)  # Load the weights from the saved path
+    model.restore(model_path, device=dev)  # Load the weights from the saved path
     # model = torch.load(model_path, weights_only=True)
     return model
 
@@ -655,7 +655,8 @@ def import_obsdata(nam):
     y3 = out_bolus[:, 1].reshape(len(instants),)
     f3 = interp1d(instants, y3, kind='previous')
 
-    Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
+    # Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
+    Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), g[:, 1])).T
     return Xobs
 
 

@@ -59,7 +59,7 @@ model_parameters:
   W7: 0.003303
   W_sys: 0.002105
   W_index: 7
-  n_obs: 1
+  n_obs: 8
   gt1_0: 24.44
   gt2_0: 29.25
   x_y2: 0
@@ -297,4 +297,4 @@ experiment_type:
     y1_0: 22.84
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /home/guglielmo/pinns-bioheat-experiments/outputs/2024-12-22/11-02-57
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2024-12-22/13-33-40
