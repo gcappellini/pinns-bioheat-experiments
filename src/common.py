@@ -52,6 +52,7 @@ def set_run(prj_figs, cfg, run):
         props.h, props.pwr_fact = 10, 0.0
         meas_settings = getattr(cfg.experiment_type, run)
         props.Ty10, props.Ty20, props.Ty30 = meas_settings.y1_0, meas_settings.y2_0, meas_settings.y3_0
+        props.n_ins = 4
 
     OmegaConf.save(cfg, f"{run_figs}/config.yaml")
     OmegaConf.save(cfg, f"{conf_dir}/config_{run}.yaml")

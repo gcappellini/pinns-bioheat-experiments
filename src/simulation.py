@@ -115,7 +115,7 @@ def main():
             run_simulation_mm_obs(config, out_dir, output_dir_gt, system_gt, mm_obs_gt, observers_gt)
     
     if dict_exp["measurement"]:
-        run_measurement_mm_obs(config, out_dir, output_dir_gt, system_gt, mm_obs_gt, observers_gt)
+        run_measurement_mm_obs(config, out_dir)
 
 
 if __name__ == "__main__":
