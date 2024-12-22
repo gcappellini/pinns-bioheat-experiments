@@ -12,6 +12,7 @@ import deepxde as dde
 import wandb
 import plots as pp
 from omegaconf import OmegaConf
+import datetime
 
 # Function 'gp_minimize' of package 'skopt(scikit-optimize)' is used in this example.
 # However 'np.int' used in skopt 0.9.0(the latest version) was deprecated since NumPy 1.20.
@@ -34,7 +35,7 @@ src_dir = os.path.dirname(current_file)
 git_dir = os.path.dirname(src_dir)
 tests_dir = os.path.join(git_dir, "tests")
 
-prj = "hpo_191124_obs_tum"
+prj = f"hpo_{datetime.date.today()}"
 
 # HPO setting
 n_calls = 50
@@ -66,20 +67,17 @@ conf_dir = os.path.join(src_dir, "configs")
 conf = OmegaConf.load(f"{conf_dir}/config_run.yaml")
 output_dir = conf.output_dir
 
-matlab_sol = uu.gen_testdata(conf, path=f"{tests_dir}/cooling_simulation")
+system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(conf, path=f"{tests_dir}/cooling_simulation")
 x_obs = uu.gen_obsdata(conf, path=f"{tests_dir}/cooling_simulation")
 
 @use_named_args(dimensions=dimensions)
 def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation, initialization):#, w_bc0, w_bc1, w_ic, w_res):
     global ITERATION
 
-    conf.model_parameters.n_obs = 1
-    conf.experiment.check_system = False
-    conf.model_properties.W = conf.model_parameters.W4
     conf.model_properties.activation, conf.model_properties.learning_rate, conf.model_properties.num_dense_layers = str(activation), learning_rate, int(num_dense_layers)
     conf.model_properties.num_dense_nodes, conf.model_properties.initialization = int(num_dense_nodes), str(initialization)
     #conf.model_properties.w_bc0, conf.model_properties.w_bc1, conf.model_properties.w_ic, conf.model_properties.w_res = int(w_bc0), int(w_bc1), int(w_ic), int(w_res) 
-    run_figs = co.set_run(output_dir, conf, f"{ITERATION}")
+    run_figs = co.set_run(output_dir, conf, f"hpo_{ITERATION}")
 
     aa = {"activation": activation,
           "learning_rate": learning_rate,
@@ -117,8 +115,8 @@ def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation, initia
 
     pred = multi_obs.predict(x_obs)
 
-    error = np.sum(uu.calculate_l2(matlab_sol[:, 0:2], matlab_sol[:, 3], pred))
-    metrics_tot = uu.compute_metrics(matlab_sol[:, 0:2], matlab_sol[:, 3], pred, run_figs, system=matlab_sol[:, 2])
+    error = np.sum(uu.calculate_l2(system_gt["grid"], mm_obs_gt["theta"], pred))
+    metrics_tot = uu.compute_metrics(system_gt["grid"], mm_obs_gt["theta"], pred, run_figs, system=system_gt["theta"])
     metrics = {"L2RE": error,
                "L2RE_sys": metrics_tot["total_L2RE_sys"]}
 
