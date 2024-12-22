@@ -271,8 +271,8 @@ plot:
       - 0.7
   show_obs: false
 experiment:
-  ground_truth: true
-  simulation: true
+  ground_truth: false
+  simulation: false
   measurement: true
   meas_set: meas_cool_1
 experiment_type:

@@ -283,7 +283,7 @@ def create_model(config):
         t = x[:, time_index:]
         x1 = x[:, 0:1]
         
-        return t * (x1 - 1) * y + ic_fun(x) + y1
+        return t * (x1 - 1) * y + ic_fun(x) + y1 - cc.theta10
     
 
     def rff_transform(inputs):
