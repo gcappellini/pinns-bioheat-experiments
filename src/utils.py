@@ -13,7 +13,7 @@ import coeff_calc as cc
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-import matlab.engine
+# import matlab.engine
 from hydra import initialize, compose
 
 
@@ -261,10 +261,10 @@ def create_model(config):
         return y1
 
 
-    def h_constraint(x, t):
-        # Define the hard constraint function
-        hc = ic_fun(x) * (t == 0).float() + bc1_hc(t) * (x == 1).float()
-        return hc
+    # def h_constraint(x, t):
+    #     # Define the hard constraint function
+    #     hc = ic_fun(x) * (t == 0).float() + bc1_hc(t) * (x == 1).float()
+    #     return hc
 
 
     def output_transform(x, y):
@@ -272,18 +272,19 @@ def create_model(config):
         x1 = x[:, 0:1]
         y2 = cc.theta20 if cc.n_ins<=2 else x[:, 1:2] if cc.n_ins==3 else x[:, 2:3]
         y3 = cc.theta30 if cc.n_ins<=4 else x[:, 3:4]
-        t = x[:, time_index]
+        t = x[:, time_index].reshape(-1,1)
 
         theta = y[:, 0:1]
         dtheta_dx = y[:, 1:]
 
         # Compute the modified first component of y
-        y1_new = t * (1 - x1) * theta + h_constraint(x1, t)
-        # y2_new = x1 * dtheta_dx + a5 * (y3 - y1_new)
-        y2_new = dtheta_dx
+        y1_new = t * (1 - x1) * theta + ic_fun(x1)
+        y2_new = x1 * dtheta_dx + a5 * (y3 - y1_new)
+        # y2_new = dtheta_dx
         
         # Stack the modified y1 and unchanged y2 along the correct axis (dim=1)
         output = torch.cat([y1_new, y2_new], dim=1)  # Stack along dim=1 to keep the original shape
+
         return output
     
 
@@ -295,16 +296,15 @@ def create_model(config):
         return torch.cat((torch.cos(vp), torch.sin(vp)), dim=-1)
         
     
-    def pde(x, theta):
-        
-        dtheta_tau = dde.grad.jacobian(theta, x, i=0, j=time_index)
-        dtheta_dx = dde.grad.jacobian(theta, x, i=0, j=0)
-        # dtheta_xx = dde.grad.hessian(theta, x, i=0, j=0)
-        dtheta_dxx = dde.grad.jacobian(dtheta_dx, x, i=0, j=0)
+    def pde(x, y):
+
+        dtheta_tau = dde.grad.jacobian(y, x, i=0, j=time_index)
+        dtheta_dx_comp = dde.grad.jacobian(y, x, i=0, j=0)
+        dtheta_dxx = dde.grad.jacobian(y, x, i=1, j=0)
 
         source_term = -a3 * torch.exp(-a4 * x[:, :1])
-        pde1 = a1 * dtheta_tau - dtheta_dxx + W * a2 * theta[:, 0:1] + source_term
-        pde2 = - dtheta_dx + theta[:, 1:]
+        pde1 = a1 * dtheta_tau - dtheta_dxx + W * a2 * y[:, 0] + source_term
+        pde2 = - dtheta_dx_comp + y[:, 1]
 
         return [pde1, pde2]
 
@@ -353,17 +353,16 @@ def compile_optimizer_and_losses(model, conf):
     model_props = conf.model_properties
     initial_weights_regularizer = model_props.initial_weights_regularizer
     learning_rate = model_props.learning_rate
-    initial_losses = get_initial_loss(model)
-    n_losses = len(initial_losses)
     
     # Dynamically extract loss weights from the configuration
     tot_loss_weights = [model_props.w_res, model_props.w_res2, model_props.w_bc0, model_props.w_bc1, model_props.w_ic]
-    loss_weights = tot_loss_weights[:n_losses]
+    loss_weights = tot_loss_weights[:2]
     optimizer = model_props.optimizer
 
     if optimizer == "adam":
         if initial_weights_regularizer:
             
+            initial_losses = get_initial_loss(model)
             loss_weights = [
                 lw / il
                 for lw, il in zip(loss_weights, initial_losses)

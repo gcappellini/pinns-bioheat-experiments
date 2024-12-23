@@ -16,7 +16,7 @@ model_properties:
   initial_weights_regularizer: false
   initialization: Glorot uniform
   optimizer: None
-  iters: 3011
+  iters: 30000
   iters_lbfgs: 15000
   learning_rate: 0.001
   num_dense_layers: 4
@@ -28,7 +28,7 @@ model_properties:
   resampling: true
   resampler_period: 100
   w_res: 1
-  w_res2: 1
+  w_res2: 100
   w_bc0: 1
   w_bc1: 1
   w_ic: 1
@@ -70,4 +70,4 @@ model_parameters:
   - 2.0888912677764893
   - 27.680763244628906
   - 8.396754264831543
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/cooling_simulation
+output_dir: /home/guglielmo/pinns-bioheat-experiments/tests/cooling_simulation

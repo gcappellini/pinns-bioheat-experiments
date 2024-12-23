@@ -587,10 +587,10 @@ def plot_multiple_series(series_data, prj_figs):
     for i, (y_min, y_max) in enumerate(lims):
         scales.append(y_max-y_min)
 
-    max_scale = np.max(scales)
+    max_scale = 4 if rescale else 0.4
     for i, scale in enumerate(scales):
-        if scale<=max_scale/20:
-            scales[i]=max_scale/20
+        if scale<=max_scale:
+            scales[i]=max_scale
         axes[i].set_ylim(y_min, y_min + scales[i])
     
     # Save and close figure
