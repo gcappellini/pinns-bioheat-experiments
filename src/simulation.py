@@ -81,7 +81,7 @@ def run_measurement_mm_obs(config, out_dir):
         output_dir=output_dir_meas,
         observers=observers
     )
-    uu.check_measurements(observers, mm_obs, output_dir_meas, config_meas)
+    uu.check_measurements(mm_obs, output_dir_meas, config_meas)
 
 
 def load_ground_truth(config, out_dir):

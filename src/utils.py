@@ -737,7 +737,7 @@ def compute_mu(g):
 
         muu.append(mu_value)
     muu = np.column_stack(muu)#.reshape(len(muu),)
-    return muu
+    return rows_0[:, 1:2], muu
 
 
 def mm_predict(multi_obs, obs_grid, folder):
@@ -767,6 +767,8 @@ def mm_predict(multi_obs, obs_grid, folder):
 
 
 def plot_observer_results(mu, t, weights, output_dir, suffix=''):
+    
+
     observers_mu = [
         {"t": t, "weight": weights[:, i], "mu": mu[:, i], "label": f"observer_{i}{suffix}"}
         for i in range(cc.n_obs)
@@ -795,22 +797,24 @@ def plot_and_compute_metrics(label, system_gt, series_to_plot, matching_args, co
     # Ground truth plots
     if label=="ground_truth" and n_obs>1:
 
-        mu = compute_mu(matching)
-        t, weights = load_weights(conf, label)
-        plot_observer_results(mu, t, weights, output_dir, suffix="_gt")
+        tm, mu = compute_mu(matching)
+        tw, weights = load_weights(conf, label)
+        plot_observer_results(mu, tw, weights, output_dir, suffix="_gt")
 
     # Multi-observer simulation plots
-    if label=="simulation_mm_obs" and n_obs > 1:
+    elif label=="simulation_mm_obs" and n_obs > 1:
 
-        mu = compute_mu(matching)[1:]
-        t, weights = load_weights(conf, label)
-        plot_observer_results(mu, t, weights, output_dir)
+        tm, mu = compute_mu(matching)#[1:]
+        tw, weights = load_weights(conf, label)
+        plot_observer_results(mu, tw, weights, output_dir)
     
-    if label.startswith("meas_") and n_obs > 1:
+    elif label.startswith("meas_") and n_obs > 1:
 
-        mu = compute_mu(matching)[1:]
-        t, weights = load_weights(conf, label)
-        plot_observer_results(mu, t, weights, output_dir)
+        tm, mu = compute_mu(matching)
+        tw, weights = load_weights(conf, label)
+        indices = np.linspace(0, mu.shape[0] - 1, weights.shape[0]).astype(int)
+        mu_downsampled = mu[indices, :]
+        plot_observer_results(mu_downsampled, tw, weights, output_dir)
 
     # Compute and return metrics
     metrics = compute_metrics(
@@ -1261,7 +1265,7 @@ def point_predictions(pred_dict):
     Generates and scales predictions from the multi-observer model.
     """
     positions = get_tc_positions()
-    preds = np.hstack(pred_dict["grid"], pred_dict["theta"].reshape(len(pred_dict["grid"]), 1))
+    preds = np.hstack((pred_dict["grid"], pred_dict["theta"].reshape(len(pred_dict["grid"]), 1)))
     
     # Extract predictions based on positions
     y2_pred_sc = preds[preds[:, 0] == positions[0]][:, -1]

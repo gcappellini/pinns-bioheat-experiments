@@ -297,4 +297,4 @@ experiment_type:
     y1_0: 22.84
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /home/guglielmo/pinns-bioheat-experiments/outputs/2024-12-22/18-21-17/meas_cool_1
+output_dir: /home/guglielmo/pinns-bioheat-experiments/outputs/2024-12-23/09-29-28/meas_cool_1

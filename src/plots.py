@@ -502,10 +502,9 @@ def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, p
     else:
         y_data_plot = y_data
     
-    exp_type = conf.experiment.name
+    exp_type = conf.experiment.meas_set
     n_obs = conf.model_parameters.n_obs
-    type_dict = getattr(conf.experiment.type, exp_type[0])
-    meas_dict = getattr(type_dict, exp_type[1])
+    meas_dict = getattr(conf.experiment_type, exp_type)
     name = meas_dict["title"]
     # Call the generic plotting function
     plot_generic(
