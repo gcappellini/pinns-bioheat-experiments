@@ -36,7 +36,7 @@ def run_simulation_system(config, out_dir, system_gt):
     label = "simulation_system"
     output_dir_system, cfg_system = co.set_run(out_dir, config, label)
     pinns_sys = uu.train_model(cfg_system)
-    system = uu.get_pred(pinns_sys, system_gt["grid"], output_dir_system, label)
+    system = uu.get_pred(pinns_sys, system_gt["grid"], output_dir_system, "system")
     uu.check_and_wandb_upload(
         label=label,
         system_gt=system_gt,

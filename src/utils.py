@@ -191,7 +191,7 @@ def create_X_anchor(n_ins, num_points=cc.n_anchor_points):
         # Create the second component ranging from 0 to 0.6
         X_anchor = np.array(np.meshgrid(space, time)).T.reshape(-1, n_ins)
 
-    if n_ins == 3:
+    elif n_ins == 3:
         # Create the second component ranging from 0 to 0.6
         y_2 = np.linspace(0, 0.6, num_points)
         X_anchor = np.array(np.meshgrid(space, y_2, time)).T.reshape(-1, n_ins)
@@ -202,9 +202,7 @@ def create_X_anchor(n_ins, num_points=cc.n_anchor_points):
         # Create the third component ranging from 0 to 0.6
         y_2 = np.linspace(0, 0.6, num_points)
         X_anchor = np.array(np.meshgrid(space, y_1, y_2, time)).T.reshape(-1, n_ins)
-    
-    else:
-        raise ValueError("Unsupported n_ins value. Only n_ins=2,3,4 are supported.")
+
     
     return X_anchor
 
@@ -368,7 +366,6 @@ def compile_optimizer_and_losses(model, conf):
         model.compile(optimizer)
 
     return model
-
 
 
 def create_callbacks(config):
@@ -806,6 +803,7 @@ def plot_and_compute_metrics(label, system_gt, series_to_plot, matching_args, co
 
         tm, mu = compute_mu(matching)#[1:]
         tw, weights = load_weights(conf, label)
+        mu = mu[1:]
         plot_observer_results(mu, tw, weights, output_dir)
     
     elif label.startswith("meas_") and n_obs > 1:

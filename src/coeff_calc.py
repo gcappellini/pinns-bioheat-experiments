@@ -96,21 +96,24 @@ decay_rate_diff: float = (eta/a1+W_obs*a2/a1)/2
 
 theta10, theta20, theta30 = scale_t(Ty10), scale_t(Ty20), scale_t(Ty30)
 
-a = np.array([[1+K*b1, 1],[b1-1, (b1-1)*np.exp(K)]])
-b = np.array([(a5*theta30+(K-a5)*theta20), theta10])
-resu = np.linalg.solve(a,b).round(5)
-[b2, b3] = resu
-hat_theta_0 = b1*(b2+b3)
+if n_ins>2:
+    a = np.array([[1+K*b1, 1],[b1-1, (b1-1)*np.exp(K)]])
+    b = np.array([(a5*theta30+(K-a5)*theta20), theta10])
+    resu = np.linalg.solve(a,b).round(5)
+    [b2, b3] = resu
+    hat_theta_0 = b1*(b2+b3)
 
-cfg.model_properties.b2 = float(b2)
-cfg.model_properties.b3 = float(b3)
+    cfg.model_properties.b2 = float(b2)
+    cfg.model_properties.b3 = float(b3)
 
-out_size = int(cfg.model_properties.num_dense_nodes/2)
-sigma = cfg.model_properties.sigma
-np_seed = cfg.model_properties.np_seed
+    out_size = int(cfg.model_properties.num_dense_nodes/2)
+    sigma = cfg.model_properties.sigma
+    np_seed = cfg.model_properties.np_seed
 
-rng = np.random.default_rng(seed=np_seed)
-b = rng.normal(loc=0.0, scale= sigma, size=(out_size, n_ins))
+    rng = np.random.default_rng(seed=np_seed)
+    b = rng.normal(loc=0.0, scale= sigma, size=(out_size, n_ins))
+else:
+    b1, b2, b3 = None, None, None
 
 OmegaConf.save(cfg, f"{conf_dir}/config_run.yaml")
 

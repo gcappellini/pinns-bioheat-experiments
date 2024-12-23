@@ -4,12 +4,12 @@ model_properties:
   k: 0.6
   rho: 1000.0
   c: 4186.0
-  W: 0.001506
+  W: 0.003303
   h: 10
   Troom: 21.5
   Tmax: 32.0
-  Ty10: 22.28
-  Ty20: 26.67
+  Ty10: 21.5
+  Ty20: 30.0
   Ty30: 21.5
   alfa: 50
   activation: tanh
@@ -37,9 +37,9 @@ model_properties:
   PD: 0.025
   x0: 0.001
   b1: 5.0
-  b2: 0.06217
-  b3: -0.00132
-  n_ins: 3
+  b2: 0.10227
+  b3: -0.00309
+  n_ins: 4
   np_seed: 500
   sigma: 1.0
   x1_min: 0
