@@ -439,19 +439,33 @@ def train_model(conf):
     if trained_model:
         # Return the trained model directly if found
         return trained_model
+    
+    props = conf.model_properties
+    w_res = props.w_res
+
+    # Step 0: Pretrain
+    props.optimizer = "adam"
+    props.w_res=0.0
+    model = create_model(conf)
+    model = compile_optimizer_and_losses(model, conf)
+    config_hash_pre = co.generate_config_hash(props)
+    model_path_pre = os.path.join(models, f"model_{config_hash_pre}.pt")
+    model, losshistory = train_and_save_model(conf, "adam", config_hash_pre, model_path_pre, pre_trained_model=model)
 
     # Step 1: Train with Adam optimizer
-    conf.model_properties.optimizer = "adam"
-    config_hash = co.generate_config_hash(conf.model_properties)
+    props.optimizer = "adam"
+    props.w_res=w_res 
+    model = compile_optimizer_and_losses(model, conf)
+    config_hash = co.generate_config_hash(props)
     model_path_adam = os.path.join(models, f"model_{config_hash}.pt")
-    model, losshistory = train_and_save_model(conf, "adam", config_hash, model_path_adam)
+    model, losshistory = train_and_save_model(conf, "adam", config_hash, model_path_adam, pre_trained_model=model)
 
-    if conf.model_properties.iters_lbfgs>0:
+    if props.iters_lbfgs>0:
         # Step 2: Train with LBFGS optimizer
-        conf.model_properties.optimizer = "L-BFGS"
-        config_hash = co.generate_config_hash(conf.model_properties)
+        props.optimizer = "L-BFGS"
+        config_hash = co.generate_config_hash(props)
         model_path_lbfgs = os.path.join(models, f"model_{config_hash}.pt")
-        iters_lbfgs = conf.model_properties.iters_lbfgs
+        iters_lbfgs = props.iters_lbfgs
         dde.optimizers.config.set_LBFGS_options(maxcor=100, ftol=1e-08, gtol=1e-08, maxiter=iters_lbfgs, maxfun=None, maxls=50)
         model, losshistory = train_and_save_model(conf, "L-BFGS", config_hash, model_path_lbfgs, pre_trained_model=model)
 
