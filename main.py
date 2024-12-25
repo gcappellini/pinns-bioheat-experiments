@@ -24,7 +24,7 @@ def main(cfg: DictConfig):
     
     initialize_run(cfg)
     
-    subprocess.run(["python", f'{src_dir}/simulation.py'])
+    subprocess.run(["python3", f'{src_dir}/simulation.py'])
 
 if __name__ == "__main__":
     main()

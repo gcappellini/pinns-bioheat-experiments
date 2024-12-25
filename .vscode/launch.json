@@ -1,12 +1,16 @@
 {
+    "version": "0.2.0",
     "configurations": [
-      {
-        "type": "debugpy",
-        "request": "launch",
-        "name": "Launch PINNS Bioheat Experiments",
-        "program": "${workspaceFolder}/pinns-bioheat-experiments/main.py",
-        "env": {"PYTHONPATH": "${workspaceFolder}"},
-
-  }
+        {
+            "name": "Launch PINNS Bioheat Experiments",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/pinns-bioheat-experiments/main.py",
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/venv"
+            },
+            "pythonPath": "${workspaceFolder}/venv/bin/python"
+        }
     ]
-  }
+}

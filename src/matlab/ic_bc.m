@@ -6,11 +6,11 @@ function [theta0, thetahat0, y1, y2, y3] = ic_bc(x)
     y3 = theta_3();
 
 function theta0 = sys_ic(x)
-    global a5 theta30 theta20
+    global a5 theta30 theta20 theta10
 
     b = a5 * (theta30-theta20);
     c = theta20;
-    a = -b -c;
+    a = theta10 -b -c;
     theta0 = a*x^2 + b*x + c;
 
 

@@ -114,7 +114,10 @@ RUN pip3 install --break-system-packages\
     seaborn \
     deepxde \
     simpy \
-    hydra-core 
+    hydra-core \
+    torch \
+    torchvision \
+    torchaudio
 
 
 # Define the command to run the application

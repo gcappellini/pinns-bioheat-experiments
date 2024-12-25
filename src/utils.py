@@ -18,6 +18,9 @@ from hydra import initialize, compose
 
 
 dde.config.set_random_seed(200)
+np.random.seed(200)
+torch.manual_seed(200)
+dde.config.set_default_float("float64")
 
 dev = torch.device("cpu")
 # dev = torch.device("cuda")
@@ -31,10 +34,6 @@ os.makedirs(models, exist_ok=True)
 
 f1, f2, f3 = [None]*3
 n_digits = 6
-
-# If L-BFGS stops earlier than expected, set the default float type to ‘float64’:
-# dde.config.set_default_float("float64")
-
 
 
 def get_initial_loss(model):

@@ -1,0 +1,16 @@
+services:
+  docker_pinns-bioheat-experiments:
+    container_name: pinns-bioheat-experiments
+    volumes:
+      - .:/app
+    environment:
+      - DDE_BACKEND=pytorch
+    build:
+      context: .
+      dockerfile: Dockerfile
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    command: bash
+
+    # docker compose run docker_pinns-bioheat-experiments bash
+    # pip3 install torch torchvision torchaudio --break-system-packages

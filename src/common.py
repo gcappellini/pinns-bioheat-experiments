@@ -42,7 +42,7 @@ def set_run(prj_figs, cfg, run):
     pars = cfg.model_parameters
 
     if run == "ground_truth":
-        cfg.output_dir = prj_figs
+        cfg.output_dir = run_figs
         cfg = filter_config_for_matlab(cfg)
     elif run == "simulation_system":
         props.W = pars.W_sys
