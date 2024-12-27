@@ -180,6 +180,32 @@ def boundary_1(x, on_boundary):
     return on_boundary and np.isclose(x[0], 1)
 
 
+def create_X_anchor(n_ins, num_points=cc.n_anchor_points):
+    # Create the time component ranging from 0 to 1
+    time = np.linspace(0, 1, num_points)
+    
+    # Create the space component ranging from 0 to 0.3
+    space = np.linspace(0, 0.3, num_points)
+
+    if n_ins == 2:
+        # Create the second component ranging from 0 to 0.6
+        X_anchor = np.array(np.meshgrid(space, time)).T.reshape(-1, n_ins)
+
+    elif n_ins == 3:
+        # Create the second component ranging from 0 to 0.6
+        y_2 = np.linspace(0, 0.6, num_points)
+        X_anchor = np.array(np.meshgrid(space, y_2, time)).T.reshape(-1, n_ins)
+    
+    elif n_ins == 4:
+        # Create the second component ranging from 0 to 0.2
+        y_1 = np.linspace(0, 0.2, num_points)
+        # Create the third component ranging from 0 to 0.6
+        y_2 = np.linspace(0, 0.6, num_points)
+        X_anchor = np.array(np.meshgrid(space, y_1, y_2, time)).T.reshape(-1, n_ins)
+
+    
+    return X_anchor
+
 def create_model(config):
     """
     Generalized function to create and configure a PDE solver model using DeepXDE.
@@ -325,6 +351,8 @@ def create_model(config):
     bc_1 = dde.icbc.OperatorBC(geomtime, bc1_fun, boundary_1)
     bc_0 = dde.icbc.OperatorBC(geomtime, bc0_fun, boundary_0)
 
+    X_anchor = create_X_anchor(n_ins)
+
     # Data object
     data = dde.data.PDE(
         geomtime,
@@ -336,6 +364,7 @@ def create_model(config):
         num_boundary=num_boundary,
         # num_initial=num_initial,
         num_test=num_test,
+        anchors=X_anchor
     )
 
     # Define the network

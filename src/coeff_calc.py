@@ -16,6 +16,7 @@ initialize('configs', version_base=None)
 cfg = OmegaConf.load(f"{conf_dir}/config_run.yaml")
 
 n_ins: int = cfg.model_properties.n_ins
+n_anchor_points: int = cfg.model_properties.n_anchor_points
 
 L0: float = cfg.model_properties.L0
 tauf: float = cfg.model_properties.tauf
