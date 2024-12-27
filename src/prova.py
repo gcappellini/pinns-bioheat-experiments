@@ -13,6 +13,7 @@ import deepxde as dde
 import torch
 from common import set_run, generate_config_hash
 from simulation import load_ground_truth
+import matlab.engine
 
 np.random.seed(237)
 
@@ -27,9 +28,7 @@ os.makedirs(tests_dir, exist_ok=True)
 fold = f"{tests_dir}/transfer_learning"
 os.makedirs(fold, exist_ok=True)
 
-# Step 0: load model with n_ins=2
-
-conf = OmegaConf.load(f"{conf_dir}/config_run.yaml")
-
-out = uu.import_obsdata(conf)
-print(out)
+eng = matlab.engine.start_matlab()
+eng.cd(f"{src_dir}/matlab", nargout=0)
+eng.BioHeat(nargout=0)
+eng.quit()

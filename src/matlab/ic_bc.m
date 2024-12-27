@@ -1,7 +1,7 @@
-function [theta0, thetahat0, y1, y2, y3] = ic_bc(x)
+function [theta0, thetahat0, y1, y2, y3] = ic_bc(x, t)
     thetahat0 = obs_ic(x);
     theta0 = sys_ic(x);
-    y1 = theta_1();
+    y1 = theta_1(t);
     y2 = theta_2();
     y3 = theta_3();
 
@@ -10,7 +10,7 @@ function theta0 = sys_ic(x)
 
     b = a5 * (theta30-theta20);
     c = theta20;
-    a = theta10 -b -c;
+    a = theta10 - b - c;
     theta0 = a*x^2 + b*x + c;
 
 
@@ -20,10 +20,14 @@ function thetahat0 = obs_ic(x)
 
     thetahat0 = (b1 - x)*(b2 + b3 * exp(K*x));
 
-function y1 = theta_1()
-    global theta10
+    
+function y1 = theta_1(t)
+    global theta10 path_exp
+    data = load(path_exp);
+    time = data(:, 1);
+    measurement = data(:, 2);
+    y1 = interp1(time, measurement, t, 'linear', 'extrap');
 
-    y1=theta10;
     
 function y2 = theta_2()
     global theta20

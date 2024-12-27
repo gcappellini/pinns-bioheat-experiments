@@ -72,3 +72,5 @@ model_parameters:
   - 27.680763244628906
   - 8.396754264831543
 output_dir: /app/tests/cooling_simulation_y1/ground_truth
+experiment:
+  meas_set: meas_cool_1

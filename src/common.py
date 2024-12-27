@@ -73,7 +73,8 @@ def filter_config_for_matlab(cfg):
     cfg_matlab = OmegaConf.create({
         "model_properties": cfg.model_properties,
         "model_parameters": cfg.model_parameters,
-        "output_dir": cfg.output_dir
+        "output_dir": cfg.output_dir,
+        "experiment": cfg.experiment.meas_set,
         })
     
     return cfg_matlab
