@@ -43,7 +43,7 @@ model_properties:
   b2: null
   b3: null
   n_ins: 2
-  n_anchor_points: 5
+  n_anchor_points: 8
   sigma: 1
   np_seed: 500
 model_parameters:
