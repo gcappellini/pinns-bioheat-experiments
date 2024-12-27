@@ -446,15 +446,17 @@ def train_model(conf):
     # Step 0: Pretrain
     props.optimizer = "adam"
     props.w_res=0.0
+    props.iters=props.iters_pre
     model = create_model(conf)
     model = compile_optimizer_and_losses(model, conf)
     config_hash_pre = co.generate_config_hash(props)
     model_path_pre = os.path.join(models, f"model_{config_hash_pre}.pt")
     model, losshistory = train_and_save_model(conf, "adam", config_hash_pre, model_path_pre, pre_trained_model=model)
 
-    # Step 1: Train with Adam optimizer
+    # # Step 1: Train with Adam optimizer
     props.optimizer = "adam"
     props.w_res=w_res 
+    props.iters=props.iters_adam
     model = compile_optimizer_and_losses(model, conf)
     config_hash = co.generate_config_hash(props)
     model_path_adam = os.path.join(models, f"model_{config_hash}.pt")
