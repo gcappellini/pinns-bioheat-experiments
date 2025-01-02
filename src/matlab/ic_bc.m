@@ -6,13 +6,18 @@ function [theta0, thetahat0, y1, y2, y3] = ic_bc(x, t)
     y3 = theta_3();
 
 function theta0 = sys_ic(x)
-    global a5 theta30 theta20 theta10
+    global a5 theta30 theta20 theta10  path_exp
 
-    b = a5 * (theta30-theta20);
-    c = theta20;
-    a = theta10 - b - c;
-    theta0 = a*x^2 + b*x + c;
+    % b = a5 * (theta30-theta20);
+    % c = theta20;
+    % a = theta10 - b - c;
+    % theta0 = a*x^2 + b*x + c;
 
+    data = load(path_exp);
+    first_row = data(1, :);
+    temperatures = first_row(2:5);
+    x_values = [1.0, 0.571, 0.143, 0.0];
+    theta0 = interp1(x_values, temperatures, x, 'linear', 'extrap');
 
     
 function thetahat0 = obs_ic(x)

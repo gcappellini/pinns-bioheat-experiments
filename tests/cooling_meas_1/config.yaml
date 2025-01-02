@@ -4,75 +4,77 @@ model_properties:
   k: 0.6
   rho: 1000.0
   c: 4186.0
-  W: 0.2
+  W: 0.0003303
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
   Ty10: 22.28
   Ty20: 26.67
   Ty30: 21.5
-  K: 50.0
+  alfa: 50
   activation: tanh
-  initial_weights_regularizer: true
+  initial_weights_regularizer: false
   initialization: Glorot uniform
-  iterations: 30000
-  LBFGS: false
-  learning_rate: 0.0001
-  num_dense_layers: 6
-  num_dense_nodes: 92
-  num_domain: 2000
-  num_boundary: 4000
-  num_initial: 1600
-  num_test: 10000
+  optimizer: L-BFGS
+  iters: 3000
+  iters_lbfgs: 15000
+  learning_rate: 0.001
+  num_dense_layers: 4
+  num_dense_nodes: 50
+  num_domain: 1800
+  num_boundary: 1000
+  num_initial: 0
+  num_test: 1000
   resampling: true
   resampler_period: 100
-  w_res: 1.0
-  w_bc0: 1.0
-  w_bc1: 1.0
-  w_ic: 1.0
+  w_res: 1
+  w_bc0: 1
+  w_bc1: 1
+  w_ic: 1
   beta: 0.9
   pwr_fact: 0.0
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b2: 0.0236
-  b3: 0.3091
+  b1: 5.0
+  b2: 0.06217
+  b3: -0.00132
+  n_ins: 4
+  np_seed: 500
+  sigma: 1.0
+  x1_min: 0
+  n_anchor_points: 5
 model_parameters:
-  lam: 750
-  upsilon: 50
-  W0: 0.04
-  W1: 0.14
-  W2: 0.24
-  W3: 0.34
-  W4: 0.44
-  W5: 0.54
-  W6: 0.64
-  W7: 0.74
-  n_obs: 8
+  lam: 1
+  upsilon: 1
+  W_min: ${model_parameters.W0}
+  W_max: ${model_parameters.W7}
+  W0: 1.0e-05
+  W1: 0.0001506
+  W2: 0.0001806
+  W3: 0.0001
+  W4: 0.0002405
+  W5: 0.0002704
+  W6: 0.0003004
+  W7: 0.0003
+  W_sys: 0.0001
+  W_index: 3
+  n_obs: 3
   gt1_0: 24.44
   gt2_0: 29.25
   x_y2: 0
   x_gt2: 0.01
   x_gt1: 0.04
   x_y1: 0.07
-output:
-  base_dir: ${hydra:runtime.output_dir}
-  save_figures: true
-output_dir: ${hydra:run.dir}
+  loss_weights:
+  - 0.006289862096309662
+  - 2.0888912677764893
+  - 27.680763244628906
+  - 8.396754264831543
 plot:
   rescale: true
+  display_every: 200
   colors:
-    observers:
-    - C0
-    - C1
-    - C2
-    - C9
-    - C4
-    - C5
-    - C6
-    - C7
-    system: C3
-    mm_obs: gold
     measuring_points:
     - '#F7CAC9'
     - '#6B5B95'
@@ -87,152 +89,212 @@ plot:
     - '#FFD700'
     - '#FF1493'
   linestyles:
-    observers:
-    - '-'
-    - -.
-    - '-'
-    - -.
-    - --
-    - '-'
-    - --
-    - '-'
-    groundtruths: --
-    mm_obs: ':'
-    system: -.
     measuring_points:
     - '-'
     - -.
     - '-'
     - -.
     - --
+  entities:
+    system:
+      color: C3
+      label: System PINNs
+      linestyle: '-'
+      linewidth: 1.2
+      alpha: 1.0
+    multi_observer:
+      color: darkblue
+      label: MultiObs PINNs
+      linestyle: ':'
+      linewidth: 1.2
+      alpha: 1.0
+    loss_terms:
+      color:
+      - '#9ACD32'
+      - '#FF6347'
+      - '#FFD700'
+      - '#FF1493'
+      label:
+      - Residual
+      - BC X=0
+      - BC X=1
+      - IC
+      linestyle:
+      - '-'
+      - --
+      - '-'
+      - --
+      linewidth:
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      alpha:
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+    train_loss:
+      color: '#D2691E'
+      label: Train Loss
+      linestyle: '-'
+      linewidth: 1.0
+      alpha: 1.0
+    test_loss:
+      color: '#D2691E'
+      label: Test Loss
+      linestyle: ':'
+      linewidth: 1.0
+      alpha: 0.8
+    observers:
+      color:
+      - C0
+      - C1
+      - C2
+      - C9
+      - C4
+      - C5
+      - C6
+      - C7
+      label:
+      - Obs 0 PINNs
+      - Obs 1 PINNs
+      - Obs 2 PINNs
+      - Obs 3 PINNs
+      - Obs 4 PINNs
+      - Obs 5 PINNs
+      - Obs 6 PINNs
+      - Obs 7 PINNs
+      linestyle:
+      - '-'
+      - -.
+      - '-'
+      - -.
+      - --
+      - '-'
+      - --
+      - '-'
+      linewidth:
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      alpha:
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+    system_gt:
+      color: C3
+      label: System MATLAB
+      linestyle: --
+      linewidth: 1.0
+      alpha: 0.8
+    system_meas:
+      color: C3
+      label: Measurement
+      linestyle: ''
+      linewidth: 1.0
+      alpha: 0.8
+      marker: '*'
+    theory:
+      color: purple
+      label: Theory
+      linestyle: --
+      linewidth: 1.0
+      alpha: 1.0
+    bound:
+      color: chocolate
+      label: Bound
+      linestyle: -.
+      linewidth: 1.0
+      alpha: 1.0
+    multi_observer_gt:
+      color: orange
+      label: MultiObs MATLAB
+      linestyle: --
+      linewidth: 1.0
+      alpha: 0.8
+    observers_gt:
+      color:
+      - C0
+      - C1
+      - C2
+      - C9
+      - C4
+      - C5
+      - C6
+      - C7
+      label:
+      - Obs 0 MATLAB
+      - Obs 1 MATLAB
+      - Obs 2 MATLAB
+      - Obs 3 MATLAB
+      - Obs 4 MATLAB
+      - Obs 5 MATLAB
+      - Obs 6 MATLAB
+      - Obs 7 MATLAB
+      linestyle:
+      - ':'
+      - ':'
+      - ':'
+      - ':'
+      - ':'
+      - ':'
+      - ':'
+      - ':'
+      linewidth:
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      alpha:
+      - 0.7
+      - 0.7
+      - 0.7
+      - 0.7
+      - 0.7
+      - 0.7
+      - 0.7
+      - 0.7
+  show_obs: true
 experiment:
-  name:
-  - cooling
-  - meas_1
+  ground_truth: true
+  simulation: false
+  measurement: false
+  meas_set: meas_cool_1
+experiment_type:
   import_data: false
   save_pickle: false
-  run_matlab: false
   run_wandb: false
-  type:
-    cooling:
-      h: 10.0
-      pwr_fact: 0.0
-      threshold: 0.5
-      show_y3: false
-      simulation:
-        y1_0: 21.5
-        gt1_0: 24.44
-        gt2_0: 29.25
-        y2_0: 28.85
-        y3_0: 21.5
-        K: 50.0
-        b2: 0.25
-        b3: 0.19
-        iterations: 50000
-      meas_1:
-        title: Cooling 1
-        date: '20240930_1'
-        string: cooling_meas_1
-        start_min: 41
-        end_min: 71
-        y1_0: 22.28
-        gt1_0: 24.44
-        gt2_0: 29.25
-        y2_0: 26.67
-        y3_0: 21.5
-        K: 50.0
-        b2: 0.0236
-        b3: 0.3091
-        iterations: 30000
-      meas_2:
-        title: Cooling 2
-        date: '20240930_3'
-        string: cooling_meas_2
-        start_min: 30
-        end_min: 60
-        y1_0: 22.84
-        gt1_0: 24.56
-        gt2_0: 29.46
-        y2_0: 28.6
-        y3_0: 21.5
-        K: 50.0
-        b2: 0.0079
-        b3: -0.0491
-        iterations: 30000
-    heating:
-      h: 238.0
-      pwr_fact: 0.4
-      threshold: 50
-      show_y3: true
-      meas_1:
-        title: Heating 1
-        date: '20240522_1'
-        string: heating_meas_1
-        start_min: 4
-        end_min: 34
-        y1_0: 21.88
-        gt1_0: 22.67
-        gt2_0: 26.3
-        y2_0: 26.76
-        y3_0: 25.8
-        b2: 0.0236
-        b3: 0.3091
-      meas_2:
-        title: Heating 2
-        date: '20240927_3'
-        string: heating_meas_2
-        start_min: 105
-        end_min: 135
-        y1_0: 22.87
-        gt1_0: 23.48
-        gt2_0: 24.24
-        y2_0: 24.71
-        y3_0: 23.98
-        b2: 0.0236
-        b3: 0.3091
-      meas_3:
-        title: Heating 3
-        date: '20240930_1'
-        string: heating_meas_3
-        start_min: 5
-        end_min: 35
-        y1_0: 21.61
-        gt1_0: 21.5
-        gt2_0: 21.74
-        y2_0: 23.24
-        y3_0: 23.82
-        b2: 0.0236
-        b3: 0.3091
-    antenna_characterization:
-      pwr_fact: 1.0
-      threshold: 50
-      show_y3: false
-      title: Antenna characterization
-      date: '20240930_3'
-      string: antenna_characterization
-      start_min: 0
-      end_min: 17
-      y1_0: 22.56
-      gt1_0: 22.99
-      gt2_0: 23.73
-      y2_0: 24.0
-      y3_0: 23.26
-  perfusion_ranges:
-    range_1:
-      W0: 0.04
-      W1: 0.08
-      W2: 0.12
-      W3: 0.16
-      W4: 0.2
-      W5: 0.24
-      W6: 0.28
-      W7: 0.32
-    range_2:
-      W0: 0.20675
-      W1: 0.212
-      W2: 0.21725
-      W3: 0.2225
-      W4: 0.22775
-      W5: 0.233
-      W6: 0.23825
-      W7: 0.2435
+  meas_cool_1:
+    title: Cooling 1
+    date: '20240930_1'
+    string: meas_cool_1
+    start_min: 41
+    end_min: 71
+    y1_0: 22.28
+    y2_0: 26.67
+    y3_0: 21.5
+  meas_cool_2:
+    title: Cooling 2
+    date: '20240930_3'
+    string: meas_cool_2
+    start_min: 30
+    end_min: 60
+    y1_0: 22.84
+run:
+  dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/cooling_meas_1

@@ -13,7 +13,7 @@ import coeff_calc as cc
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-# import matlab.engine
+import matlab.engine
 from hydra import initialize, compose
 
 
@@ -1022,8 +1022,8 @@ def get_plot_params(conf):
     observer_params = {}
     observer_gt_params = {}
 
-    for i in range(n_obs):
-        j = cc.W_index if n_obs == 1 else i
+    for j in range(n_obs):
+        i = cc.W_index if n_obs == 1 else j
         observer_params[f"observer_{i}"] = {
             "color": entities.observers.color[i],
             "label": entities.observers.label[i],

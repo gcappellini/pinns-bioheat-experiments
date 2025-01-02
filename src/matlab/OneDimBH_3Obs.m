@@ -70,7 +70,7 @@ function [sol] = OneDimBH_3Obs
 
     
     function u0 = OneDimBHic_3Obs(x)
-    [theta0, thetahat0, ~, ~, ~] = ic_bc(x);
+    [theta0, thetahat0, ~, ~, ~] = ic_bc(x, 0);
     
     u0 = [theta0; thetahat0; thetahat0; thetahat0; 1/3; 1/3; 1/3];
     % --------------------------------------------------------------------------
@@ -78,8 +78,8 @@ function [sol] = OneDimBH_3Obs
     
     function [pl,ql,pr,qr] = OneDimBHbc_3Obs(xl,ul,xr,ur,t)
     global K om0 om1 om2 upsilon a5
-    [~, ~, y1, ~, ~] = ic_bc(xr);
-    [~, ~, ~, ~, y3] = ic_bc(xl);
+    [~, ~, y1, ~, ~] = ic_bc(xr, t);
+    [~, ~, ~, ~, y3] = ic_bc(xl, t);
 
     flusso = a5*(y3-ul(1));
     

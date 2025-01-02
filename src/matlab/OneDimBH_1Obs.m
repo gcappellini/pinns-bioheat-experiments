@@ -42,7 +42,7 @@ function [sol] = OneDimBH_1Obs
     % --------------------------------------------------------------------------
     
     function u0 = OneDimBHic_1Obs(x)
-    [theta0, thetahat0, ~, ~, ~] = ic_bc(x);
+    [theta0, thetahat0, ~, ~, ~] = ic_bc(x, 0);
     
     u0 = [theta0; thetahat0];
     % --------------------------------------------------------------------------
@@ -53,8 +53,8 @@ function [sol] = OneDimBH_1Obs
     
     % p(x,t,u) + q(x,t)f(x,t,u,dudx)=0
 
-    [~, ~, y1, ~, ~] = ic_bc(xr);
-    [~, ~, ~, ~, y3] = ic_bc(xl);
+    [~, ~, y1, ~, ~] = ic_bc(xr, t);
+    [~, ~, ~, ~, y3] = ic_bc(xl, t);
     flusso = a5*(y3 - ul(1));
     
     pl = [flusso; flusso-K*(ul(2)-ul(1))];

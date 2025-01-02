@@ -37,7 +37,7 @@ b3 = config_data.model_properties.b3;
 output_path = config_data.output_dir;
 % output_path = fullfile(fileparts(git_dir), output_dir);
 
-str_exp = config_data.experiment.meas_set;
+str_exp = config_data.experiment;
 path_exp = sprintf('%s/src/data/vessel/%s.txt', git_dir, str_exp);
 % output_path = sprintf('%s/', output_dir);
 
