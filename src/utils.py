@@ -13,7 +13,7 @@ import coeff_calc as cc
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-import matlab.engine
+# import matlab.engine
 from hydra import initialize, compose
 
 
@@ -650,9 +650,25 @@ def import_obsdata(nam):
 
     y3 = out_bolus[:, 1].reshape(len(instants),)
     f3 = interp1d(instants, y3, kind='previous')
+    unique_elements = np.unique(g[:, 1])
 
-    # Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), f3(g[:, 1]), g[:, 1])).T
-    Xobs = np.vstack((g[:, 0], f1(g[:, 1]), f2(g[:, 1]), g[:, 1])).T
+    # x_tc = get_tc_positions()
+
+    g_xxl = np.vstack([
+        np.column_stack((np.linspace(0, 1, 100), np.full(100, el)))
+        for el in unique_elements
+    ])
+
+    # # Add x_tc to g_xxl[:, 0]
+    # g_xxl = np.vstack([
+    #     g_xxl,
+    #     np.column_stack((np.array(x_tc), np.full(len(x_tc), unique_elements[0])))
+    # ])
+
+    # # Sort g_xxl by the second column (time) and then by the first column (space)
+    # g_xxl = g_xxl[np.lexsort((g_xxl[:, 0], g_xxl[:, 1]))]
+
+    Xobs = np.vstack((g_xxl[:, 0], f1(g_xxl[:, 1]), f2(g_xxl[:, 1]), g_xxl[:, 1])).T
     return Xobs
 
 
@@ -781,10 +797,16 @@ def plot_and_compute_metrics(label, system_gt, series_to_plot, matching_args, co
 
     # Plot general series and L2 errors
     pp.plot_multiple_series(series_to_plot, output_dir)
-    pp.plot_l2(system_gt, series_to_plot[1:], output_dir)
 
     # Extract matching data
-    matching = extract_matching(*matching_args)
+    matching = extract_matching(matching_args)
+    series_sys = {"grid": matching[:, :2], "theta": matching[:, 2], "label": system_gt["label"]}
+    observers_data = [
+        {"grid": matching[:, :2], "theta": matching[:, 3+i], "label": series_to_plot[1+i]["label"]}
+        for i in range(cc.n_obs)
+    ]
+    
+    pp.plot_l2(series_sys, observers_data, output_dir)
 
     # 3D comparison plots
     if comparison_3d:
@@ -858,7 +880,7 @@ def check_and_wandb_upload(
     elif label=="ground_truth":
         if n_obs == 1:
             series_to_plot_n1 = [system_gt, *observers_gt]
-            matching_args_n1 = (system_gt, *observers_gt)
+            matching_args_n1 = [system_gt, *observers_gt]
             _, metrics = plot_and_compute_metrics(label, system_gt, series_to_plot_n1, matching_args_n1, conf, output_dir, system_metrics=True)
             return metrics
 
@@ -868,7 +890,7 @@ def check_and_wandb_upload(
                 if show_obs
                 else [system_gt, mm_obs_gt]
                 )
-            matching_args_mm_obs = (system_gt, *observers_gt, mm_obs_gt)
+            matching_args_mm_obs = [system_gt, *observers_gt, mm_obs_gt]
 
             _, metrics = plot_and_compute_metrics(label, system_gt, series_to_plot_mm_obs, matching_args_mm_obs, conf, output_dir, system_metrics=True)
             return metrics
@@ -876,7 +898,7 @@ def check_and_wandb_upload(
     elif label=="simulation_mm_obs":
         if n_obs == 1:
             series_to_plot_n1 = [system_gt, *observers_gt, *observers]
-            matching_args_n1 = (system_gt, *observers, mm_obs)
+            matching_args_n1 = [system_gt, *observers, mm_obs]
             _, metrics = plot_and_compute_metrics(label, system_gt, series_to_plot_n1, matching_args_n1, conf, output_dir, system_metrics=True)
             return metrics
         elif n_obs > 1:
@@ -885,7 +907,7 @@ def check_and_wandb_upload(
                 if show_obs
                 else [system_gt, mm_obs, mm_obs_gt]
             )
-            matching_args_mm_obs = (system_gt, *observers, mm_obs)
+            matching_args_mm_obs = [system_gt, *observers, mm_obs]
             _, metrics = plot_and_compute_metrics(label, system_gt, series_to_plot_mm_obs, matching_args_mm_obs, conf, output_dir, system_metrics=True)
             return metrics
     
@@ -895,7 +917,7 @@ def check_and_wandb_upload(
             if show_obs
             else [system_meas, mm_obs]
         )
-        matching_args_meas = (system_meas, *observers, mm_obs)
+        matching_args_meas = [system_meas, *observers, mm_obs]
         _, metrics = plot_and_compute_metrics(label, system_meas, series_to_plot_meas, matching_args_meas, conf, output_dir, system_metrics=True)
         return metrics
 
@@ -1257,12 +1279,14 @@ def rescale_df(df):
     return new_df
 
 
-def point_predictions(pred_dict):
+def point_predictions(pred_dicts):
     """
     Generates and scales predictions from the multi-observer model.
     """
     positions = get_tc_positions()
-    preds = np.hstack((pred_dict["grid"], pred_dict["theta"].reshape(len(pred_dict["grid"]), 1)))
+    
+    # Use extract_matching to get the combined array
+    preds = extract_matching(pred_dicts)
     
     # Extract predictions based on positions
     y2_pred_sc = preds[preds[:, 0] == positions[0]][:, -1]
@@ -1314,7 +1338,7 @@ def configure_settings(cfg, experiment):
     return cfg
 
 
-def extract_matching(d_true, *d_preds):
+def _extract_matching(d_true, *d_preds):
     """
     Matches true data points with predicted data points for multiple predictions.
     
@@ -1333,12 +1357,12 @@ def extract_matching(d_true, *d_preds):
     filtered_true = []
     tot_true[:, 1] = tot_true[:, 1].round(n_digits)
     
-    for el in np.unique(tot_true[:, 1]):
-        for i in range(len(xs)):
-            el_pred = tot_true[tot_true[:, 1] == el][i]
-            filtered_true.append(el_pred)
+    # for el in np.unique(tot_true[:, 1]):
+    #     for i in range(len(xs)):
+    #         el_pred = tot_true[tot_true[:, 1] == el][i]
+    #         filtered_true.append(el_pred)
     
-    tot_true = np.array(filtered_true)
+    # tot_true = np.array(filtered_true)
 
     # Prepare the predicted data for each d_pred
     tot_preds = []
@@ -1347,28 +1371,58 @@ def extract_matching(d_true, *d_preds):
         tot_preds.append(pred)
 
     # Match true data with predicted data
+    tot_preds = np.array(tot_preds)
     match = []
     for x in np.unique(tot_true[:, 0]):
-        # Filter true values for the current x
-        trues = tot_true[tot_true[:, 0] == x]
+        # Filter true values for the current x (allowing for a small tolerance)
+        trues = tot_true[np.abs(tot_true[:, 0] - x) < 0.01]
         
-        # Filter predicted values for the current x for each d_pred
-        preds = [pred[pred[:, 0] == x][:, 2:] for pred in tot_preds]
+        # Filter predicted values for the current x for each d_pred (allowing for a small tolerance)
+        preds = [el[np.abs(el[:, 0] - x) < 0.01][:, 0] for el in tot_preds]
         
         # Combine all predicted values column-wise
         combined_preds = np.hstack(preds) if preds else np.empty((len(trues), 0))
         
         # Combine true and predicted values
         match_el = np.hstack((trues, combined_preds))
-        for tt in range(len(match_el)):
-            match.append(match_el[tt])
+        match.append(match_el)
+
+    # Stack all match_el arrays vertically
+    match = np.vstack(match)
     
     # Convert match list to a numpy array
     return np.array(match)
 
-def check_measurements(mm_obs, output_dir, conf):
+
+def extract_matching(dicts):
+    if not dicts:
+        return np.array([])
+
+    # Extract the grid and theta from the first dictionary
+    first_dict = dicts[0]
+    grid = first_dict['grid']
+    theta_first = first_dict['theta']
+
+    # Initialize the result array with the grid and the first theta
+    result = np.hstack((grid, theta_first.reshape(-1, 1)))
+
+    # Append the theta values from the other dictionaries
+    for d in dicts[1:]:
+        other_grid = d['grid']
+        other_theta = d['theta']
+
+        # Find the closest points in the other grid to the first grid
+        closest_indices = np.argmin(np.abs(other_grid[:, 0, np.newaxis] - grid[:, 0]), axis=0)
+        matched_theta = other_theta[closest_indices].reshape(-1, 1)
+
+        # Stack the matched theta values
+        result = np.hstack((result, matched_theta))
+
+    return result
+
+def check_measurements(system_meas, mm_obs, output_dir, conf):
     name_exp = conf.experiment.meas_set
 
-    y1_pred, gt1_pred, gt2_pred, y2_pred = point_predictions(mm_obs)
+    y1_pred, gt1_pred, gt2_pred, y2_pred = point_predictions([system_meas, mm_obs])
     df = load_from_pickle(f"{src_dir}/data/vessel/{name_exp}.pkl")
     pp.plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, output_dir)

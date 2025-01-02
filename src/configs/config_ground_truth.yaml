@@ -4,7 +4,7 @@ model_properties:
   k: 0.6
   rho: 1000.0
   c: 4186.0
-  W: 0.0003303
+  W: 0.0003
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
@@ -71,5 +71,5 @@ model_parameters:
   - 2.0888912677764893
   - 27.680763244628906
   - 8.396754264831543
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/cooling_meas_1/ground_truth
+output_dir: /home/guglielmo/pinns-bioheat-experiments/tests/cooling_meas_1/ground_truth
 experiment: meas_cool_1

@@ -4,7 +4,7 @@ model_properties:
   k: 0.6
   rho: 1000.0
   c: 4186.0
-  W: 0.0003303
+  W: 0.0003
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
@@ -49,15 +49,15 @@ model_parameters:
   upsilon: 1
   W_min: ${model_parameters.W0}
   W_max: ${model_parameters.W7}
-  W0: 0.0001207
-  W1: 0.0001506
-  W2: 0.0001806
-  W3: 0.0002105
-  W4: 0.0002405
-  W5: 0.0002704
-  W6: 0.0003004
-  W7: 0.0003303
-  W_sys: 0.002105
+  W0: 1.0e-05
+  W1: 3.0e-05
+  W2: 6.0e-05
+  W3: 0.0001
+  W4: 0.00015
+  W5: 0.0002
+  W6: 0.00025
+  W7: 0.0003
+  W_sys: 0.0001
   W_index: 3
   n_obs: 8
   gt1_0: 24.44
@@ -199,9 +199,9 @@ plot:
       linewidth: 1.0
       alpha: 0.8
     system_meas:
-      color: C3
+      color: red
       label: Measurement
-      linestyle: ''
+      linestyle: --
       linewidth: 1.0
       alpha: 0.8
       marker: '*'
@@ -269,7 +269,7 @@ plot:
       - 0.7
       - 0.7
       - 0.7
-  show_obs: false
+  show_obs: true
 experiment:
   ground_truth: false
   simulation: false
@@ -297,4 +297,4 @@ experiment_type:
     y1_0: 22.84
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /app/tests/cooling_simulation_y1/ground_truth
+output_dir: /home/guglielmo/pinns-bioheat-experiments/tests/cooling_meas_1/ground_truth

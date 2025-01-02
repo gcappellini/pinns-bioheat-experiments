@@ -81,7 +81,7 @@ def run_measurement_mm_obs(config, out_dir):
         output_dir=output_dir_meas,
         observers=observers
     )
-    uu.check_measurements(mm_obs, output_dir_meas, config_meas)
+    uu.check_measurements(system_meas, mm_obs, output_dir_meas, config_meas)
 
 
 def load_ground_truth(config, out_dir):
@@ -103,7 +103,7 @@ def main():
     if dict_exp["ground_truth"]:
         output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, out_dir)
     else:
-        output_dir_gt, system_gt, observers_gt, mm_obs_gt = load_ground_truth(config, f"{tests_dir}/cooling_simulation_y1")
+        output_dir_gt, system_gt, observers_gt, mm_obs_gt = load_ground_truth(config, f"{tests_dir}/cooling_meas_1")
 
     if dict_exp["simulation"]:
         # Simulation System
