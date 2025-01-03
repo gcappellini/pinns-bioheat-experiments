@@ -232,6 +232,7 @@ def create_model(config):
     a1, a2, a3, a4, a5 = cc.a1, cc.a2, cc.a3, cc.a4, cc.a5
     b1, b2, b3 = cc.b1, cc.b2, cc.b3
     K = cc.K
+    delta_x = cc.delta_x
 
     W = model_props.W
 
@@ -239,6 +240,23 @@ def create_model(config):
 
     time_index = n_ins -1
 
+    def g1(x):
+
+        return theta20 - a5 * (theta30 - theta20) * x
+
+    def g2(x, delta_x):
+
+        return (theta10 - g1(delta_x)) * (x - delta_x) / (1 - delta_x) + g1(delta_x)
+
+    def obs_ic(x):
+
+        thetahat0 = np.zeros_like(x)  # Initialize thetahat0 with the same size as x
+
+        # Apply conditions element-wise
+        thetahat0[x <= delta_x] = g1(x[x <= delta_x])
+        thetahat0[x > delta_x] = g2(x[x > delta_x], delta_x)
+        
+        return thetahat0
 
     def ic_fun(x):
         z = x if len(x.shape) == 1 else x[:, :1]
@@ -250,8 +268,8 @@ def create_model(config):
             return c_1 * z**2 + c_2 * z + c_3
         
         else:
-        
-            return (b1 - z)*(b2 + b3 * torch.exp(K*z))
+            return obs_ic(z)
+            #return (b1 - z)*(b2 + b3 * torch.exp(K*z))
 
 
     def bc0_fun(x, theta, _):
@@ -1403,20 +1421,21 @@ def extract_matching(dicts):
     grid = first_dict['grid']
     theta_first = first_dict['theta']
 
-    # Initialize the result array with the grid and the first theta
+    theta_obsvs = np.zeros((len(grid), len(dicts)-1))
     result = np.hstack((grid, theta_first.reshape(-1, 1)))
+    counter = 0
+    for grid_elem in first_dict['grid']:
+        for j in range(0, len(dicts[1]['grid'])):
+            if np.array_equal(grid_elem, dicts[1]['grid'][j]):
+                theta_obsvs[counter, :] = [dicts[i]['theta'][j] for i in range(1, len(dicts))]
+                break
+        counter += 1
+            
 
-    # Append the theta values from the other dictionaries
-    for d in dicts[1:]:
-        obs_grid = d['grid']
-        obs_theta = d['theta']
 
-        # Find the closest points in the other grid to the first grid
-        closest_indices = np.argmin(np.abs(obs_grid[:, 0] - grid[:, 0]), axis=0)
-        matched_theta = obs_theta[closest_indices].reshape(-1, 1)
 
-        # Stack the matched theta values
-        result = np.hstack((result, matched_theta))
+    # Stack the matched theta values
+    result = np.hstack((result, theta_obsvs))
 
     return result
 

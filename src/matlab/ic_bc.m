@@ -20,10 +20,24 @@ function theta0 = sys_ic(x)
     theta0 = interp1(x_values, temperatures, x, 'linear', 'extrap');
 
     
-function thetahat0 = obs_ic(x)
-    global b1 b2 b3 K
+function first = g1(x)
+    global a5 theta30 theta20 
+    first = theta20 - a5 .* (theta30- theta20) .* x;
 
-    thetahat0 = (b1 - x)*(b2 + b3 * exp(K*x));
+    
+function second = g2(x, delta_x)
+    global theta10
+    second = (theta10 - g1(delta_x))*(x-delta_x)/(1-delta_x) + g1(delta_x);
+
+
+function thetahat0 = obs_ic(x)
+    global b1 b2 b3 K a5 theta30 theta20 theta10 delta_x
+
+    thetahat0 = zeros(size(x)); % Initialize thetahat0 with the same size as x
+
+    % Apply conditions element-wise
+    thetahat0(x <= delta_x) = g1(x(x <= delta_x));
+    thetahat0(x > delta_x) = g2(x(x > delta_x), delta_x);
 
     
 function y1 = theta_1(t)

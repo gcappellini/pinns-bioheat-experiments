@@ -588,7 +588,7 @@ def plot_multiple_series(series_data, prj_figs):
     for i, (y_min, y_max) in enumerate(lims):
         scales.append(y_max-y_min)
 
-    max_scale = 3 if rescale else 0.25
+    max_scale = 6 if rescale else 0.5
 
     for i, scale in enumerate(scales):
         if scale<=max_scale:

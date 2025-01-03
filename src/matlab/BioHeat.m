@@ -1,7 +1,7 @@
 clear all
 close all
 
-global K lambda upsilon W_obs W_sys W0 W1 W2 W3 W4 W5 W6 W7 b1 b2 b3 theta10 theta20 theta30 theta_gt10 theta_gt20 X_gt1 X_gt2 om0 om1 om2  om3 om4  om5 om6 om7 a1 a2 a3 a4 a5 str_exp path_exp output_path
+global K lambda upsilon W_obs W_sys W0 W1 W2 W3 W4 W5 W6 W7 b1 b2 b3 theta10 theta20 theta30 theta_gt10 theta_gt20 X_gt1 X_gt2 om0 om1 om2  om3 om4  om5 om6 om7 a1 a2 a3 a4 a5 str_exp path_exp output_path delta_x
 
 % Replace the following with the path to readyaml (find link on the internet)
 addpath('/Users/guglielmocappellini/Desktop/research/code/readyaml')
@@ -33,6 +33,7 @@ h = config_data.model_properties.h;
 b1 = config_data.model_properties.b1;
 b2 = config_data.model_properties.b2;
 b3 = config_data.model_properties.b3;
+delta_x = config_data.model_properties.delta_x;
 % experiment_name = config_data.experiment;
 output_path = config_data.output_dir;
 % output_path = fullfile(fileparts(git_dir), output_dir);

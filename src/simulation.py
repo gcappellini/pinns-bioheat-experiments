@@ -28,6 +28,9 @@ def run_ground_truth(config, out_dir):
         output_dir=output_dir_gt,
         observers_gt=observers_gt
     )
+    # system_meas, _ = uu.import_testdata(config)
+    # uu.check_measurements(system_meas, system_gt, output_dir_gt, config)
+
     return output_dir_gt, system_gt, observers_gt, mm_obs_gt
 
 
