@@ -13,7 +13,7 @@ import coeff_calc as cc
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-import matlab.engine
+# import matlab.engine
 from hydra import initialize, compose
 
 
@@ -22,8 +22,7 @@ np.random.seed(200)
 torch.manual_seed(200)
 dde.config.set_default_float("float64")
 
-dev = torch.device("cpu")
-# dev = torch.device("cuda")
+dev = "cuda" if torch.cuda.is_available() else "cpu"
 
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
@@ -250,7 +249,7 @@ def create_model(config):
 
     def obs_ic(x):
 
-        thetahat0 = np.zeros_like(x)  # Initialize thetahat0 with the same size as x
+        thetahat0 = torch.zeros_like(x).to(dev)  # Initialize thetahat0 with the same size as x
 
         # Apply conditions element-wise
         thetahat0[x <= delta_x] = g1(x[x <= delta_x])

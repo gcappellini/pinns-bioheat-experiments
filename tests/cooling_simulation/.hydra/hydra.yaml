@@ -130,18 +130,18 @@ hydra:
   runtime:
     version: 1.3.2
     version_base: '1.3'
-    cwd: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments
+    cwd: /home/guglielmo/pinns-bioheat-experiments
     config_sources:
     - path: hydra.conf
       schema: pkg
       provider: hydra
-    - path: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/src/configs
+    - path: /home/guglielmo/pinns-bioheat-experiments/src/configs
       schema: file
       provider: main
     - path: ''
       schema: structured
       provider: schema
-    output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/cooling_simulation
+    output_dir: /home/guglielmo/pinns-bioheat-experiments/tests/cooling_simulation
     choices:
       hydra/env: default
       hydra/callbacks: null
