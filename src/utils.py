@@ -13,7 +13,7 @@ import coeff_calc as cc
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-import matlab.engine
+# import matlab.engine
 from hydra import initialize, compose
 
 
@@ -297,7 +297,8 @@ def create_model(config):
         t = x[:, time_index:]
         x1 = x[:, 0:1]
         
-        return t * (x1 - 1) * y + ic_fun(x) + y1 - cc.theta10
+        # return t * (x1 - 1) * y + ic_fun(x) + y1 - cc.theta10
+        return (x1 - 1) * y + y1
     
 
     def rff_transform(inputs):
@@ -329,7 +330,7 @@ def create_model(config):
     timedomain = dde.geometry.TimeDomain(0, 1.5)
     geomtime = dde.geometry.GeometryXTime(geom, timedomain)
 
-    # ic = dde.icbc.IC(geomtime, ic_fun, lambda _, on_initial: on_initial)
+    ic = dde.icbc.IC(geomtime, ic_fun, lambda _, on_initial: on_initial)
     # bc_1 = dde.icbc.OperatorBC(geomtime, bc1_fun, boundary_1)
     bc_0 = dde.icbc.OperatorBC(geomtime, bc0_fun, boundary_0)
     X_anchor = create_X_anchor(n_ins)
@@ -339,8 +340,8 @@ def create_model(config):
         geomtime,
         lambda x, theta: pde(x, theta),
         # [bc_0, bc_1, ic],
-        [bc_0],
-        num_domain=num_domain,
+        [bc_0, ic],
+        num_domain=num_domain, 
         num_boundary=num_boundary,
         num_initial=num_initial,
         num_test=num_test,

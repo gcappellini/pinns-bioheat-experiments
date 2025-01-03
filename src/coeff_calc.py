@@ -120,6 +120,7 @@ OmegaConf.save(cfg, f"{conf_dir}/config_run.yaml")
 
 
 if __name__ == "__main__":
-    print(-a5*(scale_t(Ty30) - scale_t(Ty20)))
+    print(f"c={scale_t(Ty20)}, b={-a5*(scale_t(Ty30) - scale_t(Ty20))}, a={scale_t(Ty10) - scale_t(Ty20)+a5*(scale_t(Ty30) - scale_t(Ty20))}")
+    print(scale_t(Ty10), scale_t(Ty20))
     
 
