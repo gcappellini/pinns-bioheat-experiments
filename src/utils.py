@@ -13,7 +13,7 @@ import coeff_calc as cc
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-import matlab.engine
+# import matlab.engine
 from hydra import initialize, compose
 
 
@@ -260,14 +260,14 @@ def create_model(config):
     def ic_fun(x):
         z = x if len(x.shape) == 1 else x[:, :1]
 
-        if n_ins==2:
-            c_2 = a5 * (theta30 - theta20)
-            c_3 = theta20
-            c_1 = theta10 - c_2 - c_3
-            return c_1 * z**2 + c_2 * z + c_3
+        # if n_ins==2:
+        c_2 = - a5 * (theta30 - theta20)
+        c_3 = theta20
+        c_1 = theta10 - c_2 - c_3
+        return c_1 * z**2 + c_2 * z + c_3
         
-        else:
-            return obs_ic(z)
+        # else:
+        #     return obs_ic(z)
             #return (b1 - z)*(b2 + b3 * torch.exp(K*z))
 
 
@@ -297,8 +297,8 @@ def create_model(config):
         t = x[:, time_index:]
         x1 = x[:, 0:1]
         
-        # return t * (x1 - 1) * y + ic_fun(x) + y1 - cc.theta10
-        return (x1 - 1) * y + y1
+        return t * (x1 - 1) * y + ic_fun(x) + y1 - cc.theta10
+        # return (x1 - 1) * y + y1
     
 
     def rff_transform(inputs):
@@ -340,7 +340,7 @@ def create_model(config):
         geomtime,
         lambda x, theta: pde(x, theta),
         # [bc_0, bc_1, ic],
-        [bc_0, ic],
+        [bc_0],
         num_domain=num_domain, 
         num_boundary=num_boundary,
         num_initial=num_initial,
