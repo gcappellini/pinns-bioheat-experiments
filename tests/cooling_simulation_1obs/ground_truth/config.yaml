@@ -72,5 +72,5 @@ model_parameters:
   - 2.0888912677764893
   - 27.680763244628906
   - 8.396754264831543
-output_dir: /home/guglielmo/pinns-bioheat-experiments/tests/cooling_simulation_1obs/ground_truth
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/cooling_simulation_1obs/ground_truth
 experiment: meas_cool_1
