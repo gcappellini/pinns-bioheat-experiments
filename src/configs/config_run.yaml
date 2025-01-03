@@ -272,8 +272,8 @@ plot:
       - 0.7
   show_obs: true
 experiment:
-  ground_truth: false
-  simulation: true
+  ground_truth: true
+  simulation: false
   measurement: false
   meas_set: meas_cool_1
 experiment_type:
@@ -298,4 +298,4 @@ experiment_type:
     y1_0: 22.84
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /home/guglielmo/pinns-bioheat-experiments/outputs/2025-01-03/14-30-41/simulation_mm_obs
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-01-03/14-44-03

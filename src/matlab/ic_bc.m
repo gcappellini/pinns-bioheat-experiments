@@ -36,8 +36,14 @@ function thetahat0 = obs_ic(x)
     thetahat0 = zeros(size(x)); % Initialize thetahat0 with the same size as x
 
     % Apply conditions element-wise
-    thetahat0(x <= delta_x) = g1(x(x <= delta_x));
-    thetahat0(x > delta_x) = g2(x(x > delta_x), delta_x);
+    % thetahat0(x <= delta_x) = g1(x(x <= delta_x));
+    % thetahat0(x > delta_x) = g2(x(x > delta_x), delta_x);
+    c = theta20;
+    b = -a5 * (theta30 - theta20);
+    a = theta10 - b - c;
+    thetahat0 = a*x.^2 + b*x + c;
+
+
 
     
 function y1 = theta_1(t)
