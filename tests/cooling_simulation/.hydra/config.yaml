@@ -16,8 +16,8 @@ model_properties:
   initial_weights_regularizer: false
   initialization: Glorot uniform
   optimizer: L-BFGS
-  iters: 3001
-  iters_lbfgs: 9000
+  iters: 3000
+  iters_lbfgs: 15000
   learning_rate: 0.001
   num_dense_layers: 4
   num_dense_nodes: 50
@@ -272,8 +272,8 @@ plot:
       - 0.7
   show_obs: true
 experiment:
-  ground_truth: true
-  simulation: false
+  ground_truth: false
+  simulation: true
   measurement: false
   meas_set: meas_cool_1
 experiment_type:
@@ -298,4 +298,4 @@ experiment_type:
     y1_0: 22.84
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /home/guglielmo/pinns-bioheat-experiments/outputs/2025-01-03/15-13-38/simulation_mm_obs
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/cooling_simulation
