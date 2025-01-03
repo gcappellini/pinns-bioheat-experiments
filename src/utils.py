@@ -1423,17 +1423,20 @@ def extract_matching(dicts):
 
     theta_obsvs = np.zeros((len(grid), len(dicts)-1))
     result = np.hstack((grid, theta_first.reshape(-1, 1)))
-    counter = 0
-    for grid_elem in first_dict['grid']:
-        for j in range(0, len(dicts[1]['grid'])):
-            if np.array_equal(grid_elem, dicts[1]['grid'][j]):
-                theta_obsvs[counter, :] = [dicts[i]['theta'][j] for i in range(1, len(dicts))]
-                break
-        counter += 1
+
+    flag = len(dicts[1]['grid'])
+    if flag == len(dicts[0]['grid']):
+        for i in range(1, len(dicts)):
+            theta_obsvs[:, i-1] = dicts[i]['theta']
+    else:
+        counter = 0
+        for grid_elem in first_dict['grid']:
+            for j in range(0, len(dicts[1]['grid'])):
+                if np.array_equal(grid_elem, dicts[1]['grid'][j]):
+                    theta_obsvs[counter, :] = [dicts[i]['theta'][j] for i in range(1, len(dicts))]
+                    break
+            counter += 1
             
-
-
-
     # Stack the matched theta values
     result = np.hstack((result, theta_obsvs))
 
