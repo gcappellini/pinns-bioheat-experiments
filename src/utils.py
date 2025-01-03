@@ -1408,12 +1408,12 @@ def extract_matching(dicts):
 
     # Append the theta values from the other dictionaries
     for d in dicts[1:]:
-        other_grid = d['grid']
-        other_theta = d['theta']
+        obs_grid = d['grid']
+        obs_theta = d['theta']
 
         # Find the closest points in the other grid to the first grid
-        closest_indices = np.argmin(np.abs(other_grid[:, 0, np.newaxis] - grid[:, 0]), axis=0)
-        matched_theta = other_theta[closest_indices].reshape(-1, 1)
+        closest_indices = np.argmin(np.abs(obs_grid[:, 0] - grid[:, 0]), axis=0)
+        matched_theta = obs_theta[closest_indices].reshape(-1, 1)
 
         # Stack the matched theta values
         result = np.hstack((result, matched_theta))
