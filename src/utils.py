@@ -820,8 +820,8 @@ def plot_and_compute_metrics(label, system_gt, series_to_plot, matching_args, co
     matching = extract_matching(matching_args)
     series_sys = {"grid": matching[:, :2], "theta": matching[:, 2], "label": system_gt["label"]}
     observers_data = [
-        {"grid": matching[:, :2], "theta": matching[:, 3+i], "label": series_to_plot[1+i]["label"]}
-        for i in range(cc.n_obs)
+        {"grid": matching[:, :2], "theta": matching[:, 3+i], "label": series_to_plot[i]["label"]}
+        for i in range(len(series_to_plot))
     ]
     
     pp.plot_l2(series_sys, observers_data, output_dir)
