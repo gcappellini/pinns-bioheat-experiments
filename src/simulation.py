@@ -28,9 +28,12 @@ def run_ground_truth(config, out_dir):
         output_dir=output_dir_gt,
         observers_gt=observers_gt
     )
-    # system_meas, _ = uu.import_testdata(config)
-    # uu.check_measurements(system_meas, system_gt, output_dir_gt, config)
-
+    system_meas, _ = uu.import_testdata(config)
+    uu.check_measurements(system_meas, system_gt, output_dir_gt, config)
+    extracted = uu.extract_matching([system_gt, system_meas])
+    metric = uu.compute_metrics(extracted, [system_gt, system_meas], config, out_dir)
+    score = metric["system_meas_L2RE"]
+    
     return output_dir_gt, system_gt, observers_gt, mm_obs_gt
 
 

@@ -13,7 +13,7 @@ import coeff_calc as cc
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-# import matlab.engine
+import matlab.engine
 from hydra import initialize, compose
 
 
@@ -41,130 +41,84 @@ def get_initial_loss(model):
     return losshistory.loss_train[0]
 
 
-def compute_metrics(grid, true, pred, run_figs, system=None):
+def compute_metrics(matching, series_to_plot, cfg, run_figs):
     # Load loss weights from configuration
-    cfg = OmegaConf.load(f"{run_figs}/config.yaml")
     loss_weights = cfg.model_parameters.loss_weights
     small_number = 1e-8
     
-    true = np.ravel(true)
-    pred = np.ravel(pred)
+    grid = matching[:, :2]
+    true = matching[:, 2]
     true_nonzero = np.where(true != 0, true, small_number)
     
-    # Part 1: General metrics for pred (Observer PINNs vs Observer MATLAB)
-    L2RE = np.sum(calculate_l2(grid, true, pred))
-    MSE = calculate_mse(true, pred)
-    max_err = np.max(np.abs(true_nonzero - pred))
-    mean_err = np.mean(np.abs(true_nonzero - pred))
-    
-    metrics = {
-        "total_L2RE": L2RE,
-        "total_MSE": MSE,
-        "total_max": max_err,
-        "total_mean": mean_err,
-    }
-    
-    # If system predictions are provided, calculate metrics for system (Observer PINNs vs System MATLAB)
-    if system is not None:
-        system = np.ravel(system)
-        system_nonzero = np.where(system != 0, system, small_number)
-        
-        L2RE_sys = np.sum(calculate_l2(grid, pred, system))
-        MSE_sys = calculate_mse(true, system)
-        max_err_sys = np.max(np.abs(system_nonzero - pred))
-        mean_err_sys = np.mean(np.abs(system_nonzero - pred))
-        
-        # Store total metrics for system
-        metrics.update({
-            "total_L2RE_sys": L2RE_sys,
-            "total_MSE_sys": MSE_sys,
-            "total_max_sys": max_err_sys,
-            "total_mean_sys": mean_err_sys,
-        })
+    metrics = {}
+    parts = []
 
-    # Define conditions for initial, left boundary, right boundary, and domain
-    conditions = {
-        "initial_condition": grid[:, 1] == 0,  # Time t = 0
-        "bc0": grid[:, 0] == 0,                # Left boundary x = 0
-        "bc1": grid[:, 0] == 1,                # Right boundary x = 1
-    }
-    domain_condition = ~(conditions["initial_condition"] | conditions["bc0"] | conditions["bc1"])
-    conditions["domain"] = domain_condition
-
-    # Compute metrics for each condition and add to metrics dictionary
-    for cond_name, condition in conditions.items():
-        # Metrics for pred
-        true_cond = true[condition]
-        pred_cond = pred[condition]
-        true_nonzero_cond = np.where(true_cond != 0, true_cond, small_number)
+    # Iterate over each part in series_to_plot[1:]
+    for i in range(len(series_to_plot)-1):
+        part_name = series_to_plot[1+i]["label"]
+        parts.append(part_name)
+        pred = matching[:, 3 + i]
+        pred_nonzero = np.where(pred != 0, pred, small_number)
         
-        # Calculate metrics for pred under this specific condition
-        L2RE_cond = np.sum(calculate_l2(grid[condition], true_cond, pred_cond))
-        MSE_cond = calculate_mse(true_cond, pred_cond)
-        max_err_cond = np.max(np.abs(true_nonzero_cond - pred_cond))
-        mean_err_cond = np.mean(np.abs(true_nonzero_cond - pred_cond))
+        # Part 1: General metrics for pred (Observer PINNs vs Observer MATLAB)
+        L2RE = np.sum(calculate_l2(grid, true, pred))
+        MSE = calculate_mse(true, pred)
+        max_err = np.max(np.abs(true_nonzero - pred))
+        mean_err = np.mean(np.abs(true_nonzero - pred))
         
-        # Store these metrics in the dictionary
         metrics.update({
-            f"{cond_name}_L2RE": L2RE_cond,
-            f"{cond_name}_MSE": MSE_cond,
-            f"{cond_name}_max": max_err_cond,
-            f"{cond_name}_mean": mean_err_cond,
+            f"{part_name}_L2RE": L2RE,
+            f"{part_name}_MSE": MSE,
+            f"{part_name}_max": max_err,
+            f"{part_name}_mean": mean_err,
         })
         
-        # Metrics for system, if provided
-        if system is not None:
-            system_cond = system[condition]
-            system_nonzero_cond = np.where(system_cond != 0, system_cond, small_number)
+        # Define conditions for initial, left boundary, right boundary, and domain
+        conditions = {
+            "initial_condition": grid[:, 1] == 0,  # Time t = 0
+            "bc0": grid[:, 0] == 0,                # Left boundary x = 0
+            "bc1": grid[:, 0] == 1,                # Right boundary x = 1
+        }
+        domain_condition = ~(conditions["initial_condition"] | conditions["bc0"] | conditions["bc1"])
+        conditions["domain"] = domain_condition
+
+        # Compute metrics for each condition and add to metrics dictionary
+        for cond_name, condition in conditions.items():
+            true_cond = true[condition]
+            pred_cond = pred[condition]
+            true_nonzero_cond = np.where(true_cond != 0, true_cond, small_number)
             
-            # Calculate metrics for system under this specific condition
-            L2RE_sys_cond = np.sum(calculate_l2(grid[condition], pred_cond, system_cond))
-            MSE_sys_cond = calculate_mse(pred_cond, system_cond)
-            max_err_sys_cond = np.max(np.abs(system_nonzero_cond - pred_cond))
-            mean_err_sys_cond = np.mean(np.abs(system_nonzero_cond - pred_cond))
+            # Calculate metrics for pred under this specific condition
+            L2RE_cond = np.sum(calculate_l2(grid[condition], true_cond, pred_cond))
+            MSE_cond = calculate_mse(true_cond, pred_cond)
+            max_err_cond = np.max(np.abs(true_nonzero_cond - pred_cond))
+            mean_err_cond = np.mean(np.abs(true_nonzero_cond - pred_cond))
             
-            # Store these system metrics in the dictionary
+            # Store these metrics in the dictionary
             metrics.update({
-                f"{cond_name}_L2RE_sys": L2RE_sys_cond,
-                f"{cond_name}_MSE_sys": MSE_sys_cond,
-                f"{cond_name}_max_sys": max_err_sys_cond,
-                f"{cond_name}_mean_sys": mean_err_sys_cond,
+                f"{part_name}_{cond_name}_L2RE": L2RE_cond,
+                f"{part_name}_{cond_name}_MSE": MSE_cond,
+                f"{part_name}_{cond_name}_max": max_err_cond,
+                f"{part_name}_{cond_name}_mean": mean_err_cond,
             })
 
-    # Calculate and store LOSS metric for each condition (Observer PINNs vs Observer MATLAB)
-    LOSS_pred = np.sum(loss_weights * np.array([metrics[f"{cond}_MSE"] for cond in ["domain", "bc0", "bc1", "initial_condition"]]))
-    metrics["total_LOSS"] = LOSS_pred
-    for cond_name in conditions.keys():
-        metrics[f"{cond_name}_LOSS"] = loss_weights[0] * metrics.get(f"{cond_name}_MSE", 0)
-
-    # Calculate and store LOSS metric for system if provided (Observer PINNs vs System MATLAB)
-    if system is not None:
-        LOSS_sys = np.sum(loss_weights * np.array([metrics[f"{cond}_MSE_sys"] for cond in ["domain", "bc0", "bc1", "initial_condition"]]))
-        metrics["total_LOSS_sys"] = LOSS_sys
+        # Calculate and store LOSS metric for each condition
+        LOSS_pred = np.sum(loss_weights * np.array([metrics[f"{part_name}_{cond}_MSE"] for cond in ["domain", "bc0", "bc1", "initial_condition"]]))
+        metrics[f"{part_name}_LOSS"] = LOSS_pred
         for cond_name in conditions.keys():
-            metrics[f"{cond_name}_LOSS_sys"] = loss_weights[0] * metrics.get(f"{cond_name}_MSE_sys", 0)
+            metrics[f"{part_name}_{cond_name}_LOSS"] = loss_weights[0] * metrics.get(f"{part_name}_{cond_name}_MSE", 0)
 
     # Write all metrics to file with improved formatting
     with open(f"{run_figs}/metrics.txt", "w") as file:
         file.write("=== METRICS REPORT ===\n\n")
         
-        # Part 1: Observer PINNs vs Observer MATLAB
-        file.write("Part 1: Observer PINNs vs Observer MATLAB\n\n")
-        for metric_name in ["L2RE", "MSE", "max", "mean", "LOSS"]:
-            file.write(f"{metric_name.upper()}:\n")
-            file.write(f"  Total: {metrics[f'total_{metric_name}']}\n")
-            for cond_name in conditions.keys():
-                file.write(f"  {cond_name.capitalize()}: {metrics[f'{cond_name}_{metric_name}']}\n")
-            file.write("\n")  # Blank line between sections
-            
-        # Part 2: Observer PINNs vs System MATLAB, if system is provided
-        if system is not None:
-            file.write("Part 2: Observer PINNs vs System MATLAB\n\n")
-            for metric_name in ["L2RE_sys", "MSE_sys", "max_sys", "mean_sys", "LOSS_sys"]:
-                file.write(f"{metric_name.split('_')[0].upper()}:\n")
-                file.write(f"  Total: {metrics[f'total_{metric_name}']}\n")
+        for part_name in parts:
+            file.write(f"Part: {part_name}\n\n")
+            for metric_name in ["L2RE", "MSE", "max", "mean", "LOSS"]:
+                file.write(f"{metric_name.upper()}:\n")
+                file.write(f"  Total: {metrics[f'{part_name}_{metric_name}']}\n")
                 for cond_name in conditions.keys():
-                    file.write(f"  {cond_name.capitalize()}: {metrics[f'{cond_name}_{metric_name}']}\n")
+                    file.write(f"  {cond_name.capitalize()}: {metrics[f'{part_name}_{cond_name}_{metric_name}']}\n")
                 file.write("\n")  # Blank line between sections for readability
 
     return metrics
@@ -807,7 +761,7 @@ def plot_observer_results(mu, t, weights, output_dir, suffix=''):
     pp.plot_weights(observers_mu, output_dir)
 
 
-def plot_and_compute_metrics(label, system_gt, series_to_plot, matching_args, conf, output_dir, system_metrics=False, comparison_3d=True):
+def plot_and_compute_metrics(label, system_gt, series_to_plot, matching_args, conf, output_dir, comparison_3d=True):
     """
     Helper function for plotting and computing metrics.
     """
@@ -820,8 +774,8 @@ def plot_and_compute_metrics(label, system_gt, series_to_plot, matching_args, co
     matching = extract_matching(matching_args)
     series_sys = {"grid": matching[:, :2], "theta": matching[:, 2], "label": system_gt["label"]}
     observers_data = [
-        {"grid": matching[:, :2], "theta": matching[:, 3+i], "label": series_to_plot[i]["label"]}
-        for i in range(len(series_to_plot))
+        {"grid": matching[:, :2], "theta": matching[:, 3+i], "label": series_to_plot[i+1]["label"]}
+        for i in range(len(series_to_plot)-1)
     ]
     
     pp.plot_l2(series_sys, observers_data, output_dir)
@@ -855,11 +809,7 @@ def plot_and_compute_metrics(label, system_gt, series_to_plot, matching_args, co
 
     # Compute and return metrics
     metrics = compute_metrics(
-        matching[:, :2],
-        matching[:, 2] if not system_metrics else matching[:, -1],
-        matching[:, -1],
-        output_dir,
-        system=matching[:, 2] if system_metrics else None,
+        matching, series_to_plot, conf, output_dir
     )
 
     return matching, metrics
@@ -892,14 +842,14 @@ def check_and_wandb_upload(
 
     if label=="simulation_system":
         series_to_plot_direct = [system_gt, system]
-        _, metrics_direct = plot_and_compute_metrics(label, system_gt, series_to_plot_direct, (system_gt, system), conf, output_dir, system_metrics=True)
+        _, metrics_direct = plot_and_compute_metrics(label, system_gt, series_to_plot_direct, (system_gt, system), conf, output_dir)
         return metrics_direct
     
     elif label=="ground_truth":
         if n_obs == 1:
             series_to_plot_n1 = [system_gt, *observers_gt]
             matching_args_n1 = [system_gt, *observers_gt]
-            _, metrics = plot_and_compute_metrics(label, system_gt, series_to_plot_n1, matching_args_n1, conf, output_dir, system_metrics=True)
+            _, metrics = plot_and_compute_metrics(label, system_gt, series_to_plot_n1, matching_args_n1, conf, output_dir)
             return metrics
 
         elif n_obs > 1:
@@ -910,14 +860,14 @@ def check_and_wandb_upload(
                 )
             matching_args_mm_obs = [system_gt, *observers_gt, mm_obs_gt]
 
-            _, metrics = plot_and_compute_metrics(label, system_gt, series_to_plot_mm_obs, matching_args_mm_obs, conf, output_dir, system_metrics=True)
+            _, metrics = plot_and_compute_metrics(label, system_gt, series_to_plot_mm_obs, matching_args_mm_obs, conf, output_dir)
             return metrics
     
     elif label=="simulation_mm_obs":
         if n_obs == 1:
             series_to_plot_n1 = [system_gt, *observers_gt, *observers]
             matching_args_n1 = [system_gt, *observers, mm_obs]
-            _, metrics = plot_and_compute_metrics(label, system_gt, series_to_plot_n1, matching_args_n1, conf, output_dir, system_metrics=True)
+            _, metrics = plot_and_compute_metrics(label, system_gt, series_to_plot_n1, matching_args_n1, conf, output_dir)
             return metrics
         elif n_obs > 1:
             series_to_plot_mm_obs = (
@@ -926,7 +876,7 @@ def check_and_wandb_upload(
                 else [system_gt, mm_obs, mm_obs_gt]
             )
             matching_args_mm_obs = [system_gt, *observers, mm_obs]
-            _, metrics = plot_and_compute_metrics(label, system_gt, series_to_plot_mm_obs, matching_args_mm_obs, conf, output_dir, system_metrics=True)
+            _, metrics = plot_and_compute_metrics(label, system_gt, series_to_plot_mm_obs, matching_args_mm_obs, conf, output_dir)
             return metrics
     
     elif label.startswith("meas"):
@@ -936,7 +886,7 @@ def check_and_wandb_upload(
             else [system_meas, mm_obs]
         )
         matching_args_meas = [system_meas, *observers, mm_obs]
-        _, metrics = plot_and_compute_metrics(label, system_meas, series_to_plot_meas, matching_args_meas, conf, output_dir, system_metrics=True)
+        _, metrics = plot_and_compute_metrics(label, system_meas, series_to_plot_meas, matching_args_meas, conf, output_dir)
         return metrics
 
 
@@ -1304,7 +1254,9 @@ def point_predictions(pred_dicts):
     positions = get_tc_positions()
     
     # Use extract_matching to get the combined array
-    preds = extract_matching(pred_dicts)
+    # preds = extract_matching(pred_dicts)
+    to_extract = pred_dicts[-1]
+    preds = np.array([to_extract["grid"][:, 0], to_extract["grid"][:, -1], to_extract["theta"]]).T
     
     # Extract predictions based on positions
     y2_pred_sc = preds[preds[:, 0] == positions[0]][:, -1]
@@ -1417,27 +1369,39 @@ def extract_matching(dicts):
         return np.array([])
 
     # Extract the grid and theta from the first dictionary
-    first_dict = dicts[0]
-    grid = first_dict['grid']
-    theta_first = first_dict['theta']
+    # first_dict = dicts[0]
+    # grid = first_dict['grid']
+    # theta_first = first_dict['theta']
 
-    theta_obsvs = np.zeros((len(grid), len(dicts)-1))
-    result = np.hstack((grid, theta_first.reshape(-1, 1)))
+    flag = len(dicts[1]['grid']) - len(dicts[0]['grid'])
 
-    flag = len(dicts[1]['grid'])
-    if flag == len(dicts[0]['grid']):
+    if flag == 0:
+        grid = dicts[0]['grid']
+        result = np.hstack((grid, dicts[0]['theta'].reshape(-1, 1)))
+        theta_obsvs = np.zeros((len(grid), len(dicts)-1))
         for i in range(1, len(dicts)):
             theta_obsvs[:, i-1] = dicts[i]['theta']
     else:
-        counter = 0
-        for grid_elem in first_dict['grid']:
-            for j in range(0, len(dicts[1]['grid'])):
-                if np.array_equal(grid_elem, dicts[1]['grid'][j]):
-                    theta_obsvs[counter, :] = [dicts[i]['theta'][j] for i in range(1, len(dicts))]
-                    break
-            counter += 1
+        # counter = 0
+        ref_index = 1 if flag<=0 else 0
+        ref = dicts[1] if flag<=0 else dicts[0]
+        others = dicts
+        others.pop(ref_index)
+        result = np.hstack((ref["grid"], ref['theta'].reshape(-1, 1)))
+        # theta_obsvs = np.zeros((len(ref["grid"]), len(dicts)-1))
+        theta_obsvs = []
+        for grid_elem in ref['grid']:
+            distances = np.linalg.norm(others[0]["grid"] - grid_elem, axis=1)
+            closest_index = np.argmin(distances)
+            # theta_obsvs[counter, :] = [others[i]['theta'][closest_index] for i in range(len(others))]
+            theta_obsvs.append([others[i]['theta'][closest_index] for i in range(len(others))])
+            
+            # counter += 1
+            # break
+            
             
     # Stack the matched theta values
+    theta_obsvs=np.array(theta_obsvs)
     result = np.hstack((result, theta_obsvs))
 
     return result
@@ -1447,4 +1411,5 @@ def check_measurements(system_meas, mm_obs, output_dir, conf):
 
     y1_pred, gt1_pred, gt2_pred, y2_pred = point_predictions([system_meas, mm_obs])
     df = load_from_pickle(f"{src_dir}/data/vessel/{name_exp}.pkl")
+    
     pp.plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, output_dir)

@@ -1,0 +1,19 @@
+{
+    "configurations": [
+      {
+        "name": "Python: Current File",
+        "type": "python",
+        "request": "launch",
+        "program": "${file}",
+        "console": "integratedTerminal",
+        "pythonPath": "${workspaceFolder}/venv/bin/python"
+      }
+    ],
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "programPath",
+      "description": "Path to the Python program"
+    }
+  ]
+}

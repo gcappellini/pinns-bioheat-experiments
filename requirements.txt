@@ -12,3 +12,6 @@ deepxde
 simpy
 hydra-core
 matlabengine
+torch 
+torchvision 
+torchaudio

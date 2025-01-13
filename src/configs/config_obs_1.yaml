@@ -60,7 +60,7 @@ model_parameters:
   W7: 0.003303
   W_sys: 0.002105
   W_index: 1
-  n_obs: 8
+  n_obs: 1
   gt1_0: 24.44
   gt2_0: 29.25
   x_y2: 0
@@ -272,9 +272,9 @@ plot:
       - 0.7
   show_obs: true
 experiment:
-  ground_truth: false
-  simulation: true
-  measurement: false
+  ground_truth: true
+  simulation: false
+  measurement: true
   meas_set: meas_cool_1
 experiment_type:
   import_data: false
@@ -298,4 +298,4 @@ experiment_type:
     y1_0: 22.84
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/multirun/2025-01-10/10-29-52/1/simulation_mm_obs
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-01-13/10-57-41/ground_truth
