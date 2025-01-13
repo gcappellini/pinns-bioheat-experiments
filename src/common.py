@@ -41,7 +41,7 @@ def set_run(prj_figs, cfg, run):
     props = cfg.model_properties
     pars = cfg.model_parameters
 
-    if run == "ground_truth":
+    if run.startswith("ground_truth"):
         cfg.output_dir = run_figs
         cfg = filter_config_for_matlab(cfg)
     elif run == "simulation_system":
@@ -62,6 +62,7 @@ def set_run(prj_figs, cfg, run):
         cfg.model_properties.W = cfg.model_parameters.W3
 
     OmegaConf.save(cfg, f"{run_figs}/config.yaml")
+    run = "ground_truth" if run.startswith("ground_truth") else run
     OmegaConf.save(cfg, f"{conf_dir}/config_{run}.yaml")
     if run != "ground_truth":
         OmegaConf.save(cfg, f"{conf_dir}/config_run.yaml")

@@ -58,7 +58,7 @@ model_parameters:
   W5: 0.002704
   W6: 0.003004
   W7: 0.003303
-  W_sys: 1.0e-05
+  W_sys: 0.0001
   W_index: 1
   n_obs: 1
   gt1_0: 24.44
@@ -72,5 +72,5 @@ model_parameters:
   - 2.0888912677764893
   - 27.680763244628906
   - 8.396754264831543
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-01-13/13-55-29/ground_truth
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-01-13/14-06-27/ground_truth_0
 experiment: meas_cool_1
