@@ -183,9 +183,10 @@ def create_model(config):
     )
 
     a1, a2, a3, a4, a5 = cc.a1, cc.a2, cc.a3, cc.a4, cc.a5
-    b1, b2, b3 = cc.b1, cc.b2, cc.b3
+    b1, b2, b3, b4 = cc.b1, cc.b2, cc.b3, cc.b4
+    c1, c2, c3 = cc.c1, cc.c2, cc.c3 
     K = cc.K
-    delta_x = cc.delta_x
+    # delta_x = cc.delta_x
 
     W = model_props.W
 
@@ -193,36 +194,33 @@ def create_model(config):
 
     time_index = n_ins -1
 
-    def g1(x):
+    # def g1(x):
 
-        return theta20 - a5 * (theta30 - theta20) * x
+    #     return theta20 - a5 * (theta30 - theta20) * x
 
-    def g2(x, delta_x):
+    # def g2(x, delta_x):
 
-        return (theta10 - g1(delta_x)) * (x - delta_x) / (1 - delta_x) + g1(delta_x)
+    #     return (theta10 - g1(delta_x)) * (x - delta_x) / (1 - delta_x) + g1(delta_x)
 
-    def obs_ic(x):
+    # def obs_ic(x):
 
-        thetahat0 = torch.zeros_like(x).to(dev)  # Initialize thetahat0 with the same size as x
+    #     thetahat0 = torch.zeros_like(x).to(dev)  # Initialize thetahat0 with the same size as x
 
-        # Apply conditions element-wise
-        thetahat0[x <= delta_x] = g1(x[x <= delta_x])
-        thetahat0[x > delta_x] = g2(x[x > delta_x], delta_x)
+    #     # Apply conditions element-wise
+    #     thetahat0[x <= delta_x] = g1(x[x <= delta_x])
+    #     thetahat0[x > delta_x] = g2(x[x > delta_x], delta_x)
         
-        return thetahat0
+        # return thetahat0
 
     def ic_fun(x):
         z = x if len(x.shape) == 1 else x[:, :1]
 
-        # if n_ins==2:
-        c_2 = - a5 * (theta30 - theta20)
-        c_3 = theta20
-        c_1 = theta10 - c_2 - c_3
-        return c_1 * z**2 + c_2 * z + c_3
+        if n_ins==2:
+            return b1 * z**3 + b2 * z**2 + b3 * z + b4
+        else:
+            return c1 * z**2 + c2 * z + c3
         
-        # else:
-        #     return obs_ic(z)
-            #return (b1 - z)*(b2 + b3 * torch.exp(K*z))
+
 
 
     def bc0_fun(x, theta, _):
@@ -239,15 +237,15 @@ def create_model(config):
         else:
             return dtheta_x + flusso - K * (theta - y2)
 
-    def bc1_fun(x, theta, _):
-        y1 = theta10 if n_ins <=3 else x[:, 1:2]
-        return theta - y1
+    # def bc1_fun(x, theta, _):
+    #     y1 = theta10 if n_ins <=3 else x[:, 1:2]
+    #     return theta - y1
 
 
     def output_transform(x, y):
         y1 = cc.theta10 if n_ins<=3 else x[:, 1:2]
-        y2 = cc.theta20 if n_ins<=2 else x[:, 1:2] if n_ins==3 else x[:, 2:3]
-        y3 = cc.theta30 if n_ins<=4 else x[:, 3:4]
+        # y2 = cc.theta20 if n_ins<=2 else x[:, 1:2] if n_ins==3 else x[:, 2:3]
+        # y3 = cc.theta30 if n_ins<=4 else x[:, 3:4]
         t = x[:, time_index:]
         x1 = x[:, 0:1]
         
@@ -274,7 +272,7 @@ def create_model(config):
 
     geom_mapping = {
         2: dde.geometry.Interval(0, 1),
-        3: dde.geometry.Rectangle([cc.x1_min, 0], [1, 1]),
+        3: dde.geometry.Rectangle([0, 0], [1, 1]),
         4: dde.geometry.Cuboid([0, 0, 0], [1, 0.2, 1]),
         5: dde.geometry.Hypercube([0, 0, 0, 0], [1, 0.2, 1, 1])
     }

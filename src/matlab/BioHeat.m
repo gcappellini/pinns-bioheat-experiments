@@ -24,15 +24,18 @@ rho_b = rho;
 c_b = cp;
 t_room = config_data.model_properties.Troom;
 t_y10 = config_data.model_properties.Ty10;
+t_gt20 = config_data.model_properties.Tgt20;
 t_y20 = config_data.model_properties.Ty20;
 t_y30 = config_data.model_properties.Ty30;
 t_max = config_data.model_properties.Tmax;
-t_gt10 = config_data.model_parameters.gt1_0;
-t_gt20 = config_data.model_parameters.gt2_0;
 h = config_data.model_properties.h;
 b1 = config_data.model_properties.b1;
 b2 = config_data.model_properties.b2;
 b3 = config_data.model_properties.b3;
+b4 = config_data.model_properties.b4;
+c1 = config_data.model_properties.c1;
+c2 = config_data.model_properties.c2;
+c3 = config_data.model_properties.c3;
 delta_x = config_data.model_properties.delta_x;
 % experiment_name = config_data.experiment;
 output_path = config_data.output_dir;
@@ -89,7 +92,6 @@ K = alfa*L0;
 theta10 = (t_y10 - t_room)/(t_max - t_room);
 theta20 = (t_y20 - t_room)/(t_max - t_room);
 theta30 = (t_y30 - t_room)/(t_max - t_room);
-theta_gt10 = (t_gt10 - t_room)/(t_max - t_room);
 theta_gt20 = (t_gt20 - t_room)/(t_max - t_room);
 
 % Initialize observer weights and constants
@@ -101,6 +103,8 @@ om4 = 0;
 om5 = 0;
 om6 = 0;
 om7 = 0;
+
+
 
 % Call the correct solver based on the number of observers
 if n_obs == 1

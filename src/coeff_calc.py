@@ -16,9 +16,8 @@ initialize('configs', version_base=None)
 cfg = OmegaConf.load(f"{conf_dir}/config_run.yaml")
 
 n_ins: int = cfg.model_properties.n_ins
-delta_x: float = cfg.model_properties.delta_x
+# delta_x: float = cfg.model_properties.delta_x
 n_anchor_points: int = cfg.model_properties.n_anchor_points
-x1_min: int = cfg.model_properties.x1_min
 
 L0: float = cfg.model_properties.L0
 tauf: float = cfg.model_properties.tauf
@@ -39,13 +38,19 @@ Tmax: float = cfg.model_properties.Tmax
 Troom: float = cfg.model_properties.Troom
 Ty10: float = cfg.model_properties.Ty10
 Ty20: float = cfg.model_properties.Ty20
+Tgt20: float = cfg.model_properties.Tgt20
 Ty30: float = cfg.model_properties.Ty30
 dT: float = (Tmax-Troom)
 
 alfa: float = cfg.model_properties.alfa
 b1: float = cfg.model_properties.b1
-# b2: float = cfg.model_properties.b2
-# b3: float = cfg.model_properties.b3
+b2: float = cfg.model_properties.b2
+b3: float = cfg.model_properties.b3
+b4: float = cfg.model_properties.b4
+
+c1: float = cfg.model_properties.c1
+c2: float = cfg.model_properties.c2
+c3: float = cfg.model_properties.c3
 
 x_gt1: float = cfg.model_parameters.x_gt1
 x_gt2: float = cfg.model_parameters.x_gt2
@@ -95,32 +100,34 @@ c_0: float = (np.abs(W_obs*a2/a1 - W_sys*a2/a1)**2)/(eta/a1 + W_obs*a2/a1)**2
 
 decay_rate_diff: float = (eta/a1+W_obs*a2/a1)/2
 
-theta10, theta20, theta30 = scale_t(Ty10), scale_t(Ty20), scale_t(Ty30)
+theta10, theta20, theta30, theta_gt20 = scale_t(Ty10), scale_t(Ty20), scale_t(Ty30), scale_t(Tgt20)
+X_gt2 = x_gt2/L0
+
+# Define the equations in matrix form
+A = np.array([
+    [1, 1, 1, 1],
+    [0, 0, 0, 1],
+    [0, 0, 1, 0],
+    [X_gt2**3, X_gt2**2, X_gt2, 1]
+])
+
+B = np.array([theta10, theta20, -a5 * (theta30 - theta20), theta_gt20])
+
+# Solve the system of equations
+sol = np.linalg.solve(A, B)
+
+# Extract the solutions
+b1, b2, b3, b4 = sol
 
 if n_ins>2:
-    a = np.array([[1+K*b1, 1],[b1-1, (b1-1)*np.exp(K)]])
-    b = np.array([(a5*theta30+(K-a5)*theta20), theta10])
-    resu = np.linalg.solve(a,b).round(5)
-    [b2, b3] = resu
-    hat_theta_0 = b1*(b2+b3)
-
-    cfg.model_properties.b2 = float(b2)
-    cfg.model_properties.b3 = float(b3)
-
-    out_size = int(cfg.model_properties.num_dense_nodes/2)
-    sigma = cfg.model_properties.sigma
-    np_seed = cfg.model_properties.np_seed
-
-    rng = np.random.default_rng(seed=np_seed)
-    b = rng.normal(loc=0.0, scale= sigma, size=(out_size, n_ins))
+    c3 = theta20
+    c2 = -a5 * (theta30 - theta20)
+    c1 = theta10 - c2 - c3
 else:
-    b1, b2, b3 = None, None, None
+    c1, c2, c3 = None, None, None
 
 OmegaConf.save(cfg, f"{conf_dir}/config_run.yaml")
 
 
 if __name__ == "__main__":
-    print(f"c={scale_t(Ty20)}, b={-a5*(scale_t(Ty30) - scale_t(Ty20))}, a={scale_t(Ty10) - scale_t(Ty20)+a5*(scale_t(Ty30) - scale_t(Ty20))}")
-    print(scale_t(Ty10), scale_t(Ty20))
-    
-
+    print(b1, b2, b3, b4, c1, c2, c3)
