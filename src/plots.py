@@ -560,6 +560,7 @@ def plot_multiple_series(series_data, prj_figs):
             linestyle = plot_params[label]["linestyle"]
             alpha = plot_params[label]["alpha"]
             linewidth = plot_params[label]["linewidth"]
+            marker = plot_params[label]["marker"]
          
             # Rescale values if required
             x_vals_plot = uu.rescale_x(x_vals) if rescale else x_vals
@@ -567,7 +568,7 @@ def plot_multiple_series(series_data, prj_figs):
             
             # Plot the series on the current subplot
             axes[i].plot(x_vals_plot, values_plot, label=plot_params[label]["label"],
-                         color=color, linestyle=linestyle, linewidth=linewidth, alpha=alpha)
+                         color=color, linestyle=linestyle, linewidth=linewidth, alpha=alpha, marker=marker)
         
         # Set time, labels, and title for each subplot
         time = uu.rescale_time(tx) if rescale else tx
@@ -595,6 +596,7 @@ def plot_multiple_series(series_data, prj_figs):
             scales[i]=max_scale
         axes[i].set_ylim(y_min, y_min + scales[i])
     
+    axes[0].set_ylim(cc.Troom, cc.Tmax) if rescale else axes[0].set_ylim(0, 1)
     # Save and close figure
     filename = f"{prj_figs}/combined_plot.png"
     fig.tight_layout()  # Adjust layout for better spacing

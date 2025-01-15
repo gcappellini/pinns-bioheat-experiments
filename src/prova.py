@@ -13,7 +13,7 @@ import deepxde as dde
 import torch
 from common import set_run, generate_config_hash
 from simulation import load_ground_truth
-import matlab.engine
+# import matlab.engine
 import utils as uu 
 import common as co
 
@@ -27,27 +27,9 @@ tests_dir = os.path.join(git_dir, "tests")
 models = os.path.join(git_dir, "models")
 os.makedirs(tests_dir, exist_ok=True)
 
-fold = f"{tests_dir}/cooling_interp"
+# fold = f"{tests_dir}/cooling_interp"
 config = OmegaConf.load(f"{conf_dir}/config_run.yaml")
-os.makedirs(fold, exist_ok=True)
+# os.makedirs(fold, exist_ok=True)
 
-eng = matlab.engine.start_matlab()
-eng.cd(f"{src_dir}/matlab", nargout=0)
-eng.BioHeat(nargout=0)
-eng.quit()
-
-label = "ground_truth"
-output_dir_gt, config_matlab = co.set_run(fold, config, label)
-
-config_matlab = OmegaConf.load(f"{conf_dir}/config_ground_truth.yaml")
-output_dir_gt = f"{fold}/ground_truth"
-
-system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config_matlab, path=output_dir_gt)
-uu.check_and_wandb_upload(
-    label=label,
-    mm_obs_gt=mm_obs_gt,
-    system_gt=system_gt,
-    conf=config,
-    output_dir=output_dir_gt,
-    observers_gt=observers_gt
-)
+params = uu.get_plot_params(config)
+print(params["system_gt"]["marker"])

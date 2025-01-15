@@ -4,21 +4,21 @@ model_properties:
   k: 0.6
   rho: 1000.0
   c: 4186.0
-  W: 0.0033
+  W: 0.003303
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
-  Ty10: 22.28
-  Ty20: 26.67
+  Ty10: 21.5
+  Ty20: 30.2
   Ty30: 21.5
   Tgt20: 31.5
   alfa: 50
   activation: tanh
   initial_weights_regularizer: false
   initialization: Glorot uniform
-  optimizer: adam
-  iters: 3
-  iters_lbfgs: 0
+  optimizer: L-BFGS
+  iters: 3000
+  iters_lbfgs: 15000
   learning_rate: 0.001
   num_dense_layers: 4
   num_dense_nodes: 50
@@ -49,8 +49,8 @@ model_properties:
   sigma: 1.0
   n_anchor_points: 5
 model_parameters:
-  lam: 1
-  upsilon: 1
+  lam: 50
+  upsilon: 20
   W_min: 6.3e-05
   W_max: 0.0033
   W0: 0.001207
@@ -201,7 +201,7 @@ plot:
     system_meas:
       color: red
       label: Measurement
-      linestyle: --
+      linestyle: ''
       linewidth: 1.0
       alpha: 0.8
       marker: '*'
@@ -272,7 +272,7 @@ plot:
   show_obs: true
 experiment:
   ground_truth: false
-  simulation: false
+  simulation: true
   measurement: true
   meas_set: meas_cool_1
 experiment_type:
@@ -303,4 +303,4 @@ experiment_type:
     Ty30: 21.5
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /app/guglielmo/pinns-bioheat-experiments/tests/cooling_simulation_8obs/ground_truth
+output_dir: /app/guglielmo/pinns-bioheat-experiments/outputs/2025-01-15/23-27-05/simulation_mm_obs

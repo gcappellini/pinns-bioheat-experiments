@@ -16,7 +16,7 @@ model_properties:
   activation: tanh
   initial_weights_regularizer: false
   initialization: Glorot uniform
-  optimizer: adam
+  optimizer: L-BFGS
   iters: 3000
   iters_lbfgs: 15000
   learning_rate: 0.001
@@ -49,8 +49,8 @@ model_properties:
   sigma: 1.0
   n_anchor_points: 5
 model_parameters:
-  lam: 1
-  upsilon: 1
+  lam: 50
+  upsilon: 20
   W_min: 6.3e-05
   W_max: 0.0033
   W0: 0.001207
@@ -201,7 +201,7 @@ plot:
     system_meas:
       color: red
       label: Measurement
-      linestyle: --
+      linestyle: ''
       linewidth: 1.0
       alpha: 0.8
       marker: '*'
@@ -303,4 +303,4 @@ experiment_type:
     Ty30: 21.5
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /app/guglielmo/pinns-bioheat-experiments/outputs/2025-01-15/15-48-54/simulation_mm_obs
+output_dir: /app/guglielmo/pinns-bioheat-experiments/outputs/2025-01-15/23-27-05/simulation_mm_obs
