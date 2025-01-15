@@ -657,7 +657,7 @@ def execute(config, label):
     out_dir = config.output_dir
     simul_dir = os.path.join(out_dir, label)
 
-    n_obs, obs = cc.n_obs, cc.obs
+    n_obs = cc.n_obs
 
     if n_obs == 1:
         W_index = config.model_parameters.W_index
@@ -668,6 +668,7 @@ def execute(config, label):
 
     multi_obs = []
     for j in range(n_obs):
+        obs = cc.obs if label.startswith("simulation") else np.linspace(cc.W_min, cc.W_max, n_obs)
         perf = obs[j]
         config.model_properties.W = float(perf)
         co.set_run(simul_dir, config, f"obs_{j}")

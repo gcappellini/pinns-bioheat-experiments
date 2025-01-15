@@ -51,8 +51,8 @@ model_properties:
 model_parameters:
   lam: 1
   upsilon: 1
-  W_min: ${model_parameters.W0}
-  W_max: ${model_parameters.W7}
+  W_min: 6.3e-05
+  W_max: 0.0033
   W0: 0.001207
   W1: 0.001506
   W2: 0.001806
@@ -71,5 +71,5 @@ model_parameters:
   - 2.0888912677764893
   - 27.680763244628906
   - 8.396754264831543
-output_dir: /home/guglielmo/pinns-bioheat-experiments/tests/cooling_simulation_8obs/ground_truth
+output_dir: /app/guglielmo/pinns-bioheat-experiments/tests/cooling_simulation_8obs/ground_truth
 experiment: meas_cool_1
