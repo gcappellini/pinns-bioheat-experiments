@@ -1253,9 +1253,9 @@ def point_predictions(pred_dicts):
     positions = get_tc_positions()
     
     # Use extract_matching to get the combined array
-    # preds = extract_matching(pred_dicts)
-    to_extract = pred_dicts[-1]
-    preds = np.array([to_extract["grid"][:, 0], to_extract["grid"][:, -1], to_extract["theta"]]).T
+    preds = extract_matching(pred_dicts)
+    # to_extract = pred_dicts[-1]
+    # preds = np.array([to_extract["grid"][:, 0], to_extract["grid"][:, -1], to_extract["theta"]]).T
     
     # Extract predictions based on positions
     y2_pred_sc = preds[preds[:, 0] == positions[0]][:, -1]
