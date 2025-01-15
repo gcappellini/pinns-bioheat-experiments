@@ -44,17 +44,22 @@ def set_run(prj_figs, cfg, run):
     if run.startswith("ground_truth"):
         cfg.output_dir = run_figs
         cfg = filter_config_for_matlab(cfg)
-    elif run == "simulation_system":
-        props.W = pars.W_sys
-        props.Ty10, props.Ty20, props.Ty30 = 21.5, 30.0, 21.5
-        props.n_ins = 2
-        props.b2, props.b3 = None, None
-    elif run == "simulation_mm_obs":
-        cfg.output_dir = run_figs
+    # elif run == "simulation_system":
+    #     props.W = pars.W_sys
+    #     props.Ty10, props.Ty20, props.Ty30 = 21.5, 30.0, 21.5
+    #     props.n_ins = 2
+    # elif run == "simulation_mm_obs":
+    #     cfg.output_dir = run_figs
+    elif run.startswith("simulation"):
+        simu_settings = getattr(cfg.experiment_type, "simulation")
+        props.Ty10, props.Ty20, props.Ty30 = simu_settings.Ty10, simu_settings.Ty20, simu_settings.Ty30
+        if run == "simulation_mm_obs":
+            cfg.output_dir = run_figs
+
     elif run.startswith("meas_cool"):
         props.h, props.pwr_fact = 10.0, 0.0
         meas_settings = getattr(cfg.experiment_type, run)
-        props.Ty10, props.Ty20, props.Ty30 = meas_settings.y1_0, meas_settings.y2_0, meas_settings.y3_0
+        props.Ty10, props.Ty20, props.Ty30 = meas_settings.Ty10, meas_settings.Ty20, meas_settings.Ty30
         props.n_ins = 4
     elif run.startswith("hpo"):
         pars.n_obs = 1

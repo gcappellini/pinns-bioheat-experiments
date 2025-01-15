@@ -121,12 +121,12 @@ B = np.array([theta10, theta20, -a5 * (theta30 - theta20), theta_gt20])
 sol = np.linalg.solve(A, B)
 
 # Extract the solutions
-b1, b2, b3, b4 = sol
+b1, b2, b3, b4 = [round(val, 5) for val in sol]
 
 if n_ins>2:
-    c3 = theta20
-    c2 = -a5 * (theta30 - theta20)
-    c1 = theta10 - c2 - c3
+    c3 = round(theta20, 5)
+    c2 = round(-a5 * (theta30 - theta20), 5)
+    c1 = round(theta10 - c2 - c3, 5)
 else:
     c1, c2, c3 = None, None, None
 

@@ -37,13 +37,13 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b1: -1.277777584444444
-  b2: -0.5174605384126987
-  b3: 0.9666666942857142
-  b4: 0.8285714285714285
-  c1: -1.7952381228571426
-  c2: 0.9666666942857142
-  c3: 0.8285714285714285
+  b1: -1.27778
+  b2: -0.51746
+  b3: 0.96667
+  b4: 0.82857
+  c1: -1.79524
+  c2: 0.96667
+  c3: 0.82857
   n_ins: 4
   np_seed: 500
   sigma: 1.0
@@ -51,8 +51,8 @@ model_properties:
 model_parameters:
   lam: 1
   upsilon: 1
-  W_min: ${model_parameters.W0}
-  W_max: ${model_parameters.W7}
+  W_min: 6.3e-05
+  W_max: 0.0033
   W0: 0.001207
   W1: 0.001506
   W2: 0.001806
@@ -62,7 +62,7 @@ model_parameters:
   W6: 0.003004
   W7: 0.003303
   W_sys: 0.002105
-  W_index: 3
+  W_index: 4
   n_obs: 8
   x_gt2: 0.01
   x_gt1: 0.04
@@ -279,22 +279,28 @@ experiment_type:
   import_data: false
   save_pickle: false
   run_wandb: false
+  simulation:
+    Ty10: 21.5
+    Ty20: 30.2
+    Ty30: 21.5
+    Tgt20: 31.5
   meas_cool_1:
     title: Cooling 1
     date: '20240930_1'
     string: meas_cool_1
     start_min: 41
     end_min: 71
-    y1_0: 22.28
-    y2_0: 26.67
-    y3_0: 21.5
+    Ty10: 22.28
+    Ty20: 26.67
+    Ty30: 21.5
   meas_cool_2:
     title: Cooling 2
     date: '20240930_3'
     string: meas_cool_2
     start_min: 30
     end_min: 60
-    y1_0: 22.84
+    Ty10: 22.84
+    Ty30: 21.5
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /app/guglielmo/pinns-bioheat-experiments/outputs/2025-01-15/10-33-25/simulation_mm_obs
+output_dir: /app/outputs/2025-01-15/13-18-47/simulation_mm_obs
