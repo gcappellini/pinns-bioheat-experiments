@@ -17,8 +17,8 @@ model_properties:
   initial_weights_regularizer: false
   initialization: Glorot uniform
   optimizer: adam
-  iters: 3
-  iters_lbfgs: 0
+  iters: 3000
+  iters_lbfgs: 15000
   learning_rate: 0.001
   num_dense_layers: 4
   num_dense_nodes: 50
@@ -303,4 +303,4 @@ experiment_type:
     Ty30: 21.5
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: ./outputs/2025-01-15/15-22-53/simulation_mm_obs/simulation_mm_obs
+output_dir: /app/guglielmo/pinns-bioheat-experiments/outputs/2025-01-15/15-48-54/simulation_mm_obs
