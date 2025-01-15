@@ -4,7 +4,7 @@ model_properties:
   k: 0.6
   rho: 1000.0
   c: 4186.0
-  W: 0.001207
+  W: 0.003303
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
@@ -37,8 +37,8 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b1: -1.2777775844444448
-  b2: -0.5174605384126978
+  b1: -1.277777584444444
+  b2: -0.5174605384126987
   b3: 0.9666666942857142
   b4: 0.8285714285714285
   c1: -1.7952381228571426
@@ -297,4 +297,4 @@ experiment_type:
     y1_0: 22.84
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /app/outputs/2025-01-15/10-30-28/simulation_mm_obs
+output_dir: /app/guglielmo/pinns-bioheat-experiments/outputs/2025-01-15/10-33-25/simulation_mm_obs

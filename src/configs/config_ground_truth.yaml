@@ -4,7 +4,7 @@ model_properties:
   k: 0.6
   rho: 1000.0
   c: 4186.0
-  W: 0.002105
+  W: 0.003303
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
@@ -37,8 +37,8 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b1: -1.2777775844444448
-  b2: -0.5174605384126978
+  b1: -1.277777584444444
+  b2: -0.5174605384126987
   b3: 0.9666666942857142
   b4: 0.8285714285714285
   c1: -1.7952381228571426
@@ -71,5 +71,5 @@ model_parameters:
   - 2.0888912677764893
   - 27.680763244628906
   - 8.396754264831543
-output_dir: /app/tests/cooling_simulation_8obs/ground_truth
+output_dir: /home/guglielmo/pinns-bioheat-experiments/tests/cooling_simulation_8obs/ground_truth
 experiment: meas_cool_1
