@@ -15,63 +15,65 @@ initialize('configs', version_base=None)
 # cfg = compose(config_name='config_run')
 cfg = OmegaConf.load(f"{conf_dir}/config_run.yaml")
 
-n_ins: int = cfg.model_properties.n_ins
-# delta_x: float = cfg.model_properties.delta_x
-n_anchor_points: int = cfg.model_properties.n_anchor_points
+props = cfg.model_properties
+pars = cfg.model_parameters
 
-L0: float = cfg.model_properties.L0
-tauf: float = cfg.model_properties.tauf
-k: float = cfg.model_properties.k
-c: float = cfg.model_properties.c
-rho: float = cfg.model_properties.rho
+n_ins: int = props.n_ins
+n_anchor_points: int = props.n_anchor_points
+
+L0: float = props.L0
+tauf: float = props.tauf
+k: float = props.k
+c: float = props.c
+rho: float = props.rho
 c_b: float = c
 rho_b: float = rho
-h: float = cfg.model_properties.h
+h: float = props.h
 
-beta: float = cfg.model_properties.beta
-SAR_0: float = cfg.model_properties.SAR_0
-PD: float = cfg.model_properties.PD
-x0: float = cfg.model_properties.x0
-pwr_fact: float = cfg.model_properties.pwr_fact
+beta: float = props.beta
+SAR_0: float = props.SAR_0
+PD: float = props.PD
+x0: float = props.x0
+pwr_fact: float = props.pwr_fact
 
-Tmax: float = cfg.model_properties.Tmax
-Troom: float = cfg.model_properties.Troom
-Ty10: float = cfg.model_properties.Ty10
-Ty20: float = cfg.model_properties.Ty20
-Tgt20: float = cfg.model_properties.Tgt20
-Ty30: float = cfg.model_properties.Ty30
+Tmax: float = props.Tmax
+Troom: float = props.Troom
+Ty10: float = props.Ty10
+Ty20: float = props.Ty20
+Tgt20: float = props.Tgt20
+Ty30: float = props.Ty30
 dT: float = (Tmax-Troom)
 
-alfa: float = cfg.model_properties.alfa
-b1: float = cfg.model_properties.b1
-b2: float = cfg.model_properties.b2
-b3: float = cfg.model_properties.b3
-b4: float = cfg.model_properties.b4
+alfa: float = props.alfa
+b1: float = props.b1
+b2: float = props.b2
+b3: float = props.b3
+b4: float = props.b4
 
-c1: float = cfg.model_properties.c1
-c2: float = cfg.model_properties.c2
-c3: float = cfg.model_properties.c3
+c1: float = props.c1
+c2: float = props.c2
+c3: float = props.c3
 
-x_gt1: float = cfg.model_parameters.x_gt1
-x_gt2: float = cfg.model_parameters.x_gt2
+x_gt1: float = pars.x_gt1
+x_gt2: float = pars.x_gt2
 
-W0: float = cfg.model_parameters.W0
-W1: float = cfg.model_parameters.W1
-W2: float = cfg.model_parameters.W2
-W3: float = cfg.model_parameters.W3
-W4: float = cfg.model_parameters.W4
-W5: float = cfg.model_parameters.W5
-W6: float = cfg.model_parameters.W6
-W7: float = cfg.model_parameters.W7
-W_sys: float = cfg.model_parameters.W_sys
-W_index: int = cfg.model_parameters.W_index
-n_obs: int = cfg.model_parameters.n_obs
+W0: float = pars.W0
+W1: float = pars.W1
+W2: float = pars.W2
+W3: float = pars.W3
+W4: float = pars.W4
+W5: float = pars.W5
+W6: float = pars.W6
+W7: float = pars.W7
+W_sys: float = pars.W_sys
+W_index: int = pars.W_index
+n_obs: int = pars.n_obs
 
 obs = np.array([W0, W1, W2, W3, W4, W5, W6, W7])
 W_obs = float(obs[W_index])
 
-lamb: float = cfg.model_parameters.lam  # Access the lambda parameter
-upsilon: float = cfg.model_parameters.upsilon
+lamb: float = pars.lam  # Access the lambda parameter
+upsilon: float = pars.upsilon
 
 def rescale_t(t: float)->float:
 
@@ -125,6 +127,9 @@ if n_ins>2:
     c1 = theta10 - c2 - c3
 else:
     c1, c2, c3 = None, None, None
+
+props.b1, props.b2, props.b3, props.b4 = float(b1), float(b2), float(b3), float(b4)
+props.c1, props.c2, props.c3 = float(c1), float(c2), float(c3)
 
 OmegaConf.save(cfg, f"{conf_dir}/config_run.yaml")
 

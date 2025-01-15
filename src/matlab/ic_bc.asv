@@ -14,9 +14,9 @@ function theta0 = sys_ic(x)
     % temperatures = first_row(2:5);
     % x_values = [1.0, 0.571, 0.143, 0.0];
     % theta0 = interp1(x_values, temperatures, x, 'linear', 'extrap');
+    size(x)
 
-    theta0 = b1.*x.^3 + b2.*x.^2 + b3.*x + b4;
-
+    theta0 = b1*x.^3 + b2*x.^2 + b3*x + b4;
     %theta0 = 0;
 
     
@@ -39,7 +39,9 @@ function thetahat0 = obs_ic(x)
     % thetahat0(x <= delta_x) = g1(x(x <= delta_x));
     % thetahat0(x > delta_x) = g2(x(x > delta_x), delta_x);
 
-    thetahat0 = c1.*x.^2 + c2.*x + c3;
+    thetahat0 = c1*x.^2 + c2*x + c3;
+
+
 
     
 function y1 = theta_1(t)

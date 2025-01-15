@@ -37,9 +37,7 @@ function [sol] = OneDimBH_1Obs
         -W_obs*a2*u(2)+a3*exp(-a4*x);
         ];
     % --------------------------------------------------------------------------
-    
-        
-    % --------------------------------------------------------------------------
+
     
     function u0 = OneDimBHic_1Obs(x)
     [theta0, thetahat0, ~, ~, ~] = ic_bc(x, 0);
@@ -58,8 +56,8 @@ function [sol] = OneDimBH_1Obs
     flusso = a5*(y3 - ul(1));
     
     pl = [flusso; flusso-K*(ul(2)-ul(1))];
-    ql = [1;1];
+    ql = [1; 1];
 
     pr = [ur(1) - y1; ur(2) - y1];
     
-    qr = [0;0];
+    qr = [0; 0];

@@ -28,11 +28,11 @@ def run_ground_truth(config, out_dir):
         output_dir=output_dir_gt,
         observers_gt=observers_gt
     )
-    system_meas, _ = uu.import_testdata(config)
-    uu.check_measurements(system_meas, system_gt, output_dir_gt, config)
-    extracted = uu.extract_matching([system_gt, system_meas])
-    metric = uu.compute_metrics(extracted, [system_gt, system_meas], config, out_dir)
-    score = metric["system_meas_L2RE"]
+    # system_meas, _ = uu.import_testdata(config)
+    # uu.check_measurements(system_meas, system_gt, output_dir_gt, config)
+    # extracted = uu.extract_matching([system_gt, system_meas])
+    # metric = uu.compute_metrics(extracted, [system_gt, system_meas], config, out_dir)
+    # score = metric["system_meas_L2RE"]
     
     return output_dir_gt, system_gt, observers_gt, mm_obs_gt
 
@@ -104,12 +104,13 @@ def main():
     out_dir = config.output_dir
     dict_exp = config.experiment
     n_ins = config.model_properties.n_ins
+    n_obs = config.model_parameters.n_obs
 
     # Ground Truth Simulation
     if dict_exp["ground_truth"]:
         output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, out_dir)
     else:
-        output_dir_gt, system_gt, observers_gt, mm_obs_gt = load_ground_truth(config, f"{tests_dir}/cooling_simulation")
+        output_dir_gt, system_gt, observers_gt, mm_obs_gt = load_ground_truth(config, f"{tests_dir}/cooling_simulation_{n_obs}obs")
 
     if dict_exp["simulation"]:
         # Simulation System

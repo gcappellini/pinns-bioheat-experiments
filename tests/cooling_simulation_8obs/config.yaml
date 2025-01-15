@@ -63,7 +63,7 @@ model_parameters:
   W7: 0.003303
   W_sys: 0.002105
   W_index: 3
-  n_obs: 1
+  n_obs: 8
   x_gt2: 0.01
   x_gt1: 0.04
   loss_weights:
@@ -297,4 +297,4 @@ experiment_type:
     y1_0: 22.84
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/cooling_simulation_1obs
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/cooling_simulation_8obs
