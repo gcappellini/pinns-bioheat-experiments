@@ -54,10 +54,10 @@ def compute_metrics(matching, series_to_plot, cfg, run_figs):
     parts = []
 
     # Iterate over each part in series_to_plot[1:]
-    for i in range(len(series_to_plot)-1):
+    for i in range(1, len(series_to_plot)-1):
         part_name = series_to_plot[1+i]["label"]
         parts.append(part_name)
-        pred = matching[:, 3 + i]
+        pred = matching[:, 2 + i]
         pred_nonzero = np.where(pred != 0, pred, small_number)
         
         # Part 1: General metrics for pred (Observer PINNs vs Observer MATLAB)
@@ -773,8 +773,8 @@ def plot_and_compute_metrics(label, system_gt, series_to_plot, matching_args, co
     matching = extract_matching(matching_args)
     series_sys = {"grid": matching[:, :2], "theta": matching[:, 2], "label": system_gt["label"]}
     observers_data = [
-        {"grid": matching[:, :2], "theta": matching[:, 3+i], "label": series_to_plot[i+1]["label"]}
-        for i in range(len(series_to_plot)-1)
+        {"grid": matching[:, :2], "theta": matching[:, 2+i], "label": series_to_plot[i]["label"]}
+        for i in range(1, len(series_to_plot)-1)
     ]
     
     pp.plot_l2(series_sys, observers_data, output_dir)
@@ -870,7 +870,7 @@ def check_and_wandb_upload(
             return metrics
         elif n_obs > 1:
             series_to_plot_mm_obs = (
-                [system_gt, mm_obs, mm_obs_gt, *observers_gt, *observers]
+                [system_gt, mm_obs, mm_obs_gt, *observers]
                 if show_obs
                 else [system_gt, mm_obs, mm_obs_gt]
             )
