@@ -303,4 +303,4 @@ experiment_type:
     Ty30: 21.5
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /app/outputs/2025-01-15/15-22-53/simulation_mm_obs
+output_dir: ./outputs/2025-01-15/15-22-53/simulation_mm_obs/simulation_mm_obs

@@ -4,12 +4,12 @@ model_properties:
   k: 0.6
   rho: 1000.0
   c: 4186.0
-  W: 0.0033
+  W: 0.001207
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
-  Ty10: 22.28
-  Ty20: 26.67
+  Ty10: 21.5
+  Ty20: 30.2
   Ty30: 21.5
   Tgt20: 31.5
   alfa: 50
@@ -303,4 +303,4 @@ experiment_type:
     Ty30: 21.5
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /app/outputs/2025-01-15/15-22-53/simulation_mm_obs
+output_dir: ./outputs/2025-01-15/15-22-53/simulation_mm_obs/simulation_mm_obs
