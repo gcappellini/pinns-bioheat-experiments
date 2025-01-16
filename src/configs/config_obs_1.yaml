@@ -4,12 +4,12 @@ model_properties:
   k: 0.6
   rho: 1000.0
   c: 4186.0
-  W: 0.001506
+  W: 0.0005254285714285714
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
-  Ty10: 21.5
-  Ty20: 30.2
+  Ty10: 22.28
+  Ty20: 26.67
   Ty30: 21.5
   Tgt20: 31.5
   alfa: 50
@@ -37,20 +37,20 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b1: -22.76333
-  b2: 21.77079
-  b3: 0.57444
-  b4: 0.49238
-  c1: -0.99253
-  c2: 0.57444
-  c3: 0.49238
+  b1: -1.27778
+  b2: -0.51746
+  b3: 0.96667
+  b4: 0.82857
+  c1: -1.79524
+  c2: 0.96667
+  c3: 0.82857
   n_ins: 4
   np_seed: 500
   sigma: 1.0
   n_anchor_points: 5
 model_parameters:
-  lam: 50
-  upsilon: 20
+  lam: 1
+  upsilon: 1
   W_min: 6.3e-05
   W_max: 0.0033
   W0: 0.001207
@@ -201,9 +201,9 @@ plot:
     system_meas:
       color: red
       label: Measurement
-      linestyle: ''
+      linestyle: --
       linewidth: 1.0
-      alpha: 0.8
+      alpha: 0.3
       marker: '*'
     theory:
       color: purple
@@ -272,9 +272,10 @@ plot:
   show_obs: true
 experiment:
   ground_truth: false
-  simulation: true
+  simulation: false
   measurement: true
   meas_set: meas_cool_1
+  plot: true
 experiment_type:
   import_data: false
   save_pickle: false
@@ -303,4 +304,4 @@ experiment_type:
     Ty30: 21.5
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /app/guglielmo/pinns-bioheat-experiments/outputs/2025-01-15/23-27-05/simulation_mm_obs
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/cooling_simulation_8obs/ground_truth

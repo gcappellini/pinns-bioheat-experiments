@@ -481,10 +481,10 @@ def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, p
 
     # Labels for the legend (corresponding to each line in y_data)
     if gt:
-        legend_labels = ['y1 (True)', 'gt1 (True)', 'gt2 (True)', 'y2 (True)', 
+        legend_labels = ['y1 (Meas)', 'gt1 (Meas)', 'gt2 (Meas)', 'y2 (Meas)', 
                         'y1 (Matlab)', 'gt1 (Matlab)', 'gt2 (Matlab)', 'y2 (Matlab)']
     else:
-        legend_labels = ['y1 (True)', 'gt1 (True)', 'gt2 (True)', 'y2 (True)', 
+        legend_labels = ['y1 (Meas)', 'gt1 (Meas)', 'gt2 (Meas)', 'y2 (Meas)', 
                         'y1 (Pred)', 'gt1 (Pred)', 'gt2 (Pred)', 'y2 (Pred)']
 
     colors_points = conf.plot.colors.measuring_points
@@ -552,8 +552,9 @@ def plot_multiple_series(series_data, prj_figs):
             
             # Get closest match to current time instant in the grid
             closest_value = np.abs(grid[:, 1] - tx).min()
-            values_tx = values[np.abs(grid[:, 1] - tx) == closest_value]
             x_vals = np.unique(grid[:, 0])
+            values_tx = values[np.abs(grid[:, 1] - tx) == closest_value][:len(x_vals)]
+            
             
             # Retrieve plot parameters based on the label
             color = plot_params[label]["color"]
@@ -596,7 +597,7 @@ def plot_multiple_series(series_data, prj_figs):
             scales[i]=max_scale
         axes[i].set_ylim(y_min, y_min + scales[i])
     
-    axes[0].set_ylim(cc.Troom, cc.Tmax) if rescale else axes[0].set_ylim(0, 1)
+    axes[0].set_ylim(cc.Troom, cc.Tmax+0.7) if rescale else axes[0].set_ylim(0, 1)
     # Save and close figure
     filename = f"{prj_figs}/combined_plot.png"
     fig.tight_layout()  # Adjust layout for better spacing

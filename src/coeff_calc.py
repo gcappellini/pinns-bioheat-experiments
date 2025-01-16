@@ -17,6 +17,9 @@ cfg = OmegaConf.load(f"{conf_dir}/config_run.yaml")
 
 props = cfg.model_properties
 pars = cfg.model_parameters
+exp = cfg.experiment
+meas_settings = getattr(cfg.experiment_type, exp.run)
+props.Ty10, props.Ty20, props.Ty30 = meas_settings.Ty10, meas_settings.Ty20, meas_settings.Ty30
 
 n_ins: int = props.n_ins
 n_anchor_points: int = props.n_anchor_points

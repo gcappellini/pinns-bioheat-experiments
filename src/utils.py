@@ -623,9 +623,11 @@ def import_obsdata(nam):
     unique_elements = np.unique(g[:, 1])
 
     # x_tc = get_tc_positions()
+    full_length_grid = np.linspace(0, 1, 20)
+    space_array_prediction = np.sort(np.concatenate((positions[1:2], full_length_grid)))
 
     g_xxl = np.vstack([
-        np.column_stack((np.linspace(0, 1, 100), np.full(100, el)))
+        np.column_stack((space_array_prediction, np.full(len(space_array_prediction), el)))
         for el in unique_elements
     ])
 
@@ -662,7 +664,7 @@ def execute(config, label):
     if n_obs == 1:
         W_index = config.model_parameters.W_index
         config.model_properties.W = cc.W_obs
-        co.set_run(simul_dir, config, f"obs_{W_index}")
+        # co.set_run(simul_dir, config, f"obs_{W_index}")
         output_model = train_model(config)
         return output_model
 
@@ -671,7 +673,7 @@ def execute(config, label):
         obs = cc.obs if label.startswith("simulation") else np.linspace(cc.W_min, cc.W_max, n_obs)
         perf = obs[j]
         config.model_properties.W = float(perf)
-        co.set_run(simul_dir, config, f"obs_{j}")
+        # co.set_run(simul_dir, config, f"obs_{j}")
         model = train_model(config)
         multi_obs.append(model)
 
@@ -774,7 +776,7 @@ def plot_and_compute_metrics(label, system_gt, series_to_plot, matching_args, co
     series_sys = {"grid": matching[:, :2], "theta": matching[:, 2], "label": system_gt["label"]}
     observers_data = [
         {"grid": matching[:, :2], "theta": matching[:, 2+i], "label": series_to_plot[i]["label"]}
-        for i in range(1, len(series_to_plot)-1)
+        for i in range(1, len(series_to_plot))
     ]
     
     pp.plot_l2(series_sys, observers_data, output_dir)
@@ -874,7 +876,7 @@ def check_and_wandb_upload(
                 if show_obs
                 else [system_gt, mm_obs, mm_obs_gt]
             )
-            matching_args_mm_obs = [system_gt, *observers, mm_obs]
+            matching_args_mm_obs = [system_gt, *observers, mm_obs, mm_obs_gt]
             _, metrics = plot_and_compute_metrics(label, system_gt, series_to_plot_mm_obs, matching_args_mm_obs, conf, output_dir)
             return metrics
     
@@ -973,6 +975,17 @@ def get_scaled_labels(rescale):
     return xlabel, ylabel, zlabel
 
 
+def create_params(entity, default_marker=None):
+    return {
+        "color": entity.color,
+        "label": entity.label,
+        "linestyle": entity.linestyle,
+        "linewidth": entity.linewidth,
+        "alpha": entity.alpha,
+        "marker": getattr(entity, "marker", default_marker)
+    }
+
+
 def get_plot_params(conf):
     """
     Load plot parameters based on configuration for each entity (system, observers, etc.),
@@ -981,15 +994,6 @@ def get_plot_params(conf):
     :param conf: Configuration object loaded from YAML.
     :return: Dictionary containing plot parameters for each entity.
     """
-    def create_params(entity, default_marker=None):
-        return {
-            "color": entity.color,
-            "label": entity.label,
-            "linestyle": entity.linestyle,
-            "linewidth": entity.linewidth,
-            "alpha": entity.alpha,
-            "marker": getattr(entity, "marker", default_marker)
-        }
 
     entities = conf.plot.entities
 
@@ -1018,7 +1022,8 @@ def get_plot_params(conf):
             "label": entities.observers.label[i],
             "linestyle": entities.observers.linestyle[i],
             "linewidth": entities.observers.linewidth[i],
-            "alpha": entities.observers.alpha[i]
+            "alpha": entities.observers.alpha[i],
+            "marker": None
         }
 
         observer_gt_params[f"observer_{i}_gt"] = {
@@ -1026,8 +1031,10 @@ def get_plot_params(conf):
             "label": entities.observers_gt.label[i],
             "linestyle": entities.observers_gt.linestyle[i],
             "linewidth": entities.observers_gt.linewidth[i],
-            "alpha": entities.observers_gt.alpha[i]
+            "alpha": entities.observers_gt.alpha[i],
+            "marker": None
         }
+
 
     # Return combined parameters
     return {

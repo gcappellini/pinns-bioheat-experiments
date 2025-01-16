@@ -27,9 +27,10 @@ tests_dir = os.path.join(git_dir, "tests")
 models = os.path.join(git_dir, "models")
 os.makedirs(tests_dir, exist_ok=True)
 
-# fold = f"{tests_dir}/cooling_interp"
-config = OmegaConf.load(f"{conf_dir}/config_run.yaml")
-# os.makedirs(fold, exist_ok=True)
 
-params = uu.get_plot_params(config)
-print(params["system_gt"]["marker"])
+config = OmegaConf.load(f"{conf_dir}/config_run.yaml")
+
+config.experiment.meas_set="meas_cool_2"
+system_meas, _ = uu.import_testdata(config)
+
+print(uu.rescale_t(system_meas["theta"][:8]))

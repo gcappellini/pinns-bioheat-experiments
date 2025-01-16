@@ -16,9 +16,9 @@ model_properties:
   activation: tanh
   initial_weights_regularizer: false
   initialization: Glorot uniform
-  optimizer: adam
-  iters: 3
-  iters_lbfgs: 0
+  optimizer: L-BFGS
+  iters: 3000
+  iters_lbfgs: 15000
   learning_rate: 0.001
   num_dense_layers: 4
   num_dense_nodes: 50
@@ -37,13 +37,13 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b1: -22.76333
-  b2: 21.77079
-  b3: 0.57444
-  b4: 0.49238
-  c1: -0.99253
-  c2: 0.57444
-  c3: 0.49238
+  b1: -1.27778
+  b2: -0.51746
+  b3: 0.96667
+  b4: 0.82857
+  c1: -1.79524
+  c2: 0.96667
+  c3: 0.82857
   n_ins: 4
   np_seed: 500
   sigma: 1.0
@@ -203,7 +203,7 @@ plot:
       label: Measurement
       linestyle: --
       linewidth: 1.0
-      alpha: 0.8
+      alpha: 0.3
       marker: '*'
     theory:
       color: purple
@@ -275,6 +275,7 @@ experiment:
   simulation: false
   measurement: true
   meas_set: meas_cool_1
+  plot: true
 experiment_type:
   import_data: false
   save_pickle: false
@@ -303,4 +304,4 @@ experiment_type:
     Ty30: 21.5
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /app/guglielmo/pinns-bioheat-experiments/tests/cooling_simulation_8obs/ground_truth
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/cooling_simulation_8obs/ground_truth
