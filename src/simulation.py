@@ -19,14 +19,14 @@ def run_ground_truth(config, out_dir):
     label = "ground_truth"
     output_dir_gt, config_matlab = co.set_run(out_dir, config, label)
     uu.run_matlab_ground_truth()
-    system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config_matlab, path=output_dir_gt)
+    system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config_matlab, path=out_dir)
     if config.experiment.plot:
         uu.check_and_wandb_upload(
             label=label,
             mm_obs_gt=mm_obs_gt,
             system_gt=system_gt,
             conf=config,
-            output_dir=output_dir_gt,
+            output_dir=out_dir,
             observers_gt=observers_gt
         )
     # system_meas, _ = uu.import_testdata(config)
@@ -59,8 +59,8 @@ def run_simulation_mm_obs(config, out_dir, output_dir_gt, system_gt, mm_obs_gt, 
     label = "simulation_mm_obs"
     output_dir_inverse, config_inverse = co.set_run(out_dir, config, label)
     multi_obs = uu.execute(config_inverse, label)
-    x_obs = uu.gen_obsdata(config_inverse, path=output_dir_gt)
-    observers, mm_obs = uu.get_observers_preds(multi_obs, x_obs, output_dir_inverse, config_inverse, label)
+    x_obs = uu.gen_obsdata(config_inverse, path=out_dir)
+    observers, mm_obs = uu.get_observers_preds(multi_obs, x_obs, out_dir, config_inverse, label)
     if config.experiment.plot:
         uu.check_and_wandb_upload(
             label=label,
@@ -68,7 +68,7 @@ def run_simulation_mm_obs(config, out_dir, output_dir_gt, system_gt, mm_obs_gt, 
             mm_obs=mm_obs,
             system_gt=system_gt,
             conf=config_inverse,
-            output_dir=output_dir_inverse,
+            output_dir=out_dir,
             observers=observers,
             observers_gt=observers_gt
         )
@@ -81,17 +81,17 @@ def run_measurement_mm_obs(config, out_dir):
     multi_obs = uu.execute(config_meas, label)
     system_meas, _ = uu.import_testdata(config_meas)
     x_obs = uu.import_obsdata(config_meas)
-    observers, mm_obs = uu.get_observers_preds(multi_obs, x_obs, output_dir_meas, config_meas, label)
+    observers, mm_obs = uu.get_observers_preds(multi_obs, x_obs, out_dir, config_meas, label)
     if config.experiment.plot:
         uu.check_and_wandb_upload(
             label=label,
             mm_obs=mm_obs,
             system_meas=system_meas,
             conf=config_meas,
-            output_dir=output_dir_meas,
+            output_dir=out_dir,
             observers=observers
         )
-        uu.check_measurements(system_meas, mm_obs, output_dir_meas, config_meas)
+        uu.check_measurements(system_meas, mm_obs, out_dir, config_meas)
 
 
 def load_ground_truth(config, out_dir):

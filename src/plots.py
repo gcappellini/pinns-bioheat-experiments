@@ -183,7 +183,7 @@ def plot_loss_components(loss_train, loss_test, iters, nam):
     )
 
 
-def plot_weights(series_data, run_figs, strng=None):
+def plot_weights(series_data, run_figs, lal):
 
     conf = compose(config_name='config_run')
     plot_params = uu.get_plot_params(conf)
@@ -232,13 +232,13 @@ def plot_weights(series_data, run_figs, strng=None):
         size=(6, 5),               # Figure size
         colors=colors,
         linestyles=linestyles,
-        filename=f"{run_figs}/weights.png" if strng==None else f"{run_figs}/weights_{strng}.png",  # Filename to save the plot
+        filename=f"{run_figs}/weights_{lal}.png",  # Filename to save the plot
         alphas=alphas,
         linewidths=linewidths
     )
 
 
-def plot_obs_err(series_data, run_figs, xref=0.0):
+def plot_obs_err(series_data, run_figs, lal, xref=0.0):
 
     conf = compose(config_name='config_run')
     plot_params = uu.get_plot_params(conf)
@@ -283,7 +283,7 @@ def plot_obs_err(series_data, run_figs, xref=0.0):
         size=(6, 5),               # Figure size
         colors=colors,
         linestyles=linestyles,
-        filename=f"{run_figs}/obs_error_{xref}.png",  # Filename to save the plot
+        filename=f"{run_figs}/obs_error_{xref}_{lal}.png",  # Filename to save the plot
         alphas=alphas,
         linewidths=linewidths
     )
@@ -520,7 +520,7 @@ def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, p
     )
 
 
-def plot_multiple_series(series_data, prj_figs):
+def plot_multiple_series(series_data, prj_figs, lal):
     """
     Generalized plot function for multiple series at specified time instants.
     
@@ -598,12 +598,12 @@ def plot_multiple_series(series_data, prj_figs):
     
     axes[0].set_ylim(cc.Troom, cc.Tmax+0.7) if rescale else axes[0].set_ylim(0, 1)
     # Save and close figure
-    filename = f"{prj_figs}/combined_plot.png"
+    filename = f"{prj_figs}/combined_plot_{lal}.png"
     fig.tight_layout()  # Adjust layout for better spacing
     save_and_close(fig, filename)
 
 
-def plot_l2(series_sys, series_data, folder):
+def plot_l2(series_sys, series_data, folder, lal):
     """
     Plot L2 norm of prediction errors for true and predicted values.
     
@@ -666,7 +666,7 @@ def plot_l2(series_sys, series_data, folder):
         ylabel=r"$L^2$ norm",
         legend_labels=legend_labels,  # Labels for the legend
         size=(6, 5),
-        filename=f"{folder}/l2_combined.png",
+        filename=f"{folder}/l2_combined_{lal}.png",
         colors=colors,
         linestyles=linestyles,
         alphas=alphas,

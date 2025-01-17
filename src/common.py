@@ -35,15 +35,15 @@ run_figs = [None]
 def set_run(prj_figs, cfg, run):
     global run_figs
 
-    run_figs = os.path.join(prj_figs, run)
-    os.makedirs(run_figs, exist_ok=True)
+    # run_figs = os.path.join(prj_figs, run)
+    # os.makedirs(run_figs, exist_ok=True)
 
     props = cfg.model_properties
     pars = cfg.model_parameters
     simu_settings = getattr(cfg.experiment_type, "simulation")
 
     if run.startswith("ground_truth"):
-        cfg.output_dir = run_figs
+        cfg.output_dir = prj_figs
         props.Ty10, props.Ty20, props.Ty30, props.Tgt20 = simu_settings.Ty10, simu_settings.Ty20, simu_settings.Ty30, simu_settings.Tgt20
         OmegaConf.save(cfg, f"{conf_dir}/config_run.yaml")
         cfg = filter_config_for_matlab(cfg)
@@ -56,7 +56,7 @@ def set_run(prj_figs, cfg, run):
         
         props.Ty10, props.Ty20, props.Ty30, props.Tgt20 = simu_settings.Ty10, simu_settings.Ty20, simu_settings.Ty30, simu_settings.Tgt20
         if run == "simulation_mm_obs":
-            cfg.output_dir = run_figs
+            cfg.output_dir = prj_figs
 
     elif run.startswith("meas_cool"):
         props.h, props.pwr_fact = 10.0, 0.0
@@ -69,8 +69,8 @@ def set_run(prj_figs, cfg, run):
         cfg.experiment.ground_truth = False
         cfg.model_properties.W = cfg.model_parameters.W3
 
-    OmegaConf.save(cfg, f"{run_figs}/config.yaml")
-    OmegaConf.save(cfg, f"{conf_dir}/config_{run}.yaml")
+    OmegaConf.save(cfg, f"{prj_figs}/config_{run}.yaml")
+    # OmegaConf.save(cfg, f"{conf_dir}/config_{run}.yaml")
 
     return run_figs, cfg
 
@@ -80,9 +80,9 @@ def filter_config_for_matlab(cfg):
         "model_properties": cfg.model_properties,
         "model_parameters": cfg.model_parameters,
         "output_dir": cfg.output_dir,
-        "experiment": cfg.experiment.meas_set,
+        "experiment": cfg.experiment.run,
         })
-    
+    OmegaConf.save(cfg_matlab, f"{conf_dir}/config_ground_truth.yaml")
     return cfg_matlab
 
 def generate_config_hash(config_data):

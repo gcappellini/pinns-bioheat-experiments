@@ -37,13 +37,13 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b1: -22.76333
-  b2: 21.77079
-  b3: 0.57444
-  b4: 0.49238
-  c1: -0.99253
-  c2: 0.57444
-  c3: 0.49238
+  b1: -1.27778
+  b2: -0.51746
+  b3: 0.96667
+  b4: 0.82857
+  c1: -1.79524
+  c2: 0.96667
+  c3: 0.82857
   n_ins: 4
   np_seed: 500
   sigma: 1.0
@@ -71,5 +71,5 @@ model_parameters:
   - 2.0888912677764893
   - 27.680763244628906
   - 8.396754264831543
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-01-17/16-34-04
-experiment: meas_cool_1
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/cooling_simulation
+experiment: simulation

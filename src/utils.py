@@ -13,7 +13,7 @@ import coeff_calc as cc
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-# import matlab.engine
+import matlab.engine
 from hydra import initialize, compose
 
 
@@ -500,10 +500,10 @@ def load_weights(observers, conf, label):
     lamb = pars.lam
     ups = pars.upsilon
 
-    data = np.loadtxt(f"{conf.output_dir}/{label}/weights_l_{lamb:.1f}_u_{ups:.1f}_{label}.txt")
+    data = np.loadtxt(f"{conf.output_dir}/weights_l_{lamb:.1f}_u_{ups:.1f}_{label}.txt")
 
     for j in range(n):
-        observers[j]["weights"] = np.hstack((data[:, 0:1], data[:, j+1:j+2]))
+        observers[j]["weights"] = np.hstack((data[:, 0:1], data[:, j+1].reshape(data[:, 0:1].shape)))
 
     return observers
 
@@ -762,17 +762,18 @@ def plot_and_compute_metrics(label, system_gt, series_to_plot, matching_args, co
     show_obs = conf.plot.show_obs
 
     # Plot general series and L2 errors
-    pp.plot_multiple_series(series_to_plot, output_dir)
+    pp.plot_multiple_series(series_to_plot, output_dir, label)
 
     # Extract matching data
     matching = extract_matching(matching_args)
     series_sys = {"grid": matching[:, :2], "theta": matching[:, 2], "label": system_gt["label"]}
     observers_data = [
-        {"grid": matching[:, :2], "theta": matching[:, 2+i], "label": series_to_plot[i]["label"]}
-        for i in range(1, len(series_to_plot))
+        {"grid": matching[:, :2], "theta": matching[:, 2+i], "label": matching_args[i]["label"]}
+        for i in range(1, len(matching_args))
     ]
     
-    pp.plot_l2(series_sys, observers_data, output_dir)
+    pp.plot_l2(series_sys, observers_data, output_dir, label)
+    # observers_data = observers_data[n_obs:] 
 
     # 3D comparison plots
     if comparison_3d:
@@ -782,30 +783,34 @@ def plot_and_compute_metrics(label, system_gt, series_to_plot, matching_args, co
     if label=="ground_truth" and n_obs>1:
 
         observers_data = compute_obs_err(matching, observers_data)
-        pp.plot_obs_err(observers_data, output_dir)
+        pp.plot_obs_err(observers_data, output_dir, label)
 
         if show_obs:
+            observers_data = [obs for obs in observers_data if obs["label"].startswith("observer_")]
             observers_data = load_weights(observers_data, conf, label)
-            pp.plot_weights(observers_data[:-1], output_dir, strng="gt")
+            pp.plot_weights(observers_data[:-1], output_dir, label)
 
     # Multi-observer simulation plots
     elif label=="simulation_mm_obs" and n_obs > 1:
 
         observers_data = compute_obs_err(matching, observers_data)
-        pp.plot_obs_err(observers_data, output_dir)
+        pp.plot_obs_err(observers_data, output_dir, label)
 
         if show_obs:
+            observers_data = [obs for obs in observers_data if obs["label"].startswith("observer_")]
             observers_data = load_weights(observers_data, conf, label)
-            pp.plot_weights(observers_data[:-1], output_dir)
+
+            pp.plot_weights(observers_data[:-1], output_dir, label)
     
     elif label.startswith("meas_") and n_obs > 1:
 
         observers_data = compute_obs_err(matching, observers_data)
-        pp.plot_obs_err(observers_data, output_dir)
+        pp.plot_obs_err(observers_data, output_dir, label)
 
         if show_obs:
+            observers_data = [obs for obs in observers_data if obs["label"].startswith("observer_")]
             observers_data = load_weights(observers_data, conf, label)
-            pp.plot_weights(observers_data[:-1], output_dir)
+            pp.plot_weights(observers_data[:-1], output_dir, label)
 
     # Compute and return metrics
     metrics = compute_metrics(
