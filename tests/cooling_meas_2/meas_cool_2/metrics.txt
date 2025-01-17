@@ -1,6 +1,6 @@
 === METRICS REPORT ===
 
-Part: observer_0
+Part: observer_1
 
 L2RE:
   Total: 175.53973841376762
@@ -37,7 +37,7 @@ LOSS:
   Bc1: 6.2898620963028444e-15
   Domain: 0.00045632336560244845
 
-Part: observer_1
+Part: observer_2
 
 L2RE:
   Total: 152.2609236833236
@@ -74,7 +74,7 @@ LOSS:
   Bc1: 6.2898620963028444e-15
   Domain: 0.0003538500859711126
 
-Part: observer_2
+Part: observer_3
 
 L2RE:
   Total: 132.13346023616342
@@ -111,7 +111,7 @@ LOSS:
   Bc1: 6.2898620963028444e-15
   Domain: 0.00027819627606600456
 
-Part: observer_3
+Part: observer_4
 
 L2RE:
   Total: 115.90939472012575
@@ -148,7 +148,7 @@ LOSS:
   Bc1: 6.2898620963028444e-15
   Domain: 0.00022436225789375085
 
-Part: observer_4
+Part: observer_5
 
 L2RE:
   Total: 104.65062401388491
@@ -185,7 +185,7 @@ LOSS:
   Bc1: 6.2898620963028444e-15
   Domain: 0.00018797210285493457
 
-Part: observer_5
+Part: observer_6
 
 L2RE:
   Total: 99.2524881546963
@@ -222,7 +222,7 @@ LOSS:
   Bc1: 6.2898620963028444e-15
   Domain: 0.00016507632305137968
 
-Part: observer_6
+Part: observer_7
 
 L2RE:
   Total: 99.05948424487514
@@ -259,7 +259,7 @@ LOSS:
   Bc1: 6.2898620963028444e-15
   Domain: 0.00015312091412681436
 
-Part: observer_7
+Part: multi_observer
 
 L2RE:
   Total: 102.06339543989259

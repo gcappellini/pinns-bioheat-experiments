@@ -493,16 +493,19 @@ def gen_obsdata(conf, path=None):
     return input_mapping.get(n_ins, lambda: None)()
 
 
-def load_weights(conf, label, path=None):
-    n = cc.n_obs
-    dir_name = path if path is not None else conf.output_dir
-    lamb = cc.lamb
-    ups = cc.upsilon
+def load_weights(observers, conf, label):
+    pars = conf.model_parameters
+    n = pars.n_obs
+    # dir_name = path if path is not None else conf.output_dir
+    lamb = pars.lam
+    ups = pars.upsilon
 
-    data = np.loadtxt(f"{dir_name}/weights_l_{lamb:.3f}_u_{ups:.3f}.txt")
-    t, weights = data[:, 0:1], data[:, 1:1+n]
+    data = np.loadtxt(f"{conf.output_dir}/{label}/weights_l_{lamb:.1f}_u_{ups:.1f}_{label}.txt")
 
-    return t, np.array(weights)
+    for j in range(n):
+        observers[j]["weights"] = np.hstack((data[:, 0:1], data[:, j+1:j+2]))
+
+    return observers
 
     
 def scale_t(t):
@@ -534,12 +537,15 @@ def rescale_t(theta):
 
 
 def rescale_x(X):
+    # Check if X is a single float value
+    if isinstance(X, (int, float)):
+        return X * cc.L0
 
     # Iterate through each component in X and rescale if it is a list-like object
     rescaled_X = []
     for part in X:
         part = np.array(part, dtype=float)  # Ensure each part is converted into a numpy array
-        rescaled_part = part * cc.L0           # Apply the scaling
+        rescaled_part = part * cc.L0        # Apply the scaling
         rescaled_X.append(rescaled_part)    # Append rescaled part to the result list
 
     return rescaled_X
@@ -571,7 +577,7 @@ def get_tc_positions():
 
 
 def import_testdata(conf):
-    name = conf.experiment.meas_set
+    name = conf.experiment.run
     df = load_from_pickle(f"{src_dir}/data/vessel/{name}.pkl")
 
     positions = get_tc_positions()
@@ -707,30 +713,7 @@ def calculate_mu(os, tr, upsilon):
     return scrt
 
 
-def compute_mu(g):
-    n_obs = cc.n_obs
-    upsilon = cc.upsilon
-
-    rows_0 = g[g[:, 0] == 0.0]
-    sys_0 = rows_0[:, 2:3]
-    obss_0 = rows_0[:, 3:3+n_obs]
-
-    muu = []
-
-    for el in range(obss_0.shape[1]):
-        mu_value = calculate_mu(obss_0[:, el], sys_0, upsilon)
-
-        muu.append(mu_value)
-    muu = np.column_stack(muu)#.reshape(len(muu),)
-    return rows_0[:, 1:2], muu
-
-
-def mm_predict(multi_obs, obs_grid, folder):
-
-    ups = cc.upsilon
-    lam = cc.lamb
-    a = np.loadtxt(f'{folder}/weights_l_{lam:.3f}_u_{ups:.3f}.txt')
-    weights = a[1:]
+def mm_predict(multi_obs, obs_grid, weights):
 
     num_time_steps = weights.shape[1]
 
@@ -751,22 +734,32 @@ def mm_predict(multi_obs, obs_grid, folder):
     return np.array(predictions)
 
 
-def plot_observer_results(mu, t, weights, output_dir, suffix=''):
-    
 
-    observers_mu = [
-        {"t": t, "weight": weights[:, i], "mu": mu[:, i], "label": f"observer_{i}{suffix}"}
-        for i in range(cc.n_obs)
-    ]
-    pp.plot_mu(observers_mu, output_dir)
-    pp.plot_weights(observers_mu, output_dir)
+def compute_obs_err(g, observers_data, x_ref=0.0):
+    if isinstance(x_ref, (list, np.ndarray)):
+        for j, x in enumerate(x_ref):
+            rows_xref = g[g[:, 0] == x]
+            sys_xref = rows_xref[:, 2]
+            obs_err = np.abs(rows_xref[:, 3:] - sys_xref[:, None])
+            
+            for i, observer in enumerate(observers_data):
+                observer[f'obs_err_{x_ref[j]}'] = obs_err[:, i]
+    else:
+        rows_xref = g[g[:, 0] == x_ref]
+        sys_xref = rows_xref[:, 2]
+        obs_err = np.abs(rows_xref[:, 3:] - sys_xref[:, None])
+        
+        for i, observer in enumerate(observers_data):
+            observer[f'obs_err_{x_ref}'] = obs_err[:, i]
 
+    return observers_data
 
 def plot_and_compute_metrics(label, system_gt, series_to_plot, matching_args, conf, output_dir, comparison_3d=True):
     """
     Helper function for plotting and computing metrics.
     """
-    n_ins, n_obs = conf.model_properties.n_ins, conf.model_parameters.n_obs
+    n_obs = conf.model_parameters.n_obs
+    show_obs = conf.plot.show_obs
 
     # Plot general series and L2 errors
     pp.plot_multiple_series(series_to_plot, output_dir)
@@ -788,25 +781,31 @@ def plot_and_compute_metrics(label, system_gt, series_to_plot, matching_args, co
     # Ground truth plots
     if label=="ground_truth" and n_obs>1:
 
-        tm, mu = compute_mu(matching)
-        tw, weights = load_weights(conf, label)
-        plot_observer_results(mu, tw, weights, output_dir, suffix="_gt")
+        observers_data = compute_obs_err(matching, observers_data)
+        pp.plot_obs_err(observers_data, output_dir)
+
+        if show_obs:
+            observers_data = load_weights(observers_data, conf, label)
+            pp.plot_weights(observers_data[:-1], output_dir, strng="gt")
 
     # Multi-observer simulation plots
     elif label=="simulation_mm_obs" and n_obs > 1:
 
-        tm, mu = compute_mu(matching)#[1:]
-        tw, weights = load_weights(conf, label)
-        mu = mu[1:]
-        plot_observer_results(mu, tw, weights, output_dir)
+        observers_data = compute_obs_err(matching, observers_data)
+        pp.plot_obs_err(observers_data, output_dir)
+
+        if show_obs:
+            observers_data = load_weights(observers_data, conf, label)
+            pp.plot_weights(observers_data[:-1], output_dir)
     
     elif label.startswith("meas_") and n_obs > 1:
 
-        tm, mu = compute_mu(matching)
-        tw, weights = load_weights(conf, label)
-        indices = np.linspace(0, mu.shape[0] - 1, weights.shape[0]).astype(int)
-        mu_downsampled = mu[indices, :]
-        plot_observer_results(mu_downsampled, tw, weights, output_dir)
+        observers_data = compute_obs_err(matching, observers_data)
+        pp.plot_obs_err(observers_data, output_dir)
+
+        if show_obs:
+            observers_data = load_weights(observers_data, conf, label)
+            pp.plot_weights(observers_data[:-1], output_dir)
 
     # Compute and return metrics
     metrics = compute_metrics(
@@ -855,11 +854,11 @@ def check_and_wandb_upload(
 
         elif n_obs > 1:
             series_to_plot_mm_obs = (
-                [system_gt, mm_obs_gt, *observers_gt]
+                [system_gt, *observers_gt, mm_obs_gt]
                 if show_obs
                 else [system_gt, mm_obs_gt]
                 )
-            matching_args_mm_obs = [system_gt, *observers_gt, mm_obs_gt]
+            matching_args_mm_obs = [system_gt, *observers_gt, mm_obs_gt] if show_obs else [system_gt, mm_obs_gt]
 
             _, metrics = plot_and_compute_metrics(label, system_gt, series_to_plot_mm_obs, matching_args_mm_obs, conf, output_dir)
             return metrics
@@ -872,21 +871,21 @@ def check_and_wandb_upload(
             return metrics
         elif n_obs > 1:
             series_to_plot_mm_obs = (
-                [system_gt, mm_obs, mm_obs_gt, *observers]
+                [system_gt, mm_obs_gt, *observers, mm_obs]
                 if show_obs
-                else [system_gt, mm_obs, mm_obs_gt]
+                else [system_gt, mm_obs_gt, mm_obs]
             )
-            matching_args_mm_obs = [system_gt, *observers, mm_obs, mm_obs_gt]
+            matching_args_mm_obs = [system_gt, *observers, mm_obs, mm_obs_gt] if show_obs else [system_gt, mm_obs, mm_obs_gt]
             _, metrics = plot_and_compute_metrics(label, system_gt, series_to_plot_mm_obs, matching_args_mm_obs, conf, output_dir)
             return metrics
     
     elif label.startswith("meas"):
         series_to_plot_meas = (
-            [system_meas, mm_obs, *observers]
+            [system_meas, *observers, mm_obs]
             if show_obs
             else [system_meas, mm_obs]
         )
-        matching_args_meas = [system_meas, *observers, mm_obs]
+        matching_args_meas = [system_meas, *observers, mm_obs] if show_obs else [system_meas, mm_obs]
         _, metrics = plot_and_compute_metrics(label, system_meas, series_to_plot_meas, matching_args_meas, conf, output_dir)
         return metrics
 
@@ -903,7 +902,7 @@ def get_pred(model, X, output_dir, label):
 
 
 
-def get_observers_preds(multi_obs, x_obs, output_dir, conf):
+def get_observers_preds(multi_obs, x_obs, output_dir, conf, label):
     """
     Generate predictions for observers and multi-observer models.
 
@@ -917,24 +916,25 @@ def get_observers_preds(multi_obs, x_obs, output_dir, conf):
         obs_dict: List of dictionaries for each observer's predictions.
         mm_obs: Dictionary for multi-observer's predictions.
     """
-    n_obs = conf.model_parameters.n_obs
+    pars = conf.model_parameters
+    n_obs = pars.n_obs
     preds = [x_obs[:, 0], x_obs[:, -1]]
 
     # Process for a single observer
     if n_obs == 1:
         obs_pred = multi_obs.predict(x_obs).reshape(-1)
         data_to_save = np.column_stack((x_obs[:, 0], x_obs[:, -1], obs_pred)).round(n_digits)
-        np.savetxt(f'{output_dir}/prediction_obs_{cc.W_index}.txt', data_to_save, fmt='%.3f %.3f %.6f', delimiter=' ')
+        np.savetxt(f'{output_dir}/prediction_obs_{pars.W_index}_{label}.txt', data_to_save, fmt='%.3f %.3f %.6f', delimiter=' ')
 
         preds.append(obs_pred)
         preds = np.array(preds).T.round(n_digits)
 
-        OmegaConf.save(conf, f"{output_dir}/config.yaml")
+        OmegaConf.save(conf, f"{output_dir}/config_{label}.yaml")
 
         obs_dict = [{
             "grid": preds[:, :2],
             "theta": preds[:, 2],
-            "label": f"observer_{cc.W_index}"
+            "label": f"observer_{pars.W_index}"
         }]
         mm_obs = obs_dict[0]
         return obs_dict, mm_obs
@@ -944,12 +944,12 @@ def get_observers_preds(multi_obs, x_obs, output_dir, conf):
         obs_pred = multi_obs[el].predict(x_obs).reshape(-1)
         preds.append(obs_pred)
 
-    mm_pred = solve_ivp(multi_obs, output_dir, conf, x_obs)
+    mm_pred = solve_ivp(multi_obs, output_dir, conf, x_obs, label)
     preds.append(mm_pred)
 
     # Save multi-observer predictions
     preds = np.array(preds).T.round(n_digits)
-    np.savetxt(f'{output_dir}/prediction_mm_obs.txt', preds, delimiter=' ')
+    np.savetxt(f'{output_dir}/prediction_mm_obs_{label}.txt', preds, delimiter=' ')
 
     # Prepare observer dictionaries
     obs_dict = [
@@ -1051,13 +1051,14 @@ def get_plot_params(conf):
         **observer_gt_params
     }
 
-def solve_ivp(multi_obs, fold, conf, x_obs):
+def solve_ivp(multi_obs, fold, conf, x_obs, label):
     """
     Solve the IVP for observer weights and plot the results.
     """
-    n_obs = cc.n_obs
-    lam = cc.lamb
-    ups = cc.upsilon
+    pars = conf.model_parameters
+    n_obs = pars.n_obs
+    lam = pars.lam
+    ups = pars.upsilon
 
     p0 = np.full((n_obs,), 1/n_obs)
 
@@ -1077,8 +1078,8 @@ def solve_ivp(multi_obs, fold, conf, x_obs):
     weights[1:] = sol.y
     weights = weights.T
     
-    np.savetxt(f"{fold}/weights_l_{lam:.3f}_u_{ups:.3f}.txt", weights, delimiter=' ')
-    y_pred = mm_predict(multi_obs, x_obs, fold)
+    np.savetxt(f"{fold}/weights_l_{lam:.1f}_u_{ups:.1f}_{label}.txt", weights, delimiter=' ')
+    y_pred = mm_predict(multi_obs, x_obs, weights)
 
     return y_pred
 
@@ -1413,7 +1414,7 @@ def extract_matching(dicts):
     return result
 
 def check_measurements(system_meas, mm_obs, output_dir, conf):
-    name_exp = conf.experiment.meas_set
+    name_exp = conf.experiment.run
 
     y1_pred, gt1_pred, gt2_pred, y2_pred = point_predictions([system_meas, mm_obs])
     df = load_from_pickle(f"{src_dir}/data/vessel/{name_exp}.pkl")

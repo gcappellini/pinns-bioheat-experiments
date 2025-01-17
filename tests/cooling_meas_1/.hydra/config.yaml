@@ -8,8 +8,8 @@ model_properties:
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
-  Ty10: 21.5
-  Ty20: 30.2
+  Ty10: 22.28
+  Ty20: 26.67
   Ty30: 21.5
   Tgt20: 31.5
   alfa: 50
@@ -273,7 +273,6 @@ plot:
 experiment:
   ground_truth: false
   run: meas_cool_1
-  meas_set: meas_cool_1
   plot: true
 experiment_type:
   import_data: false
@@ -300,7 +299,8 @@ experiment_type:
     start_min: 30
     end_min: 60
     Ty10: 22.84
+    Ty20: 28.6
     Ty30: 21.5
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /app/tests/cooling_simulation_8obs/ground_truth
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/cooling_meas_1_no_obs

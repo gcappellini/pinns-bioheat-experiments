@@ -36,5 +36,6 @@ p0 50 W
 
 
 cooling_meas_1: 20240930_1 from min 35
+cooling_meas_2: 20240930_3 from min 30
 
 

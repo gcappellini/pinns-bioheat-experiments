@@ -60,7 +60,7 @@ def run_simulation_mm_obs(config, out_dir, output_dir_gt, system_gt, mm_obs_gt, 
     output_dir_inverse, config_inverse = co.set_run(out_dir, config, label)
     multi_obs = uu.execute(config_inverse, label)
     x_obs = uu.gen_obsdata(config_inverse, path=output_dir_gt)
-    observers, mm_obs = uu.get_observers_preds(multi_obs, x_obs, output_dir_inverse, config_inverse)
+    observers, mm_obs = uu.get_observers_preds(multi_obs, x_obs, output_dir_inverse, config_inverse, label)
     if config.experiment.plot:
         uu.check_and_wandb_upload(
             label=label,
@@ -76,12 +76,12 @@ def run_simulation_mm_obs(config, out_dir, output_dir_gt, system_gt, mm_obs_gt, 
 
 def run_measurement_mm_obs(config, out_dir):
     """Run multi-observer simulation, load data, and plot results."""
-    label = config.experiment.meas_set
+    label = config.experiment.run
     output_dir_meas, config_meas = co.set_run(out_dir, config, label)
     multi_obs = uu.execute(config_meas, label)
     system_meas, _ = uu.import_testdata(config_meas)
     x_obs = uu.import_obsdata(config_meas)
-    observers, mm_obs = uu.get_observers_preds(multi_obs, x_obs, output_dir_meas, config_meas)
+    observers, mm_obs = uu.get_observers_preds(multi_obs, x_obs, output_dir_meas, config_meas, label)
     if config.experiment.plot:
         uu.check_and_wandb_upload(
             label=label,
@@ -105,28 +105,27 @@ def main():
     Main function to run the testing of the network, MATLAB ground truth, observer checks, and PINNs.
     """
     config = compose(config_name="config_run")
-    out_dir = config.output_dir
+    run_out_dir = config.output_dir
     dict_exp = config.experiment
     n_ins = config.model_properties.n_ins
-    n_obs = config.model_parameters.n_obs
 
     # Ground Truth Simulation
     if dict_exp["ground_truth"]:
-        output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, out_dir)
-    else:
-        output_dir_gt, system_gt, observers_gt, mm_obs_gt = load_ground_truth(config, f"{tests_dir}/cooling_simulation_{n_obs}obs")
+        output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, run_out_dir)
+    # else:
+    #     output_dir_gt, system_gt, observers_gt, mm_obs_gt = load_ground_truth(config, f"{tests_dir}/cooling_simulation_{n_obs}obs")
 
     if dict_exp["run"]=="simulation":
         # Simulation System
         if n_ins==2:
-            run_simulation_system(config, out_dir, system_gt)
+            run_simulation_system(config, run_out_dir, system_gt)
 
         # Simulation Multi-Observer
         else:
-            run_simulation_mm_obs(config, out_dir, output_dir_gt, system_gt, mm_obs_gt, observers_gt)
+            run_simulation_mm_obs(config, run_out_dir, output_dir_gt, system_gt, mm_obs_gt, observers_gt)
     
     elif dict_exp["run"].startswith("meas"):
-        run_measurement_mm_obs(config, out_dir)
+        run_measurement_mm_obs(config, run_out_dir)
 
 
 if __name__ == "__main__":

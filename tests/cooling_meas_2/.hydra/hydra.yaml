@@ -112,12 +112,11 @@ hydra:
     hydra:
     - hydra.run.dir=tests/cooling_meas_2
     - hydra.mode=RUN
-    task:
-    - plot.show_obs=true
+    task: []
   job:
     name: main
     chdir: null
-    override_dirname: plot.show_obs=true
+    override_dirname: ''
     id: ???
     num: ???
     config_name: config_run
@@ -131,18 +130,18 @@ hydra:
   runtime:
     version: 1.3.2
     version_base: '1.3'
-    cwd: /app
+    cwd: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments
     config_sources:
     - path: hydra.conf
       schema: pkg
       provider: hydra
-    - path: /app/src/configs
+    - path: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/src/configs
       schema: file
       provider: main
     - path: ''
       schema: structured
       provider: schema
-    output_dir: /app/tests/cooling_meas_2
+    output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/cooling_meas_2
     choices:
       hydra/env: default
       hydra/callbacks: null

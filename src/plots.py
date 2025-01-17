@@ -204,14 +204,14 @@ def plot_weights(series_data, run_figs, strng=None):
     t_vals = []
 
     for series in series_data:
-        values = series['weight']
+        values = series['weights'][:, 1]
         label = series['label']
         colors.append(plot_params[label]["color"])
         linestyles.append(plot_params[label]["linestyle"])
         alphas.append(plot_params[label]["alpha"])
         linewidths.append(plot_params[label]["linewidth"])
-        t_vals.append(series['t'])
-        weights.append(values.reshape(series['t'].shape))
+        t_vals.append(series['weights'][:, 0])
+        weights.append(values.reshape(len(values), 1))
 
     # Define the title with the lambda value
     title = fr"Dynamic weights, $\lambda={lam}$, $\upsilon={ups}$"
@@ -238,37 +238,36 @@ def plot_weights(series_data, run_figs, strng=None):
     )
 
 
-def plot_mu(series_data, run_figs, strng=None):
+def plot_obs_err(series_data, run_figs, xref=0.0):
 
     conf = compose(config_name='config_run')
     plot_params = uu.get_plot_params(conf)
-    n_obs = conf.model_parameters.n_obs
     # Prepare the labels for each line based on the number of columns in `mus`
-    legend_labels = [f"$e_{i}$" for i in range(n_obs)]
 
     colors = []
     linestyles = []
-    run_figs
     rescale = conf.plot.rescale
     alphas = []
     linewidths = []
     mus = []
     t_vals = []
+    legend_labels = []
 
     for series in series_data:
-        values = series['mu']
+        values = series[f'obs_err_{xref}']
         label = series['label']
-        t_vals.append(series['t'])
+        t_vals.append(np.unique(series["grid"][:, 1]))
         colors.append(plot_params[label]["color"])
         linestyles.append(plot_params[label]["linestyle"])
         alphas.append(plot_params[label]["alpha"])
         linewidths.append(plot_params[label]["linewidth"])
-        mus.append(values.reshape(series['t'].shape))
+        mus.append(values.reshape(len(values), 1))
+        legend_labels.append(plot_params[label]["label"])
 
     # Define the title for the plot
-    title = "Observation errors"
+    title = f"Observation errors, x={uu.rescale_x(xref)}" if rescale else f"Observation errors, X={xref}"
     # t = t.reshape(len(t), 1)
-    mus = np.array(mus)
+    mus = np.array(uu.rescale_t(mus))-cc.Troom if rescale else np.array(mus)  
 
     times_plot = np.array(uu.rescale_time(t_vals)) if rescale else np.array(t_vals)  
     _, xlabel, _ = uu.get_scaled_labels(rescale) 
@@ -279,12 +278,12 @@ def plot_mu(series_data, run_figs, strng=None):
         y=mus,                   # Transpose mus to get lines for each observation error
         title=title,               # Plot title
         xlabel=xlabel,      # x-axis label
-        ylabel=r"Error $\mu$",             # y-axis label
+        ylabel=r"Error $^{\circ} C$" if rescale else r"Error",
         legend_labels=legend_labels, # Labels for each observation error
         size=(6, 5),               # Figure size
         colors=colors,
         linestyles=linestyles,
-        filename=f"{run_figs}/obs_error.png" if strng==None else f"{run_figs}/obs_error_strng.png",  # Filename to save the plot
+        filename=f"{run_figs}/obs_error_{xref}.png",  # Filename to save the plot
         alphas=alphas,
         linewidths=linewidths
     )
@@ -502,7 +501,7 @@ def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, p
     else:
         y_data_plot = y_data
     
-    exp_type = conf.experiment.meas_set
+    exp_type = conf.experiment.run
     n_obs = conf.model_parameters.n_obs
     meas_dict = getattr(conf.experiment_type, exp_type)
     name = meas_dict["title"]
@@ -640,10 +639,7 @@ def plot_l2(series_sys, series_data, folder):
             l2 = values
         else:
             l2 = uu.calculate_l2(e, theta_system, values)
-            # l2 = np.array([norm(ts - val) for ts, val in zip(theta_system, values)])
-        # l2 = l2.reshape(len(l2), 1)
 
-        # t_vals = [t_pred for _ in range(n_obs + 1)]
         t_vals.append(t_pred)
         legend_labels.append(plot_params[label]["label"])
         colors.append(plot_params[label]["color"])
