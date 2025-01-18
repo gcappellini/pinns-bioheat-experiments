@@ -62,7 +62,7 @@ def compute_metrics(series_to_plot, cfg, run_figs):
         pred_nonzero = np.where(pred != 0, pred, small_number)
         
         # Part 1: General metrics for pred (Observer PINNs vs Observer MATLAB)
-        L2RE = np.sum(calculate_l2(grid, true, pred))
+        L2RE = np.sum(series_to_plot[i]["L2_err"])
         MSE = calculate_mse(true, pred)
         max_err = np.max(np.abs(true_nonzero - pred))
         mean_err = np.mean(np.abs(true_nonzero - pred))
@@ -90,7 +90,8 @@ def compute_metrics(series_to_plot, cfg, run_figs):
             true_nonzero_cond = np.where(true_cond != 0, true_cond, small_number)
             
             # Calculate metrics for pred under this specific condition
-            L2RE_cond = np.sum(calculate_l2(grid[condition], true_cond, pred_cond))
+
+            L2RE_cond = 0
             MSE_cond = calculate_mse(true_cond, pred_cond)
             max_err_cond = np.max(np.abs(true_nonzero_cond - pred_cond))
             mean_err_cond = np.mean(np.abs(true_nonzero_cond - pred_cond))
@@ -461,16 +462,14 @@ def gen_testdata(conf, path=None):
 
     observers_gt, mm_obs_gt = calculate_l2(system_gt, observers_gt, mm_obs_gt)
     observers_gt, mm_obs_gt = compute_obs_err(system_gt, observers_gt, mm_obs_gt)
-    observers_gt = load_weights(observers_gt, conf, "ground_truth")
+    observers_gt = load_weights(observers_gt, conf, "ground_truth", path=path)
     
     return system_gt, observers_gt, mm_obs_gt
 
 
-def gen_obsdata(conf, path=None):
+def gen_obsdata(conf, system_gt):
     global f1, f2, f3
 
-    # Generate ground truth data
-    system_gt, _, _ = gen_testdata(conf, path)
     n_ins = conf.model_properties.n_ins
 
     # Prepare grid and theta data
@@ -498,14 +497,16 @@ def gen_obsdata(conf, path=None):
     return input_mapping.get(n_ins, lambda: None)()
 
 
-def load_weights(observers, conf, label):
+def load_weights(observers, conf, label, path=None):
     pars = conf.model_parameters
     n = pars.n_obs
     # dir_name = path if path is not None else conf.output_dir
     lamb = pars.lam
     ups = pars.upsilon
 
-    data = np.loadtxt(f"{conf.output_dir}/weights_l_{lamb:.1f}_u_{ups:.1f}_{label}.txt")
+    dir_name = path if path is not None else conf.output_dir
+
+    data = np.loadtxt(f"{dir_name}/weights_l_{lamb:.1f}_u_{ups:.1f}_{label}.txt")
 
     for j in range(n):
         observers[j]["weights"] = np.hstack((data[:, 0:1], data[:, j+1].reshape(data[:, 0:1].shape)))
@@ -739,162 +740,24 @@ def mm_predict(multi_obs, obs_grid, weights):
     return np.array(predictions)
 
 
-def compute_obs_err(system, observers_data, mm_obs, x_ref=0.0):
+def compute_obs_err(system, observers_data, mm_obs):
+
+    xref = get_tc_positions()
 
     matching = [system, *observers_data, mm_obs]
     g = extract_matching(matching)
 
-    rows_xref = g[g[:, 0] == x_ref]
-    sys_xref = rows_xref[:, 2]
-    obs_err = np.abs(rows_xref[:, 3:-1] - sys_xref[:, None])
-    mm_obs_err = np.abs(rows_xref[:, -1] - sys_xref)
-    
-    for i, observer in enumerate(observers_data):
-        observer[f'obs_err_{x_ref}'] = obs_err[:, i]
+    for x_ref in xref[:-1]:
+        rows_xref = g[g[:, 0] == x_ref]
+        sys_xref = rows_xref[:, 2]
+        obs_err = np.abs(rows_xref[:, 3:-1] - sys_xref[:, None])
+        mm_obs_err = np.abs(rows_xref[:, -1] - sys_xref)
+        
+        for i, observer in enumerate(observers_data):
+            observer[f'obs_err_{x_ref}'] = obs_err[:, i]
 
-    mm_obs[f'obs_err_{x_ref}'] = mm_obs_err
+        mm_obs[f'obs_err_{x_ref}'] = mm_obs_err
     return observers_data, mm_obs
-
-
-def plot_and_compute_metrics(label, system_gt, series_to_plot, matching_args, conf, output_dir, comparison_3d=True):
-    """
-    Helper function for plotting and computing metrics.
-    """
-    n_obs = conf.model_parameters.n_obs
-    show_obs = conf.plot.show_obs
-
-    # Plot general series and L2 errors
-    pp.plot_multiple_series(series_to_plot, output_dir, label)
-
-    # # Extract matching data
-    # matching = extract_matching(matching_args)
-    # series_sys = {"grid": matching[:, :2], "theta": matching[:, 2], "label": system_gt["label"]}
-    # observers_data = [
-    #     {"grid": matching[:, :2], "theta": matching[:, 2+i], "label": matching_args[i]["label"]}
-    #     for i in range(1, len(matching_args))
-    # ]
-    
-    pp.plot_l2(series_sys, observers_data, output_dir, label)
-    # observers_data = observers_data[n_obs:] 
-
-    # 3D comparison plots
-    if comparison_3d:
-        pp.plot_validation_3d(matching[:, :2], matching[:, 2], matching[:, -1], output_dir, system=True)
-
-    # Ground truth plots
-    if label=="ground_truth" and n_obs>1:
-
-        observers_data = compute_obs_err(matching, observers_data)
-        pp.plot_obs_err(observers_data, output_dir, label)
-
-        if show_obs:
-            observers_data = [obs for obs in observers_data if obs["label"].startswith("observer_")]
-            observers_data = load_weights(observers_data, conf, label)
-            pp.plot_weights(observers_data[:-1], output_dir, label)
-
-    # Multi-observer simulation plots
-    elif label=="simulation_mm_obs" and n_obs > 1:
-
-        observers_data = compute_obs_err(matching, observers_data)
-        pp.plot_obs_err(observers_data, output_dir, label)
-
-        if show_obs:
-            observers_data = [obs for obs in observers_data if obs["label"].startswith("observer_")]
-            observers_data = load_weights(observers_data, conf, label)
-
-            pp.plot_weights(observers_data[:-1], output_dir, label)
-    
-    elif label.startswith("meas_") and n_obs > 1:
-
-        observers_data = compute_obs_err(matching, observers_data)
-        pp.plot_obs_err(observers_data, output_dir, label)
-
-        if show_obs:
-            observers_data = [obs for obs in observers_data if obs["label"].startswith("observer_")]
-            observers_data = load_weights(observers_data, conf, label)
-            pp.plot_weights(observers_data[:-1], output_dir, label)
-
-    # Compute and return metrics
-    metrics = compute_metrics(
-        matching, series_to_plot, conf, output_dir
-    )
-
-    return matching, metrics
-
-
-def check_and_wandb_upload(
-    label,
-    mm_obs_gt=None,
-    mm_obs=None,
-    system=None,
-    system_gt=None,
-    system_meas=None,
-    conf=None,
-    output_dir=None,
-    observers_gt=None,
-    observers=None
-):
-    """
-    Check observers and optionally upload results to wandb.
-    """
-    if conf is None:
-        raise ValueError("Configuration (`conf`) is required.")
-
-    n_ins = conf.model_properties.n_ins if conf and conf.model_properties else False
-    n_obs = conf.model_parameters.n_obs if conf and conf.model_parameters else 0
-    show_obs = conf.plot.show_obs if conf and conf.plot else False
-
-    if output_dir is None:
-        raise ValueError("Output directory (`output_dir`) is required.")
-
-    if label=="simulation_system":
-        series_to_plot_direct = [system_gt, system]
-        _, metrics_direct = plot_and_compute_metrics(label, system_gt, series_to_plot_direct, (system_gt, system), conf, output_dir)
-        return metrics_direct
-    
-    elif label=="ground_truth":
-        if n_obs == 1:
-            series_to_plot_n1 = [system_gt, *observers_gt]
-            matching_args_n1 = [system_gt, *observers_gt]
-            _, metrics = plot_and_compute_metrics(label, system_gt, series_to_plot_n1, matching_args_n1, conf, output_dir)
-            return metrics
-
-        elif n_obs > 1:
-            series_to_plot_mm_obs = (
-                [system_gt, *observers_gt, mm_obs_gt]
-                if show_obs
-                else [system_gt, mm_obs_gt]
-                )
-            matching_args_mm_obs = [system_gt, *observers_gt, mm_obs_gt] if show_obs else [system_gt, mm_obs_gt]
-
-            _, metrics = plot_and_compute_metrics(label, system_gt, series_to_plot_mm_obs, matching_args_mm_obs, conf, output_dir)
-            return metrics
-    
-    elif label=="simulation_mm_obs":
-        if n_obs == 1:
-            series_to_plot_n1 = [system_gt, *observers_gt, *observers]
-            matching_args_n1 = [system_gt, *observers, mm_obs]
-            _, metrics = plot_and_compute_metrics(label, system_gt, series_to_plot_n1, matching_args_n1, conf, output_dir)
-            return metrics
-        elif n_obs > 1:
-            series_to_plot_mm_obs = (
-                [system_gt, mm_obs_gt, *observers, mm_obs]
-                if show_obs
-                else [system_gt, mm_obs_gt, mm_obs]
-            )
-            matching_args_mm_obs = [system_gt, *observers, mm_obs, mm_obs_gt] if show_obs else [system_gt, mm_obs, mm_obs_gt]
-            _, metrics = plot_and_compute_metrics(label, system_gt, series_to_plot_mm_obs, matching_args_mm_obs, conf, output_dir)
-            return metrics
-    
-    elif label.startswith("meas"):
-        series_to_plot_meas = (
-            [system_meas, *observers, mm_obs]
-            if show_obs
-            else [system_meas, mm_obs]
-        )
-        matching_args_meas = [system_meas, *observers, mm_obs] if show_obs else [system_meas, mm_obs]
-        _, metrics = plot_and_compute_metrics(label, system_meas, series_to_plot_meas, matching_args_meas, conf, output_dir)
-        return metrics
 
 
 def get_pred(model, X, output_dir, label):
@@ -934,6 +797,7 @@ def get_observers_preds(ground_truth, multi_obs, x_obs, output_dir, conf, label)
 
     mm_pred = obs_pred if n_obs==1 else solve_ivp(multi_obs, output_dir, conf, x_obs, label)
     preds.append(mm_pred)
+    preds=np.array(preds).T
 
     # Prepare observer dictionaries
     obs_dict = [
@@ -960,7 +824,7 @@ def get_observers_preds(ground_truth, multi_obs, x_obs, output_dir, conf, label)
         label = obs["label"]
         data_to_save = np.column_stack((obs["grid"][:, 0].round(n_digits), obs["grid"][:, -1].round(n_digits), obs["theta"].round(n_digits)))
         np.savetxt(f'{output_dir}/{label}.txt', data_to_save, fmt='%.2f %.2f %.6f', delimiter=' ')
-    # Save those dictionaries
+
     data_to_save = np.column_stack((mm_obs["grid"][:, 0].round(n_digits), mm_obs["grid"][:, -1].round(n_digits), mm_obs["theta"].round(n_digits)))
     np.savetxt(f'{output_dir}/{mm_obs["label"]}.txt', data_to_save, fmt='%.2f %.2f %.6f', delimiter=' ')
     return obs_dict, mm_obs

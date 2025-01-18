@@ -112,12 +112,11 @@ hydra:
     hydra:
     - hydra.run.dir=tests/cooling_meas_1
     - hydra.mode=RUN
-    task:
-    - plot.show_obs=true
+    task: []
   job:
     name: main
     chdir: null
-    override_dirname: plot.show_obs=true
+    override_dirname: ''
     id: ???
     num: ???
     config_name: config_run

@@ -175,23 +175,23 @@ plot:
       - --
       - '-'
       linewidth:
-      - 1.2
-      - 1.2
-      - 1.2
-      - 1.2
-      - 1.2
-      - 1.2
-      - 1.2
-      - 1.2
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
       alpha:
-      - 1.0
-      - 1.0
-      - 1.0
-      - 1.0
-      - 1.0
-      - 1.0
-      - 1.0
-      - 1.0
+      - 0.9
+      - 0.9
+      - 0.9
+      - 0.9
+      - 0.9
+      - 0.9
+      - 0.9
+      - 0.9
     system_gt:
       color: C3
       label: System MATLAB
@@ -272,7 +272,7 @@ plot:
   show_obs: true
 experiment:
   ground_truth: false
-  run: meas_cool_1
+  run: meas_cool_2
   plot: true
 experiment_type:
   import_data: false
@@ -303,4 +303,4 @@ experiment_type:
     Ty30: 21.5
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/cooling_meas_1_no_obs
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/cooling_meas_1

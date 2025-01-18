@@ -175,23 +175,23 @@ plot:
       - --
       - '-'
       linewidth:
-      - 1.2
-      - 1.2
-      - 1.2
-      - 1.2
-      - 1.2
-      - 1.2
-      - 1.2
-      - 1.2
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
       alpha:
-      - 1.0
-      - 1.0
-      - 1.0
-      - 1.0
-      - 1.0
-      - 1.0
-      - 1.0
-      - 1.0
+      - 0.9
+      - 0.9
+      - 0.9
+      - 0.9
+      - 0.9
+      - 0.9
+      - 0.9
+      - 0.9
     system_gt:
       color: C3
       label: System MATLAB
@@ -271,7 +271,7 @@ plot:
       - 0.7
   show_obs: true
 experiment:
-  ground_truth: true
+  ground_truth: false
   run: simulation
   plot: true
 experiment_type:
@@ -303,4 +303,4 @@ experiment_type:
     Ty30: 21.5
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-01-17/16-19-20
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-01-18/17-24-01

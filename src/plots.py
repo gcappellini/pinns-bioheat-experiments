@@ -238,55 +238,59 @@ def plot_weights(series_data, run_figs, lal):
     )
 
 
-def plot_obs_err(series_data, run_figs, lal, xref=0.0):
+def plot_obs_err(series_data: list, run_figs: str, lal: str):
 
     conf = compose(config_name='config_run')
     plot_params = uu.get_plot_params(conf)
     # Prepare the labels for each line based on the number of columns in `mus`
 
-    colors = []
-    linestyles = []
-    rescale = conf.plot.rescale
-    alphas = []
-    linewidths = []
-    mus = []
-    t_vals = []
-    legend_labels = []
+    x_ref = uu.get_tc_positions()
 
-    for series in series_data:
-        values = series[f'obs_err_{xref}']
-        label = series['label']
-        t_vals.append(np.unique(series["grid"][:, 1]))
-        colors.append(plot_params[label]["color"])
-        linestyles.append(plot_params[label]["linestyle"])
-        alphas.append(plot_params[label]["alpha"])
-        linewidths.append(plot_params[label]["linewidth"])
-        mus.append(values.reshape(len(values), 1))
-        legend_labels.append(plot_params[label]["label"])
+    for xref in x_ref[:-1]:
 
-    # Define the title for the plot
-    title = f"Observation errors, x={uu.rescale_x(xref)}" if rescale else f"Observation errors, X={xref}"
-    # t = t.reshape(len(t), 1)
-    mus = np.array(uu.rescale_t(mus))-cc.Troom if rescale else np.array(mus)  
+        colors = []
+        linestyles = []
+        rescale = conf.plot.rescale
+        alphas = []
+        linewidths = []
+        mus = []
+        t_vals = []
+        legend_labels = []
 
-    times_plot = np.array(uu.rescale_time(t_vals)) if rescale else np.array(t_vals)  
-    _, xlabel, _ = uu.get_scaled_labels(rescale) 
+        for series in series_data:
+            values = series[f'obs_err_{xref}']
+            label = series['label']
+            t_vals.append(np.unique(series["grid"][:, 1]))
+            colors.append(plot_params[label]["color"])
+            linestyles.append(plot_params[label]["linestyle"])
+            alphas.append(plot_params[label]["alpha"])
+            linewidths.append(plot_params[label]["linewidth"])
+            mus.append(values.reshape(len(values), 1))
+            legend_labels.append(plot_params[label]["label"])
 
-    # Call the generic plotting function
-    plot_generic(
-        x=times_plot,                       # Time data for the x-axis
-        y=mus,                   # Transpose mus to get lines for each observation error
-        title=title,               # Plot title
-        xlabel=xlabel,      # x-axis label
-        ylabel=r"Error $^{\circ} C$" if rescale else r"Error",
-        legend_labels=legend_labels, # Labels for each observation error
-        size=(6, 5),               # Figure size
-        colors=colors,
-        linestyles=linestyles,
-        filename=f"{run_figs}/obs_error_{xref}_{lal}.png",  # Filename to save the plot
-        alphas=alphas,
-        linewidths=linewidths
-    )
+        # Define the title for the plot
+        title = f"Observation errors, {round(uu.rescale_x(xref)*100,2)} cm depth" if rescale else f"Observation errors, X={xref}"
+        # t = t.reshape(len(t), 1)
+        mus = np.array(uu.rescale_t(mus))-cc.Troom if rescale else np.array(mus)  
+
+        times_plot = np.array(uu.rescale_time(t_vals)) if rescale else np.array(t_vals)  
+        _, xlabel, _ = uu.get_scaled_labels(rescale) 
+
+        # Call the generic plotting function
+        plot_generic(
+            x=times_plot,                       # Time data for the x-axis
+            y=mus,                   # Transpose mus to get lines for each observation error
+            title=title,               # Plot title
+            xlabel=xlabel,      # x-axis label
+            ylabel=r"Error $^{\circ} C$" if rescale else r"Error",
+            legend_labels=legend_labels, # Labels for each observation error
+            size=(6, 5),               # Figure size
+            colors=colors,
+            linestyles=linestyles,
+            filename=f"{run_figs}/obs_error_{xref}_{lal}.png",  # Filename to save the plot
+            alphas=alphas,
+            linewidths=linewidths
+        )
 
 
 def plot_tx(tx, tot_true, tot_obs_pred, number, prj_figs, system=False, gt=False, MultiObs=False):

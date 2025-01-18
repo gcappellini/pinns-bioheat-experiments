@@ -22,15 +22,18 @@ def run_ground_truth(config, out_dir):
     uu.run_matlab_ground_truth()
     system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config_matlab, path=out_dir)
 
+    uu.compute_metrics([system_gt, *observers_gt, mm_obs_gt], config, out_dir)
+
     if config.experiment.plot:
 
         pp.plot_multiple_series([system_gt, *observers_gt, mm_obs_gt], out_dir, label)
         pp.plot_l2(system_gt, [*observers_gt, mm_obs_gt], out_dir, label)
         pp.plot_validation_3d(system_gt["grid"], system_gt["theta"], mm_obs_gt["theta"], out_dir, label)
+        pp.plot_obs_err([*observers_gt, mm_obs_gt], out_dir, label)
 
         if config.model_parameters.n_obs>1: 
             pp.plot_weights([*observers_gt], out_dir, label)
-        # uu.compute_metrics([*observers_gt, mm_obs_gt], config, out_dir)
+        
 
     # system_meas, _ = uu.import_testdata(config)
     # uu.check_measurements(system_meas, system_gt, output_dir_gt, config)
@@ -47,34 +50,38 @@ def run_simulation_system(config, out_dir, system_gt):
     output_dir_system, cfg_system = co.set_run(out_dir, config, label)
     pinns_sys = uu.train_model(cfg_system)
     system = uu.get_pred(pinns_sys, system_gt["grid"], output_dir_system, "system")
+
+    uu.compute_metrics([system_gt, system], config, out_dir)
+
     if config.experiment.plot:
-        uu.check_and_wandb_upload(
-            label=label,
-            system_gt=system_gt,
-            system=system,
-            conf=cfg_system,
-            output_dir=output_dir_system
-        )
+        pp.plot_multiple_series([system_gt, system], out_dir, label)
+        pp.plot_l2(system_gt, [system], out_dir, label)
+        pp.plot_validation_3d(system_gt["grid"], system_gt["theta"], system["theta"], out_dir, label)
+        pp.plot_obs_err([system], out_dir, label)
 
 
-def run_simulation_mm_obs(config, out_dir, output_dir_gt, system_gt, mm_obs_gt, observers_gt):
+
+
+def run_simulation_mm_obs(config, out_dir, system_gt, mm_obs_gt, observers_gt, gt_path=None):
     """Run multi-observer simulation, load data, and plot results."""
     label = "simulation_mm_obs"
     output_dir_inverse, config_inverse = co.set_run(out_dir, config, label)
     multi_obs = uu.execute(config_inverse, label)
-    x_obs = uu.gen_obsdata(config_inverse, path=out_dir)
-    observers, mm_obs = uu.get_observers_preds(multi_obs, x_obs, out_dir, config_inverse, label)
+    x_obs = uu.gen_obsdata(config_inverse, system_gt)
+    observers, mm_obs = uu.get_observers_preds(system_gt, multi_obs, x_obs, out_dir, config_inverse, label)
+
+    uu.compute_metrics([system_gt, *observers, mm_obs], config, out_dir)
+
     if config.experiment.plot:
-        uu.check_and_wandb_upload(
-            label=label,
-            mm_obs_gt=mm_obs_gt,
-            mm_obs=mm_obs,
-            system_gt=system_gt,
-            conf=config_inverse,
-            output_dir=out_dir,
-            observers=observers,
-            observers_gt=observers_gt
-        )
+
+        pp.plot_multiple_series([system_gt, *observers, mm_obs_gt, mm_obs], out_dir, label)
+        pp.plot_l2(system_gt, [*observers, mm_obs_gt, mm_obs], out_dir, label)
+        pp.plot_validation_3d(system_gt["grid"], system_gt["theta"], mm_obs["theta"], out_dir, label)
+        pp.plot_obs_err([*observers, mm_obs_gt, mm_obs], out_dir, label)
+
+        if config.model_parameters.n_obs>1: 
+            pp.plot_weights([*observers], out_dir, label)
+
 
 
 def run_measurement_mm_obs(config, out_dir):
@@ -84,23 +91,21 @@ def run_measurement_mm_obs(config, out_dir):
     multi_obs = uu.execute(config_meas, label)
     system_meas, _ = uu.import_testdata(config_meas)
     x_obs = uu.import_obsdata(config_meas)
-    observers, mm_obs = uu.get_observers_preds(multi_obs, x_obs, out_dir, config_meas, label)
+    observers, mm_obs = uu.get_observers_preds(system_meas, multi_obs, x_obs, out_dir, config_meas, label)
+
+    uu.compute_metrics([system_meas, *observers, mm_obs], config, out_dir)
+
     if config.experiment.plot:
-        uu.check_and_wandb_upload(
-            label=label,
-            mm_obs=mm_obs,
-            system_meas=system_meas,
-            conf=config_meas,
-            output_dir=out_dir,
-            observers=observers
-        )
+
+        pp.plot_multiple_series([system_meas, *observers, mm_obs], out_dir, label)
+        pp.plot_l2(system_meas, [*observers, mm_obs], out_dir, label)
+        # pp.plot_validation_3d(system_meas["grid"], system_meas["theta"], mm_obs["theta"], out_dir, label)
+        pp.plot_obs_err([*observers, mm_obs], out_dir, label)
+
+        if config.model_parameters.n_obs>1: 
+            pp.plot_weights([*observers], out_dir, label)
+
         uu.check_measurements(system_meas, mm_obs, out_dir, config_meas)
-
-
-def load_ground_truth(config, out_dir):
-    output_dir_gt, config_matlab = co.set_run(out_dir, config, "ground_truth")
-    system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config_matlab, path=output_dir_gt)
-    return output_dir_gt, system_gt, observers_gt, mm_obs_gt
 
 
 def main():
@@ -112,23 +117,25 @@ def main():
     dict_exp = config.experiment
     n_ins = config.model_properties.n_ins
 
+    gt_path=f"{tests_dir}/cooling_ground_truth"
+
     # Ground Truth Simulation
     if dict_exp["ground_truth"]:
         output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, run_out_dir)
-    # else:
-    #     output_dir_gt, system_gt, observers_gt, mm_obs_gt = load_ground_truth(config, f"{tests_dir}/cooling_simulation_{n_obs}obs")
+    else:
+        system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config, path=gt_path)
 
-    # if dict_exp["run"]=="simulation":
-    #     # Simulation System
-    #     if n_ins==2:
-    #         run_simulation_system(config, run_out_dir, system_gt)
+    if dict_exp["run"]=="simulation":
+        # Simulation System
+        if n_ins==2:
+            run_simulation_system(config, run_out_dir, system_gt, gt_path)
 
-    #     # Simulation Multi-Observer
-    #     else:
-    #         run_simulation_mm_obs(config, run_out_dir, output_dir_gt, system_gt, mm_obs_gt, observers_gt)
+        # Simulation Multi-Observer
+        else:
+            run_simulation_mm_obs(config, run_out_dir, system_gt, mm_obs_gt, observers_gt, gt_path)
     
-    # elif dict_exp["run"].startswith("meas"):
-    #     run_measurement_mm_obs(config, run_out_dir)
+    elif dict_exp["run"].startswith("meas"):
+        run_measurement_mm_obs(config, run_out_dir)
 
 
 if __name__ == "__main__":

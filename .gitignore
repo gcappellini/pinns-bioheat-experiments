@@ -193,11 +193,11 @@ pyrightconfig.json
 .ionide
 
 
-tests/*
-!tests/cooling_simulation*
-!tests/cooling_meas_1
-!tests/cooling_meas_2
-!tests/transfer_learning
+tests/old*
+# !tests/cooling_simulation*
+# !tests/cooling_meas_1
+# !tests/cooling_meas_2
+# !tests/transfer_learning
 
 old/
 src/wandb
