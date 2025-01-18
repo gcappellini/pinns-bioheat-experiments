@@ -192,8 +192,7 @@ def plot_weights(series_data, run_figs, lal):
     ups = cc.upsilon
 
     # Prepare the labels for each weight line
-    legend_labels = [f"Weight $p_{i}$" for i in range(n_obs)]
-
+    legend_labels = []
     colors = []
     linestyles = []
     run_figs
@@ -212,6 +211,7 @@ def plot_weights(series_data, run_figs, lal):
         linewidths.append(plot_params[label]["linewidth"])
         t_vals.append(series['weights'][:, 0])
         weights.append(values.reshape(len(values), 1))
+        legend_labels.append(plot_params[label]["label"])
 
     # Define the title with the lambda value
     title = fr"Dynamic weights, $\lambda={lam}$, $\upsilon={ups}$"
@@ -422,7 +422,7 @@ def plot_comparison_3d(e, t_true, t_pred, run_figs, gt=False):
     )
 
 
-def plot_validation_3d(e, t_true, t_pred, run_figs, system=False):
+def plot_validation_3d(e, t_true, t_pred, run_figs, label):
     """
     Refactor the plot_comparison function to use plot_generic_3d for 3D comparisons.
     
@@ -442,12 +442,18 @@ def plot_validation_3d(e, t_true, t_pred, run_figs, system=False):
     theta_pred = t_pred.reshape(le, la)
 
     # Column titles for each subplot
-    col_titles = ["MATLAB", "PINNs", "Error"] 
+    if label == "ground_truth":
+        col_titles = ["Matlab System", "Matlab MM-Observer", "Error"]
+    elif label == "simulation_mm_obs":
+        col_titles = ["Matlab", "PINNs", "Error"]
+    elif label.startswith("meas"):
+        col_titles = ["Measurements", "PINNs", "Error"]
+    
 
     rescale = conf.plot.rescale
     n = conf.model_parameters.n_obs
 
-    fname = f"{run_figs}/validation_3d_system.png" if system else f"{run_figs}/validation_3d_{n}obs.png"
+    fname = f"{run_figs}/validation_3d_{label}.png"
 
     theta_true_plot = uu.rescale_t(theta_true) if rescale else theta_true
     theta_pred_plot = uu.rescale_t(theta_pred) if rescale else theta_pred
@@ -632,13 +638,13 @@ def plot_l2(series_sys, series_data, folder, lal):
     linewidths = []
 
     for series in series_data:
-        values = series['theta']
+        l2 = series['L2_err']
         label = series['label']
 
-        if label in ('theory', 'bound'):
-            l2 = values
-        else:
-            l2 = uu.calculate_l2(e, theta_system, values)
+        # if label in ('theory', 'bound'):
+        #     l2 = values
+        # else:
+        #     l2 = uu.calculate_l2(e, theta_system, values)
 
         t_vals.append(t_pred)
         legend_labels.append(plot_params[label]["label"])

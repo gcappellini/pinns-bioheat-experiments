@@ -4,6 +4,7 @@ from omegaconf import OmegaConf
 from hydra import compose
 import utils as uu
 import common as co
+import plots as pp
 
 # Directories Setup
 current_file = os.path.abspath(__file__)
@@ -20,15 +21,17 @@ def run_ground_truth(config, out_dir):
     output_dir_gt, config_matlab = co.set_run(out_dir, config, label)
     uu.run_matlab_ground_truth()
     system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config_matlab, path=out_dir)
+
     if config.experiment.plot:
-        uu.check_and_wandb_upload(
-            label=label,
-            mm_obs_gt=mm_obs_gt,
-            system_gt=system_gt,
-            conf=config,
-            output_dir=out_dir,
-            observers_gt=observers_gt
-        )
+
+        pp.plot_multiple_series([system_gt, *observers_gt, mm_obs_gt], out_dir, label)
+        pp.plot_l2(system_gt, [*observers_gt, mm_obs_gt], out_dir, label)
+        pp.plot_validation_3d(system_gt["grid"], system_gt["theta"], mm_obs_gt["theta"], out_dir, label)
+
+        if config.model_parameters.n_obs>1: 
+            pp.plot_weights([*observers_gt], out_dir, label)
+        # uu.compute_metrics([*observers_gt, mm_obs_gt], config, out_dir)
+
     # system_meas, _ = uu.import_testdata(config)
     # uu.check_measurements(system_meas, system_gt, output_dir_gt, config)
     # extracted = uu.extract_matching([system_gt, system_meas])
@@ -115,17 +118,17 @@ def main():
     # else:
     #     output_dir_gt, system_gt, observers_gt, mm_obs_gt = load_ground_truth(config, f"{tests_dir}/cooling_simulation_{n_obs}obs")
 
-    if dict_exp["run"]=="simulation":
-        # Simulation System
-        if n_ins==2:
-            run_simulation_system(config, run_out_dir, system_gt)
+    # if dict_exp["run"]=="simulation":
+    #     # Simulation System
+    #     if n_ins==2:
+    #         run_simulation_system(config, run_out_dir, system_gt)
 
-        # Simulation Multi-Observer
-        else:
-            run_simulation_mm_obs(config, run_out_dir, output_dir_gt, system_gt, mm_obs_gt, observers_gt)
+    #     # Simulation Multi-Observer
+    #     else:
+    #         run_simulation_mm_obs(config, run_out_dir, output_dir_gt, system_gt, mm_obs_gt, observers_gt)
     
-    elif dict_exp["run"].startswith("meas"):
-        run_measurement_mm_obs(config, run_out_dir)
+    # elif dict_exp["run"].startswith("meas"):
+    #     run_measurement_mm_obs(config, run_out_dir)
 
 
 if __name__ == "__main__":

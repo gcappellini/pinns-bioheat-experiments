@@ -41,8 +41,9 @@ def get_initial_loss(model):
     return losshistory.loss_train[0]
 
 
-def compute_metrics(matching, series_to_plot, cfg, run_figs):
+def compute_metrics(series_to_plot, cfg, run_figs):
     # Load loss weights from configuration
+    matching = extract_matching(series_to_plot)
     loss_weights = cfg.model_parameters.loss_weights
     small_number = 1e-8
     
@@ -457,6 +458,10 @@ def gen_testdata(conf, path=None):
         }
         for i in range(n)
     ]
+
+    observers_gt, mm_obs_gt = calculate_l2(system_gt, observers_gt, mm_obs_gt)
+    observers_gt, mm_obs_gt = compute_obs_err(system_gt, observers_gt, mm_obs_gt)
+    observers_gt = load_weights(observers_gt, conf, "ground_truth")
     
     return system_gt, observers_gt, mm_obs_gt
 
@@ -734,25 +739,22 @@ def mm_predict(multi_obs, obs_grid, weights):
     return np.array(predictions)
 
 
+def compute_obs_err(system, observers_data, mm_obs, x_ref=0.0):
 
-def compute_obs_err(g, observers_data, x_ref=0.0):
-    if isinstance(x_ref, (list, np.ndarray)):
-        for j, x in enumerate(x_ref):
-            rows_xref = g[g[:, 0] == x]
-            sys_xref = rows_xref[:, 2]
-            obs_err = np.abs(rows_xref[:, 3:] - sys_xref[:, None])
-            
-            for i, observer in enumerate(observers_data):
-                observer[f'obs_err_{x_ref[j]}'] = obs_err[:, i]
-    else:
-        rows_xref = g[g[:, 0] == x_ref]
-        sys_xref = rows_xref[:, 2]
-        obs_err = np.abs(rows_xref[:, 3:] - sys_xref[:, None])
-        
-        for i, observer in enumerate(observers_data):
-            observer[f'obs_err_{x_ref}'] = obs_err[:, i]
+    matching = [system, *observers_data, mm_obs]
+    g = extract_matching(matching)
 
-    return observers_data
+    rows_xref = g[g[:, 0] == x_ref]
+    sys_xref = rows_xref[:, 2]
+    obs_err = np.abs(rows_xref[:, 3:-1] - sys_xref[:, None])
+    mm_obs_err = np.abs(rows_xref[:, -1] - sys_xref)
+    
+    for i, observer in enumerate(observers_data):
+        observer[f'obs_err_{x_ref}'] = obs_err[:, i]
+
+    mm_obs[f'obs_err_{x_ref}'] = mm_obs_err
+    return observers_data, mm_obs
+
 
 def plot_and_compute_metrics(label, system_gt, series_to_plot, matching_args, conf, output_dir, comparison_3d=True):
     """
@@ -764,13 +766,13 @@ def plot_and_compute_metrics(label, system_gt, series_to_plot, matching_args, co
     # Plot general series and L2 errors
     pp.plot_multiple_series(series_to_plot, output_dir, label)
 
-    # Extract matching data
-    matching = extract_matching(matching_args)
-    series_sys = {"grid": matching[:, :2], "theta": matching[:, 2], "label": system_gt["label"]}
-    observers_data = [
-        {"grid": matching[:, :2], "theta": matching[:, 2+i], "label": matching_args[i]["label"]}
-        for i in range(1, len(matching_args))
-    ]
+    # # Extract matching data
+    # matching = extract_matching(matching_args)
+    # series_sys = {"grid": matching[:, :2], "theta": matching[:, 2], "label": system_gt["label"]}
+    # observers_data = [
+    #     {"grid": matching[:, :2], "theta": matching[:, 2+i], "label": matching_args[i]["label"]}
+    #     for i in range(1, len(matching_args))
+    # ]
     
     pp.plot_l2(series_sys, observers_data, output_dir, label)
     # observers_data = observers_data[n_obs:] 
@@ -907,7 +909,7 @@ def get_pred(model, X, output_dir, label):
 
 
 
-def get_observers_preds(multi_obs, x_obs, output_dir, conf, label):
+def get_observers_preds(ground_truth, multi_obs, x_obs, output_dir, conf, label):
     """
     Generate predictions for observers and multi-observer models.
 
@@ -925,36 +927,13 @@ def get_observers_preds(multi_obs, x_obs, output_dir, conf, label):
     n_obs = pars.n_obs
     preds = [x_obs[:, 0], x_obs[:, -1]]
 
-    # Process for a single observer
-    if n_obs == 1:
-        obs_pred = multi_obs.predict(x_obs).reshape(-1)
-        data_to_save = np.column_stack((x_obs[:, 0], x_obs[:, -1], obs_pred)).round(n_digits)
-        np.savetxt(f'{output_dir}/prediction_obs_{pars.W_index}_{label}.txt', data_to_save, fmt='%.3f %.3f %.6f', delimiter=' ')
-
-        preds.append(obs_pred)
-        preds = np.array(preds).T.round(n_digits)
-
-        OmegaConf.save(conf, f"{output_dir}/config_{label}.yaml")
-
-        obs_dict = [{
-            "grid": preds[:, :2],
-            "theta": preds[:, 2],
-            "label": f"observer_{pars.W_index}"
-        }]
-        mm_obs = obs_dict[0]
-        return obs_dict, mm_obs
-
     # Process for multiple observers
     for el in range(n_obs):
         obs_pred = multi_obs[el].predict(x_obs).reshape(-1)
         preds.append(obs_pred)
 
-    mm_pred = solve_ivp(multi_obs, output_dir, conf, x_obs, label)
+    mm_pred = obs_pred if n_obs==1 else solve_ivp(multi_obs, output_dir, conf, x_obs, label)
     preds.append(mm_pred)
-
-    # Save multi-observer predictions
-    preds = np.array(preds).T.round(n_digits)
-    np.savetxt(f'{output_dir}/prediction_mm_obs_{label}.txt', preds, delimiter=' ')
 
     # Prepare observer dictionaries
     obs_dict = [
@@ -970,6 +949,20 @@ def get_observers_preds(multi_obs, x_obs, output_dir, conf, label):
         "theta": preds[:, -1],
         "label": "multi_observer"
     }
+
+    obs_dict, mm_obs = calculate_l2(ground_truth, obs_dict, mm_obs)
+    obs_dict, mm_obs = compute_obs_err(ground_truth, obs_dict, mm_obs)
+    if n_obs>1:
+        obs_dict = load_weights(obs_dict, conf, label)
+
+    OmegaConf.save(conf, f"{output_dir}/config_{label}.yaml")
+    for obs in obs_dict:
+        label = obs["label"]
+        data_to_save = np.column_stack((obs["grid"][:, 0].round(n_digits), obs["grid"][:, -1].round(n_digits), obs["theta"].round(n_digits)))
+        np.savetxt(f'{output_dir}/{label}.txt', data_to_save, fmt='%.2f %.2f %.6f', delimiter=' ')
+    # Save those dictionaries
+    data_to_save = np.column_stack((mm_obs["grid"][:, 0].round(n_digits), mm_obs["grid"][:, -1].round(n_digits), mm_obs["theta"].round(n_digits)))
+    np.savetxt(f'{output_dir}/{mm_obs["label"]}.txt', data_to_save, fmt='%.2f %.2f %.6f', delimiter=' ')
     return obs_dict, mm_obs
 
 
@@ -1120,18 +1113,37 @@ def compute_y_theory(grid, sys, obs):
     return theory, bound
 
 
-def calculate_l2(e, true, pred):
-    l2 = []
-    true = true.reshape(len(e), 1)
-    pred = pred.reshape(len(e), 1)
-    tot = np.hstack((e, true, pred))
-    t = np.unique(tot[:, 1])
+def calculate_l2(system, observers, mm_obs):
 
+    matching = [system, *observers, mm_obs]
+    g = extract_matching(matching)
+    e = g[:, 0:2]
+    true = g[:, 2].reshape(len(e), 1)
+    obs_pred = g[:, 3:-1]
+    mm_obs_pred = g[:, -1].reshape(len(e), 1)
+
+    for i, observer in enumerate(observers):
+        pred = obs_pred[:, i]
+        l2 = []
+        pred = pred.reshape(len(e), 1)
+        tot = np.hstack((e, true, pred))
+        t = np.unique(tot[:, 1])
+
+        for el in t:
+            tot_el = tot[tot[:, 1] == el]
+            el_err = norm(np.abs(tot_el[:, 2] - tot_el[:, 3]))
+            l2.append(el_err)
+        observer['L2_err']=np.array(l2)
+
+    l2 = []
+    tot = np.hstack((e, true, mm_obs_pred))
     for el in t:
         tot_el = tot[tot[:, 1] == el]
         el_err = norm(np.abs(tot_el[:, 2] - tot_el[:, 3]))
         l2.append(el_err)
-    return np.array(l2)
+    mm_obs['L2_err']=np.array(l2)
+
+    return observers, mm_obs
 
 
 def calculate_mse(true, pred):
