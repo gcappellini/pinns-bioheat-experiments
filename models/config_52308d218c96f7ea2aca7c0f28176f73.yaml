@@ -1,0 +1,310 @@
+model_properties:
+  L0: 0.07
+  tauf: 1800.0
+  k: 0.6
+  rho: 1000.0
+  c: 4186.0
+  W: 0.0001207
+  h: 10.0
+  Troom: 21.5
+  Tmax: 32.0
+  Ty10: 22.17
+  Ty20: 27.43
+  Ty30: 24.8
+  Tgt20: 31.5
+  alfa: 50
+  activation: tanh
+  initial_weights_regularizer: false
+  initialization: Glorot uniform
+  optimizer: L-BFGS
+  iters: 3000
+  iters_lbfgs: 15000
+  learning_rate: 0.001
+  num_dense_layers: 4
+  num_dense_nodes: 50
+  num_domain: 1800
+  num_boundary: 1000
+  num_initial: 0
+  num_test: 1000
+  resampling: true
+  resampler_period: 100
+  w_res: 1
+  w_bc0: 1
+  w_bc1: 1
+  w_ic: 1
+  beta: 0.9
+  pwr_fact: 0.0
+  SAR_0: 50.0
+  PD: 0.025
+  x0: 0.001
+  b1: -20.69778
+  b2: 19.9046
+  b3: 0.29222
+  b4: 0.56476
+  c1: -0.79317
+  c2: 0.29222
+  c3: 0.56476
+  n_ins: 4
+  np_seed: 500
+  sigma: 1.0
+  n_anchor_points: 5
+model_parameters:
+  lam: 1
+  upsilon: 1
+  W_min: 0.0001207
+  W_max: 0.0003303
+  W0: 0.001207
+  W1: 0.001506
+  W2: 0.001806
+  W3: 0.002105
+  W4: 0.002405
+  W5: 0.002704
+  W6: 0.003004
+  W7: 0.003303
+  W_sys: 0.002105
+  W_index: 4
+  n_obs: 8
+  x_gt2: 0.01
+  x_gt1: 0.04
+  loss_weights:
+  - 0.006289862096309662
+  - 2.0888912677764893
+  - 27.680763244628906
+  - 8.396754264831543
+plot:
+  rescale: true
+  display_every: 200
+  colors:
+    measuring_points:
+    - '#F7CAC9'
+    - '#6B5B95'
+    - '#88B04B'
+    - '#FF6F61'
+    - '#92A8D1'
+    losses:
+    - '#D2691E'
+    - '#4682B4'
+    - '#9ACD32'
+    - '#FF6347'
+    - '#FFD700'
+    - '#FF1493'
+  linestyles:
+    measuring_points:
+    - '-'
+    - -.
+    - '-'
+    - -.
+    - --
+  entities:
+    system:
+      color: C3
+      label: System PINNs
+      linestyle: '-'
+      linewidth: 1.2
+      alpha: 1.0
+    multi_observer:
+      color: darkblue
+      label: MultiObs PINNs
+      linestyle: ':'
+      linewidth: 1.2
+      alpha: 1.0
+    loss_terms:
+      color:
+      - '#9ACD32'
+      - '#FF6347'
+      - '#FFD700'
+      - '#FF1493'
+      label:
+      - Residual
+      - BC X=0
+      - BC X=1
+      - IC
+      linestyle:
+      - '-'
+      - --
+      - '-'
+      - --
+      linewidth:
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      alpha:
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+    train_loss:
+      color: '#D2691E'
+      label: Train Loss
+      linestyle: '-'
+      linewidth: 1.0
+      alpha: 1.0
+    test_loss:
+      color: '#D2691E'
+      label: Test Loss
+      linestyle: ':'
+      linewidth: 1.0
+      alpha: 0.8
+    observers:
+      color:
+      - C0
+      - C1
+      - C2
+      - C9
+      - C4
+      - C5
+      - C6
+      - C7
+      label:
+      - Obs 0 PINNs
+      - Obs 1 PINNs
+      - Obs 2 PINNs
+      - Obs 3 PINNs
+      - Obs 4 PINNs
+      - Obs 5 PINNs
+      - Obs 6 PINNs
+      - Obs 7 PINNs
+      linestyle:
+      - '-'
+      - -.
+      - '-'
+      - -.
+      - --
+      - '-'
+      - --
+      - '-'
+      linewidth:
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      alpha:
+      - 0.9
+      - 0.9
+      - 0.9
+      - 0.9
+      - 0.9
+      - 0.9
+      - 0.9
+      - 0.9
+    system_gt:
+      color: C3
+      label: System MATLAB
+      linestyle: --
+      linewidth: 1.0
+      alpha: 0.8
+    system_meas:
+      color: red
+      label: Measurement
+      linestyle: --
+      linewidth: 1.0
+      alpha: 0.3
+      marker: '*'
+    theory:
+      color: purple
+      label: Theory
+      linestyle: --
+      linewidth: 1.0
+      alpha: 1.0
+    bound:
+      color: chocolate
+      label: Bound
+      linestyle: -.
+      linewidth: 1.0
+      alpha: 1.0
+    multi_observer_gt:
+      color: orange
+      label: MultiObs MATLAB
+      linestyle: --
+      linewidth: 1.0
+      alpha: 0.8
+    observers_gt:
+      color:
+      - C0
+      - C1
+      - C2
+      - C9
+      - C4
+      - C5
+      - C6
+      - C7
+      label:
+      - Obs 0 MATLAB
+      - Obs 1 MATLAB
+      - Obs 2 MATLAB
+      - Obs 3 MATLAB
+      - Obs 4 MATLAB
+      - Obs 5 MATLAB
+      - Obs 6 MATLAB
+      - Obs 7 MATLAB
+      linestyle:
+      - ':'
+      - ':'
+      - ':'
+      - ':'
+      - ':'
+      - ':'
+      - ':'
+      - ':'
+      linewidth:
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      alpha:
+      - 0.7
+      - 0.7
+      - 0.7
+      - 0.7
+      - 0.7
+      - 0.7
+      - 0.7
+      - 0.7
+  show_obs: true
+experiment:
+  ground_truth: false
+  run: meas_cool_1
+  plot: true
+experiment_type:
+  import_data: false
+  save_pickle: true
+  run_wandb: false
+  simulation:
+    Ty10: 21.5
+    Ty20: 30.2
+    Ty30: 21.5
+    Tgt20: 31.5
+  meas_cool_1:
+    title: Cooling 1
+    date: '20240930_1'
+    string: meas_cool_1
+    start_min: 43
+    end_min: 73
+    Ty10: 22.17
+    Tgt10: 24.23
+    Tgt20: 28.4
+    Ty20: 27.43
+    Ty30: 24.8
+  meas_cool_2:
+    title: Cooling 2
+    date: '20240930_3'
+    string: meas_cool_2
+    start_min: 30
+    end_min: 60
+    Ty10: 22.84
+    Ty20: 28.6
+    Ty30: 28.15
+    Tgt10: 24.56
+    Tgt20: 29.46
+run:
+  dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-01-19/19-45-02

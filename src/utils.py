@@ -13,7 +13,7 @@ import coeff_calc as cc
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-import matlab.engine
+# import matlab.engine
 from hydra import initialize, compose
 
 
@@ -695,22 +695,27 @@ def execute(config, label):
 def mu(o, tau_in, upsilon):
     global f1, f2, f3
 
-    tau = np.where(tau_in < 0.9944, tau_in, 0.9944)
+    # tau = np.where(tau_in < 0.9944, tau_in, 0.9944)
 
-        # Mapping of inputs to feature configurations
-    input_mapping = {
-        3: lambda: np.vstack((np.zeros_like(tau), f2(tau), tau)).T,
-        4: lambda: np.vstack((np.zeros_like(tau), f1(tau), f2(tau), tau)).T,
-        5: lambda: np.vstack((np.zeros_like(tau), f1(tau), f2(tau), f3(tau), tau)).T
-    }
+    #     # Mapping of inputs to feature configurations
+    # input_mapping = {
+    #     3: lambda: np.vstack((np.zeros_like(tau), f2(tau), tau)).T,
+    #     4: lambda: np.vstack((np.zeros_like(tau), f1(tau), f2(tau), tau)).T,
+    #     5: lambda: np.vstack((np.zeros_like(tau), f1(tau), f2(tau), f3(tau), tau)).T
+    # }
 
-    # Generate and return observations based on the number of inputs
-    n_inputs = o[0].net.linears[0].in_features
-    xo = input_mapping.get(n_inputs, lambda: None)()
+    # # Generate and return observations based on the number of inputs
+    # n_inputs = o[0].net.linears[0].in_features
+    # xo = input_mapping.get(n_inputs, lambda: None)()
 
-    muu = [calculate_mu(el.predict(xo), f2(tau), upsilon) for el in o]
+    # muu = [calculate_mu(el.predict(xo), f2(tau), upsilon) for el in o]
 
-    return np.column_stack(muu)
+    t = np.unique(o[0]["grid"][:, 1])
+    closest_index = np.argmin(np.abs(t-tau_in))
+    obs_err = [obs["obs_err_0.0"][closest_index] for obs in o]
+    muu = [upsilon * (err ** 2) for err in obs_err]
+
+    return np.array(muu)
 
 
 def calculate_mu(os, tr, upsilon):
@@ -719,44 +724,54 @@ def calculate_mu(os, tr, upsilon):
     return scrt
 
 
-def mm_predict(multi_obs, obs_grid, weights):
-
-    num_time_steps = weights.shape[1]
+def mm_predict(multi_obs):
 
     predictions = []
+    obs_grid = multi_obs[0]["grid"]
+    instants = np.unique(multi_obs[0]["grid"][:, 1])
 
-    for row in obs_grid:
+    for i, row in enumerate(obs_grid):
         t = row[-1]
-        closest_idx = int(np.round(t * (num_time_steps - 1)))
-        w = weights[closest_idx]
+        index_w = np.argmin(np.abs(instants- t))
+
+        w = np.array([obs["weights"][index_w] for obs in multi_obs]).reshape(len(multi_obs), 1)
 
         # Predict using the multi_obs predictors for the current row
-        o_preds = np.array([multi_obs[i].predict(row.reshape(1, -1)) for i in range(len(multi_obs))]).flatten()
+        o_preds = np.array([obs["theta"][i] for obs in multi_obs]).flatten()
 
         # Combine the predictions using the weights for the current row
-        prediction = np.dot(w[1:], o_preds)
+        prediction = np.dot(w.T, o_preds.reshape(w.shape))
         predictions.append(prediction)
 
-    return np.array(predictions)
+    return np.array(predictions).reshape(multi_obs[0]["theta"].shape)
 
 
-def compute_obs_err(system, observers_data, mm_obs):
+def compute_obs_err(system, observers_data=None, mm_obs=None):
 
     xref = get_tc_positions()
 
-    matching = [system, *observers_data, mm_obs]
+    matching = [system]
+    if observers_data:
+        matching.extend(observers_data)
+    if mm_obs:
+        matching.append(mm_obs)
+
     g = extract_matching(matching)
 
     for x_ref in xref[:-1]:
         rows_xref = g[g[:, 0] == x_ref]
         sys_xref = rows_xref[:, 2]
-        obs_err = np.abs(rows_xref[:, 3:-1] - sys_xref[:, None])
-        mm_obs_err = np.abs(rows_xref[:, -1] - sys_xref)
-        
-        for i, observer in enumerate(observers_data):
-            observer[f'obs_err_{x_ref}'] = obs_err[:, i]
 
-        mm_obs[f'obs_err_{x_ref}'] = mm_obs_err
+        if observers_data:
+            n_obs = len(observers_data)
+            obs_err = np.abs(rows_xref[:, 3:3+n_obs] - sys_xref[:, None])
+            for i, observer in enumerate(observers_data):
+                observer[f'obs_err_{x_ref}'] = obs_err[:, i]
+
+        if mm_obs:
+            mm_obs_err = np.abs(rows_xref[:, -1] - sys_xref)
+            mm_obs[f'obs_err_{x_ref}'] = mm_obs_err
+
     return observers_data, mm_obs
 
 
@@ -795,8 +810,6 @@ def get_observers_preds(ground_truth, multi_obs, x_obs, output_dir, conf, label)
         obs_pred = multi_obs[el].predict(x_obs).reshape(-1)
         preds.append(obs_pred)
 
-    mm_pred = obs_pred if n_obs==1 else solve_ivp(multi_obs, output_dir, conf, x_obs, label)
-    preds.append(mm_pred)
     preds=np.array(preds).T
 
     # Prepare observer dictionaries
@@ -808,25 +821,36 @@ def get_observers_preds(ground_truth, multi_obs, x_obs, output_dir, conf, label)
         }
         for i in range(n_obs)
     ]
-    mm_obs = {
-        "grid": preds[:, :2],
-        "theta": preds[:, -1],
-        "label": "multi_observer"
-    }
 
-    obs_dict, mm_obs = calculate_l2(ground_truth, obs_dict, mm_obs)
+    mm_obs = None
     obs_dict, mm_obs = compute_obs_err(ground_truth, obs_dict, mm_obs)
-    if n_obs>1:
-        obs_dict = load_weights(obs_dict, conf, label)
+
+    if n_obs==1:
+        mm_obs = obs_dict[0]
+    else:
+        obs_dict = solve_ivp(obs_dict, output_dir, conf, x_obs, label)
+        mm_pred = mm_predict(obs_dict)
+
+        mm_obs = {
+            "grid": preds[:, :2],
+            "theta": mm_pred,
+            "label": "multi_observer"
+        }
+
+    _, mm_obs = compute_obs_err(ground_truth, obs_dict, mm_obs)
+    obs_dict, mm_obs = calculate_l2(ground_truth, obs_dict, mm_obs)
+    
+    # if n_obs>1:
+    #     obs_dict = load_weights(obs_dict, conf, label)
 
     OmegaConf.save(conf, f"{output_dir}/config_{label}.yaml")
     for obs in obs_dict:
-        label = obs["label"]
+        lal = obs["label"]
         data_to_save = np.column_stack((obs["grid"][:, 0].round(n_digits), obs["grid"][:, -1].round(n_digits), obs["theta"].round(n_digits)))
-        np.savetxt(f'{output_dir}/{label}.txt', data_to_save, fmt='%.2f %.2f %.6f', delimiter=' ')
+        np.savetxt(f'{output_dir}/{lal}_{label}.txt', data_to_save, fmt='%.2f %.2f %.6f', delimiter=' ')
 
     data_to_save = np.column_stack((mm_obs["grid"][:, 0].round(n_digits), mm_obs["grid"][:, -1].round(n_digits), mm_obs["theta"].round(n_digits)))
-    np.savetxt(f'{output_dir}/{mm_obs["label"]}.txt', data_to_save, fmt='%.2f %.2f %.6f', delimiter=' ')
+    np.savetxt(f'{output_dir}/{mm_obs["label"]}_{label}.txt', data_to_save, fmt='%.2f %.2f %.6f', delimiter=' ')
     return obs_dict, mm_obs
 
 
@@ -913,7 +937,7 @@ def get_plot_params(conf):
         **observer_gt_params
     }
 
-def solve_ivp(multi_obs, fold, conf, x_obs, label):
+def solve_ivp(multi_obs: list, fold: str, conf: dict, x_obs, label: str):
     """
     Solve the IVP for observer weights and plot the results.
     """
@@ -924,7 +948,8 @@ def solve_ivp(multi_obs, fold, conf, x_obs, label):
 
     p0 = np.full((n_obs,), 1/n_obs)
 
-    t_eval = np.linspace(0, 1, 100)
+    # t_eval = np.linspace(0, 1, 100)
+    t_eval = np.unique(multi_obs[0]["grid"][:, 1])
 
     def f(t, p):
         a = mu(multi_obs, t, ups)
@@ -941,9 +966,11 @@ def solve_ivp(multi_obs, fold, conf, x_obs, label):
     weights = weights.T
     
     np.savetxt(f"{fold}/weights_l_{lam:.1f}_u_{ups:.1f}_{label}.txt", weights, delimiter=' ')
-    y_pred = mm_predict(multi_obs, x_obs, weights)
+    
+    for j in range(len(multi_obs)):
+        multi_obs[j]["weights"] = weights[:, j+1].reshape(weights[:, 0:1].shape)
 
-    return y_pred
+    return multi_obs
 
  
 def run_matlab_ground_truth():

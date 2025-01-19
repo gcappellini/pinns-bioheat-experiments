@@ -191,6 +191,8 @@ def plot_weights(series_data, run_figs, lal):
     lam = cc.lamb
     ups = cc.upsilon
 
+    times = np.unique(series_data[0]['grid'][:, 1])
+
     # Prepare the labels for each weight line
     legend_labels = []
     colors = []
@@ -203,13 +205,13 @@ def plot_weights(series_data, run_figs, lal):
     t_vals = []
 
     for series in series_data:
-        values = series['weights'][:, 1]
+        values = series['weights']
         label = series['label']
         colors.append(plot_params[label]["color"])
         linestyles.append(plot_params[label]["linestyle"])
         alphas.append(plot_params[label]["alpha"])
         linewidths.append(plot_params[label]["linewidth"])
-        t_vals.append(series['weights'][:, 0])
+        t_vals.append(times)
         weights.append(values.reshape(len(values), 1))
         legend_labels.append(plot_params[label]["label"])
 

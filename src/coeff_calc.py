@@ -139,5 +139,17 @@ props.c1, props.c2, props.c3 = float(c1), float(c2), float(c3)
 OmegaConf.save(cfg, f"{conf_dir}/config_run.yaml")
 
 
+r_cooling_1 = 0.5/1000  # Radius Cooling 1 (m)
+r_cooling_2 = 1.0/1000  # Radius Cooling 2 (m)
+
+Q_cooling_1 = 0.4/17#*(1/1000)*(1/60)    # Volumetric flow Cooling 1 (m^3/s)
+Q_cooling_2 = 1.9/17#*(1/1000)*(1/60)    # Volumetric flow Cooling 2 (m^3/s)
+
+A_cooling_1 = np.pi*(r_cooling_1**2)    # Area Cooling 1 (m^2)
+A_cooling_2 = np.pi*(r_cooling_2**2)    # Area Cooling 2 (m^2)
+
+v_cooling_1 = round(Q_cooling_1/A_cooling_1, 3) # Velocity Cooling 1 (m/s)
+v_cooling_2 = round(Q_cooling_2/A_cooling_2, 3) # Velocity Cooling 2 (m/s)
+
 if __name__ == "__main__":
     print(b1, b2, b3, b4, c1, c2, c3)

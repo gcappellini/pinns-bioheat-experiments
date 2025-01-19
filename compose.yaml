@@ -3,8 +3,11 @@ services:
     container_name: pinns-bioheat-experiments
     volumes:
       - .:/app
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     environment:
       - DDE_BACKEND=pytorch
+      - TZ=Europe/Rome
     build:
       context: .
       dockerfile: Dockerfile
@@ -14,3 +17,6 @@ services:
 
     # docker compose run docker_pinns-bioheat-experiments bash
     # pip3 install torch torchvision torchaudio --break-system-packages
+
+
+    #  docker container prune
