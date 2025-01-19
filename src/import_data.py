@@ -7,7 +7,7 @@ import plots as pp
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
 
-def main(meas, rescale, save_pickle, show_y3, threshold):
+def main(meas, rescale, save_pickle, show_y3=False, threshold=0.0):
 
     date = meas.date
     start_min = meas.start_min
@@ -20,7 +20,7 @@ def main(meas, rescale, save_pickle, show_y3, threshold):
     timeseries_data = uu.load_measurements(file_path)
     df = uu.extract_entries(timeseries_data, start_min*60, end_min*60, threshold)
 
-    # print(df['y1'][0],df['gt1'][0],df['gt2'][0], df['y2'][0], df['y3'][0])
+
 
     df1 = uu.scale_df(df)
 
@@ -57,34 +57,37 @@ def main(meas, rescale, save_pickle, show_y3, threshold):
                     size = (10, 5),
                     filename=f"{src_dir}/data/vessel/{string}.png", 
                     colors=colors, linestyles = linestyles)
+    
+    return df['y1'][0],df['gt1'][0],df['gt2'][0], df['y2'][0], df['y3'][0]
 
 
 
 if __name__ == "__main__":
-    conf = OmegaConf.load(f"{src_dir}/config.yaml")
+    conf = OmegaConf.load(f"{src_dir}/configs/config_run.yaml")
     rescale = conf.plot.rescale
-    save_pickle = conf.experiment.save_pickle
+    save_pickle = conf.experiment_type.save_pickle
 
     # Loop through all experiment types except antenna_characterization
-    for experiment_type in conf.experiment.type.keys():
+    for experiment_type in conf.experiment_type.keys():
         
         if experiment_type == 'antenna_characterization':
-            antenna_exp = conf.experiment.type.antenna_characterization
+            antenna_exp = conf.experiment_type.antenna_characterization
             threshold = antenna_exp['threshold']
             show_y3 = antenna_exp['show_y3']
             main(antenna_exp, rescale, save_pickle, show_y3, threshold)  # Use the extracted values
             continue
 
-        # For other experiment types
-        experiment_group = getattr(conf.experiment.type, experiment_type)
-        threshold = experiment_group['threshold']
-        show_y3 = experiment_group['show_y3']
+        if experiment_type.startswith('meas_'):
+            meas = getattr(conf.experiment_type, experiment_type)
+            Ty10, Tgt10, Tgt20, Ty20, Ty30 = main(meas, rescale, save_pickle)
+            meas.Ty10 = float(round(Ty10, 2))
+            meas.Tgt10 = float(round(Tgt10, 2))
+            meas.Tgt20 = float(round(Tgt20, 2))
+            meas.Ty20 = float(round(Ty20, 2))
+            meas.Ty30 = float(round(Ty30, 2))
 
-        # Process each measurement in the experiment group
-        for meas_key in experiment_group.keys():
-            if meas_key.startswith('meas_'):
-                meas = getattr(experiment_group, meas_key)
-                main(meas, rescale, save_pickle, show_y3, threshold)
+            OmegaConf.update(conf, f"experiment_type.{experiment_type}", meas)
+            OmegaConf.save(conf, f"{src_dir}/configs/config_run.yaml")
 
 
 

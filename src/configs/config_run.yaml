@@ -10,7 +10,7 @@ model_properties:
   Tmax: 32.0
   Ty10: 22.84
   Ty20: 28.6
-  Ty30: 21.5
+  Ty30: 28.15
   Tgt20: 31.5
   alfa: 50
   activation: tanh
@@ -37,12 +37,12 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b1: -10.90667
-  b2: 9.56921
-  b3: 0.78889
+  b1: -16.07889
+  b2: 15.48032
+  b3: 0.05
   b4: 0.67619
-  c1: -1.33746
-  c2: 0.78889
+  c1: -0.59857
+  c2: 0.05
   c3: 0.67619
   n_ins: 4
   np_seed: 500
@@ -276,7 +276,7 @@ experiment:
   plot: true
 experiment_type:
   import_data: false
-  save_pickle: false
+  save_pickle: true
   run_wandb: false
   simulation:
     Ty10: 21.5
@@ -287,11 +287,13 @@ experiment_type:
     title: Cooling 1
     date: '20240930_1'
     string: meas_cool_1
-    start_min: 41
-    end_min: 71
-    Ty10: 22.28
-    Ty20: 26.67
-    Ty30: 21.5
+    start_min: 43
+    end_min: 73
+    Ty10: 22.17
+    Tgt10: 24.23
+    Tgt20: 28.4
+    Ty20: 27.43
+    Ty30: 24.8
   meas_cool_2:
     title: Cooling 2
     date: '20240930_3'
@@ -300,7 +302,9 @@ experiment_type:
     end_min: 60
     Ty10: 22.84
     Ty20: 28.6
-    Ty30: 21.5
+    Ty30: 28.15
+    Tgt10: 24.56
+    Tgt20: 29.46
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
 output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/cooling_meas_2_no_obs
