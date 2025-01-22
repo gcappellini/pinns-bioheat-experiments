@@ -41,12 +41,6 @@ def run_ground_truth(config, out_dir):
             pp.plot_validation_3d(system_gt["grid"], system_gt["theta"], mm_obs_gt["theta"], out_dir, label)
             pp.plot_obs_err([mm_obs_gt], out_dir, label)     
         
-
-    # system_meas, _ = uu.import_testdata(config)
-    # uu.check_measurements(system_meas, system_gt, output_dir_gt, config)
-    # extracted = uu.extract_matching([system_gt, system_meas])
-    # metric = uu.compute_metrics(extracted, [system_gt, system_meas], config, out_dir)
-    # score = metric["system_meas_L2RE"]
     
     return output_dir_gt, system_gt, observers_gt, mm_obs_gt
 
@@ -137,12 +131,13 @@ def main():
 
     gt_path=f"{tests_dir}/cooling_ground_truth"
 
+
     # Ground Truth Simulation
     if dict_exp["ground_truth"]:
         output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, run_out_dir)
         
 
-    if dict_exp["run"]=="simulation":
+    elif dict_exp["simulation"]:
 
         if dict_exp["ground_truth"]==False:
             system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config, path=gt_path)

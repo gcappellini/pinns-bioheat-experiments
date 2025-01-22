@@ -58,6 +58,7 @@ c2: float = props.c2
 c3: float = props.c3
 
 x_gt1: float = pars.x_gt1
+x_w: float = pars.x_w
 x_gt2: float = pars.x_gt2
 
 W0: float = pars.W0

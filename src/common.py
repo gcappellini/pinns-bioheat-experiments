@@ -47,6 +47,7 @@ def set_run(prj_figs, cfg, run):
         props.Ty10, props.Ty20, props.Ty30, props.Tgt20 = simu_settings.Ty10, simu_settings.Ty20, simu_settings.Ty30, simu_settings.Tgt20
         OmegaConf.save(cfg, f"{conf_dir}/config_run.yaml")
         cfg = filter_config_for_matlab(cfg)
+        
     # elif run == "simulation_system":
     #     props.W = pars.W_sys
     #     props.Ty10, props.Ty20, props.Ty30 = 21.5, 30.0, 21.5

@@ -13,7 +13,7 @@ import coeff_calc as cc
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-# import matlab.engine
+import matlab.engine
 from hydra import initialize, compose
 
 
@@ -509,7 +509,7 @@ def load_weights(observers, conf, label, path=None):
     data = np.loadtxt(f"{dir_name}/weights_l_{lamb:.1f}_u_{ups:.1f}_{label}.txt")
 
     for j in range(n):
-        observers[j]["weights"] = np.hstack((data[:, 0:1], data[:, j+1].reshape(data[:, 0:1].shape)))
+        observers[j]["weights"] = data[:, j+1].reshape(data[:, 0:1].shape)
 
     return observers
 
@@ -714,6 +714,7 @@ def mu(o, tau_in, upsilon):
     closest_index = np.argmin(np.abs(t-tau_in))
     obs_err = [obs["obs_err_0.0"][closest_index] for obs in o]
     muu = [upsilon * (err ** 2) for err in obs_err]
+    # print(muu)
 
     return np.array(muu)
 
@@ -810,8 +811,8 @@ def get_observers_preds(ground_truth, multi_obs, x_obs, output_dir, conf, label)
         obs_pred = multi_obs[el].predict(x_obs).reshape(-1)
         preds.append(obs_pred)
 
-    preds=np.array(preds).T
 
+    preds=np.array(preds).T
     # Prepare observer dictionaries
     obs_dict = [
         {
@@ -823,6 +824,12 @@ def get_observers_preds(ground_truth, multi_obs, x_obs, output_dir, conf, label)
     ]
 
     mm_obs = None
+
+    # if conf.experiment.run.startswith("meas_"):
+    #     meas_sett = getattr(conf.experiment_type, conf.experiment.run)
+    #     for obs in obs_dict:
+    #         obs["theta"] = filter_theta_vessel(obs["grid"], meas_sett["r1"], meas_sett["Tfl"], obs["theta"])
+    
     obs_dict, mm_obs = compute_obs_err(ground_truth, obs_dict, mm_obs)
 
     if n_obs==1:
@@ -837,6 +844,10 @@ def get_observers_preds(ground_truth, multi_obs, x_obs, output_dir, conf, label)
             "label": "multi_observer"
         }
 
+    # if conf.experiment.run.startswith("meas_"):
+    #     meas_sett = getattr(conf.experiment_type, conf.experiment.run)
+    #     for obs in obs_dict:
+    #         obs["theta"] = filter_theta_vessel(obs["grid"], meas_sett["r1"], meas_sett["Tfl"], obs["theta"])
     _, mm_obs = compute_obs_err(ground_truth, obs_dict, mm_obs)
     obs_dict, mm_obs = calculate_l2(ground_truth, obs_dict, mm_obs)
     
@@ -955,10 +966,10 @@ def solve_ivp(multi_obs: list, fold: str, conf: dict, x_obs, label: str):
         a = mu(multi_obs, t, ups)
         e = np.exp(-a)
 
-        weighted_sum = np.sum(p[:, None] * e, axis=0) 
-        f_matrix = -lam * (1 - (e / weighted_sum)) * p[:, None]
-        return np.sum(f_matrix, axis=1)
+        weighted_sum = np.sum(p * e) 
 
+        return -lam * (1 - (e / weighted_sum)) * p
+    
     sol = integrate.solve_ivp(f, (0, 1), p0, t_eval=t_eval)
     weights = np.zeros((sol.y.shape[0] + 1, sol.y.shape[1]))
     weights[0] = sol.t
@@ -1327,4 +1338,38 @@ def check_measurements(system_meas, mm_obs, output_dir, conf):
     y1_pred, gt1_pred, gt2_pred, y2_pred = point_predictions([system_meas, mm_obs])
     df = load_from_pickle(f"{src_dir}/data/vessel/{name_exp}.pkl")
     
-    pp.plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, output_dir)
+    pp.plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, conf.experiment.run, output_dir)
+
+
+def filter_theta_vessel(grid, r, t_fluid, theta_pred):
+    x = grid[:, 0]
+    t = grid[:, 1]
+
+    theta_fluid=scale_t(t_fluid)
+    r = r*cc.L0
+    
+    res = np.zeros_like(x)
+    coords_sc = get_tc_positions()
+    X_w = cc.x_w / cc.L0
+    theta_w_index = np.argmin(np.abs(x-X_w)) 
+    theta_w = theta_pred[theta_w_index]
+    y0 = theta_fluid/theta_w
+    k = 1
+
+    def quadratic_segment(xi, h):
+        a = (y0 - k) / ((X_w - h) ** 2)
+        return a * (xi - h) ** 2 + k
+
+    for i, xi in enumerate(x):
+        if xi < coords_sc[1]:
+            res[i] = 1
+        elif coords_sc[1] <= xi < X_w - r:
+            res[i] = quadratic_segment(xi, coords_sc[1])
+        elif X_w - r <= xi <= X_w + r:
+            res[i] = y0
+        elif X_w + r < xi < 1.3 * coords_sc[2]:
+            res[i] = quadratic_segment(xi, 1.3 * coords_sc[2])
+        else:
+            res[i] = 1
+
+    return res*theta_pred

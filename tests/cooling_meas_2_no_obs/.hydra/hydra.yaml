@@ -1,6 +1,6 @@
 hydra:
   run:
-    dir: tests/cooling_meas_2_no_obs
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
   sweep:
     dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
     subdir: ${hydra.job.num}
@@ -104,21 +104,22 @@ hydra:
       - file
     disable_existing_loggers: false
   env: {}
-  mode: RUN
+  mode: MULTIRUN
   searchpath: []
   callbacks: {}
   output_subdir: .hydra
   overrides:
     hydra:
-    - hydra.run.dir=tests/cooling_meas_2_no_obs
-    - hydra.mode=RUN
-    task: []
+    - hydra.mode=MULTIRUN
+    task:
+    - plot.show_obs=False
+    - experiment.run=meas_cool_2
   job:
     name: main
     chdir: null
-    override_dirname: ''
-    id: ???
-    num: ???
+    override_dirname: experiment.run=meas_cool_2,plot.show_obs=False
+    id: '3'
+    num: 3
     config_name: config_run
     env_set: {}
     env_copy: []
@@ -141,7 +142,7 @@ hydra:
     - path: ''
       schema: structured
       provider: schema
-    output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/cooling_meas_2_no_obs
+    output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/multirun/2025-01-20/18-24-13/3
     choices:
       hydra/env: default
       hydra/callbacks: null

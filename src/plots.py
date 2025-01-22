@@ -477,7 +477,7 @@ def plot_validation_3d(e, t_true, t_pred, run_figs, label):
     )
     
 
-def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, prj_figs, gt=False):
+def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, label, prj_figs):
 
     conf = compose(config_name='config_run')
 
@@ -491,12 +491,12 @@ def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, p
     ]
 
     # Labels for the legend (corresponding to each line in y_data)
-    if gt:
-        legend_labels = ['y1 (Meas)', 'gt1 (Meas)', 'gt2 (Meas)', 'y2 (Meas)', 
-                        'y1 (Matlab)', 'gt1 (Matlab)', 'gt2 (Matlab)', 'y2 (Matlab)']
-    else:
-        legend_labels = ['y1 (Meas)', 'gt1 (Meas)', 'gt2 (Meas)', 'y2 (Meas)', 
-                        'y1 (Pred)', 'gt1 (Pred)', 'gt2 (Pred)', 'y2 (Pred)']
+    # if gt:
+    #     legend_labels = ['y1 (Meas)', 'gt1 (Meas)', 'gt2 (Meas)', 'y2 (Meas)', 
+    #                     'y1 (Matlab)', 'gt1 (Matlab)', 'gt2 (Matlab)', 'y2 (Matlab)']
+    # else:
+    legend_labels = ['y1 (Meas)', 'gt1 (Meas)', 'gt2 (Meas)', 'y2 (Meas)', 
+                    'y1 (Pred)', 'gt1 (Pred)', 'gt2 (Pred)', 'y2 (Pred)']
 
     colors_points = conf.plot.colors.measuring_points
     colors_list = list(colors_points)
@@ -528,7 +528,7 @@ def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, p
         colors=colors,
         linestyles=linestyles,
         size=(12, 6),
-        filename=f"{prj_figs}/timeseries_vs_pinns_{n_obs}obs.png"
+        filename=f"{prj_figs}/timeseries_vs_pinns_{label}.png"
     )
 
 
@@ -609,6 +609,9 @@ def plot_multiple_series(series_data, prj_figs, lal):
         axes[i].set_ylim(y_min, y_min + scales[i])
     
     axes[0].set_ylim(cc.Troom, cc.Tmax+0.7) if rescale else axes[0].set_ylim(0, 1)
+    if conf.experiment.run.startswith("meas_cool"):
+        axes[0].set_ylim(cc.Troom, 30)
+        
     # Save and close figure
     filename = f"{prj_figs}/combined_plot_{lal}.png"
     fig.tight_layout()  # Adjust layout for better spacing

@@ -50,8 +50,8 @@ model_properties:
   n_anchor_points: 5
 model_parameters:
   lam: 1
-  upsilon: 1
-  W_min: 5.0e-06
+  upsilon: 500
+  W_min: 0.0001
   W_max: 0.0005
   W0: 0.001207
   W1: 0.001506
@@ -65,6 +65,7 @@ model_parameters:
   W_index: 4
   n_obs: 8
   x_gt2: 0.01
+  x_w: 0.025
   x_gt1: 0.04
   loss_weights:
   - 0.006289862096309662
