@@ -16,6 +16,7 @@ def initialize_run(cfg1):
     cfg1.output_dir = output_dir
     OmegaConf.save(cfg1,f"{output_dir}/config.yaml")
     OmegaConf.save(cfg1,f"{conf_dir}/config_run.yaml")
+    logger.info(f'Working dir: {output_dir}')
 
     return cfg1, output_dir
 

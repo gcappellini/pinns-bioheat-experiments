@@ -1,7 +1,7 @@
 import deepxde as dde
 import numpy as np
 from numpy.linalg import norm
-import os
+import os, logging
 import torch
 import wandb
 from scipy.interpolate import interp1d
@@ -13,7 +13,7 @@ import coeff_calc as cc
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-import matlab.engine
+# import matlab.engine
 from hydra import initialize, compose
 
 
@@ -30,6 +30,8 @@ git_dir = os.path.dirname(src_dir)
 conf_dir = os.path.join(src_dir, "configs")
 models = os.path.join(git_dir, "models")
 os.makedirs(models, exist_ok=True)
+
+logger = logging.getLogger(__name__)
 
 f1, f2, f3 = [None]*3
 n_digits = 6
@@ -398,15 +400,18 @@ def train_model(conf):
 
     if trained_model:
         # Return the trained model directly if found
+        logger.info("Found a pre-trained model.")
         return trained_model
 
     # Step 1: Train with Adam optimizer
+    logger.info("Training a new model with Adam optimizer.")
     conf.model_properties.optimizer = "adam"
     config_hash = co.generate_config_hash(conf.model_properties)
     model_path_adam = os.path.join(models, f"model_{config_hash}.pt")
     model, losshistory = train_and_save_model(conf, "adam", config_hash, model_path_adam)
 
     if conf.model_properties.iters_lbfgs>0:
+        logger.info("COntinue training the model with L-BFGS optimizer.")
         # Step 2: Train with LBFGS optimizer
         conf.model_properties.optimizer = "L-BFGS"
         config_hash = co.generate_config_hash(conf.model_properties)
@@ -677,6 +682,7 @@ def execute(config, label):
     if n_obs == 1:
         W_index = config.model_parameters.W_index
         config.model_properties.W = cc.W_obs
+        logger.info(f"Training single observer with perfusion {cc.W_obs}.")
         # co.set_run(simul_dir, config, f"obs_{W_index}")
         output_model = train_model(config)
         return output_model
@@ -687,6 +693,7 @@ def execute(config, label):
         perf = obs[j]
         config.model_properties.W = float(perf)
         # co.set_run(simul_dir, config, f"obs_{j}")
+        logger.info(f"Training observer {j} with perfusion {perf}.")
         model = train_model(config)
         multi_obs.append(model)
 
@@ -953,6 +960,7 @@ def solve_ivp(multi_obs: list, fold: str, conf: dict, x_obs, label: str):
     """
     Solve the IVP for observer weights and plot the results.
     """
+    logger.info("Solving the IVP for observer weights...")
     pars = conf.model_parameters
     n_obs = pars.n_obs
     lam = pars.lam
@@ -982,6 +990,7 @@ def solve_ivp(multi_obs: list, fold: str, conf: dict, x_obs, label: str):
     for j in range(len(multi_obs)):
         multi_obs[j]["weights"] = weights[:, j+1].reshape(weights[:, 0:1].shape)
 
+    logger.info("IVP for observer weights solved.")
     return multi_obs
 
  
@@ -989,13 +998,12 @@ def run_matlab_ground_truth():
     """
     Optionally run MATLAB ground truth.
     """
-
-    print("Running MATLAB ground truth calculation...")
+    logger.info("Running MATLAB ground truth calculation...")
     eng = matlab.engine.start_matlab()
     eng.cd(f"{src_dir}/matlab", nargout=0)
     eng.BioHeat(nargout=0)
     eng.quit()
-    print("MATLAB ground truth calculation completed.")
+    logger.info("MATLAB ground truth calculation completed.")
 
 
 def compute_y_theory(grid, sys, obs):

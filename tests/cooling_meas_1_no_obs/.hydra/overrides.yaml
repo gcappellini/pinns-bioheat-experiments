@@ -1,2 +1,1 @@
-- plot.show_obs=False
-- experiment.run=meas_cool_1
+- plot.show_obs=false

@@ -1,4 +1,4 @@
-import os
+import os, logging
 import numpy as np
 from omegaconf import OmegaConf
 from hydra import compose
@@ -14,6 +14,7 @@ tests_dir = os.path.join(git_dir, "tests")
 conf_dir = os.path.join(src_dir, "configs")
 os.makedirs(tests_dir, exist_ok=True)
 
+logger = logging.getLogger(__name__)
 
 def run_ground_truth(config, out_dir):
     """Run MATLAB ground truth simulation, load data, and plot results."""
