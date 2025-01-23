@@ -205,5 +205,6 @@ src/outputs
 src/data/vessel/foto&video
 outputs/
 multirun/
+wandb/
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,python
