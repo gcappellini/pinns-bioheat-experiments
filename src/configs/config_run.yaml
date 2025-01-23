@@ -51,8 +51,8 @@ model_properties:
 model_parameters:
   lam: 100
   upsilon: 1000
-  W_min: 5.0e-05
-  W_max: 0.0005
+  W_min: 1.0e-05
+  W_max: 0.0001
   W0: 0.001207
   W1: 0.001506
   W2: 0.001806
@@ -270,7 +270,7 @@ plot:
       - 0.7
       - 0.7
       - 0.7
-  show_obs: false
+  show_obs: true
 experiment:
   ground_truth: false
   simulation: false
@@ -313,4 +313,4 @@ experiment_type:
     r1: 0.001
 run:
   dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /home/guglielmo/pinns-bioheat-experiments/multirun/2025-01-23/18-15-50/1
+output_dir: /home/guglielmo/pinns-bioheat-experiments/tests/cooling_meas_2
