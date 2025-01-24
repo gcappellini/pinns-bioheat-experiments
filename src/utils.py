@@ -13,7 +13,7 @@ import coeff_calc as cc
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-# import matlab.engine
+import matlab.engine
 from hydra import initialize, compose
 
 
@@ -1346,8 +1346,9 @@ def check_measurements(system_meas, mm_obs, output_dir, conf):
 
     y1_pred, gt1_pred, gt2_pred, y2_pred = point_predictions([system_meas, mm_obs])
     df = load_from_pickle(f"{src_dir}/data/vessel/{name_exp}.pkl")
+    gt = True if mm_obs["label"].endswith("gt") else False
     
-    pp.plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, conf.experiment.run, output_dir)
+    pp.plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, conf.experiment.run, output_dir, gt=gt)
 
 
 def filter_theta_vessel(grid, r, t_fluid, theta_pred):

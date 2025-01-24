@@ -37,33 +37,33 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b1: -1.27778
-  b2: -0.51746
-  b3: 0.96667
-  b4: 0.82857
-  c1: -1.79524
-  c2: 0.96667
-  c3: 0.82857
+  b1: -16.07889
+  b2: 15.48032
+  b3: 0.05
+  b4: 0.67619
+  c1: -0.59857
+  c2: 0.05
+  c3: 0.67619
   n_ins: 4
   np_seed: 500
   sigma: 1.0
   n_anchor_points: 5
 model_parameters:
-  lam: 100
-  upsilon: 1000
-  W_min: 0.0001
-  W_max: 0.0005
-  W0: 0.001207
-  W1: 0.001506
-  W2: 0.001806
-  W3: 0.002105
-  W4: 0.002405
-  W5: 0.002704
-  W6: 0.003004
-  W7: 0.003303
-  W_sys: 0.002105
+  lam: 1
+  upsilon: 1
+  W_min: 1.0e-05
+  W_max: 0.0001
+  W0: 1.0e-05
+  W1: 2.3e-05
+  W2: 3.6e-05
+  W3: 4.9e-05
+  W4: 6.1e-05
+  W5: 7.4e-05
+  W6: 8.7e-05
+  W7: 0.0001
+  W_sys: 5.0e-05
   W_index: 3
-  n_obs: 1
+  n_obs: 8
   x_gt2: 0.01
   x_w: 0.025
   x_gt1: 0.04
@@ -72,5 +72,5 @@ model_parameters:
   - 2.0888912677764893
   - 27.680763244628906
   - 8.396754264831543
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/cooling_ground_truth_1obs
-experiment: simulation
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-01-24/16-52-34
+experiment: meas_cool_2

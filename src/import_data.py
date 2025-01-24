@@ -26,7 +26,7 @@ def main(meas, rescale, save_pickle, show_y3=False, threshold=0.0):
 
     if save_pickle:
         uu.save_to_pickle(df1, f"{src_dir}/data/vessel/{string}.pkl")
-
+        df1.to_csv(f"{src_dir}/data/vessel/{string}.txt", header=False, index=False, sep="\t")
 
     title=f"{name}"
     xlabel="Time (min)"

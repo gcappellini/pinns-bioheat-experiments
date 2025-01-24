@@ -18,6 +18,8 @@ function theta0 = sys_ic(x)
     else
         theta0 = b1.*x.^3 + b2.*x.^2 + b3.*x + b4;
 
+    end
+
     %theta0 = 0;
 
     
@@ -44,12 +46,16 @@ function thetahat0 = obs_ic(x)
 
     
 function y1 = theta_1(t)
-    global theta10 %path_exp
-    % data = load(path_exp);
-    % time = data(:, 1);
-    % measurement = data(:, 2);
-    % y1 = interp1(time, measurement, t, 'linear', 'extrap');
-    y1 = 0;
+    global theta10 path_exp  str_exp
+    if startsWith(str_exp, 'meas')
+        data = load(path_exp);
+        time = data(:, 1);
+        measurement = data(:, 2);
+        y1 = interp1(time, measurement, t, 'linear', 'extrap');
+    else
+        y1 = theta10;
+    end
+
 
     
 function y2 = theta_2()

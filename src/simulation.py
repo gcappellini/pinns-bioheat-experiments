@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 def run_ground_truth(config, out_dir):
     """Run MATLAB ground truth simulation, load data, and plot results."""
     label = "ground_truth"
+    dict_exp = config.experiment
     output_dir_gt, config_matlab = co.set_run(out_dir, config, label)
     uu.run_matlab_ground_truth()
     system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config_matlab, path=out_dir)
@@ -40,7 +41,11 @@ def run_ground_truth(config, out_dir):
             pp.plot_multiple_series([system_gt, mm_obs_gt], out_dir, label)
             pp.plot_l2(system_gt, [mm_obs_gt], out_dir, label)
             pp.plot_validation_3d(system_gt["grid"], system_gt["theta"], mm_obs_gt["theta"], out_dir, label)
-            pp.plot_obs_err([mm_obs_gt], out_dir, label)     
+            pp.plot_obs_err([mm_obs_gt], out_dir, label)
+
+            if dict_exp["run"].startswith("meas"):
+                system_meas, _ = uu.import_testdata(config)
+                uu.check_measurements(system_meas, system_gt, out_dir, config)     
         
     
     return output_dir_gt, system_gt, observers_gt, mm_obs_gt
@@ -151,6 +156,7 @@ def main():
     elif dict_exp["run"].startswith("meas"):
         if dict_exp["ground_truth"]:
             output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, run_out_dir)
+            
         run_measurement_mm_obs(config, run_out_dir)
 
 
