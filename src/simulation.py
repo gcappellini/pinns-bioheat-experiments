@@ -134,13 +134,11 @@ def main():
 
 
     # Ground Truth Simulation
-    if dict_exp["ground_truth"]:
-        output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, run_out_dir)
-        
 
-    elif dict_exp["simulation"]:
-
-        if dict_exp["ground_truth"]==False:
+    if dict_exp["simulation"]:
+        if dict_exp["ground_truth"]:
+            output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, run_out_dir)
+        else:
             system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config, path=gt_path)
         # Simulation System
         if n_ins==2:
@@ -151,6 +149,8 @@ def main():
             run_simulation_mm_obs(config, run_out_dir, system_gt, mm_obs_gt, observers_gt, gt_path)
     
     elif dict_exp["run"].startswith("meas"):
+        if dict_exp["ground_truth"]:
+            output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, run_out_dir)
         run_measurement_mm_obs(config, run_out_dir)
 
 

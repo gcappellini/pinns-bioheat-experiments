@@ -1,0 +1,236 @@
+Loss Components Data
+==================================================
+   Iteration     Loss Type            Loss Value
+--------------------------------------------------
+           0  $\mathcal{L}_{res}$        1.75253522e+01
+         200  $\mathcal{L}_{res}$        2.94890015e+00
+         400  $\mathcal{L}_{res}$        1.34857292e+00
+         600  $\mathcal{L}_{res}$        9.05204879e-01
+         800  $\mathcal{L}_{res}$        4.63429427e-01
+        1000  $\mathcal{L}_{res}$        3.87436670e-01
+        1200  $\mathcal{L}_{res}$        2.28731338e-01
+        1400  $\mathcal{L}_{res}$        1.79650990e-01
+        1600  $\mathcal{L}_{res}$        1.41884967e-01
+        1800  $\mathcal{L}_{res}$        1.33305855e-01
+        2000  $\mathcal{L}_{res}$        1.10740946e-01
+        2200  $\mathcal{L}_{res}$        1.03127879e-01
+        2400  $\mathcal{L}_{res}$        1.05646708e-01
+        2600  $\mathcal{L}_{res}$        8.76878473e-02
+        2800  $\mathcal{L}_{res}$        7.35446123e-02
+        3000  $\mathcal{L}_{res}$        6.98401533e-02
+        3000  $\mathcal{L}_{res}$        6.83568230e-02
+        4000  $\mathcal{L}_{res}$        2.39502892e-03
+        5000  $\mathcal{L}_{res}$        1.14697077e-03
+        6000  $\mathcal{L}_{res}$        3.25010894e-03
+        7000  $\mathcal{L}_{res}$        1.10803248e-02
+        8000  $\mathcal{L}_{res}$        7.33918615e-03
+        9000  $\mathcal{L}_{res}$        3.43326097e-03
+       10000  $\mathcal{L}_{res}$        1.91672778e-03
+       11000  $\mathcal{L}_{res}$        1.31729803e-03
+       12000  $\mathcal{L}_{res}$        9.65155343e-04
+       12277  $\mathcal{L}_{res}$        8.86951413e-04
+       13277  $\mathcal{L}_{res}$        7.27173079e-04
+       14277  $\mathcal{L}_{res}$        5.97078070e-04
+       14409  $\mathcal{L}_{res}$        5.86814068e-04
+       14471  $\mathcal{L}_{res}$        5.82261216e-04
+       14644  $\mathcal{L}_{res}$        5.70772249e-04
+       14652  $\mathcal{L}_{res}$        5.70501525e-04
+       14657  $\mathcal{L}_{res}$        5.70332864e-04
+       14747  $\mathcal{L}_{res}$        5.64868331e-04
+       14759  $\mathcal{L}_{res}$        5.64284467e-04
+       15181  $\mathcal{L}_{res}$        5.34742877e-04
+       15606  $\mathcal{L}_{res}$        5.06468310e-04
+       15689  $\mathcal{L}_{res}$        5.01539277e-04
+       16012  $\mathcal{L}_{res}$        4.78532064e-04
+       16113  $\mathcal{L}_{res}$        4.71547339e-04
+       16120  $\mathcal{L}_{res}$        4.71365164e-04
+       16145  $\mathcal{L}_{res}$        4.69892393e-04
+       16410  $\mathcal{L}_{res}$        4.48057716e-04
+       16721  $\mathcal{L}_{res}$        4.24156557e-04
+       16792  $\mathcal{L}_{res}$        4.20907668e-04
+       16877  $\mathcal{L}_{res}$        4.17324610e-04
+       16961  $\mathcal{L}_{res}$        4.12106197e-04
+       17109  $\mathcal{L}_{res}$        4.02719591e-04
+       17114  $\mathcal{L}_{res}$        4.02691323e-04
+       17119  $\mathcal{L}_{res}$        4.02612536e-04
+       17127  $\mathcal{L}_{res}$        4.02501027e-04
+       17161  $\mathcal{L}_{res}$        4.01443674e-04
+       17258  $\mathcal{L}_{res}$        3.97604387e-04
+       17263  $\mathcal{L}_{res}$        3.97561631e-04
+       17269  $\mathcal{L}_{res}$        3.97469135e-04
+       17307  $\mathcal{L}_{res}$        3.95488005e-04
+--------------------------------------------------
+           0  $\mathcal{L}_{bc0}$        3.74411954e+01
+         200  $\mathcal{L}_{bc0}$        1.10040684e+01
+         400  $\mathcal{L}_{bc0}$        8.73396668e+00
+         600  $\mathcal{L}_{bc0}$        7.16937035e+00
+         800  $\mathcal{L}_{bc0}$        6.49539853e+00
+        1000  $\mathcal{L}_{bc0}$        6.22130472e+00
+        1200  $\mathcal{L}_{bc0}$        6.08230910e+00
+        1400  $\mathcal{L}_{bc0}$        6.01125437e+00
+        1600  $\mathcal{L}_{bc0}$        5.97943669e+00
+        1800  $\mathcal{L}_{bc0}$        5.95436777e+00
+        2000  $\mathcal{L}_{bc0}$        5.92958361e+00
+        2200  $\mathcal{L}_{bc0}$        5.91788172e+00
+        2400  $\mathcal{L}_{bc0}$        5.91051841e+00
+        2600  $\mathcal{L}_{bc0}$        5.89277913e+00
+        2800  $\mathcal{L}_{bc0}$        5.88608436e+00
+        3000  $\mathcal{L}_{bc0}$        5.88667961e+00
+        3000  $\mathcal{L}_{bc0}$        5.88667961e+00
+        4000  $\mathcal{L}_{bc0}$        5.85205922e+00
+        5000  $\mathcal{L}_{bc0}$        5.85097318e+00
+        6000  $\mathcal{L}_{bc0}$        5.84345813e+00
+        7000  $\mathcal{L}_{bc0}$        5.80302516e+00
+        8000  $\mathcal{L}_{bc0}$        5.78626722e+00
+        9000  $\mathcal{L}_{bc0}$        5.78508750e+00
+       10000  $\mathcal{L}_{bc0}$        5.78500550e+00
+       11000  $\mathcal{L}_{bc0}$        5.78494652e+00
+       12000  $\mathcal{L}_{bc0}$        5.78490077e+00
+       12277  $\mathcal{L}_{bc0}$        5.78488440e+00
+       13277  $\mathcal{L}_{bc0}$        5.78487782e+00
+       14277  $\mathcal{L}_{bc0}$        5.78487201e+00
+       14409  $\mathcal{L}_{bc0}$        5.78487028e+00
+       14471  $\mathcal{L}_{bc0}$        5.78486939e+00
+       14644  $\mathcal{L}_{bc0}$        5.78486949e+00
+       14652  $\mathcal{L}_{bc0}$        5.78486944e+00
+       14657  $\mathcal{L}_{bc0}$        5.78486951e+00
+       14747  $\mathcal{L}_{bc0}$        5.78486811e+00
+       14759  $\mathcal{L}_{bc0}$        5.78486817e+00
+       15181  $\mathcal{L}_{bc0}$        5.78486364e+00
+       15606  $\mathcal{L}_{bc0}$        5.78485634e+00
+       15689  $\mathcal{L}_{bc0}$        5.78485484e+00
+       16012  $\mathcal{L}_{bc0}$        5.78485072e+00
+       16113  $\mathcal{L}_{bc0}$        5.78485100e+00
+       16120  $\mathcal{L}_{bc0}$        5.78485097e+00
+       16145  $\mathcal{L}_{bc0}$        5.78485094e+00
+       16410  $\mathcal{L}_{bc0}$        5.78485050e+00
+       16721  $\mathcal{L}_{bc0}$        5.78484770e+00
+       16792  $\mathcal{L}_{bc0}$        5.78484625e+00
+       16877  $\mathcal{L}_{bc0}$        5.78484537e+00
+       16961  $\mathcal{L}_{bc0}$        5.78484491e+00
+       17109  $\mathcal{L}_{bc0}$        5.78484356e+00
+       17114  $\mathcal{L}_{bc0}$        5.78484350e+00
+       17119  $\mathcal{L}_{bc0}$        5.78484349e+00
+       17127  $\mathcal{L}_{bc0}$        5.78484343e+00
+       17161  $\mathcal{L}_{bc0}$        5.78484333e+00
+       17258  $\mathcal{L}_{bc0}$        5.78484269e+00
+       17263  $\mathcal{L}_{bc0}$        5.78484263e+00
+       17269  $\mathcal{L}_{bc0}$        5.78484258e+00
+       17307  $\mathcal{L}_{bc0}$        5.78484249e+00
+--------------------------------------------------
+           0     test loss        5.28193734e+01
+         200     test loss        1.14488215e+01
+         400     test loss        8.83548760e+00
+         600     test loss        7.27121783e+00
+         800     test loss        6.54190599e+00
+        1000     test loss        6.32122707e+00
+        1200     test loss        6.11255247e+00
+        1400     test loss        6.03785399e+00
+        1600     test loss        6.00086478e+00
+        1800     test loss        5.97432398e+00
+        2000     test loss        5.94639698e+00
+        2200     test loss        5.93594744e+00
+        2400     test loss        5.92737924e+00
+        2600     test loss        5.90794633e+00
+        2800     test loss        5.90081060e+00
+        3000     test loss        5.90079945e+00
+        3000     test loss        5.90079945e+00
+        4000     test loss        5.85272193e+00
+        5000     test loss        5.85134622e+00
+        6000     test loss        5.84491887e+00
+        7000     test loss        5.80870388e+00
+        8000     test loss        5.78983839e+00
+        9000     test loss        5.78712512e+00
+       10000     test loss        5.78595863e+00
+       11000     test loss        5.78585127e+00
+       12000     test loss        5.78553914e+00
+       12277     test loss        5.78541212e+00
+       13277     test loss        5.78528340e+00
+       14277     test loss        5.78521554e+00
+       14409     test loss        5.78519819e+00
+       14471     test loss        5.78519160e+00
+       14644     test loss        5.78520346e+00
+       14652     test loss        5.78520113e+00
+       14657     test loss        5.78520120e+00
+       14747     test loss        5.78519192e+00
+       14759     test loss        5.78519175e+00
+       15181     test loss        5.78520389e+00
+       15606     test loss        5.78516626e+00
+       15689     test loss        5.78515191e+00
+       16012     test loss        5.78514247e+00
+       16113     test loss        5.78514738e+00
+       16120     test loss        5.78514873e+00
+       16145     test loss        5.78515306e+00
+       16410     test loss        5.78515756e+00
+       16721     test loss        5.78513444e+00
+       16792     test loss        5.78513430e+00
+       16877     test loss        5.78512368e+00
+       16961     test loss        5.78511947e+00
+       17109     test loss        5.78510540e+00
+       17114     test loss        5.78510566e+00
+       17119     test loss        5.78510551e+00
+       17127     test loss        5.78510658e+00
+       17161     test loss        5.78510493e+00
+       17258     test loss        5.78509367e+00
+       17263     test loss        5.78509296e+00
+       17269     test loss        5.78509105e+00
+       17307     test loss        5.78509431e+00
+--------------------------------------------------
+           0    train loss        5.49665477e+01
+         200    train loss        1.39529686e+01
+         400    train loss        1.00825396e+01
+         600    train loss        8.07457523e+00
+         800    train loss        6.95882796e+00
+        1000    train loss        6.60874139e+00
+        1200    train loss        6.31104044e+00
+        1400    train loss        6.19090536e+00
+        1600    train loss        6.12132166e+00
+        1800    train loss        6.08767363e+00
+        2000    train loss        6.04032455e+00
+        2200    train loss        6.02100960e+00
+        2400    train loss        6.01616512e+00
+        2600    train loss        5.98046697e+00
+        2800    train loss        5.95962898e+00
+        3000    train loss        5.95651976e+00
+        3000    train loss        5.95503643e+00
+        4000    train loss        5.85445425e+00
+        5000    train loss        5.85212015e+00
+        6000    train loss        5.84670824e+00
+        7000    train loss        5.81410548e+00
+        8000    train loss        5.79360641e+00
+        9000    train loss        5.78852076e+00
+       10000    train loss        5.78692223e+00
+       11000    train loss        5.78626382e+00
+       12000    train loss        5.78586593e+00
+       12277    train loss        5.78577135e+00
+       13277    train loss        5.78560499e+00
+       14277    train loss        5.78546909e+00
+       14409    train loss        5.78545710e+00
+       14471    train loss        5.78545165e+00
+       14644    train loss        5.78544026e+00
+       14652    train loss        5.78543995e+00
+       14657    train loss        5.78543985e+00
+       14747    train loss        5.78543298e+00
+       14759    train loss        5.78543245e+00
+       15181    train loss        5.78539839e+00
+       15606    train loss        5.78536281e+00
+       15689    train loss        5.78535638e+00
+       16012    train loss        5.78532925e+00
+       16113    train loss        5.78532255e+00
+       16120    train loss        5.78532233e+00
+       16145    train loss        5.78532083e+00
+       16410    train loss        5.78529856e+00
+       16721    train loss        5.78527185e+00
+       16792    train loss        5.78526716e+00
+       16877    train loss        5.78526269e+00
+       16961    train loss        5.78525702e+00
+       17109    train loss        5.78524628e+00
+       17114    train loss        5.78524619e+00
+       17119    train loss        5.78524610e+00
+       17127    train loss        5.78524593e+00
+       17161    train loss        5.78524477e+00
+       17258    train loss        5.78524030e+00
+       17263    train loss        5.78524019e+00
+       17269    train loss        5.78524005e+00
+       17307    train loss        5.78523798e+00
+--------------------------------------------------

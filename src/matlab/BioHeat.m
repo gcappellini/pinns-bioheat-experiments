@@ -1,7 +1,7 @@
 clear all
 close all
 
-global K lambda upsilon W_obs W_sys W0 W1 W2 W3 W4 W5 W6 W7 c1 c2 c3 b1 b2 b3 b4 theta10 theta20 theta30 theta_gt10 theta_gt20 X_gt1 X_gt2 om0 om1 om2  om3 om4  om5 om6 om7 a1 a2 a3 a4 a5 str_exp path_exp output_path delta_x
+global K lambda upsilon W_obs W_sys W0 W1 W2 W3 W4 W5 W6 W7 c1 c2 c3 b1 b2 b3 b4 theta10 theta20 theta30 theta_gt10 theta_gt20 X_gt1 X_gt2 om0 om1 om2  om3 om4  om5 om6 om7 a1 a2 a3 a4 a5 str_exp path_exp output_path delta_x str_exp
 
 % Replace the following with the path to readyaml (find link on the internet)
 addpath('/Users/guglielmocappellini/Desktop/research/code/readyaml')

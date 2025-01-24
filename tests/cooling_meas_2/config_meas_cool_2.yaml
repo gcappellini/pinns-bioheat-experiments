@@ -51,8 +51,8 @@ model_properties:
 model_parameters:
   lam: 100
   upsilon: 1000
-  W_min: 1.0e-05
-  W_max: 0.0001
+  W_min: 4.0e-05
+  W_max: 0.0004
   W0: 0.001207
   W1: 0.001506
   W2: 0.001806
