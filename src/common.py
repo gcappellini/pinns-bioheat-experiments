@@ -44,6 +44,7 @@ def set_run(prj_figs, cfg, run):
 
     if run.startswith("ground_truth"):
         cfg.output_dir = prj_figs
+        [pars.W0, pars.W1, pars.W2, pars.W3, pars.W4, pars.W5, pars.W6, pars.W7] = [float(j) for j in np.linspace(pars.W_min, pars.W_max, 8).round(6)]
         props.Ty10, props.Ty20, props.Ty30, props.Tgt20 = simu_settings.Ty10, simu_settings.Ty20, simu_settings.Ty30, simu_settings.Tgt20
         OmegaConf.save(cfg, f"{conf_dir}/config_run.yaml")
         cfg = filter_config_for_matlab(cfg)
