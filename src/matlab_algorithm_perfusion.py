@@ -21,26 +21,25 @@ def run_ground_truth(iter, config, out_dir):
     uu.run_matlab_ground_truth()
     system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config_matlab, path=output_dir_gt)
     system_meas, _ = uu.import_testdata(config)
-    uu.check_measurements(system_meas, system_gt, output_dir_gt, config)
+    system_gt, mm_obs_gt = uu.calculate_l2(system_meas, [system_gt], mm_obs_gt)
+    # uu.check_measurements(system_meas, system_gt, output_dir_gt, config)
 
-    metric = uu.compute_metrics([system_gt, system_meas], config, out_dir)
-    print(metric.keys())
-    score_all = metric["system_meas_L2RE"]
+    score_all = np.sum(system_gt["L2_err"])
     points = uu.get_tc_positions()
     x_gt2 = points[1]
     x_gt1 = points[2]
 
-    mask_gt2 = [system_meas["grid"][:, 0] != x_gt2]
-    mask_gt1 = [system_meas["grid"][:, 0] != x_gt1]
+    mask_gt2 = [system_gt["grid"][:, 0] != x_gt2]
+    mask_gt1 = [system_gt["grid"][:, 0] != x_gt1]
 
-    system_meas_gt1 = {"grid": system_meas["grid"][mask_gt1], "theta": system_meas["theta"][mask_gt1]}
-    system_meas_gt2 = {"grid": system_meas["grid"][mask_gt2], "theta": system_meas["theta"][mask_gt2]}
+    # system_meas_gt1 = {"grid": system_meas["grid"][mask_gt1], "theta": system_meas["theta"][mask_gt1]}
+    # system_meas_gt2 = {"grid": system_meas["grid"][mask_gt2], "theta": system_meas["theta"][mask_gt2]}
     
-    metric_gt1 = uu.compute_metrics([system_gt, system_meas_gt1], config, out_dir)
-    metric_gt2 = uu.compute_metrics([system_gt, system_meas_gt2], config, out_dir)
+    # metric_gt1 = uu.compute_metrics([system_gt, system_meas_gt1], config, out_dir)
+    # metric_gt2 = uu.compute_metrics([system_gt, system_meas_gt2], config, out_dir)
     
-    score_gt1 = metric_gt1["system_meas_L2RE"]
-    score_gt2 = metric_gt2["system_meas_L2RE"]
+    score_gt1 = np.sum(system_gt["L2_err"][mask_gt1])
+    score_gt2 = np.sum(system_gt["L2_err"][mask_gt2])
     
     return score_all, score_gt1, score_gt2
 

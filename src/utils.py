@@ -57,10 +57,10 @@ def compute_metrics(series_to_plot, cfg, run_figs):
     parts = []
 
     # Iterate over each part in series_to_plot[1:]
-    for i in range(1, len(series_to_plot)-1):
-        part_name = series_to_plot[1+i]["label"]
+    for i in range(len(series_to_plot)):
+        part_name = series_to_plot[i]["label"]
         parts.append(part_name)
-        pred = matching[:, 2 + i]
+        pred = matching[:, 3 + i]
         pred_nonzero = np.where(pred != 0, pred, small_number)
         
         # Part 1: General metrics for pred (Observer PINNs vs Observer MATLAB)
