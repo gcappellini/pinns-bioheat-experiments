@@ -12,8 +12,8 @@ models: str = os.path.join(git_dir, "models")
 conf_dir: str = os.path.join(src_dir, "configs")
 
 initialize('configs', version_base=None)
-# cfg = compose(config_name='config_run')
-cfg = OmegaConf.load(f"{conf_dir}/config_run.yaml")
+cfg = compose(config_name='config_run')
+# cfg = OmegaConf.load(f"{conf_dir}/config_run.yaml")
 
 props = cfg.model_properties
 pars = cfg.model_parameters
@@ -153,4 +153,4 @@ v_cooling_1 = round(Q_cooling_1/A_cooling_1, 3) # Velocity Cooling 1 (m/s)
 v_cooling_2 = round(Q_cooling_2/A_cooling_2, 3) # Velocity Cooling 2 (m/s)
 
 if __name__ == "__main__":
-    print(b1, b2, b3, b4, c1, c2, c3)
+    print(os.path.abspath(cfg.run.dir))

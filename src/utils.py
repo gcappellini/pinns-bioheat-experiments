@@ -999,11 +999,13 @@ def run_matlab_ground_truth():
     Optionally run MATLAB ground truth.
     """
     logger.info("Running MATLAB ground truth calculation...")
+    print("Running MATLAB ground truth calculation...")
     eng = matlab.engine.start_matlab()
     eng.cd(f"{src_dir}/matlab", nargout=0)
     eng.BioHeat(nargout=0)
     eng.quit()
     logger.info("MATLAB ground truth calculation completed.")
+    print("MATLAB ground truth calculation completed.")
 
 
 def compute_y_theory(grid, sys, obs):
