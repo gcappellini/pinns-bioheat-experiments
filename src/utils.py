@@ -429,31 +429,30 @@ def gen_testdata(conf, path=None):
     n = cc.n_obs
     dir_name = path if path is not None else conf.output_dir
 
-    file_path = f"{dir_name}/output_matlab_{n}Obs.txt"
+    file_path = f"{dir_name}/output_matlab_{n}Obs.txt" if n>0 else f"{dir_name}/output_matlab.txt"
 
-    try:
-        data = np.loadtxt(file_path)
-        x, t, sys = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T
-
-        if n == 1:
-            y_obs = data[:, 3:4].T
-            y_obs = y_obs.flatten()[:, None]
-            y_mm_obs = y_obs
-        else:
-            y_obs, mmobs = data[:, 3:3+n], data[:, -1].T
-            y_mm_obs = mmobs.flatten()[:, None]
-
-    except FileNotFoundError:
-        print(f"File not found: {file_path}.")
-
+    data = np.loadtxt(file_path)
+    x, t, sys = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T
     X = np.vstack((x, t)).T
     y_sys = sys.flatten()[:, None]
+    system_gt = {"grid": X, "theta": y_sys, "label": "system_gt"}
+
+    if n == 1:
+        y_obs = data[:, 3:4].T
+        y_obs = y_obs.flatten()[:, None]
+        y_mm_obs = y_obs
+    elif n > 1:
+        y_obs, mmobs = data[:, 3:3+n], data[:, -1].T
+        y_mm_obs = mmobs.flatten()[:, None]
+
+    elif n==0:
+        return system_gt, None, None
+
     
     out = np.hstack((X, y_sys, y_obs, y_mm_obs))
 
     label_mm_obs_gt = f"observer_{cc.W_index}_gt" if n==1 else "multi_observer_gt"
 
-    system_gt = {"grid": out[:, :2], "theta": out[:, 2], "label": "system_gt"}
     mm_obs_gt = { "grid": out[:, :2], "theta": out[:, -1], "label": label_mm_obs_gt}
 
     observers_gt = [

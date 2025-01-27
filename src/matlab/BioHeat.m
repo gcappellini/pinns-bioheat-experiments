@@ -106,7 +106,9 @@ om7 = 0;
 
 
 % Call the correct solver based on the number of observers
-if n_obs == 1
+if n_obs == 0
+    sol = OneDimBH;
+elseif n_obs == 1
     sol = OneDimBH_1Obs;
 elseif n_obs == 3
     sol = OneDimBH_3Obs;

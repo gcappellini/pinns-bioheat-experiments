@@ -44,7 +44,8 @@ def set_run(prj_figs, cfg, run):
 
     if run.startswith("ground_truth"):
         
-        cfg.output_dir = os.path.abspath(prj_figs)#os.path.abspath(os.path.join(prj_figs, run))
+        cfg.output_dir = os.path.abspath(prj_figs)
+        # cfg.output_dir = os.path.abspath(os.path.join(prj_figs, run))
         os.makedirs(cfg.output_dir, exist_ok=True)
         [pars.W0, pars.W1, pars.W2, pars.W3, pars.W4, pars.W5, pars.W6, pars.W7] = [float(j) for j in np.linspace(pars.W_min, pars.W_max, 8).round(6)]
         props.Ty10, props.Ty20, props.Ty30, props.Tgt20 = simu_settings.Ty10, simu_settings.Ty20, simu_settings.Ty30, simu_settings.Tgt20

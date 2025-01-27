@@ -22,7 +22,7 @@ git_dir = os.path.dirname(src_dir)
 models_dir = os.path.join(git_dir, "models")
 os.makedirs(models_dir, exist_ok=True)
 
-def plot_generic(x, y, title, xlabel, ylabel, legend_labels=None, log_scale=False, 
+def plot_generic(x, y, title, xlabel, ylabel, legend_labels=None, log_scale=False, log_xscale=False, 
                  size=(6, 5), filename=None, colors=None, linestyles=None, markers=None,
                  linewidths=None, markersizes=None, alphas=None):
     """
@@ -72,6 +72,9 @@ def plot_generic(x, y, title, xlabel, ylabel, legend_labels=None, log_scale=Fals
     # Set y-axis to log scale if specified
     if log_scale:
         ax.set_yscale('log')
+    
+    if log_xscale:
+        ax.set_xscale('log')
 
     ax.grid(True)
 
@@ -271,7 +274,7 @@ def plot_obs_err(series_data: list, run_figs: str, lal: str):
             legend_labels.append(plot_params[label]["label"])
 
         # Define the title for the plot
-        title = f"Observation errors, {round(uu.rescale_x(xref)*100,2)} cm depth" if rescale else f"Observation errors, X={xref}"
+        title = f"Observation errors, {round(uu.rescale_x(xref)*100,0)} cm depth" if rescale else f"Observation errors, X={xref}"
         # t = t.reshape(len(t), 1)
         mus = np.array(uu.rescale_t(mus))-cc.Troom if rescale else np.array(mus)  
 

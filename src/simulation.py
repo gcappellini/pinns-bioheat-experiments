@@ -27,8 +27,16 @@ def run_ground_truth(config, out_dir):
     # uu.compute_metrics([system_gt, *observers_gt, mm_obs_gt], config, out_dir)
 
     if config.experiment.plot:
+        if config.model_parameters.n_obs == 0:
+            pp.plot_multiple_series([system_gt], out_dir, label)
 
-        if config.plot.show_obs:
+        elif config.model_parameters.n_obs == 1:
+            pp.plot_multiple_series([system_gt, *observers_gt], out_dir, label)
+            pp.plot_l2(system_gt, [*observers_gt], out_dir, label)
+            pp.plot_validation_3d(system_gt["grid"], system_gt["theta"], mm_obs_gt["theta"], out_dir, label)
+            pp.plot_obs_err([*observers_gt], out_dir, label)
+
+        elif config.plot.show_obs:
             pp.plot_multiple_series([system_gt, *observers_gt, mm_obs_gt], out_dir, label)
             pp.plot_l2(system_gt, [*observers_gt, mm_obs_gt], out_dir, label)
             pp.plot_validation_3d(system_gt["grid"], system_gt["theta"], mm_obs_gt["theta"], out_dir, label)
