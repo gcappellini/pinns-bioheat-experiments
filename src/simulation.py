@@ -24,7 +24,7 @@ def run_ground_truth(config, out_dir):
     uu.run_matlab_ground_truth()
     system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config_matlab, path=out_dir)
 
-    uu.compute_metrics([system_gt, *observers_gt, mm_obs_gt], config, out_dir)
+    # uu.compute_metrics([system_gt, *observers_gt, mm_obs_gt], config, out_dir)
 
     if config.experiment.plot:
 
