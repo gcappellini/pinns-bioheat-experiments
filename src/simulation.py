@@ -132,9 +132,6 @@ def main():
 
     gt_path=f"{tests_dir}/cooling_ground_truth"
 
-
-    # Ground Truth Simulation
-
     if dict_exp["simulation"]:
         if dict_exp["ground_truth"]:
             output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, run_out_dir)
