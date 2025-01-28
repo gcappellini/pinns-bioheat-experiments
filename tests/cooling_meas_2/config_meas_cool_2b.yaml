@@ -4,15 +4,15 @@ model_properties:
   k: 0.6
   rho: 1000.0
   c: 4186.0
-  W: 0.0001
+  W: 0.000525
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
-  Ty10: 22.84
-  Ty20: 28.6
-  Ty30: 28.15
+  Ty10: 22.87
+  Ty20: 27.83
+  Ty30: 28.55
   Tgt20: 31.5
-  alfa: 250.0
+  alfa: 50.0
   activation: tanh
   initial_weights_regularizer: false
   initialization: Glorot uniform
@@ -37,32 +37,32 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b1: -16.07889
-  b2: 15.48032
-  b3: 0.05
-  b4: 0.67619
-  c1: -0.59857
-  c2: 0.05
-  c3: 0.67619
+  b1: -21.09222
+  b2: 20.69984
+  b3: -0.08
+  b4: 0.60286
+  c1: -0.39238
+  c2: -0.08
+  c3: 0.60286
   n_ins: 4
   np_seed: 500
   sigma: 1.0
   n_anchor_points: 5
 model_parameters:
-  lam: 100
-  upsilon: 1000
-  W_min: 4.0e-05
-  W_max: 0.0004
-  W0: 0.001207
-  W1: 0.001506
-  W2: 0.001806
-  W3: 0.002105
-  W4: 0.002405
-  W5: 0.002704
-  W6: 0.003004
-  W7: 0.003303
-  W_sys: 0.002105
-  W_index: 3
+  lam: 1
+  upsilon: 1
+  W_min: 6.3e-05
+  W_max: 0.000525
+  W0: 6.3e-05
+  W1: 0.000129
+  W2: 0.000195
+  W3: 0.000261
+  W4: 0.000327
+  W5: 0.000393
+  W6: 0.000459
+  W7: 0.000525
+  W_sys: 8.0e-05
+  W_index: 0
   n_obs: 8
   x_gt2: 0.01
   x_w: 0.025
@@ -272,9 +272,9 @@ plot:
       - 0.7
   show_obs: true
 experiment:
-  ground_truth: false
+  ground_truth: true
   simulation: false
-  run: meas_cool_2
+  run: meas_cool_2b
   plot: true
 experiment_type:
   import_data: false
@@ -311,6 +311,19 @@ experiment_type:
     Tgt20: 29.46
     Tfl: 21.63
     r1: 0.001
+  meas_cool_2b:
+    title: Cooling 2b
+    date: '20240930_3'
+    string: meas_cool_2b
+    start_min: 35
+    end_min: 65
+    Ty10: 22.87
+    Ty20: 27.83
+    Ty30: 28.55
+    Tgt10: 24.43
+    Tgt20: 28.56
+    Tfl: 21.63
+    r1: 0.001
 run:
-  dir: ./pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /home/guglielmo/pinns-bioheat-experiments/tests/cooling_meas_2
+  dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/cooling_meas_2

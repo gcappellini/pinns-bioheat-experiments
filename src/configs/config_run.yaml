@@ -5,12 +5,12 @@ model_properties:
   rho: 1000.0
   c: 4186.0
   W: 0.0033
-  h: 10.0
+  h: 20.0
   Troom: 21.5
   Tmax: 32.0
-  Ty10: 22.87
-  Ty20: 27.83
-  Ty30: 28.55
+  Ty10: 21.5
+  Ty20: 30.2
+  Ty30: 21.5
   Tgt20: 31.5
   alfa: 50.0
   activation: tanh
@@ -37,12 +37,12 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b1: -21.09222
-  b2: 20.69984
-  b3: -0.08
+  b1: -21.65222
+  b2: 21.33984
+  b3: -0.16
   b4: 0.60286
-  c1: -0.39238
-  c2: -0.08
+  c1: -0.31238
+  c2: -0.16
   c3: 0.60286
   n_ins: 4
   np_seed: 500
@@ -272,7 +272,7 @@ plot:
       - 0.7
   show_obs: true
 experiment:
-  ground_truth: false
+  ground_truth: true
   simulation: false
   run: meas_cool_2b
   plot: true
@@ -326,4 +326,4 @@ experiment_type:
     r1: 0.001
 run:
   dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /home/guglielmo/pinns-bioheat-experiments/outputs/2025-01-28/10-43-21
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-01-28/11-18-57
