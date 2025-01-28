@@ -4,12 +4,12 @@ model_properties:
   k: 0.6
   rho: 1000.0
   c: 4186.0
-  W: 0.0033
+  W: 0.00165
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
-  Ty10: 22.84
-  Ty20: 28.6
+  Ty10: 22.17
+  Ty20: 27.43
   Ty30: 21.5
   Tgt20: 31.5
   alfa: 50.0
@@ -37,13 +37,13 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b1: -10.90667
-  b2: 9.56921
-  b3: 0.78889
-  b4: 0.67619
-  c1: -1.33746
-  c2: 0.78889
-  c3: 0.67619
+  b1: -18.13111
+  b2: 16.97127
+  b3: 0.65889
+  b4: 0.56476
+  c1: -1.15984
+  c2: 0.65889
+  c3: 0.56476
   n_ins: 4
   np_seed: 500
   sigma: 1.0
@@ -270,11 +270,11 @@ plot:
       - 0.7
       - 0.7
       - 0.7
-  show_obs: false
+  show_obs: true
 experiment:
   ground_truth: false
   simulation: false
-  run: meas_cool_2
+  run: meas_cool_1
   plot: true
 experiment_type:
   import_data: false
@@ -326,4 +326,4 @@ experiment_type:
     r1: 0.001
 run:
   dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /home/guglielmo/pinns-bioheat-experiments/multirun/2025-01-28/22-20-18/3
+output_dir: /home/guglielmo/pinns-bioheat-experiments/multirun/2025-01-28/22-20-18/0

@@ -601,6 +601,8 @@ def import_testdata(conf):
     theta_values = df[['tau', 'y2', 'gt2', 'gt1', 'y1']].values
     time_arrays = [np.column_stack((positions, [time_value] * 4, theta_values[i, 1:])) for i, time_value in enumerate(theta_values[:, 0])]
     vstack_array = np.vstack(time_arrays)
+    # Remove rows where vstack_array[:, 0] equals positions[-2]
+    vstack_array = vstack_array[vstack_array[:, 0] != positions[-2]]
 
     system_meas = {"grid": vstack_array[:, :2], "theta": vstack_array[:, -1], "label": "system_meas"}
 

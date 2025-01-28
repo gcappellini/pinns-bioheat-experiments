@@ -192,7 +192,7 @@ pyrightconfig.json
 .history
 .ionide
 
-
+models/
 tests/old*
 # !tests/cooling_simulation*
 # !tests/cooling_meas_1
@@ -206,5 +206,6 @@ src/data/vessel/foto&video
 outputs/
 multirun/
 wandb/
+
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,python
