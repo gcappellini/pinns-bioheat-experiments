@@ -52,18 +52,18 @@ model_parameters:
   lam: 1
   upsilon: 1
   W_min: 6.3e-05
-  W_max: 0.000525
+  W_max: 0.0033
   W0: 6.3e-05
-  W1: 0.000129
-  W2: 0.000195
-  W3: 0.000261
-  W4: 0.000327
-  W5: 0.000393
-  W6: 0.000459
-  W7: 0.000525
+  W1: 0.000525
+  W2: 0.000988
+  W3: 0.00145
+  W4: 0.001913
+  W5: 0.002375
+  W6: 0.002838
+  W7: 0.0033
   W_sys: 8.0e-05
   W_index: 0
-  n_obs: 8
+  n_obs: 0
   x_gt2: 0.01
   x_w: 0.025
   x_gt1: 0.04
@@ -326,4 +326,4 @@ experiment_type:
     r1: 0.001
 run:
   dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-01-28/10-35-59
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-01-28/10-28-36

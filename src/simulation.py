@@ -23,12 +23,13 @@ def run_ground_truth(config, out_dir):
     output_dir_gt, config_matlab = co.set_run(out_dir, config, label)
     uu.run_matlab_ground_truth()
     system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config_matlab, path=out_dir)
+    system_meas, _ = uu.import_testdata(config)
 
     # uu.compute_metrics([system_gt, *observers_gt, mm_obs_gt], config, out_dir)
 
     if config.experiment.plot:
         if config.model_parameters.n_obs == 0:
-            pp.plot_multiple_series([system_gt], out_dir, label)
+            pp.plot_multiple_series([system_gt, system_meas], out_dir, label)
 
         elif config.model_parameters.n_obs == 1:
             pp.plot_multiple_series([system_gt, *observers_gt], out_dir, label)
@@ -162,7 +163,7 @@ def main():
         if dict_exp["ground_truth"]:
             output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, run_out_dir)
             
-        run_measurement_mm_obs(config, run_out_dir)
+        # run_measurement_mm_obs(config, run_out_dir)
 
 
 if __name__ == "__main__":
