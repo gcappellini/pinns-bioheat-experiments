@@ -13,7 +13,7 @@ import coeff_calc as cc
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-import matlab.engine
+# import matlab.engine
 from hydra import initialize, compose
 
 
@@ -137,6 +137,8 @@ def boundary_1(x, on_boundary):
 
 
 def create_X_anchor(n_ins, num_points=cc.n_anchor_points):
+    if num_points == 0:
+        return None
     # Create the time component ranging from 0 to 1
     time = np.linspace(0, 1, num_points)
     

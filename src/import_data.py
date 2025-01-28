@@ -84,7 +84,7 @@ if __name__ == "__main__":
             meas.Tgt10 = float(round(Tgt10, 2))
             meas.Tgt20 = float(round(Tgt20, 2))
             meas.Ty20 = float(round(Ty20, 2))
-            meas.Ty30 = float(round(Ty30, 2))
+            meas.Ty30 = float(21.5)
 
             OmegaConf.update(conf, f"experiment_type.{experiment_type}", meas)
             OmegaConf.save(conf, f"{src_dir}/configs/config_run.yaml")
