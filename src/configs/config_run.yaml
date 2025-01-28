@@ -8,9 +8,9 @@ model_properties:
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
-  Ty10: 21.5
-  Ty20: 30.2
-  Ty30: 21.5
+  Ty10: 22.87
+  Ty20: 27.83
+  Ty30: 28.55
   Tgt20: 31.5
   alfa: 50.0
   activation: tanh
@@ -272,7 +272,7 @@ plot:
       - 0.7
   show_obs: true
 experiment:
-  ground_truth: true
+  ground_truth: false
   simulation: false
   run: meas_cool_2b
   plot: true
@@ -326,4 +326,4 @@ experiment_type:
     r1: 0.001
 run:
   dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-01-28/10-35-59
+output_dir: /home/guglielmo/pinns-bioheat-experiments/outputs/2025-01-28/10-43-21
