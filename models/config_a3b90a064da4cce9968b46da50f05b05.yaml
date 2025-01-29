@@ -5,7 +5,7 @@ model_properties:
   rho: 1000.0
   c: 4186.0
   incr_fact: 1.2
-  W: 0.0033
+  W: 6.3e-05
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
@@ -17,8 +17,8 @@ model_properties:
   activation: tanh
   initial_weights_regularizer: false
   initialization: Glorot uniform
-  optimizer: L-BFGS
-  iters: 2
+  optimizer: adam
+  iters: 1
   iters_lbfgs: 0
   learning_rate: 0.001
   num_dense_layers: 4
@@ -76,6 +76,14 @@ model_parameters:
 plot:
   rescale: true
   display_every: 200
+  colors:
+    losses:
+    - '#D2691E'
+    - '#4682B4'
+    - '#9ACD32'
+    - '#FF6347'
+    - '#FFD700'
+    - '#FF1493'
   entities:
     system:
       color: C3
@@ -272,10 +280,10 @@ plot:
       - '#FFD700'
       - '#FF1493'
       label:
-      - $\mathcal{L}_{res}$
-      - $\mathcal{L}_{bc0}$
-      - $\mathcal{L}_{bc1}$
-      - $\mathcal{L}_{ic}$
+      - r'$\mathcal{L}_{res}$'
+      - r'$\mathcal{L}_{bc0}$'
+      - r'$\mathcal{L}_{bc1}$'
+      - r'$\mathcal{L}_{ic}$'
       - test loss
       - train loss
   show_obs: false
@@ -334,4 +342,4 @@ experiment_type:
     r1: 0.001
 run:
   dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-01-29/13-13-30
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-01-29/13-12-15

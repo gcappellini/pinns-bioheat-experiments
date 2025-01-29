@@ -164,11 +164,14 @@ def plot_loss_components(loss_train, loss_test, iters, nam):
     
     # Labels for the legend
     # legend_labels = [r'$\mathcal{L}_{res}$', r'$\mathcal{L}_{bc0}$', r'$\mathcal{L}_{bc1}$', r'$\mathcal{L}_{ic}$', 'test loss', 'train loss']
-    legend_labels = [r'$\mathcal{L}_{res}$', r'$\mathcal{L}_{bc0}$', 'test loss', 'train loss']
+    loss_names = uu.get_loss_names()
     # Get iterations (x-axis)
     iterations = np.array([iters]*len(loss_terms))
     conf = compose(config_name='config_run')
-    colors = conf.plot.colors.losses
+    plot_params = uu.get_plot_params(conf)
+    colors = [plot_params[label]["color"] for label in loss_names]
+    legend_labels = [plot_params[lab]["label"] for lab in loss_names]
+    # colors = conf.plot.colors.losses
 
     save_loss_components(iters, loss_terms, legend_labels, nam)
 

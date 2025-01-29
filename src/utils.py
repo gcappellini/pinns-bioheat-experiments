@@ -589,6 +589,10 @@ def get_tc_positions():
     # return {"y2": x_y2, "gt2": round(x_gt2, 2), "y1": x_y1}
     return {"y2": x_y2, "gt2": round(x_gt2, 2), "gt1": round(x_gt1, 2),"y1": x_y1}
 
+def get_loss_names():
+    # return ["residual", "bc0", "bc1", "ic", "test", "train"]
+    return ["residual", "bc0", "test", "train"]
+
 def import_testdata(conf):
     name = conf.experiment.run
     df = load_from_pickle(f"{src_dir}/data/vessel/{name}.pkl")
@@ -823,10 +827,13 @@ def get_observers_preds(ground_truth, multi_obs, x_obs, output_dir, conf, label)
     preds = [x_obs[:, 0], x_obs[:, -1]]
 
     # Process for multiple observers
-    for el in range(n_obs):
-        obs_pred = multi_obs[el].predict(x_obs).reshape(-1)
+    if isinstance(multi_obs, list):
+        for el in range(n_obs):
+            obs_pred = multi_obs[el].predict(x_obs).reshape(-1)
+            preds.append(obs_pred)
+    else:
+        obs_pred = multi_obs.predict(x_obs).reshape(-1)
         preds.append(obs_pred)
-
 
     preds=np.array(preds).T
     # Prepare observer dictionaries
@@ -924,9 +931,11 @@ def get_plot_params(conf):
     # Observers parameters (dynamically adjust for number of observers)
     n_obs = conf.model_parameters.n_obs
     pos = get_tc_positions()
+    losses = get_loss_names()
     observer_params = {}
     observer_gt_params = {}
     meas_points_params = {}
+    losses_params = {}
 
     if 1<=n_obs<=8:
         for j in range(n_obs):
@@ -958,6 +967,16 @@ def get_plot_params(conf):
             # "alpha": entities.meas_points.alpha[i],
             # "marker": None
         }
+    
+    for j, lab in enumerate(losses):
+        losses_params[lab] = {
+            "color": entities.losses.color[j],
+            "label": entities.losses.label[j],
+            # "linestyle": entities.losses.linestyle[j],
+            # "linewidth": entities.losses.linewidth[j],
+            # "alpha": entities.losses.alpha[j],
+            # "marker": None
+        }
 
 
     # Return combined parameters
@@ -973,7 +992,8 @@ def get_plot_params(conf):
         "test_loss": test_loss_params,
         **observer_params,
         **observer_gt_params,
-        **meas_points_params
+        **meas_points_params,
+        **losses_params
     }
 
 def solve_ivp(multi_obs: list, fold: str, conf: dict, x_obs, label: str):
