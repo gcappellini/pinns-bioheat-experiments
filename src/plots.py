@@ -250,8 +250,10 @@ def plot_obs_err(series_data: list, run_figs: str, lal: str):
     # Prepare the labels for each line based on the number of columns in `mus`
 
     x_ref = uu.get_tc_positions()
+    intern_positions_dict = {k: v for k, v in x_ref.items() if k not in [ "y1"]}
+    obs_positions = list(intern_positions_dict.values())
 
-    for xref in x_ref[:-1]:
+    for xref in obs_positions:
 
         colors = []
         linestyles = []
@@ -480,46 +482,51 @@ def plot_validation_3d(e, t_true, t_pred, run_figs, label):
     )
     
 
-def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, label, prj_figs, gt):
+def plot_timeseries_with_predictions(system_meas, mm_obs, conf, out_dir):
 
-    conf = compose(config_name='config_run')
+    label = conf.experiment.run
+    gt = mm_obs["label"].endswith("gt")
+    preds = uu.point_predictions([system_meas, mm_obs])
+    df = uu.load_from_pickle(f"{src_dir}/data/vessel/{label}.pkl")
 
     time_in_minutes = df['tau']*conf.model_properties.tauf / 60
-    time_matlab = np.linspace(0, time_in_minutes.max(), len(y1_pred))
+    time_pred = preds[0]["tau"]*conf.model_properties.tauf / 60
     
     # Prepare y-axis data (ground truth and predicted values)
     y_data = [
-        df['y1'], df['gt1'], df['gt2'], df['y2'],  # Ground truth lines
-        y1_pred, gt1_pred, gt2_pred, y2_pred       # Predicted lines
+        *[df[pred['label']] for pred in preds],  # Extract values based on the 'label' key in preds
+        *[pred['theta'] for pred in preds]     # Predicted lines
     ]
 
     # Labels for the legend (corresponding to each line in y_data)
-    if gt:
-        legend_labels = ['y1 (Meas)', 'gt1 (Meas)', 'gt2 (Meas)', 'y2 (Meas)', 
-                        'y1 (Matlab)', 'gt1 (Matlab)', 'gt2 (Matlab)', 'y2 (Matlab)']
-    else:
-        legend_labels = ['y1 (Meas)', 'gt1 (Meas)', 'gt2 (Meas)', 'y2 (Meas)', 
-                        'y1 (Pred)', 'gt1 (Pred)', 'gt2 (Pred)', 'y2 (Pred)']
+    plot_params = uu.get_plot_params(conf)
+    lines_labels = [pred["label"] for pred in preds]
+    colors = [plot_params[ll]["color"] for ll in lines_labels]*2
+    meas_labels = [f"{ll} (Meas)" for ll in lines_labels]
+    gt_labels = [f"{ll} (Matlab)" for ll in lines_labels]
+    pinns_labels = [f"{ll} (Pred)" for ll in lines_labels]
+    legend_labels = [*meas_labels, *gt_labels] if gt else [*meas_labels, *pinns_labels]
+    
+    # colors_points = conf.plot.colors.measuring_points
+    # colors_list = list(colors_points)
+    # colors = colors_list[:-2] * 2
+    linestyles=["-"]*len(preds) + ["--"]*len(preds)
 
-    colors_points = conf.plot.colors.measuring_points
-    colors_list = list(colors_points)
-    colors = colors_list[:-1] * 2
-    linestyles=["-", "-", "-", "-", "--", "--", "--", "--"]
     rescale = conf.plot.rescale
     _, _, ylabel = uu.get_scaled_labels(rescale)
 
-    times = [time_in_minutes]*4 + [time_matlab]*4 
+    times = [time_in_minutes]*len(preds) + [time_pred]*len(preds)
 
-    if rescale:
-        y_data_plot = uu.rescale_t(y_data)
+    y_data_plot = uu.rescale_t(y_data) if rescale else y_data
 
-    else:
-        y_data_plot = y_data
-    
-    exp_type = conf.experiment.run
-    n_obs = conf.model_parameters.n_obs
-    meas_dict = getattr(conf.experiment_type, exp_type)
+    meas_dict = getattr(conf.experiment_type, label)
     name = meas_dict["title"]
+    # if gt:
+    #     legend_labels = ['y1 (Meas)', 'gt2 (Meas)', 'y2 (Meas)', 
+    #                     'y1 (Matlab)', 'gt2 (Matlab)', 'y2 (Matlab)']
+    # else:
+    #     legend_labels = ['y1 (Meas)', 'gt2 (Meas)', 'y2 (Meas)', 
+    #                     'y1 (Pred)', 'gt2 (Pred)', 'y2 (Pred)']
     # Call the generic plotting function
     plot_generic(
         x=times,        # Time data
@@ -531,7 +538,7 @@ def plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, l
         colors=colors,
         linestyles=linestyles,
         size=(12, 6),
-        filename=f"{prj_figs}/timeseries_vs_pinns_{label}_matlab.png" if gt else f"{prj_figs}/timeseries_vs_pinns_{label}.png"
+        filename=f"{out_dir}/timeseries_vs_pinns_{label}_matlab.png" if gt else f"{out_dir}/timeseries_vs_pinns_{label}.png"
     )
 
 

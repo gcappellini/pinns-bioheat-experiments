@@ -586,23 +586,24 @@ def get_tc_positions():
     x_gt1 = (cc.x_gt1)/L0
     x_y1 = 1.0
 
-    return [x_y2, round(x_gt2, 2), round(x_gt1, 2), x_y1] 
-
+    return {"y2": x_y2, "gt2": round(x_gt2, 2), "y1": x_y1}
 
 def import_testdata(conf):
     name = conf.experiment.run
     df = load_from_pickle(f"{src_dir}/data/vessel/{name}.pkl")
 
-    positions = get_tc_positions()
+    positions_dict = get_tc_positions()
+    positions = list(positions_dict.values())
     taus = df['tau'].unique()
     bolus = df[df['tau'].isin(taus)][['y3']].values.flatten()
     out_bolus = np.vstack((taus, bolus)).T
 
-    theta_values = df[['tau', 'y2', 'gt2', 'gt1', 'y1']].values
-    time_arrays = [np.column_stack((positions, [time_value] * 4, theta_values[i, 1:])) for i, time_value in enumerate(theta_values[:, 0])]
+    # theta_values = df[['tau', 'y2', 'gt2', 'gt1', 'y1']].values
+    theta_values = df[['tau'] + list(positions_dict.keys())].values
+    time_arrays = [np.column_stack((positions, [time_value] * len(positions), theta_values[i, 1:])) for i, time_value in enumerate(theta_values[:, 0])]
     vstack_array = np.vstack(time_arrays)
     # Remove rows where vstack_array[:, 0] equals positions[-2]
-    vstack_array = vstack_array[vstack_array[:, 0] != positions[-2]]
+    # vstack_array = vstack_array[vstack_array[:, 0] != positions[-2]]
 
     system_meas = {"grid": vstack_array[:, :2], "theta": vstack_array[:, -1], "label": "system_meas"}
 
@@ -628,15 +629,15 @@ def import_obsdata(nam):
     instants = out_bolus[:, 0]
 
     # Get positions for filtering rows
-    positions = get_tc_positions()
-    rows = {pos: g[g[:, 0] == pos] for pos in [positions[0], positions[-1]]}
-    
+    positions_dict = get_tc_positions()
+    positions = list(positions_dict.values())
+    rows = {pos: g[g[:, 0] == pos] for pos in [positions_dict["y1"], positions_dict["y2"]]}
 
     # Interpolation functions
-    y1 = rows[positions[-1]][:, -1].reshape(len(instants),)
+    y1 = rows[positions_dict["y1"]][:, -1].reshape(len(instants),)
     f1 = interp1d(instants, y1, kind='previous')
 
-    y2 = rows[positions[0]][:, -1].reshape(len(instants),)
+    y2 = rows[positions_dict["y2"]][:, -1].reshape(len(instants),)
     f2 = interp1d(instants, y2, kind='previous')
 
     y3 = out_bolus[:, 1].reshape(len(instants),)
@@ -645,7 +646,10 @@ def import_obsdata(nam):
 
     # x_tc = get_tc_positions()
     full_length_grid = np.linspace(0, 1, 20)
-    space_array_prediction = np.sort(np.concatenate((positions[1:2], full_length_grid)))
+
+    intern_positions_dict = {k: v for k, v in positions_dict.items() if k not in ["y1", "y2"]}
+    intern_positions = list(intern_positions_dict.values())
+    space_array_prediction = np.sort(np.concatenate((intern_positions, full_length_grid)))
 
     g_xxl = np.vstack([
         np.column_stack((space_array_prediction, np.full(len(space_array_prediction), el)))
@@ -760,7 +764,7 @@ def mm_predict(multi_obs):
 
 def compute_obs_err(system, observers_data=None, mm_obs=None):
 
-    xref = get_tc_positions()
+    xref_dict = get_tc_positions()
 
     matching = [system]
     if observers_data:
@@ -770,7 +774,7 @@ def compute_obs_err(system, observers_data=None, mm_obs=None):
 
     g = extract_matching(matching)
 
-    for x_ref in xref[:-1]:
+    for x_ref in xref_dict.values():
         rows_xref = g[g[:, 0] == x_ref]
         sys_xref = rows_xref[:, 2]
 
@@ -918,10 +922,10 @@ def get_plot_params(conf):
 
     # Observers parameters (dynamically adjust for number of observers)
     n_obs = conf.model_parameters.n_obs
-    observers = create_params(entities.observers)
-    observers_gt = create_params(entities.observers_gt)
+    pos = get_tc_positions()
     observer_params = {}
     observer_gt_params = {}
+    meas_points_params = {}
 
     for j in range(n_obs):
         i = cc.W_index if n_obs == 1 else j
@@ -943,6 +947,16 @@ def get_plot_params(conf):
             "marker": None
         }
 
+    for i, k in enumerate(pos.keys()):
+        meas_points_params[k] = {
+            "color": entities.meas_points.color[i],
+            "label": entities.meas_points.label[i],
+            # "linestyle": entities.meas_points.linestyle[i],
+            # "linewidth": entities.meas_points.linewidth[i],
+            # "alpha": entities.meas_points.alpha[i],
+            # "marker": None
+        }
+
 
     # Return combined parameters
     return {
@@ -956,7 +970,8 @@ def get_plot_params(conf):
         "train_loss": train_loss_params,
         "test_loss": test_loss_params,
         **observer_params,
-        **observer_gt_params
+        **observer_gt_params,
+        **meas_points_params
     }
 
 def solve_ivp(multi_obs: list, fold: str, conf: dict, x_obs, label: str):
@@ -1191,39 +1206,42 @@ def point_predictions(pred_dicts):
     """
     Generates and scales predictions from the multi-observer model.
     """
-    positions = get_tc_positions()
+    positions_dict = get_tc_positions()
     
     # Use extract_matching to get the combined array
     preds = extract_matching(pred_dicts)
-    # to_extract = pred_dicts[-1]
-    # preds = np.array([to_extract["grid"][:, 0], to_extract["grid"][:, -1], to_extract["theta"]]).T
     
     # Extract predictions based on positions
-    y2_pred_sc = preds[preds[:, 0] == positions[0]][:, -1]
-    gt2_pred_sc = preds[preds[:, 0] == positions[1]][:, -1]
-    gt1_pred_sc = preds[preds[:, 0] == positions[2]][:, -1]
-    y1_pred_sc = preds[preds[:, 0] == positions[3]][:, -1]
-
-    return y1_pred_sc, gt1_pred_sc, gt2_pred_sc, y2_pred_sc
-
-
-def point_ground_truths(conf):
-    """
-    Generates and scales predictions from the multi-observer model.
-    """
+    pred_sc = []
+    for entry in positions_dict.keys():
+        pos=positions_dict[entry]
+        dict_pred = {
+            "tau": preds[preds[:, 0] == pos][:, 1],
+            "theta": preds[preds[:, 0] == pos][:, -1],
+            "label": entry
+        }
+        pred_sc.append(dict_pred)
     
-    positions = get_tc_positions()
-    X, _, _, y_mmobs = gen_testdata(conf)
+    return pred_sc
 
-    truths = np.hstack((X, y_mmobs))
+
+# def point_ground_truths(conf):
+#     """
+#     Generates and scales predictions from the multi-observer model.
+#     """
     
-    # Extract predictions based on positions
-    y2_truth_sc = truths[truths[:, 0] == positions[0]][:, 2]
-    gt2_truth_sc = truths[truths[:, 0] == positions[1]][:, 2]
-    gt1_truth_sc = truths[truths[:, 0] == positions[2]][:, 2]
-    y1_truth_sc = truths[truths[:, 0] == positions[3]][:, 2]
+#     positions = get_tc_positions()
+#     X, _, _, y_mmobs = gen_testdata(conf)
 
-    return y1_truth_sc, gt1_truth_sc, gt2_truth_sc, y2_truth_sc
+#     truths = np.hstack((X, y_mmobs))
+    
+#     # Extract predictions based on positions
+#     y2_truth_sc = truths[truths[:, 0] == positions[0]][:, 2]
+#     gt2_truth_sc = truths[truths[:, 0] == positions[1]][:, 2]
+#     gt1_truth_sc = truths[truths[:, 0] == positions[2]][:, 2]
+#     y1_truth_sc = truths[truths[:, 0] == positions[3]][:, 2]
+
+#     return y1_truth_sc, gt1_truth_sc, gt2_truth_sc, y2_truth_sc
 
 
 def configure_settings(cfg, experiment):
@@ -1346,45 +1364,36 @@ def extract_matching(dicts):
 
     return result
 
-def check_measurements(system_meas, mm_obs, output_dir, conf):
-    name_exp = conf.experiment.run
 
-    y1_pred, gt1_pred, gt2_pred, y2_pred = point_predictions([system_meas, mm_obs])
-    df = load_from_pickle(f"{src_dir}/data/vessel/{name_exp}.pkl")
-    gt = True if mm_obs["label"].endswith("gt") else False
+# def filter_theta_vessel(grid, r, t_fluid, theta_pred):
+#     x = grid[:, 0]
+#     t = grid[:, 1]
+
+#     theta_fluid=scale_t(t_fluid)
+#     r = r*cc.L0
     
-    pp.plot_timeseries_with_predictions(df, y1_pred, gt1_pred, gt2_pred, y2_pred, conf.experiment.run, output_dir, gt=gt)
+#     res = np.zeros_like(x)
+#     coords_sc = get_tc_positions()
+#     X_w = cc.x_w / cc.L0
+#     theta_w_index = np.argmin(np.abs(x-X_w)) 
+#     theta_w = theta_pred[theta_w_index]
+#     y0 = theta_fluid/theta_w
+#     k = 1
 
+#     def quadratic_segment(xi, h):
+#         a = (y0 - k) / ((X_w - h) ** 2)
+#         return a * (xi - h) ** 2 + k
 
-def filter_theta_vessel(grid, r, t_fluid, theta_pred):
-    x = grid[:, 0]
-    t = grid[:, 1]
+#     for i, xi in enumerate(x):
+#         if xi < coords_sc[1]:
+#             res[i] = 1
+#         elif coords_sc[1] <= xi < X_w - r:
+#             res[i] = quadratic_segment(xi, coords_sc[1])
+#         elif X_w - r <= xi <= X_w + r:
+#             res[i] = y0
+#         elif X_w + r < xi < 1.3 * coords_sc[2]:
+#             res[i] = quadratic_segment(xi, 1.3 * coords_sc[2])
+#         else:
+#             res[i] = 1
 
-    theta_fluid=scale_t(t_fluid)
-    r = r*cc.L0
-    
-    res = np.zeros_like(x)
-    coords_sc = get_tc_positions()
-    X_w = cc.x_w / cc.L0
-    theta_w_index = np.argmin(np.abs(x-X_w)) 
-    theta_w = theta_pred[theta_w_index]
-    y0 = theta_fluid/theta_w
-    k = 1
-
-    def quadratic_segment(xi, h):
-        a = (y0 - k) / ((X_w - h) ** 2)
-        return a * (xi - h) ** 2 + k
-
-    for i, xi in enumerate(x):
-        if xi < coords_sc[1]:
-            res[i] = 1
-        elif coords_sc[1] <= xi < X_w - r:
-            res[i] = quadratic_segment(xi, coords_sc[1])
-        elif X_w - r <= xi <= X_w + r:
-            res[i] = y0
-        elif X_w + r < xi < 1.3 * coords_sc[2]:
-            res[i] = quadratic_segment(xi, 1.3 * coords_sc[2])
-        else:
-            res[i] = 1
-
-    return res*theta_pred
+#     return res*theta_pred

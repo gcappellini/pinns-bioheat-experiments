@@ -8,8 +8,8 @@ model_properties:
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
-  Ty10: 22.84
-  Ty20: 28.6
+  Ty10: 22.17
+  Ty20: 27.43
   Ty30: 21.5
   Tgt20: 31.5
   alfa: 50.0
@@ -37,13 +37,13 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b1: -10.90667
-  b2: 9.56921
-  b3: 0.78889
-  b4: 0.67619
-  c1: -1.33746
-  c2: 0.78889
-  c3: 0.67619
+  b1: -18.13111
+  b2: 16.97127
+  b3: 0.65889
+  b4: 0.56476
+  c1: -1.15984
+  c2: 0.65889
+  c3: 0.56476
   n_ins: 4
   np_seed: 500
   sigma: 1.0
@@ -76,12 +76,6 @@ plot:
   rescale: true
   display_every: 200
   colors:
-    measuring_points:
-    - '#F7CAC9'
-    - '#6B5B95'
-    - '#88B04B'
-    - '#FF6F61'
-    - '#92A8D1'
     losses:
     - '#D2691E'
     - '#4682B4'
@@ -270,11 +264,24 @@ plot:
       - 0.7
       - 0.7
       - 0.7
-  show_obs: false
+    meas_points:
+      color:
+      - '#6B5B95'
+      - '#FF6F61'
+      - '#F7CAC9'
+      - '#88B04B'
+      - '#92A8D1'
+      label:
+      - y1
+      - gt1
+      - gt2
+      - y2
+      - y3
+  show_obs: true
 experiment:
   ground_truth: false
   simulation: false
-  run: meas_cool_2
+  run: meas_cool_1
   plot: true
 experiment_type:
   import_data: false
@@ -326,4 +333,4 @@ experiment_type:
     r1: 0.001
 run:
   dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /home/guglielmo/pinns-bioheat-experiments/multirun/2025-01-28/22-20-18/3
+output_dir: /home/guglielmo/pinns-bioheat-experiments/outputs/2025-01-29/01-41-29

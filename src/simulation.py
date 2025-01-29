@@ -131,8 +131,7 @@ def run_measurement_mm_obs(config, out_dir):
             # pp.plot_validation_3d(system_meas["grid"], system_meas["theta"], mm_obs["theta"], out_dir, label)
             pp.plot_obs_err([mm_obs], out_dir, label)
 
-
-        uu.check_measurements(system_meas, mm_obs, out_dir, config_meas)
+        pp.plot_timeseries_with_predictions(system_meas, mm_obs, config, out_dir)
 
 
 def main():

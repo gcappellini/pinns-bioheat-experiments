@@ -192,7 +192,6 @@ pyrightconfig.json
 .history
 .ionide
 
-models/
 tests/old*
 # !tests/cooling_simulation*
 # !tests/cooling_meas_1
