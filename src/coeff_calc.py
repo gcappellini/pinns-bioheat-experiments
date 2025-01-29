@@ -61,22 +61,17 @@ x_gt1: float = pars.x_gt1
 x_w: float = pars.x_w
 x_gt2: float = pars.x_gt2
 
-W0: float = pars.W0
-W1: float = pars.W1
-W2: float = pars.W2
-W3: float = pars.W3
-W4: float = pars.W4
-W5: float = pars.W5
-W6: float = pars.W6
-W7: float = pars.W7
+
 W_min: float = pars.W_min
 W_max: float = pars.W_max
 W_sys: float = pars.W_sys
 W_index: int = pars.W_index
 n_obs: int = pars.n_obs
 
-obs = np.array([W0, W1, W2, W3, W4, W5, W6, W7])
+obs = np.logspace(np.log10(W_min), np.log10(W_max), n_obs).round(6)
 W_obs = float(obs[W_index])
+for i in range(n_obs):
+    setattr(pars, f'W{i}', float(obs[i]))
 
 lamb: float = pars.lam  # Access the lambda parameter
 upsilon: float = pars.upsilon

@@ -55,16 +55,16 @@ model_parameters:
   W_min: 6.3e-05
   W_max: 0.00165
   W0: 6.3e-05
-  W1: 0.00029
-  W2: 0.000516
-  W3: 0.000743
-  W4: 0.00097
-  W5: 0.001197
-  W6: 0.001423
+  W1: 0.0001
+  W2: 0.00016
+  W3: 0.000255
+  W4: 0.000407
+  W5: 0.000649
+  W6: 0.001035
   W7: 0.00165
   W_sys: 8.0e-05
   W_index: 0
-  n_obs: 1
+  n_obs: 8
   x_gt2: 0.01
   x_w: 0.025
   x_gt1: 0.04
@@ -298,7 +298,7 @@ plot:
         linestyle: '-'
         linewidth: 1.2
         alpha: 1.0
-  show_obs: false
+  show_obs: true
 experiment:
   ground_truth: true
   simulation: false
@@ -354,4 +354,4 @@ experiment_type:
     r1: 0.001
 run:
   dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-01-29/14-54-18
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-01-29/15-11-08
