@@ -931,11 +931,10 @@ def get_plot_params(conf):
     # Observers parameters (dynamically adjust for number of observers)
     n_obs = conf.model_parameters.n_obs
     pos = get_tc_positions()
-    losses = get_loss_names()
     observer_params = {}
     observer_gt_params = {}
-    meas_points_params = {}
-    losses_params = {}
+    meas_points_params = getattr(entities, "meas_points")
+    losses_params = getattr(entities, "losses")
 
     if 1<=n_obs<=8:
         for j in range(n_obs):
@@ -958,25 +957,25 @@ def get_plot_params(conf):
                 "marker": None
             }
 
-    for i, k in enumerate(pos.keys()):
-        meas_points_params[k] = {
-            "color": entities.meas_points.color[i],
-            "label": entities.meas_points.label[i],
-            # "linestyle": entities.meas_points.linestyle[i],
-            # "linewidth": entities.meas_points.linewidth[i],
-            # "alpha": entities.meas_points.alpha[i],
-            # "marker": None
-        }
+    # for i, k in enumerate(pos.keys()):
+    #     meas_points_params[k] = {
+    #         "color": entities.meas_points.color[i],
+    #         "label": entities.meas_points.label[i],
+    #         # "linestyle": entities.meas_points.linestyle[i],
+    #         # "linewidth": entities.meas_points.linewidth[i],
+    #         # "alpha": entities.meas_points.alpha[i],
+    #         # "marker": None
+    #     }
     
-    for j, lab in enumerate(losses):
-        losses_params[lab] = {
-            "color": entities.losses.color[j],
-            "label": entities.losses.label[j],
-            # "linestyle": entities.losses.linestyle[j],
-            # "linewidth": entities.losses.linewidth[j],
-            # "alpha": entities.losses.alpha[j],
-            # "marker": None
-        }
+    # for j, lab in enumerate(losses):
+    #     losses_params[lab] = {
+    #         "color": entities.losses.color[j],
+    #         "label": entities.losses.label[j],
+    #         # "linestyle": entities.losses.linestyle[j],
+    #         # "linewidth": entities.losses.linewidth[j],
+    #         # "alpha": entities.losses.alpha[j],
+    #         # "marker": None
+    #     }
 
 
     # Return combined parameters

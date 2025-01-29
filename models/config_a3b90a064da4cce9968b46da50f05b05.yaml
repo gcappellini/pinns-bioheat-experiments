@@ -76,14 +76,6 @@ model_parameters:
 plot:
   rescale: true
   display_every: 200
-  colors:
-    losses:
-    - '#D2691E'
-    - '#4682B4'
-    - '#9ACD32'
-    - '#FF6347'
-    - '#FFD700'
-    - '#FF1493'
   entities:
     system:
       color: C3
@@ -259,36 +251,56 @@ plot:
       - 0.7
       - 0.7
     meas_points:
-      color:
-      - '#6B5B95'
-      - '#FF6F61'
-      - '#F7CAC9'
-      - '#88B04B'
-      - '#92A8D1'
-      label:
-      - y1
-      - gt1
-      - gt2
-      - y2
-      - y3
+      y1:
+        color: '#F7CAC9'
+      gt1:
+        color: '#6B5B95'
+      gt2:
+        color: '#FF6F61'
+      y2:
+        color: '#88B04B'
+      y3:
+        color: '#92A8D1'
     losses:
-      color:
-      - '#D2691E'
-      - '#4682B4'
-      - '#9ACD32'
-      - '#FF6347'
-      - '#FFD700'
-      - '#FF1493'
-      label:
-      - r'$\mathcal{L}_{res}$'
-      - r'$\mathcal{L}_{bc0}$'
-      - r'$\mathcal{L}_{bc1}$'
-      - r'$\mathcal{L}_{ic}$'
-      - test loss
-      - train loss
+      residual:
+        color: '#9ACD32'
+        label: $\mathcal{L}_{res}$
+        linestyle: '-'
+        linewidth: 1.2
+        alpha: 1.0
+      bc0:
+        color: '#FF6347'
+        label: $\mathcal{L}_{bc0}$
+        linestyle: '-'
+        linewidth: 1.2
+        alpha: 1.0
+      bc1:
+        color: '#FFD700'
+        label: $\mathcal{L}_{bc1}$
+        linestyle: '-'
+        linewidth: 1.2
+        alpha: 1.0
+      ic:
+        color: '#FF1493'
+        label: $\mathcal{L}_{ic}$
+        linestyle: '-'
+        linewidth: 1.2
+        alpha: 1.0
+      test:
+        color: '#D2691E'
+        label: test loss
+        linestyle: ':'
+        linewidth: 1.2
+        alpha: 1.0
+      train:
+        color: '#D2691E'
+        label: train loss
+        linestyle: '-'
+        linewidth: 1.2
+        alpha: 1.0
   show_obs: false
 experiment:
-  ground_truth: false
+  ground_truth: true
   simulation: false
   run: meas_cool_1
   plot: true
@@ -342,4 +354,4 @@ experiment_type:
     r1: 0.001
 run:
   dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-01-29/13-12-15
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-01-29/14-54-18
