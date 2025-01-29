@@ -927,25 +927,26 @@ def get_plot_params(conf):
     observer_gt_params = {}
     meas_points_params = {}
 
-    for j in range(n_obs):
-        i = cc.W_index if n_obs == 1 else j
-        observer_params[f"observer_{i}"] = {
-            "color": entities.observers.color[i],
-            "label": entities.observers.label[i],
-            "linestyle": entities.observers.linestyle[i],
-            "linewidth": entities.observers.linewidth[i],
-            "alpha": entities.observers.alpha[i],
-            "marker": None
-        }
+    if 1<=n_obs<=8:
+        for j in range(n_obs):
+            i = cc.W_index if n_obs == 1 else j
+            observer_params[f"observer_{i}"] = {
+                "color": entities.observers.color[i],
+                "label": entities.observers.label[i],
+                "linestyle": entities.observers.linestyle[i],
+                "linewidth": entities.observers.linewidth[i],
+                "alpha": entities.observers.alpha[i],
+                "marker": None
+            }
 
-        observer_gt_params[f"observer_{i}_gt"] = {
-            "color": entities.observers_gt.color[i],
-            "label": entities.observers_gt.label[i],
-            "linestyle": entities.observers_gt.linestyle[i],
-            "linewidth": entities.observers_gt.linewidth[i],
-            "alpha": entities.observers_gt.alpha[i],
-            "marker": None
-        }
+            observer_gt_params[f"observer_{i}_gt"] = {
+                "color": entities.observers_gt.color[i],
+                "label": entities.observers_gt.label[i],
+                "linestyle": entities.observers_gt.linestyle[i],
+                "linewidth": entities.observers_gt.linewidth[i],
+                "alpha": entities.observers_gt.alpha[i],
+                "marker": None
+            }
 
     for i, k in enumerate(pos.keys()):
         meas_points_params[k] = {
