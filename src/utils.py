@@ -13,7 +13,7 @@ import coeff_calc as cc
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-# import matlab.engine
+import matlab.engine
 from hydra import initialize, compose
 
 
@@ -586,7 +586,8 @@ def get_tc_positions():
     x_gt1 = (cc.x_gt1)/L0
     x_y1 = 1.0
 
-    return {"y2": x_y2, "gt2": round(x_gt2, 2), "y1": x_y1}
+    # return {"y2": x_y2, "gt2": round(x_gt2, 2), "y1": x_y1}
+    return {"y2": x_y2, "gt2": round(x_gt2, 2), "gt1": round(x_gt1, 2),"y1": x_y1}
 
 def import_testdata(conf):
     name = conf.experiment.run

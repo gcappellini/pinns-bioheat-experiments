@@ -23,11 +23,11 @@ function [sol] = OneDimBH
 
     %-----------------
     function [c,f,s] = OneDimBHpde(x,t,u,dudx)
-    global a1 a2 a3 a4 W_obs W_sys
+    global a1 a2 a3 a4 W_obs W_sys incr_fact
     %la prima equazione è quella del sistema, a seguire gli osservatori
     t
     f = dudx;
-    incr_fact=1.0;
+    % incr_fact=1.0;
     if x >= 0.2 && x <= 0.5
       a1 = a1 / incr_fact;
       a2 = a2 / incr_fact;

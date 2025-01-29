@@ -4,12 +4,13 @@ model_properties:
   k: 0.6
   rho: 1000.0
   c: 4186.0
+  incr_fact: 1.2
   W: 0.0033
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
-  Ty10: 22.84
-  Ty20: 28.6
+  Ty10: 21.5
+  Ty20: 30.2
   Ty30: 21.5
   Tgt20: 31.5
   alfa: 50.0
@@ -37,13 +38,13 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b1: -10.90667
-  b2: 9.56921
-  b3: 0.78889
-  b4: 0.67619
-  c1: -1.33746
-  c2: 0.78889
-  c3: 0.67619
+  b1: -18.13111
+  b2: 16.97127
+  b3: 0.65889
+  b4: 0.56476
+  c1: -1.15984
+  c2: 0.65889
+  c3: 0.56476
   n_ins: 4
   np_seed: 500
   sigma: 1.0
@@ -54,16 +55,16 @@ model_parameters:
   W_min: 6.3e-05
   W_max: 0.00165
   W0: 6.3e-05
-  W1: 0.000129
-  W2: 0.000195
-  W3: 0.000261
-  W4: 0.000327
-  W5: 0.000393
-  W6: 0.000459
-  W7: 0.000525
+  W1: 0.00029
+  W2: 0.000516
+  W3: 0.000743
+  W4: 0.00097
+  W5: 0.001197
+  W6: 0.001423
+  W7: 0.00165
   W_sys: 8.0e-05
   W_index: 0
-  n_obs: 16
+  n_obs: 1
   x_gt2: 0.01
   x_w: 0.025
   x_gt1: 0.04
@@ -279,9 +280,9 @@ plot:
       - y3
   show_obs: false
 experiment:
-  ground_truth: false
+  ground_truth: true
   simulation: false
-  run: meas_cool_2
+  run: meas_cool_1
   plot: true
 experiment_type:
   import_data: false
@@ -333,4 +334,4 @@ experiment_type:
     r1: 0.001
 run:
   dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /home/guglielmo/pinns-bioheat-experiments/multirun/2025-01-29/11-27-12/1
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-01-29/12-26-06

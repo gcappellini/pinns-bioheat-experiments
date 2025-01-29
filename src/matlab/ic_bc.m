@@ -6,15 +6,16 @@ function [theta0, thetahat0, y1, y2, y3] = ic_bc(x, t)
     y3 = theta_3();
 
 function theta0 = sys_ic(x)
-    global b1 b2 b3 b4 path_exp str_exp
+    global b1 b2 b3 b4 path_exp str_exp n_obs
 
-
+    % if n_obs > 0
     if startsWith(str_exp, 'meas')
         data = load(path_exp);
         first_row = data(1, :);
         temperatures = first_row(2:5);
         x_values = [1.0, 0.571, 0.143, 0.0];
         theta0 = interp1(x_values, temperatures, x, 'linear', 'extrap');
+        % end
     else
         theta0 = b1.*x.^3 + b2.*x.^2 + b3.*x + b4;
 
