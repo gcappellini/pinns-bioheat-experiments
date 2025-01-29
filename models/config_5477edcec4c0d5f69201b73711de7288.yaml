@@ -300,7 +300,7 @@ plot:
         alpha: 1.0
   show_obs: true
 experiment:
-  ground_truth: true
+  ground_truth: false
   simulation: false
   run: meas_cool_1
   plot: true
@@ -354,4 +354,4 @@ experiment_type:
     r1: 0.001
 run:
   dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-01-29/15-11-08
+output_dir: /home/guglielmo/pinns-bioheat-experiments/multirun/2025-01-29/15-15-41/0

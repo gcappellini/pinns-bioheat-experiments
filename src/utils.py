@@ -332,6 +332,7 @@ def compile_optimizer_and_losses(model, conf):
                 lw * len(initial_losses) / il
                 for lw, il in zip(loss_weights, initial_losses)
             ]
+            loss_weights=round(loss_weights, 6)
             model.compile(optimizer, lr=learning_rate, loss_weights=loss_weights)
         else:
             model.compile(optimizer, lr=learning_rate, loss_weights=loss_weights)
