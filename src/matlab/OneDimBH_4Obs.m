@@ -52,9 +52,14 @@ function [sol] = OneDimBH_4Obs
     
     %-----------------
     function [c,f,s] = OneDimBHpde_4Obs(x,t,u,dudx)
-    global lambda om0 om1 om2 om3 W_sys W0 W1 W2 W3 a1 a2 a3 a4
+    global lambda om0 om1 om2 om3 W_sys W0 W1 W2 W3 a1 a2 a3 a4 incr_fact
     %la prima equazione è quella del sistema, a seguire gli osservatoris
     t
+    if x >= 0.2 && x <= 0.5
+        a1 = a1 / incr_fact;
+        a2 = a2 / incr_fact;
+        a3 = a3 / incr_fact;
+    end
     c = [a1; a1; a1; a1; a1; 1; 1; 1; 1];
     f = [1; 1; 1; 1; 1; 1; 1; 1; 1].* dudx;
     

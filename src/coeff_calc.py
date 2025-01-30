@@ -68,7 +68,7 @@ W_sys: float = pars.W_sys
 W_index: int = pars.W_index
 n_obs: int = pars.n_obs
 
-obs = np.logspace(np.log10(W_min), np.log10(W_max), n_obs).round(6)
+obs = np.logspace(np.log10(W_min), np.log10(W_max), 8).round(6)
 W_obs = float(obs[W_index])
 for i in range(n_obs):
     setattr(pars, f'W{i}', float(obs[i]))

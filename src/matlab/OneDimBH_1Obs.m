@@ -25,16 +25,25 @@ function [sol] = OneDimBH_1Obs
 
     %-----------------
     function [c,f,s] = OneDimBHpde_1Obs(x,t,u,dudx)
-    global a1 a2 a3 a4 W_obs W_sys
+    global a1 a2 a3 a4 W_obs W_sys incr_fact
     %la prima equazione è quella del sistema, a seguire gli osservatori
     t
-    c = [a1; a1];
+    if x >= 0.2 && x <= 0.5
+    a1_ = a1 / incr_fact;
+    a2_ = a2 / incr_fact;
+    a3_ = a3 / incr_fact;
+    else
+    a1_ = a1;
+    a2_ = a2;
+    a3_ = a3;
+    end
+    c = [a1; a1_];
     f = [1; 1].* dudx;
     
     % den=u(5)*exp(-om0)+u(6)*exp(-om1)+u(7)*exp(-om2);
     
     s = [-W_sys*a2*u(1)+a3*exp(-a4*x); 
-        -W_obs*a2*u(2)+a3*exp(-a4*x);
+        -W_obs*a2_*u(2)+a3_*exp(-a4*x);
         ];
     % --------------------------------------------------------------------------
 
