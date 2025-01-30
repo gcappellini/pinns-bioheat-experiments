@@ -162,7 +162,7 @@ def main():
         if dict_exp["ground_truth"]:
             output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, run_out_dir)
             
-        # run_measurement_mm_obs(config, run_out_dir)
+        run_measurement_mm_obs(config, run_out_dir)
 
 
 if __name__ == "__main__":

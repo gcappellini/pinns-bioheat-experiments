@@ -68,10 +68,13 @@ W_sys: float = pars.W_sys
 W_index: int = pars.W_index
 n_obs: int = pars.n_obs
 
-obs = np.logspace(np.log10(W_min), np.log10(W_max), 8).round(6)
+obs_steps = 8 if n_obs<=8 else n_obs
+obs = np.logspace(np.log10(W_min), np.log10(W_max), obs_steps).round(6)
 W_obs = float(obs[W_index])
-for i in range(n_obs):
-    setattr(pars, f'W{i}', float(obs[i]))
+
+eight_obs = np.logspace(np.log10(W_min), np.log10(W_max), 8).round(6)
+for i in range(8):
+    setattr(pars, f'W{i}', float(eight_obs[i]))
 
 lamb: float = pars.lam  # Access the lambda parameter
 upsilon: float = pars.upsilon

@@ -13,7 +13,7 @@ import coeff_calc as cc
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-import matlab.engine
+# import matlab.engine
 from hydra import initialize, compose
 
 
@@ -335,7 +335,7 @@ def compile_optimizer_and_losses(model, conf):
             loss_weights=round(loss_weights, 3)
             model.compile(optimizer, lr=learning_rate, loss_weights=loss_weights)
         else:
-            loss_weights=round(loss_weights, 3)
+            loss_weights=[round(el, 3) for el in loss_weights]
             model.compile(optimizer, lr=learning_rate, loss_weights=loss_weights)
         return model
 
