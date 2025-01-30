@@ -40,7 +40,7 @@ n_digits = 6
 def get_initial_loss(model):
     model.compile("adam", lr=0.001)
     losshistory, _ = model.train(0)
-    return losshistory.loss_train[0]
+    return round(losshistory.loss_train[0], 3)
 
 
 def compute_metrics(series_to_plot, cfg, run_figs):
@@ -332,9 +332,10 @@ def compile_optimizer_and_losses(model, conf):
                 lw * len(initial_losses) / il
                 for lw, il in zip(loss_weights, initial_losses)
             ]
-            loss_weights=round(loss_weights, 6)
+            loss_weights=round(loss_weights, 3)
             model.compile(optimizer, lr=learning_rate, loss_weights=loss_weights)
         else:
+            loss_weights=round(loss_weights, 3)
             model.compile(optimizer, lr=learning_rate, loss_weights=loss_weights)
         return model
 
