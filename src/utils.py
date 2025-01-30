@@ -693,10 +693,9 @@ def execute(config, label):
     n_obs = cc.n_obs
 
     if n_obs == 1:
-        W_index = config.model_parameters.W_index
+
         config.model_properties.W = cc.W_obs
         logger.info(f"Training single observer with perfusion {cc.W_obs}.")
-        # co.set_run(simul_dir, config, f"obs_{W_index}")
         output_model = train_model(config)
         return output_model
 
@@ -705,7 +704,6 @@ def execute(config, label):
         obs = cc.obs if label.startswith("simulation") else np.linspace(cc.W_min, cc.W_max, n_obs)
         perf = obs[j]
         config.model_properties.W = float(perf)
-        # co.set_run(simul_dir, config, f"obs_{j}")
         logger.info(f"Training observer {j} with perfusion {perf}.")
         model = train_model(config)
         multi_obs.append(model)
