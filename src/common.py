@@ -19,11 +19,12 @@ tests_dir = os.path.join(git_dir, "tests")
 conf_dir = os.path.join(src_dir, "configs")
 os.makedirs(tests_dir, exist_ok=True)
 
-def setup_logging():
+def setup_log(string):
     # logging.basicConfig(level=logging.INFO, filename='app.log', filemode='a',
     #                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     logger = logging.getLogger(__name__)
-    return logger
+    logger.info(string)
+    # return logger
 
 models = os.path.join(git_dir, "models")
 os.makedirs(models, exist_ok=True)

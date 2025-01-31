@@ -15,7 +15,7 @@ import common as co
 from omegaconf import OmegaConf
 # import matlab.engine
 from hydra import initialize, compose
-from common import setup_logging
+from common import setup_log
 
 
 dde.config.set_random_seed(200)
@@ -31,8 +31,6 @@ git_dir = os.path.dirname(src_dir)
 conf_dir = os.path.join(src_dir, "configs")
 models = os.path.join(git_dir, "models")
 os.makedirs(models, exist_ok=True)
-
-logger = setup_logging()
 
 f1, f2, f3 = [None]*3
 n_digits = 6
@@ -391,7 +389,7 @@ def train_and_save_model(conf, optimizer, config_hash, save_path, pre_trained_mo
         model_save_path=save_path,
         display_every=conf.plot.display_every
     )
-    logger.info(f"Model trained with {optimizer} optimizer.")
+    setup_log(f"Model trained with {optimizer} optimizer.")
     # Save configuration
     confi_path = os.path.join(models, f"config_{config_hash}.yaml")
     OmegaConf.save(conf, confi_path)
@@ -406,18 +404,18 @@ def train_model(conf):
 
     if trained_model:
         # Return the trained model directly if found
-        logger.info("Found a pre-trained model.")
+        setup_log("Found a pre-trained model.")
         return trained_model
 
     # Step 1: Train with Adam optimizer
-    logger.info("Training a new model with Adam optimizer.")
+    setup_log("Training a new model with Adam optimizer.")
     conf.model_properties.optimizer = "adam"
     config_hash = co.generate_config_hash(conf.model_properties)
     model_path_adam = os.path.join(models, f"model_{config_hash}.pt")
     model, losshistory = train_and_save_model(conf, "adam", config_hash, model_path_adam)
 
     if conf.model_properties.iters_lbfgs>0:
-        logger.info("Continue training the model with L-BFGS optimizer.")
+        setup_log("Continue training the model with L-BFGS optimizer.")
         # Step 2: Train with LBFGS optimizer
         conf.model_properties.optimizer = "L-BFGS"
         config_hash = co.generate_config_hash(conf.model_properties)
@@ -698,7 +696,7 @@ def execute(config, label):
     if n_obs == 1:
 
         config.model_properties.W = cc.W_obs
-        logger.info(f"Training single observer with perfusion {cc.W_obs}.")
+        setup_log(f"Training single observer with perfusion {cc.W_obs}.")
         output_model = train_model(config)
         return output_model
 
@@ -707,7 +705,7 @@ def execute(config, label):
         obs = cc.obs if label.startswith("simulation") else np.linspace(cc.W_min, cc.W_max, n_obs)
         perf = obs[j]
         config.model_properties.W = float(perf)
-        logger.info(f"Training observer {j} with perfusion {perf}.")
+        setup_log(f"Training observer {j} with perfusion {perf}.")
         model = train_model(config)
         multi_obs.append(model)
 
@@ -1001,7 +999,7 @@ def solve_ivp(multi_obs: list, fold: str, conf: dict, x_obs, label: str):
     """
     Solve the IVP for observer weights and plot the results.
     """
-    logger.info("Solving the IVP for observer weights...")
+    setup_log("Solving the IVP for observer weights...")
     pars = conf.model_parameters
     n_obs = pars.n_obs
     lam = pars.lam
@@ -1031,7 +1029,7 @@ def solve_ivp(multi_obs: list, fold: str, conf: dict, x_obs, label: str):
     for j in range(len(multi_obs)):
         multi_obs[j]["weights"] = weights[:, j+1].reshape(weights[:, 0:1].shape)
 
-    logger.info("IVP for observer weights solved.")
+    setup_log("IVP for observer weights solved.")
     return multi_obs
 
  
@@ -1039,13 +1037,13 @@ def run_matlab_ground_truth():
     """
     Optionally run MATLAB ground truth.
     """
-    logger.info("Running MATLAB ground truth calculation...")
+    setup_log("Running MATLAB ground truth calculation...")
     print("Running MATLAB ground truth calculation...")
     eng = matlab.engine.start_matlab()
     eng.cd(f"{src_dir}/matlab", nargout=0)
     eng.BioHeat(nargout=0)
     eng.quit()
-    logger.info("MATLAB ground truth calculation completed.")
+    setup_log("MATLAB ground truth calculation completed.")
     print("MATLAB ground truth calculation completed.")
 
 

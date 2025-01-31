@@ -354,4 +354,4 @@ experiment_type:
     r1: 0.001
 run:
   dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /home/guglielmo/pinns-bioheat-experiments/outputs/2025-01-31/12-08-37
+output_dir: /home/guglielmo/pinns-bioheat-experiments/outputs/2025-01-31/13-43-27
