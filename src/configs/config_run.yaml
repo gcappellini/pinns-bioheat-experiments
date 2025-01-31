@@ -9,8 +9,8 @@ model_properties:
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
-  Ty10: 21.5
-  Ty20: 30.2
+  Ty10: 22.17
+  Ty20: 27.43
   Ty30: 21.5
   Tgt20: 31.5
   alfa: 50.0
@@ -337,19 +337,6 @@ experiment_type:
     Ty30: 21.5
     Tgt10: 24.56
     Tgt20: 29.46
-    Tfl: 21.63
-    r1: 0.001
-  meas_cool_2b:
-    title: Cooling 2b
-    date: '20240930_3'
-    string: meas_cool_2b
-    start_min: 35
-    end_min: 65
-    Ty10: 22.87
-    Ty20: 27.83
-    Ty30: 21.5
-    Tgt10: 24.43
-    Tgt20: 28.56
     Tfl: 21.63
     r1: 0.001
 run:

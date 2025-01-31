@@ -7,7 +7,7 @@ import plots as pp
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
 
-def main(meas, rescale, save_pickle, show_y3=False, threshold=0.0):
+def main(meas, rescale, save_pickle, show_y3=False):
 
     date = meas.date
     start_min = meas.start_min
@@ -18,9 +18,7 @@ def main(meas, rescale, save_pickle, show_y3=False, threshold=0.0):
     file_path = f"{src_dir}/data/vessel/{date}.txt"
 
     timeseries_data = uu.load_measurements(file_path)
-    df = uu.extract_entries(timeseries_data, start_min*60, end_min*60, threshold)
-
-
+    df = uu.extract_entries(timeseries_data, start_min*60, end_min*60)
 
     df1 = uu.scale_df(df)
 
@@ -36,14 +34,14 @@ def main(meas, rescale, save_pickle, show_y3=False, threshold=0.0):
     if show_y3:
         x_vals = np.vstack(([df['t']/60]*5)).T
         y_vals = np.vstack((df['y1'],df['gt1'],df['gt2'],df['y2'],df['y3'])).T
-        labels = ["y1", "gt1", "gt2", "y2", "y3"]
+        labels = ["y1","gt1","gt2","y2","y3"]
         colors = conf.plot.colors.measuring_points
         linestyles = conf.plot.linestyles.measuring_points
 
     else:
         x_vals = np.vstack(([df['t']/60]*4)).T
         y_vals = np.vstack((df['y1'],df['gt1'],df['gt2'],df['y2'])).T
-        labels = ["y1", "gt1", "gt2", "y2"]
+        labels = ["y1","gt1","gt2","y2"]
         colors = conf.plot.colors.measuring_points[:-1]
         linestyles = conf.plot.linestyles.measuring_points[:-1]
 

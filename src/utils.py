@@ -1116,8 +1116,8 @@ def load_from_pickle(file_path):
         return pickle.load(pkl_file)
     
 
-def extract_entries(timeseries_data, tmin, tmax, threshold):
-    keys_to_extract = {10: 'y1', 45: 'gt1', 66: 'gt2', 24: 'y2', 31: 'y3', 37:'bol_out'}  # original bol_out: 39
+def extract_entries(timeseries_data, tmin, tmax, keys_to_extract={10:'y1', 45:'gt1', 66:'gt2', 24:'y2', 31:'y3', 37:'bol_out'}, threshold=0.0):
+ # original bol_out: 39
     extracted_data = {new_key: timeseries_data.get(old_key, []) for old_key, new_key in keys_to_extract.items()}
 
     # Create a list of all unique times
@@ -1162,6 +1162,50 @@ def extract_entries(timeseries_data, tmin, tmax, threshold):
 
     return df_short
 
+def _extract_entries(timeseries_data: dict, tmin: float, tmax: float, keys_to_extract: dict = {10: 'y1', 45: 'gt1', 66: 'gt2', 24: 'y2', 31: 'y3', 37: 'bol_out'}, threshold=0.0):
+    # Implemented without pandas
+    extracted_data = {new_key: timeseries_data.get(old_key, []) for old_key, new_key in keys_to_extract.items()}
+
+    # Create a list of all unique times
+    all_times = sorted(set(time for times in extracted_data.values() for time, temp in times))
+
+    # Normalize times to seconds, starting from zero
+    start_time = all_times[0]
+    all_times_in_seconds = [(datetime.datetime.combine(datetime.date.today(), time) -
+                             datetime.datetime.combine(datetime.date.today(), start_time)).total_seconds()
+                            for time in all_times]
+
+    # Initialize the dictionary
+    data_dict = {'t': np.array(all_times_in_seconds).round()}
+
+    # Populate the dictionary with temperatures
+    for key, timeseries in extracted_data.items():
+        temp_dict = {time: temp for time, temp in timeseries}
+        data_dict[key] = [temp_dict.get(time, float('nan')) for time in all_times]
+
+    # Filter the data based on tmin and tmax
+    filtered_indices = [i for i, t in enumerate(data_dict['t']) if tmin < t < tmax]
+    filtered_data = {key: [values[i] for i in filtered_indices] for key, values in data_dict.items()}
+
+    # Calculate time differences
+    time_diff = np.diff(filtered_data['t'], prepend=filtered_data['t'][0])
+
+    # Identify the indices where a new interval starts
+    new_intervals = [i for i, diff in enumerate(time_diff) if diff > threshold]
+
+    # Include the first index as the start of the first interval
+    new_intervals = [0] + new_intervals
+
+    # Create a list to store the last measurements of each interval
+    last_measurements = []
+
+    # Extract the last measurement from each interval
+    for i in range(len(new_intervals)):
+        start_idx = new_intervals[i]
+        end_idx = new_intervals[i + 1] - 1 if i + 1 < len(new_intervals) else len(filtered_data['t']) - 1
+        last_measurements.append({key: filtered_data[key][end_idx] for key in filtered_data})
+
+    return last_measurements
 
 def scale_df(df):
     time = df['t']-df['t'][0]
