@@ -1,16 +1,10 @@
 import deepxde as dde
 import numpy as np
 import os
-# import matplotlib.pyplot as plt
 import torch
-# import seaborn as sns
-# import wandb
 import json
-# from scipy.interpolate import interp1d
-# from scipy import integrate
-# import pickle
-# import pandas as pd
 import hashlib
+import logging
 from omegaconf import OmegaConf
 
 dde.config.set_random_seed(200)
@@ -25,6 +19,11 @@ tests_dir = os.path.join(git_dir, "tests")
 conf_dir = os.path.join(src_dir, "configs")
 os.makedirs(tests_dir, exist_ok=True)
 
+def setup_logging():
+    # logging.basicConfig(level=logging.INFO, filename='app.log', filemode='a',
+    #                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logger = logging.getLogger(__name__)
+    return logger
 
 models = os.path.join(git_dir, "models")
 os.makedirs(models, exist_ok=True)
@@ -47,15 +46,15 @@ def set_run(prj_figs, cfg, run):
         cfg.output_dir = os.path.abspath(prj_figs)
         # cfg.output_dir = os.path.abspath(os.path.join(prj_figs, run))
         os.makedirs(cfg.output_dir, exist_ok=True)
-        # [pars.W0, pars.W1, pars.W2, pars.W3, pars.W4, pars.W5, pars.W6, pars.W7] = [float(j) for j in np.linspace(pars.W_min, pars.W_max, 8).round(6)]
         props.Ty10, props.Ty20, props.Ty30, props.Tgt20 = simu_settings.Ty10, simu_settings.Ty20, simu_settings.Ty30, simu_settings.Tgt20
         OmegaConf.save(cfg, f"{conf_dir}/config_run.yaml")
         cfg = filter_config_for_matlab(cfg)
         run_figs = cfg.output_dir
-    # elif run == "simulation_system":
-    #     props.W = pars.W_sys
-    #     props.Ty10, props.Ty20, props.Ty30 = 21.5, 30.0, 21.5
-    #     props.n_ins = 2
+
+    elif run == "simulation_system":
+        props.W = pars.W_sys
+        props.Ty10, props.Ty20, props.Ty30 = simu_settings.Ty10, simu_settings.Ty20, simu_settings.Ty30
+        props.n_ins = 2
 
     elif run.startswith("simulation"):
         

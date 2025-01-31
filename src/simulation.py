@@ -5,6 +5,7 @@ from hydra import compose
 import utils as uu
 import common as co
 import plots as pp
+from common import setup_logging
 
 # Directories Setup
 current_file = os.path.abspath(__file__)
@@ -14,10 +15,11 @@ tests_dir = os.path.join(git_dir, "tests")
 conf_dir = os.path.join(src_dir, "configs")
 os.makedirs(tests_dir, exist_ok=True)
 
-logger = logging.getLogger(__name__)
+logger = setup_logging()
 
 def run_ground_truth(config, out_dir):
     """Run MATLAB ground truth simulation, load data, and plot results."""
+    logger.info("Running MATLAB ground truth simulation.")
     label = "ground_truth"
     dict_exp = config.experiment
     output_dir_gt, config_matlab = co.set_run(out_dir, config, label)
@@ -62,6 +64,7 @@ def run_ground_truth(config, out_dir):
 
 def run_simulation_system(config, out_dir, system_gt):
     """Run simulation for the system and plot results."""
+    logger.info("Running simulation for the system.")
     label = "simulation_system"
     output_dir_system, cfg_system = co.set_run(out_dir, config, label)
     pinns_sys = uu.train_model(cfg_system)
@@ -80,6 +83,7 @@ def run_simulation_system(config, out_dir, system_gt):
 
 def run_simulation_mm_obs(config, out_dir, system_gt, mm_obs_gt, observers_gt, gt_path=None):
     """Run multi-observer simulation, load data, and plot results."""
+    logger.info("Running simulation for multi-observer.")
     label = "simulation_mm_obs"
     output_dir_inverse, config_inverse = co.set_run(out_dir, config, label)
     multi_obs = uu.execute(config_inverse, label)
@@ -108,6 +112,7 @@ def run_simulation_mm_obs(config, out_dir, system_gt, mm_obs_gt, observers_gt, g
 def run_measurement_mm_obs(config, out_dir):
     """Run multi-observer simulation, load data, and plot results."""
     label = config.experiment.run
+    logger.info(f"Running measurement {label} for multi-observer")
     output_dir_meas, config_meas = co.set_run(out_dir, config, label)
     multi_obs = uu.execute(config_meas, label)
     system_meas, _ = uu.import_testdata(config_meas)

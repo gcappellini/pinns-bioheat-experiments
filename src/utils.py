@@ -15,6 +15,7 @@ import common as co
 from omegaconf import OmegaConf
 # import matlab.engine
 from hydra import initialize, compose
+from common import setup_logging
 
 
 dde.config.set_random_seed(200)
@@ -31,7 +32,7 @@ conf_dir = os.path.join(src_dir, "configs")
 models = os.path.join(git_dir, "models")
 os.makedirs(models, exist_ok=True)
 
-logger = logging.getLogger(__name__)
+logger = setup_logging()
 
 f1, f2, f3 = [None]*3
 n_digits = 6
@@ -390,6 +391,7 @@ def train_and_save_model(conf, optimizer, config_hash, save_path, pre_trained_mo
         model_save_path=save_path,
         display_every=conf.plot.display_every
     )
+    logger.info(f"Model trained with {optimizer} optimizer.")
     # Save configuration
     confi_path = os.path.join(models, f"config_{config_hash}.yaml")
     OmegaConf.save(conf, confi_path)
@@ -415,7 +417,7 @@ def train_model(conf):
     model, losshistory = train_and_save_model(conf, "adam", config_hash, model_path_adam)
 
     if conf.model_properties.iters_lbfgs>0:
-        logger.info("COntinue training the model with L-BFGS optimizer.")
+        logger.info("Continue training the model with L-BFGS optimizer.")
         # Step 2: Train with LBFGS optimizer
         conf.model_properties.optimizer = "L-BFGS"
         config_hash = co.generate_config_hash(conf.model_properties)
@@ -588,8 +590,8 @@ def get_tc_positions():
     x_gt1 = (cc.x_gt1)/L0
     x_y1 = 1.0
 
-    # return {"y2": x_y2, "gt2": round(x_gt2, 2), "y1": x_y1}
-    return {"y2": x_y2, "gt2": round(x_gt2, 2), "gt1": round(x_gt1, 2),"y1": x_y1}
+    return {"y2": x_y2, "gt2": round(x_gt2, 2), "y1": x_y1}
+    # return {"y2": x_y2, "gt2": round(x_gt2, 2), "gt1": round(x_gt1, 2),"y1": x_y1}
 
 def get_loss_names():
     # return ["residual", "bc0", "bc1", "ic", "test", "train"]

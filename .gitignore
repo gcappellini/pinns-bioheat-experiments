@@ -198,6 +198,7 @@ tests/old*
 # !tests/cooling_meas_2
 # !tests/transfer_learning
 
+models/
 old/
 src/wandb
 src/outputs

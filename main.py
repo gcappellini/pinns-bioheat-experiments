@@ -2,13 +2,14 @@ import subprocess
 import os, logging
 import hydra
 from omegaconf import DictConfig, OmegaConf
+from src.common import setup_logging
 
 
 git_dir = os.getcwd()
 src_dir = os.path.join(git_dir, "src")
 conf_dir = os.path.join(src_dir, "configs")
 
-logger = logging.getLogger(__name__)
+logger = setup_logging()
 
 def initialize_run(cfg1):
 

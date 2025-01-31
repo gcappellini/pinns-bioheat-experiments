@@ -64,7 +64,7 @@ model_parameters:
   W7: 0.00165
   W_sys: 8.0e-05
   W_index: 1
-  n_obs: 8
+  n_obs: 64
   x_gt2: 0.01
   x_w: 0.025
   x_gt1: 0.04
@@ -254,13 +254,13 @@ plot:
       y1:
         color: '#F7CAC9'
       gt1:
-        color: '#92A8D1'
+        color: '#6B5B95'
       gt2:
         color: '#FF6F61'
       y2:
-        color: '#6B5B95'
-      y3:
         color: '#88B04B'
+      y3:
+        color: '#92A8D1'
     losses:
       residual:
         color: '#9ACD32'
@@ -354,4 +354,4 @@ experiment_type:
     r1: 0.001
 run:
   dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /home/guglielmo/pinns-bioheat-experiments/outputs/2025-01-31/12-08-37
+output_dir: /home/guglielmo/pinns-bioheat-experiments/multirun/2025-01-31/10-00-46/0
