@@ -13,7 +13,7 @@ import coeff_calc as cc
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-# import matlab.engine
+import matlab.engine
 from hydra import initialize, compose
 from common import setup_log
 
@@ -612,7 +612,7 @@ def import_testdata(conf):
     # Remove rows where vstack_array[:, 0] equals positions[-2]
     # vstack_array = vstack_array[vstack_array[:, 0] != positions[-2]]
 
-    system_meas = {"grid": vstack_array[:, :2], "theta": vstack_array[:, -1], "label": "system_meas"}
+    system_meas = {"grid": vstack_array[:, :2], "theta": vstack_array[:, -1].reshape(len(vstack_array[:, -1]), 1), "label": "system_meas"}
 
     return system_meas, out_bolus
 
@@ -662,15 +662,6 @@ def import_obsdata(nam):
         np.column_stack((space_array_prediction, np.full(len(space_array_prediction), el)))
         for el in unique_elements
     ])
-
-    # # Add x_tc to g_xxl[:, 0]
-    # g_xxl = np.vstack([
-    #     g_xxl,
-    #     np.column_stack((np.array(x_tc), np.full(len(x_tc), unique_elements[0])))
-    # ])
-
-    # # Sort g_xxl by the second column (time) and then by the first column (space)
-    # g_xxl = g_xxl[np.lexsort((g_xxl[:, 0], g_xxl[:, 1]))]
 
     Xobs = np.vstack((g_xxl[:, 0], f1(g_xxl[:, 1]), f2(g_xxl[:, 1]), g_xxl[:, 1])).T
     return Xobs
@@ -848,11 +839,6 @@ def get_observers_preds(ground_truth, multi_obs, x_obs, output_dir, conf, label)
 
     mm_obs = None
 
-    # if conf.experiment.run.startswith("meas_"):
-    #     meas_sett = getattr(conf.experiment_type, conf.experiment.run)
-    #     for obs in obs_dict:
-    #         obs["theta"] = filter_theta_vessel(obs["grid"], meas_sett["r1"], meas_sett["Tfl"], obs["theta"])
-    
     obs_dict, mm_obs = compute_obs_err(ground_truth, obs_dict, mm_obs)
 
     if n_obs==1:
@@ -867,16 +853,9 @@ def get_observers_preds(ground_truth, multi_obs, x_obs, output_dir, conf, label)
             "label": "multi_observer"
         }
 
-    # if conf.experiment.run.startswith("meas_"):
-    #     meas_sett = getattr(conf.experiment_type, conf.experiment.run)
-    #     for obs in obs_dict:
-    #         obs["theta"] = filter_theta_vessel(obs["grid"], meas_sett["r1"], meas_sett["Tfl"], obs["theta"])
     _, mm_obs = compute_obs_err(ground_truth, obs_dict, mm_obs)
     obs_dict, mm_obs = calculate_l2(ground_truth, obs_dict, mm_obs)
     
-    # if n_obs>1:
-    #     obs_dict = load_weights(obs_dict, conf, label)
-
     OmegaConf.save(conf, f"{output_dir}/config_{label}.yaml")
     for obs in obs_dict:
         lal = obs["label"]
@@ -956,27 +935,6 @@ def get_plot_params(conf):
                 "alpha": entities.observers_gt.alpha[i],
                 "marker": None
             }
-
-    # for i, k in enumerate(pos.keys()):
-    #     meas_points_params[k] = {
-    #         "color": entities.meas_points.color[i],
-    #         "label": entities.meas_points.label[i],
-    #         # "linestyle": entities.meas_points.linestyle[i],
-    #         # "linewidth": entities.meas_points.linewidth[i],
-    #         # "alpha": entities.meas_points.alpha[i],
-    #         # "marker": None
-    #     }
-    
-    # for j, lab in enumerate(losses):
-    #     losses_params[lab] = {
-    #         "color": entities.losses.color[j],
-    #         "label": entities.losses.label[j],
-    #         # "linestyle": entities.losses.linestyle[j],
-    #         # "linewidth": entities.losses.linewidth[j],
-    #         # "alpha": entities.losses.alpha[j],
-    #         # "marker": None
-    #     }
-
 
     # Return combined parameters
     return {
@@ -1246,25 +1204,6 @@ def point_predictions(pred_dicts):
     return pred_sc
 
 
-# def point_ground_truths(conf):
-#     """
-#     Generates and scales predictions from the multi-observer model.
-#     """
-    
-#     positions = get_tc_positions()
-#     X, _, _, y_mmobs = gen_testdata(conf)
-
-#     truths = np.hstack((X, y_mmobs))
-    
-#     # Extract predictions based on positions
-#     y2_truth_sc = truths[truths[:, 0] == positions[0]][:, 2]
-#     gt2_truth_sc = truths[truths[:, 0] == positions[1]][:, 2]
-#     gt1_truth_sc = truths[truths[:, 0] == positions[2]][:, 2]
-#     y1_truth_sc = truths[truths[:, 0] == positions[3]][:, 2]
-
-#     return y1_truth_sc, gt1_truth_sc, gt2_truth_sc, y2_truth_sc
-
-
 def configure_settings(cfg, experiment):
     cfg.model_properties.direct = False
     cfg.model_properties.W = cfg.model_parameters.W4
@@ -1287,70 +1226,9 @@ def configure_settings(cfg, experiment):
     return cfg
 
 
-def _extract_matching(d_true, *d_preds):
-    """
-    Matches true data points with predicted data points for multiple predictions.
-    
-    Args:
-        d_true: Dictionary containing true data with keys "grid" and "theta".
-        *d_preds: Multiple dictionaries containing predicted data with keys "grid" and "theta".
-    
-    Returns:
-        A numpy array with the matched true and predicted values for all inputs.
-    """
-    # Extract the columns from d_true
-    tot_true = np.hstack((d_true["grid"], d_true["theta"].reshape(len(d_true["grid"]), 1)))
-
-    # Prepare the true data for matching
-    xs = np.unique(tot_true[:, 0])
-    filtered_true = []
-    tot_true[:, 1] = tot_true[:, 1].round(n_digits)
-    
-    # for el in np.unique(tot_true[:, 1]):
-    #     for i in range(len(xs)):
-    #         el_pred = tot_true[tot_true[:, 1] == el][i]
-    #         filtered_true.append(el_pred)
-    
-    # tot_true = np.array(filtered_true)
-
-    # Prepare the predicted data for each d_pred
-    tot_preds = []
-    for d_pred in d_preds:
-        pred = np.hstack((d_pred["grid"], d_pred["theta"].reshape(-1, 1)))
-        tot_preds.append(pred)
-
-    # Match true data with predicted data
-    tot_preds = np.array(tot_preds)
-    match = []
-    for x in np.unique(tot_true[:, 0]):
-        # Filter true values for the current x (allowing for a small tolerance)
-        trues = tot_true[np.abs(tot_true[:, 0] - x) < 0.01]
-        
-        # Filter predicted values for the current x for each d_pred (allowing for a small tolerance)
-        preds = [el[np.abs(el[:, 0] - x) < 0.01][:, 0] for el in tot_preds]
-        
-        # Combine all predicted values column-wise
-        combined_preds = np.hstack(preds) if preds else np.empty((len(trues), 0))
-        
-        # Combine true and predicted values
-        match_el = np.hstack((trues, combined_preds))
-        match.append(match_el)
-
-    # Stack all match_el arrays vertically
-    match = np.vstack(match)
-    
-    # Convert match list to a numpy array
-    return np.array(match)
-
-
 def extract_matching(dicts):
     if not dicts:
         return np.array([])
-
-    # Extract the grid and theta from the first dictionary
-    # first_dict = dicts[0]
-    # grid = first_dict['grid']
-    # theta_first = first_dict['theta']
 
     flag = len(dicts[1]['grid']) - len(dicts[0]['grid'])
 
@@ -1367,16 +1245,13 @@ def extract_matching(dicts):
         others = dicts
         others.pop(ref_index)
         result = np.hstack((ref["grid"], ref['theta'].reshape(-1, 1)))
-        # theta_obsvs = np.zeros((len(ref["grid"]), len(dicts)-1))
+
         theta_obsvs = []
         for grid_elem in ref['grid']:
             distances = np.linalg.norm(others[0]["grid"] - grid_elem, axis=1)
             closest_index = np.argmin(distances)
-            # theta_obsvs[counter, :] = [others[i]['theta'][closest_index] for i in range(len(others))]
             theta_obsvs.append([others[i]['theta'][closest_index] for i in range(len(others))])
-            
-            # counter += 1
-            # break
+
             
             
     # Stack the matched theta values
@@ -1385,36 +1260,3 @@ def extract_matching(dicts):
 
     return result
 
-
-# def filter_theta_vessel(grid, r, t_fluid, theta_pred):
-#     x = grid[:, 0]
-#     t = grid[:, 1]
-
-#     theta_fluid=scale_t(t_fluid)
-#     r = r*cc.L0
-    
-#     res = np.zeros_like(x)
-#     coords_sc = get_tc_positions()
-#     X_w = cc.x_w / cc.L0
-#     theta_w_index = np.argmin(np.abs(x-X_w)) 
-#     theta_w = theta_pred[theta_w_index]
-#     y0 = theta_fluid/theta_w
-#     k = 1
-
-#     def quadratic_segment(xi, h):
-#         a = (y0 - k) / ((X_w - h) ** 2)
-#         return a * (xi - h) ** 2 + k
-
-#     for i, xi in enumerate(x):
-#         if xi < coords_sc[1]:
-#             res[i] = 1
-#         elif coords_sc[1] <= xi < X_w - r:
-#             res[i] = quadratic_segment(xi, coords_sc[1])
-#         elif X_w - r <= xi <= X_w + r:
-#             res[i] = y0
-#         elif X_w + r < xi < 1.3 * coords_sc[2]:
-#             res[i] = quadratic_segment(xi, 1.3 * coords_sc[2])
-#         else:
-#             res[i] = 1
-
-#     return res*theta_pred

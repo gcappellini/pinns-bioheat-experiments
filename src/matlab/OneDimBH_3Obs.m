@@ -35,7 +35,7 @@ function [sol] = OneDimBH_3Obs
     end
     
     
-    filename2 = sprintf('%s/ground_truth/weights_l_%.1f_u_%.1f_ground_truth.txt', output_path, lambda, upsilon);
+    filename2 = sprintf('%s/weights_l_%.1f_u_%.1f_ground_truth.txt', output_path, lambda, upsilon);
     fileID = fopen(filename2,'w');
     
     for i = 1:101
@@ -82,16 +82,22 @@ function [sol] = OneDimBH_3Obs
     
     
     function [pl,ql,pr,qr] = OneDimBHbc_3Obs(xl,ul,xr,ur,t)
-    global K om0 om1 om2 upsilon a5
+    global K om0 om1 om2 upsilon a5 str_exp
     [~, ~, y1, ~, ~] = ic_bc(xr, t);
-    [~, ~, ~, ~, y3] = ic_bc(xl, t);
+    [~, ~, ~, y2, y3] = ic_bc(xl, t);
 
-    flusso = a5*(y3-ul(1));
+    if startsWith(str_exp, 'meas')
+        sup_y = y2;
+    else
+        sup_y = ul(1);
+    end
+
+    flusso = a5*(y3-sup_y);
     
     pl = [flusso;
-        flusso-K*(ul(2)-ul(1));
-        flusso-K*(ul(3)-ul(1));
-        flusso-K*(ul(4)-ul(1));
+        flusso-K*(ul(2)-sup_y);
+        flusso-K*(ul(3)-sup_y);
+        flusso-K*(ul(4)-sup_y);
         0;0;0];
     ql = [1;1;1;1;1;1;1];
     pr = [ur(1) - y1; 
@@ -101,6 +107,6 @@ function [sol] = OneDimBH_3Obs
         0;0;0];
     
     qr = [0;0;0;0; 1;1;1];
-    om0=upsilon*((ul(2)-ul(1)))^2;
-    om1=upsilon*((ul(3)-ul(1)))^2;
-    om2=upsilon*((ul(4)-ul(1)))^2;
+    om0=upsilon*((ul(2)-sup_y))^2;
+    om1=upsilon*((ul(3)-sup_y))^2;
+    om2=upsilon*((ul(4)-sup_y))^2;

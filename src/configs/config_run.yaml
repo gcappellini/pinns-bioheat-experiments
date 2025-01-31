@@ -9,8 +9,8 @@ model_properties:
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
-  Ty10: 22.17
-  Ty20: 27.43
+  Ty10: 21.5
+  Ty20: 30.2
   Ty30: 21.5
   Tgt20: 31.5
   alfa: 50.0
@@ -50,8 +50,8 @@ model_properties:
   sigma: 1.0
   n_anchor_points: 0
 model_parameters:
-  lam: 100.0
-  upsilon: 1000.0
+  lam: 1.0
+  upsilon: 1.0
   W_min: 6.3e-05
   W_max: 0.00165
   W0: 6.3e-05
@@ -64,7 +64,7 @@ model_parameters:
   W7: 0.00165
   W_sys: 8.0e-05
   W_index: 1
-  n_obs: 8
+  n_obs: 3
   x_gt2: 0.01
   x_w: 0.025
   x_gt1: 0.04
@@ -300,7 +300,7 @@ plot:
         alpha: 1.0
   show_obs: false
 experiment:
-  ground_truth: false
+  ground_truth: true
   simulation: false
   run: meas_cool_1
   plot: true
@@ -354,4 +354,4 @@ experiment_type:
     r1: 0.001
 run:
   dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /home/guglielmo/pinns-bioheat-experiments/outputs/2025-01-31/13-43-27
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-01-31/14-55-49

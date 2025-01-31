@@ -38,24 +38,24 @@ def run_ground_truth(config, out_dir):
             pp.plot_validation_3d(system_gt["grid"], system_gt["theta"], mm_obs_gt["theta"], out_dir, label)
             pp.plot_obs_err([*observers_gt], out_dir, label)
 
-        elif config.plot.show_obs:
-            pp.plot_multiple_series([system_gt, *observers_gt, mm_obs_gt], out_dir, label)
-            pp.plot_l2(system_gt, [*observers_gt, mm_obs_gt], out_dir, label)
-            pp.plot_validation_3d(system_gt["grid"], system_gt["theta"], mm_obs_gt["theta"], out_dir, label)
-            pp.plot_obs_err([*observers_gt, mm_obs_gt], out_dir, label)
-
-            if 1 < config.model_parameters.n_obs <= 8:
-                pp.plot_weights([*observers_gt], out_dir, label)
-        
         else:
-            pp.plot_multiple_series([system_gt, mm_obs_gt], out_dir, label)
-            pp.plot_l2(system_gt, [mm_obs_gt], out_dir, label)
-            pp.plot_validation_3d(system_gt["grid"], system_gt["theta"], mm_obs_gt["theta"], out_dir, label)
-            pp.plot_obs_err([mm_obs_gt], out_dir, label)
+            if config.plot.show_obs:
+                pp.plot_multiple_series([system_gt, *observers_gt, mm_obs_gt], out_dir, label)
+                pp.plot_l2(system_gt, [*observers_gt, mm_obs_gt], out_dir, label)
+                pp.plot_validation_3d(system_gt["grid"], system_gt["theta"], mm_obs_gt["theta"], out_dir, label)
+                pp.plot_obs_err([*observers_gt, mm_obs_gt], out_dir, label)
+                if 1 < config.model_parameters.n_obs <= 8:
+                    pp.plot_weights([*observers_gt], out_dir, label)
+        
+            else:
+                pp.plot_multiple_series([system_gt, mm_obs_gt], out_dir, label)
+                pp.plot_l2(system_gt, [mm_obs_gt], out_dir, label)
+                pp.plot_validation_3d(system_gt["grid"], system_gt["theta"], mm_obs_gt["theta"], out_dir, label)
+                pp.plot_obs_err([mm_obs_gt], out_dir, label)
 
-            if dict_exp["run"].startswith("meas"):
-                system_meas, _ = uu.import_testdata(config)
-                pp.plot_timeseries_with_predictions(system_meas, system_gt, config, out_dir)     
+        if dict_exp["run"].startswith("meas"):
+            system_meas, _ = uu.import_testdata(config)
+            pp.plot_timeseries_with_predictions(system_meas, system_gt, config, out_dir)     
         
     
     return output_dir_gt, system_gt, observers_gt, mm_obs_gt
@@ -166,7 +166,7 @@ def main():
         if dict_exp["ground_truth"]:
             output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, run_out_dir)
             
-        run_measurement_mm_obs(config, run_out_dir)
+        # run_measurement_mm_obs(config, run_out_dir)
 
 
 if __name__ == "__main__":

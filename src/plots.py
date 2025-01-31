@@ -489,38 +489,58 @@ def plot_timeseries_with_predictions(system_meas, mm_obs, conf, out_dir):
 
     label = conf.experiment.run
     gt = mm_obs["label"].endswith("gt")
-    preds = uu.point_predictions([system_meas, mm_obs])
-    df = uu.load_from_pickle(f"{src_dir}/data/vessel/{label}.pkl")
+    x_points = uu.get_tc_positions()
 
-    time_in_minutes = df['tau']*conf.model_properties.tauf / 60
-    time_pred = preds[0]["tau"]*conf.model_properties.tauf / 60
+    y_data = []
+    for entry in x_points.keys():
+        closest_indices_pred = np.where(np.abs(mm_obs["grid"][:, 0] - x_points[entry]) == np.min(np.abs(mm_obs["grid"][:, 0] - x_points[entry])))
+        dict_pred = {
+            "tau": np.unique(mm_obs["grid"][:, 1])*conf.model_properties.tauf / 60,
+            "theta": mm_obs["theta"][closest_indices_pred],
+            "label": f"{entry} (Matlab)" if gt else f"{entry} (Pred)"
+        }
+        closest_indices_meas = np.where(np.abs(system_meas["grid"][:, 0] - x_points[entry]) == np.min(np.abs(system_meas["grid"][:, 0] - x_points[entry])))
+        dict_meas = {
+            "tau": np.unique(system_meas["grid"][:, 1])*conf.model_properties.tauf / 60,
+            "theta": system_meas["theta"][closest_indices_meas],
+            "label": f"{entry} (Meas)"
+        }
+        y_data.append(dict_meas)
+        y_data.append(dict_pred)
+
+
+    # preds = uu.point_predictions([system_meas, mm_obs])
+    # df = uu.load_from_pickle(f"{src_dir}/data/vessel/{label}.pkl")
+
+    # time_in_minutes = df['tau']*conf.model_properties.tauf / 60
+    # time_pred = preds[0]["tau"]*conf.model_properties.tauf / 60
     
     # Prepare y-axis data (ground truth and predicted values)
-    y_data = [
-        *[df[pred['label']] for pred in preds],  # Extract values based on the 'label' key in preds
-        *[pred['theta'] for pred in preds]     # Predicted lines
-    ]
+    # y_data = [
+    #     *[df[pred['label']] for pred in preds],  # Extract values based on the 'label' key in preds
+    #     *[pred['theta'] for pred in preds]     # Predicted lines
+    # ]
 
     # Labels for the legend (corresponding to each line in y_data)
     plot_params = uu.get_plot_params(conf)
-    lines_labels = [pred["label"] for pred in preds]
-    colors = [plot_params[ll]["color"] for ll in lines_labels]*2
-    meas_labels = [f"{ll} (Meas)" for ll in lines_labels]
-    gt_labels = [f"{ll} (Matlab)" for ll in lines_labels]
-    pinns_labels = [f"{ll} (Pred)" for ll in lines_labels]
-    legend_labels = [*meas_labels, *gt_labels] if gt else [*meas_labels, *pinns_labels]
+    # lines_labels = [pred["label"] for pred in preds]
+    colors = [plot_params[ll]["color"] for ll in x_points.keys() for _ in range(2)]
+    # meas_labels = [f"{ll} (Meas)" for ll in lines_labels]
+    # gt_labels = [f"{ll} (Matlab)" for ll in lines_labels]
+    # pinns_labels = [f"{ll} (Pred)" for ll in lines_labels]
+    legend_labels = [p["label"] for p in y_data]
     
     # colors_points = conf.plot.colors.measuring_points
     # colors_list = list(colors_points)
     # colors = colors_list[:-2] * 2
-    linestyles=["-"]*len(preds) + ["--"]*len(preds)
+    linestyles=(["-"] + ["--"])*len(x_points)
 
     rescale = conf.plot.rescale
     _, _, ylabel = uu.get_scaled_labels(rescale)
 
-    times = [time_in_minutes]*len(preds) + [time_pred]*len(preds)
+    times = [p["tau"] for p in y_data]
 
-    y_data_plot = uu.rescale_t(y_data) if rescale else y_data
+    y_data_plot = [uu.rescale_t(p["theta"]) for p in y_data] if rescale else [p["theta"] for p in y_data]
 
     meas_dict = getattr(conf.experiment_type, label)
     name = meas_dict["title"]
