@@ -584,12 +584,12 @@ def scale_time(t):
 def get_tc_positions():
     L0 = cc.L0
     x_y2 = 0.0
-    x_gt2 = (cc.x_gt2)/L0
+    x_gt = (cc.x_gt)/L0
     x_gt1 = (cc.x_gt1)/L0
     x_y1 = 1.0
 
-    return {"y2": x_y2, "gt2": round(x_gt2, 2), "y1": x_y1}
-    # return {"y2": x_y2, "gt2": round(x_gt2, 2), "gt1": round(x_gt1, 2),"y1": x_y1}
+    return {"y2": x_y2, "gt": round(x_gt, 2), "y1": x_y1}
+    # return {"y2": x_y2, "gt": round(x_gt, 2), "gt1": round(x_gt1, 2),"y1": x_y1}
 
 def get_loss_names():
     # return ["residual", "bc0", "bc1", "ic", "test", "train"]
@@ -605,7 +605,7 @@ def import_testdata(conf):
     bolus = df[df['tau'].isin(taus)][['y3']].values.flatten()
     out_bolus = np.vstack((taus, bolus)).T
 
-    # theta_values = df[['tau', 'y2', 'gt2', 'gt1', 'y1']].values
+    # theta_values = df[['tau', 'y2', 'gt', 'gt1', 'y1']].values
     theta_values = df[['tau'] + list(positions_dict.keys())].values
     time_arrays = [np.column_stack((positions, [time_value] * len(positions), theta_values[i, 1:])) for i, time_value in enumerate(theta_values[:, 0])]
     vstack_array = np.vstack(time_arrays)
@@ -1116,7 +1116,7 @@ def load_from_pickle(file_path):
         return pickle.load(pkl_file)
     
 
-def extract_entries(timeseries_data, tmin, tmax, keys_to_extract={10:'y1', 45:'gt1', 66:'gt2', 24:'y2', 31:'y3', 37:'bol_out'}, threshold=0.0):
+def extract_entries(timeseries_data, tmin, tmax, keys_to_extract={10:'y1', 45:'gt1', 66:'gt', 24:'y2', 31:'y3', 37:'bol_out'}, threshold=0.0):
  # original bol_out: 39
     extracted_data = {new_key: timeseries_data.get(old_key, []) for old_key, new_key in keys_to_extract.items()}
 
@@ -1162,7 +1162,7 @@ def extract_entries(timeseries_data, tmin, tmax, keys_to_extract={10:'y1', 45:'g
 
     return df_short
 
-def _extract_entries(timeseries_data: dict, tmin: float, tmax: float, keys_to_extract: dict = {10: 'y1', 45: 'gt1', 66: 'gt2', 24: 'y2', 31: 'y3', 37: 'bol_out'}, threshold=0.0):
+def _extract_entries(timeseries_data: dict, tmin: float, tmax: float, keys_to_extract: dict = {10: 'y1', 45: 'gt1', 66: 'gt', 24: 'y2', 31: 'y3', 37: 'bol_out'}, threshold=0.0):
     # Implemented without pandas
     extracted_data = {new_key: timeseries_data.get(old_key, []) for old_key, new_key in keys_to_extract.items()}
 
@@ -1211,7 +1211,7 @@ def scale_df(df):
     time = df['t']-df['t'][0]
     new_df = pd.DataFrame({'tau': scale_time(time)})
 
-    for ei in ['y1', 'gt1', 'gt2', 'y2', 'y3']:
+    for ei in ['y1', 'gt1', 'gt', 'y2', 'y3']:
         new_df[ei] = scale_t(df[ei])    
     return new_df
 
@@ -1220,7 +1220,7 @@ def rescale_df(df):
     time = df['tau']
     new_df = pd.DataFrame({'t': rescale_time(time)})
 
-    for ei in ['y1', 'gt1', 'gt2', 'y2', 'y3']:
+    for ei in ['y1', 'gt1', 'gt', 'y2', 'y3']:
         new_df[ei] = rescale_t(df[ei])    
     return new_df
 
@@ -1265,7 +1265,7 @@ def configure_settings(cfg, experiment):
     cfg.model_properties.Ty20=meas_settings["y2_0"]
     cfg.model_properties.Ty30=meas_settings["y3_0"]
     cfg.model_parameters.gt1_0=meas_settings["gt1_0"]
-    cfg.model_parameters.gt2_0=meas_settings["gt2_0"]
+    cfg.model_parameters.gt_0=meas_settings["gt_0"]
 
     return cfg
 

@@ -59,7 +59,7 @@ c3: float = props.c3
 
 x_gt1: float = pars.x_gt1
 x_w: float = pars.x_w
-x_gt2: float = pars.x_gt2
+x_gt: float = pars.x_gt
 
 
 W_min: float = pars.W_min
@@ -107,14 +107,14 @@ c_0: float = (np.abs(W_obs*a2/a1 - W_sys*a2/a1)**2)/(eta/a1 + W_obs*a2/a1)**2
 decay_rate_diff: float = (eta/a1+W_obs*a2/a1)/2
 
 theta10, theta20, theta30, theta_gt20 = scale_t(Ty10), scale_t(Ty20), scale_t(Ty30), scale_t(Tgt20)
-X_gt2 = x_gt2/L0
+X_gt = x_gt/L0
 
 # Define the equations in matrix form
 A = np.array([
     [1, 1, 1, 1],
     [0, 0, 0, 1],
     [0, 0, 1, 0],
-    [X_gt2**3, X_gt2**2, X_gt2, 1]
+    [X_gt**3, X_gt**2, X_gt, 1]
 ])
 
 B = np.array([theta10, theta20, -a5 * (theta30 - theta20), theta_gt20])
