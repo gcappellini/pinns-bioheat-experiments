@@ -68,11 +68,6 @@ model_parameters:
   x_gt: 0.01
   x_w: 0.025
   x_gt1: 0.04
-  loss_weights:
-  - 0.006289862096309662
-  - 2.0888912677764893
-  - 27.680763244628906
-  - 8.396754264831543
 plot:
   rescale: true
   display_every: 200

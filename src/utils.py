@@ -45,7 +45,8 @@ def get_initial_loss(model):
 def compute_metrics(series_to_plot, cfg, run_figs):
     # Load loss weights from configuration
     matching = extract_matching(series_to_plot)
-    loss_weights = cfg.model_parameters.loss_weights
+    props = cfg.model_properties
+    loss_weights = [props.w_res, props.w_bc0, props.w_bc1, props.w_ic]
     small_number = 1e-8
     
     grid = matching[:, :2]
