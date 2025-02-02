@@ -71,7 +71,7 @@ for exp_str in exp_strs:
         markersize = [7] * len(markers)
 
         pp.plot_generic(x=x, y=y, title=f"Test {pt_lbl}", xlabel="Time (s)", ylabel="Temperature (°C)", 
-                        filename=f"{tests_dir}/{exp_str}/visualize_{exp_str}_{pt_lbl}.png", legend_labels=labels, 
+                        filename=f"{tests_dir}/meas_cool_bone_tum/visualize_{exp_str}_{pt_lbl}.png", legend_labels=labels, 
                         colors=colors, markers=markers, markersizes=markersize, markevery=20)
 
 

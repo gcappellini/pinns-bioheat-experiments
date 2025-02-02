@@ -64,7 +64,7 @@ model_parameters:
   W7: 0.00165
   W_sys: 8.0e-05
   W_index: 1
-  n_obs: 64
+  n_obs: 16
   x_gt: 0.01
   x_w: 0.025
   x_gt1: 0.04
@@ -341,4 +341,4 @@ experiment_type:
     r1: 0.001
 run:
   dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /home/guglielmo/pinns-bioheat-experiments/outputs/2025-01-31/16-15-22
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-02-03/00-10-15

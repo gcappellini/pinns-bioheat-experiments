@@ -496,7 +496,7 @@ def plot_timeseries_with_predictions(system_meas, mm_obs, conf, out_dir):
     for entry in x_points.keys():
         closest_indices_pred = np.where(np.abs(mm_obs["grid"][:, 0] - x_points[entry]) == np.min(np.abs(mm_obs["grid"][:, 0] - x_points[entry])))
         dict_pred = {
-            "tau": np.unique(mm_obs["grid"][:, 1])*conf.model_properties.tauf / 60,
+            "tau": np.unique(system_meas["grid"][:, 1])*conf.model_properties.tauf / 60,
             "theta": mm_obs["theta"][closest_indices_pred],
             "label": f"{entry} (Matlab)" if gt else f"{entry} (Pred)"
         }

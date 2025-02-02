@@ -33,17 +33,18 @@ def main(meas, rescale, save_pickle, show_y3=False):
 
     if show_y3:
         x_vals = np.vstack(([df['t']/60]*5)).T
-        y_vals = np.vstack((df['y1'],df['gt1'],df['gt2'],df['y2'],df['y3'])).T
-        labels = ["y1","gt1","gt2","y2","y3"]
+        y_vals = np.vstack((df['y1'],df['gt1'],df['gt'],df['y2'],df['y3'])).T
+        labels = ["y1","gt1","gt","y2","y3"]
         colors = conf.plot.colors.measuring_points
         linestyles = conf.plot.linestyles.measuring_points
 
     else:
         x_vals = np.vstack(([df['t']/60]*4)).T
-        y_vals = np.vstack((df['y1'],df['gt1'],df['gt2'],df['y2'])).T
-        labels = ["y1","gt1","gt2","y2"]
-        colors = conf.plot.colors.measuring_points[:-1]
-        linestyles = conf.plot.linestyles.measuring_points[:-1]
+        y_vals = np.vstack((df['y1'],df['gt1'],df['gt'],df['y2'])).T
+        labels = ["y1","gt1","gt","y2"]
+        plot_params = uu.get_plot_params(conf)
+        colors = [plot_params[pt_lbl]['color'] for pt_lbl in labels]
+        linestyles = ['-']*len(labels)
 
 
     pp.plot_generic(x_vals.T, 
@@ -56,7 +57,7 @@ def main(meas, rescale, save_pickle, show_y3=False):
                     filename=f"{src_dir}/data/vessel/{string}.png", 
                     colors=colors, linestyles = linestyles)
     
-    return df['y1'][0],df['gt1'][0],df['gt2'][0], df['y2'][0], df['y3'][0]
+    return df['y1'][0],df['gt1'][0],df['gt'][0], df['y2'][0], df['y3'][0]
 
 
 

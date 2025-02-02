@@ -860,12 +860,48 @@ def get_observers_preds(ground_truth, multi_obs, x_obs, output_dir, conf, label)
     for obs in obs_dict:
         lal = obs["label"]
         data_to_save = np.column_stack((obs["grid"][:, 0].round(n_digits), obs["grid"][:, -1].round(n_digits), obs["theta"].round(n_digits)))
-        np.savetxt(f'{output_dir}/{lal}_{label}.txt', data_to_save, fmt='%.2f %.2f %.6f', delimiter=' ')
+        np.savetxt(f'{output_dir}/{lal}_{label}.txt', data_to_save, fmt='%.6f %.6f %.6f', delimiter=' ')
 
     data_to_save = np.column_stack((mm_obs["grid"][:, 0].round(n_digits), mm_obs["grid"][:, -1].round(n_digits), mm_obs["theta"].round(n_digits)))
-    np.savetxt(f'{output_dir}/{mm_obs["label"]}_{label}.txt', data_to_save, fmt='%.2f %.2f %.6f', delimiter=' ')
+    np.savetxt(f'{output_dir}/{mm_obs["label"]}_{label}.txt', data_to_save, fmt='%.6f %.6f %.6f', delimiter=' ')
     return obs_dict, mm_obs
 
+
+def load_observers_preds(output_dir, conf, label):
+    """
+    Load predictions for observers and multi-observer models from text files.
+
+    Args:
+        output_dir: Directory where predictions are saved.
+        conf: Configuration object.
+        label: Label used for the prediction files.
+
+    Returns:
+        obs_dict: List of dictionaries for each observer's predictions.
+        mm_obs: Dictionary for multi-observer's predictions.
+    """
+    pars = conf.model_parameters
+    n_obs = pars.n_obs
+
+    obs_dict = []
+    for i in range(n_obs):
+        file_path = os.path.join(output_dir, f"observer_{i}_{label}.txt")
+        data = np.loadtxt(file_path)
+        obs_dict.append({
+            "grid": data[:, :2],
+            "theta": data[:, 2],
+            "label": f"observer_{i}"
+        })
+
+    mm_obs_file_path = os.path.join(output_dir, f"multi_observer_{label}.txt")
+    mm_obs_data = np.loadtxt(mm_obs_file_path)
+    mm_obs = {
+        "grid": mm_obs_data[:, :2],
+        "theta": mm_obs_data[:, 2],
+        "label": "multi_observer"
+    }
+
+    return obs_dict, mm_obs
 
 def get_scaled_labels(rescale):
     xlabel=r"$x \, (m)$" if rescale else "X"
