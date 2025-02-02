@@ -24,7 +24,7 @@ os.makedirs(models_dir, exist_ok=True)
 
 def plot_generic(x, y, title, xlabel, ylabel, legend_labels=None, log_scale=False, log_xscale=False, 
                  size=(6, 5), filename=None, colors=None, linestyles=None, markers=None,
-                 linewidths=None, markersizes=None, alphas=None):
+                 linewidths=None, markersizes=None, alphas=None, markevery=50):
     """
     Create a generic 2D plot with support for multiple lines, colors, and linestyles.
 
@@ -59,7 +59,8 @@ def plot_generic(x, y, title, xlabel, ylabel, legend_labels=None, log_scale=Fals
         markersize = markersizes[i] if markersizes else 12
         alpha=alphas[i] if isinstance(alphas, list) and alphas else (alphas if alphas else 1)
 
-        ax.plot(xi, yi, label=label, color=color, linestyle=linestyle, marker=marker, linewidth=linewidth, markersize=markersize, alpha=alpha)
+        ax.plot(xi, yi, label=label, color=color, linestyle=linestyle, marker=marker, linewidth=linewidth, 
+                markersize=markersize, alpha=alpha, markevery=markevery)
 
     ax.set_title(title, fontweight='bold')
     ax.set_xlabel(xlabel)
