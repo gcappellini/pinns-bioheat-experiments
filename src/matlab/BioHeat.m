@@ -74,10 +74,10 @@ PD = config_data.model_properties.PD;
 x0 = config_data.model_properties.x0;
 
 x_gt1 = config_data.model_parameters.x_gt1;
-x_gt2 = config_data.model_parameters.x_gt2;
+x_gt = config_data.model_parameters.x_gt;
 
 X_gt1 = x_gt1/L0;
-X_gt2 = x_gt2/L0;
+X_gt = x_gt/L0;
 
 cc = log(2)/(PD - x0*10^(-2));
 dT = t_max - t_room;

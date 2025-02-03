@@ -13,7 +13,7 @@ import coeff_calc as cc
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-# import matlab.engine
+import matlab.engine
 from hydra import initialize, compose
 from common import setup_log
 
@@ -431,7 +431,7 @@ def train_model(conf):
 
 
 def gen_testdata(conf, path=None):
-    n = cc.n_obs
+    n = conf.model_parameters.n_obs
     dir_name = path if path is not None else conf.output_dir
 
     file_path = f"{dir_name}/output_matlab_{n}Obs.txt" if n>0 else f"{dir_name}/output_matlab.txt"
