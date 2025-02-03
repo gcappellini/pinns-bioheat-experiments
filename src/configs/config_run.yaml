@@ -295,7 +295,7 @@ plot:
         alpha: 1.0
   show_obs: true
 experiment:
-  ground_truth: true
+  ground_truth: false
   simulation: true
   run: simulation
   plot: true
