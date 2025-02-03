@@ -30,13 +30,14 @@ os.makedirs(tests_dir, exist_ok=True)
 
 config = OmegaConf.load(f"{conf_dir}/config_run.yaml")
 
-file_path = f"{src_dir}/data/vessel/20240930_3.txt"
-timeseries_data = uu.load_measurements(file_path)
+
 # print(timeseries_data.keys())
 exp_strs = ["meas_cool_1", "meas_cool_2"]
 
 for exp_str in exp_strs:
     meas = getattr(config.experiment_type, exp_str)
+    file_path = f"{src_dir}/data/vessel/{meas.date}.txt"
+    timeseries_data = uu.load_measurements(file_path)
 
     keys_to_neglect = [11, 13, 47, 65, 26]
     default_tc = {10:'y1', 45:'gt1', 66:'gt', 24:'y2'}
@@ -70,8 +71,8 @@ for exp_str in exp_strs:
         markersize = [1] * len(markers)
         markersize = [7] * len(markers)
 
-        pp.plot_generic(x=x, y=y, title=f"Test {pt_lbl}", xlabel="Time (s)", ylabel="Temperature (°C)", 
-                        filename=f"{tests_dir}/meas_cool_bone_tum/visualize_{exp_str}_{pt_lbl}.png", legend_labels=labels, 
+        pp.plot_generic(x=x, y=y, title=f"Test {pt_lbl} {meas.title}", xlabel="Time (min)", ylabel="Temperature (°C)", 
+                        filename=f"{tests_dir}/{exp_str}/visualize_{exp_str}_{pt_lbl}.png", legend_labels=labels, 
                         colors=colors, markers=markers, markersizes=markersize, markevery=20)
 
 

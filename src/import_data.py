@@ -35,13 +35,16 @@ def main(meas, rescale, save_pickle, show_y3=False):
         x_vals = np.vstack(([df['t']/60]*5)).T
         y_vals = np.vstack((df['y1'],df['gt1'],df['gt'],df['y2'],df['y3'])).T
         labels = ["y1","gt1","gt","y2","y3"]
-        colors = conf.plot.colors.measuring_points
-        linestyles = conf.plot.linestyles.measuring_points
+        plot_params = uu.get_plot_params(conf)
+        colors = [plot_params[pt_lbl]['color'] for pt_lbl in labels]
+        linestyles = ['-']*len(labels)
 
     else:
-        x_vals = np.vstack(([df['t']/60]*4)).T
-        y_vals = np.vstack((df['y1'],df['gt1'],df['gt'],df['y2'])).T
-        labels = ["y1","gt1","gt","y2"]
+        x_vals = np.vstack(([(df['t']-df['t'][0])/60]*4)).T
+        # y_vals = np.vstack((df['y1'],df['gt1'],df['gt'],df['y2'])).T
+        # labels = ["y1","gt1","gt","y2"]
+        y_vals = np.vstack((df['y1'],df['gt'],df['y2'])).T
+        labels = ["y1","gt","y2"]
         plot_params = uu.get_plot_params(conf)
         colors = [plot_params[pt_lbl]['color'] for pt_lbl in labels]
         linestyles = ['-']*len(labels)
