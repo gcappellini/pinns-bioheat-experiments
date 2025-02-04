@@ -50,7 +50,7 @@ model_properties:
   sigma: 1.0
   n_anchor_points: 0
 model_parameters:
-  lam: 1.0
+  lam: 100
   upsilon: 100.0
   W_min: 6.3e-05
   W_max: 0.00165
@@ -68,5 +68,5 @@ model_parameters:
   x_gt: 0.01
   x_w: 0.025
   x_gt1: 0.04
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/ground_truth_5e-04
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-02-04/09-35-23
 experiment: simulation
