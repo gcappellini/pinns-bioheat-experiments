@@ -308,7 +308,7 @@ experiment_type:
     Ty20: 30.2
     Ty30: 21.5
     Tgt20: 31.5
-    lam: 100
+    lam: 1.0
     upsilon: 100.0
     n_obs: 8
   meas_cool_1:
@@ -345,4 +345,4 @@ experiment_type:
     n_obs: 64
 run:
   dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /app/guglielmo/pinns-bioheat-experiments/tests/cooling_simulation_5e-04_lam_100
+output_dir: /app/guglielmo/pinns-bioheat-experiments/tests/cooling_simulation_5e-04_no_obs

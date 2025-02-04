@@ -194,9 +194,9 @@ def plot_weights(series_data, run_figs, lal):
 
     conf = compose(config_name='config_run')
     plot_params = uu.get_plot_params(conf)
-    n_obs = cc.n_obs
-    lam = cc.lamb
-    ups = cc.upsilon
+    pars = conf.model_parameters
+    lam = pars.lam
+    ups = pars.upsilon
 
     times = np.unique(series_data[0]['grid'][:, 1])
 

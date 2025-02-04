@@ -5,7 +5,7 @@ model_properties:
   rho: 1000.0
   c: 4186.0
   incr_fact: 1.0
-  W: 0.0033
+  W: 0.00165
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
@@ -50,7 +50,7 @@ model_properties:
   sigma: 1.0
   n_anchor_points: 0
 model_parameters:
-  lam: 1.0
+  lam: 100
   upsilon: 100.0
   W_min: 6.3e-05
   W_max: 0.00165
@@ -293,7 +293,7 @@ plot:
         linestyle: '-'
         linewidth: 1.2
         alpha: 1.0
-  show_obs: false
+  show_obs: true
 experiment:
   ground_truth: false
   simulation: true
@@ -345,4 +345,4 @@ experiment_type:
     n_obs: 64
 run:
   dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /app/guglielmo/pinns-bioheat-experiments/tests/cooling_simulation_5e-04_lam_100
+output_dir: /app/guglielmo/pinns-bioheat-experiments/tests/cooling_simulation_5e-04_lam_100_obs

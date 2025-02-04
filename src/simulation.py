@@ -95,15 +95,20 @@ def run_simulation_mm_obs(config, out_dir, system_gt, mm_obs_gt, observers_gt, g
     if config.experiment.plot:
 
         if config.plot.show_obs:
-            pp.plot_multiple_series([system_gt, *observers, mm_obs_gt, mm_obs], out_dir, label)
-            pp.plot_l2(system_gt, [*observers, mm_obs_gt, mm_obs], out_dir, label)
-            pp.plot_obs_err([*observers, mm_obs_gt, mm_obs], out_dir, label)
+            # pp.plot_multiple_series([system_gt, *observers, mm_obs_gt, mm_obs], out_dir, label)
+            # pp.plot_l2(system_gt, [*observers, mm_obs_gt, mm_obs], out_dir, label)
+            pp.plot_multiple_series([system_gt, *observers, mm_obs], out_dir, label)
+            pp.plot_l2(system_gt, [*observers, mm_obs], out_dir, label)
+            pp.plot_obs_err([*observers, mm_obs], out_dir, label)
             if 1 < config.model_parameters.n_obs <= 8:
                 pp.plot_weights([*observers], out_dir, label)
         else:
-            pp.plot_multiple_series([system_gt, mm_obs_gt, mm_obs], out_dir, label)
-            pp.plot_l2(system_gt, [mm_obs_gt, mm_obs], out_dir, label)
-            pp.plot_obs_err([mm_obs_gt, mm_obs], out_dir, label)
+            # pp.plot_multiple_series([system_gt, mm_obs_gt, mm_obs], out_dir, label)
+            # pp.plot_l2(system_gt, [mm_obs_gt, mm_obs], out_dir, label)
+            # pp.plot_obs_err([mm_obs_gt, mm_obs], out_dir, label)
+            pp.plot_multiple_series([system_gt, mm_obs], out_dir, label)
+            pp.plot_l2(system_gt, [mm_obs], out_dir, label)
+            pp.plot_obs_err([mm_obs], out_dir, label)
 
         pp.plot_validation_3d(system_gt["grid"], system_gt["theta"], mm_obs["theta"], out_dir, label)
 
@@ -150,7 +155,7 @@ def main():
     dict_exp = config.experiment
     n_ins = config.model_properties.n_ins
 
-    gt_path=f"{tests_dir}/cooling_ground_truth_logspace"
+    gt_path=f"{tests_dir}/ground_truth_5e-04"
 
     if dict_exp["simulation"]:
         if dict_exp["ground_truth"]:
@@ -162,8 +167,8 @@ def main():
             run_simulation_system(config, run_out_dir, system_gt, gt_path)
 
         # Simulation Multi-Observer
-        # else:
-            # run_simulation_mm_obs(config, run_out_dir, system_gt, mm_obs_gt, observers_gt, gt_path)
+        else:
+            run_simulation_mm_obs(config, run_out_dir, system_gt, mm_obs_gt, observers_gt, gt_path)
     
     elif dict_exp["run"].startswith("meas"):
         if dict_exp["ground_truth"]:
