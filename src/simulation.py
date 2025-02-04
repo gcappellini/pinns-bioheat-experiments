@@ -162,8 +162,8 @@ def main():
             run_simulation_system(config, run_out_dir, system_gt, gt_path)
 
         # Simulation Multi-Observer
-        else:
-            run_simulation_mm_obs(config, run_out_dir, system_gt, mm_obs_gt, observers_gt, gt_path)
+        # else:
+            # run_simulation_mm_obs(config, run_out_dir, system_gt, mm_obs_gt, observers_gt, gt_path)
     
     elif dict_exp["run"].startswith("meas"):
         if dict_exp["ground_truth"]:
