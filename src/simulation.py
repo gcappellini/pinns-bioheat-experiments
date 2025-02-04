@@ -90,7 +90,7 @@ def run_simulation_mm_obs(config, out_dir, system_gt, mm_obs_gt, observers_gt, g
     x_obs = uu.gen_obsdata(config_inverse, system_gt)
     observers, mm_obs = uu.get_observers_preds(system_gt, multi_obs, x_obs, out_dir, config_inverse, label)
 
-    uu.compute_metrics([system_gt, *observers, mm_obs], config, out_dir)
+    # uu.compute_metrics([system_gt, *observers, mm_obs], config, out_dir)
 
     if config.experiment.plot:
 
