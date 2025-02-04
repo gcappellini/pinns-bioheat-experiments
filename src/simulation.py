@@ -155,7 +155,7 @@ def main():
     dict_exp = config.experiment
     n_ins = config.model_properties.n_ins
 
-    gt_path=f"{tests_dir}/ground_truth_5e-04"
+    gt_path=f"{tests_dir}/cooling_ground_truth_5e-04"
 
     if dict_exp["simulation"]:
         if dict_exp["ground_truth"]:

@@ -50,7 +50,7 @@ model_properties:
   sigma: 1.0
   n_anchor_points: 0
 model_parameters:
-  lam: 1.0
+  lam: 100
   upsilon: 100.0
   W_min: 6.3e-05
   W_max: 0.00165

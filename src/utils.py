@@ -13,7 +13,7 @@ import coeff_calc as cc
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-import matlab.engine
+# import matlab.engine
 from hydra import initialize, compose
 from common import setup_log
 
@@ -471,8 +471,8 @@ def gen_testdata(conf, path=None):
 
     observers_gt, mm_obs_gt = calculate_l2(system_gt, observers_gt, mm_obs_gt)
     observers_gt, mm_obs_gt = compute_obs_err(system_gt, observers_gt, mm_obs_gt)
-    if n > 1:
-        observers_gt = load_weights(observers_gt, conf, "ground_truth", path=path)
+    # if n > 1:
+    #     observers_gt = load_weights(observers_gt, conf, "ground_truth", path=path)
     
     return system_gt, observers_gt, mm_obs_gt
 
