@@ -256,6 +256,42 @@ plot:
         color: '#EE82EE'
       y3:
         color: '#88B04B'
+      A0:
+        color: '#FF4500'
+      A1:
+        color: '#32CD32'
+      A2:
+        color: '#1E90FF'
+      A3:
+        color: '#FFD700'
+      A4:
+        color: '#FF69B4'
+      A5:
+        color: '#8A2BE2'
+      A6:
+        color: '#8B0000'
+      B0:
+        color: '#00008B'
+      B1:
+        color: '#8B008B'
+      B2:
+        color: '#556B2F'
+      B3:
+        color: '#FF8C00'
+      B4:
+        color: '#9932CC'
+      B5:
+        color: '#8B4513'
+      B6:
+        color: '#2F4F4F'
+      bol1_d:
+        color: '#FF8C00'
+      bol1_u:
+        color: '#ADFF2F'
+      bol2_d:
+        color: '#00CED1'
+      bol2_u:
+        color: '#FF00FF'
     losses:
       residual:
         color: '#9ACD32'
@@ -343,6 +379,41 @@ experiment_type:
     lam: 10.0
     upsilon: 100.0
     n_obs: 64
+  agar_1:
+    date: 240124
+    string: agar_1
+    start_min: 0
+    end_min: 240
+    title: Agar 1
+    phantom: B
+  agar_2:
+    date: 240125
+    string: agar_2
+    start_min: 0
+    end_min: 30
+    title: Agar 2
+    phantom: B
+  agar_3:
+    date: 240125b
+    string: agar_3
+    start_min: 0
+    end_min: 240
+    title: Agar 3
+    phantom: B
+  agar_4:
+    date: 240130
+    string: agar_4
+    start_min: 0
+    end_min: 240
+    title: Agar 4
+    phantom: B
+  agar_5:
+    date: 240202
+    string: agar_5
+    start_min: 0
+    end_min: 240
+    title: Agar 5
+    phantom: B
 run:
   dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
 output_dir: /app/guglielmo/pinns-bioheat-experiments/tests/cooling_simulation_5e-04_lam_100_obs
