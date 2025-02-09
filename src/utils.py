@@ -113,18 +113,11 @@ def compute_metrics(series_to_plot, cfg, run_figs):
         for cond_name in conditions.keys():
             metrics[f"{part_name}_{cond_name}_LOSS"] = loss_weights[0] * metrics.get(f"{part_name}_{cond_name}_MSE", 0)
 
-    # Write all metrics to file with improved formatting
-    with open(f"{run_figs}/metrics.txt", "w") as file:
-        file.write("=== METRICS REPORT ===\n\n")
-        
-        for part_name in parts:
-            file.write(f"Part: {part_name}\n\n")
-            for metric_name in ["L2RE", "MSE", "max", "mean", "LOSS"]:
-                file.write(f"{metric_name.upper()}:\n")
-                file.write(f"  Total: {metrics[f'{part_name}_{metric_name}']}\n")
-                for cond_name in conditions.keys():
-                    file.write(f"  {cond_name.capitalize()}: {metrics[f'{part_name}_{cond_name}_{metric_name}']}\n")
-                file.write("\n")  # Blank line between sections for readability
+    # Save the metrics dictionary as a YAML file
+    # Convert metrics values to float (Hydra supports float, not float64)
+    metrics = {k: float(v) for k, v in metrics.items()}
+    with open(f"{run_figs}/metrics.yaml", "w") as file:
+        OmegaConf.save(config=OmegaConf.create(metrics), f=file)
 
     return metrics
 

@@ -33,7 +33,7 @@ src_dir = os.path.dirname(current_file)
 git_dir = os.path.dirname(src_dir)
 tests_dir = os.path.join(git_dir, "tests")
 
-prj = f"hpo_{datetime.date.today()}_ok"
+prj = f"hpo_{datetime.date.today()}_2"
 
 # HPO setting
 n_calls = 50
@@ -95,7 +95,7 @@ def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation, initia
         multi_obs = uu.execute(conf, label)
         _, obs_pred = uu.get_observers_preds(system_gt, multi_obs, x_obs, run_figs, conf, "simulation")
 
-        _, obs_pred = uu.calculate_l2(system_gt, [], obs_pred)
+        _, obs_pred = uu.calculate_l2(mm_obs_gt, [], obs_pred)
         # error = np.sum(obs_pred["L2_err"])
         metrics_tot = uu.compute_metrics([mm_obs_gt, obs_pred], conf, run_figs)
         error = metrics_tot["observer_4_L2RE"]
