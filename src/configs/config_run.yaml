@@ -42,10 +42,10 @@ model_properties:
   b2: -0.51746
   b3: 0.96667
   b4: 0.82857
-  c1: -1.79524
-  c2: 0.96667
-  c3: 0.82857
-  n_ins: 4
+  c1: null
+  c2: null
+  c3: null
+  n_ins: 2
   np_seed: 500
   sigma: 1.0
   n_anchor_points: 0
@@ -64,7 +64,7 @@ model_parameters:
   W7: 0.00165
   W_sys: 0.0005
   W_index: 1
-  n_obs: 8
+  n_obs: 1
   x_gt: 0.01
   x_w: 0.025
   x_gt1: 0.04
@@ -416,4 +416,4 @@ experiment_type:
     phantom: B
 run:
   dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /app/guglielmo/pinns-bioheat-experiments/tests/cooling_simulation_5e-04_lam_100_obs
+output_dir: /home/guglielmo/pinns-bioheat-experiments/multirun/2025-02-09/01-10-52/15

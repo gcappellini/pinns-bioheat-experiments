@@ -57,10 +57,11 @@ def compute_metrics(series_to_plot, cfg, run_figs):
     parts = []
 
     # Iterate over each part in series_to_plot[1:]
-    for i in range(len(series_to_plot)):
+
+    for i in range(1, len(series_to_plot)):
         part_name = series_to_plot[i]["label"]
         parts.append(part_name)
-        pred = matching[:, 3 + i]
+        pred = matching[:, 2 + i]
         pred_nonzero = np.where(pred != 0, pred, small_number)
         
         # Part 1: General metrics for pred (Observer PINNs vs Observer MATLAB)
@@ -431,10 +432,13 @@ def train_model(conf):
 
 
 def gen_testdata(conf, path=None):
-    n = conf.model_parameters.n_obs
+    
+    n_ins = conf.model_properties.n_ins
+    n = 0 if n_ins == 2 else conf.model_parameters.n_obs
+
     dir_name = path if path is not None else conf.output_dir
 
-    file_path = f"{dir_name}/output_matlab_{n}Obs.txt" if n>0 else f"{dir_name}/output_matlab.txt"
+    file_path = next((f"{dir_name}/{file}" for file in os.listdir(dir_name) if file.startswith("output_matlab") and file.endswith(".txt")), None)
 
     data = np.loadtxt(file_path)
     x, t, sys = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T
@@ -1068,13 +1072,14 @@ def calculate_l2(system, observers, mm_obs):
     true = g[:, 2].reshape(len(e), 1)
     obs_pred = g[:, 3:-1]
     mm_obs_pred = g[:, -1].reshape(len(e), 1)
+    t = np.unique(g[:, 1])
 
     for i, observer in enumerate(observers):
         pred = obs_pred[:, i]
         l2 = []
         pred = pred.reshape(len(e), 1)
         tot = np.hstack((e, true, pred))
-        t = np.unique(tot[:, 1])
+        
 
         for el in t:
             tot_el = tot[tot[:, 1] == el]

@@ -129,11 +129,12 @@ if n_ins>2:
     c3 = round(theta20, 5)
     c2 = round(-a5 * (theta30 - theta20), 5)
     c1 = round(theta10 - c2 - c3, 5)
+    props.c1, props.c2, props.c3 = float(c1), float(c2), float(c3)
 else:
-    c1, c2, c3 = None, None, None
+    props.c1, props.c2, props.c3 = None, None, None
 
 props.b1, props.b2, props.b3, props.b4 = float(b1), float(b2), float(b3), float(b4)
-props.c1, props.c2, props.c3 = float(c1), float(c2), float(c3)
+
 
 OmegaConf.save(cfg, f"{conf_dir}/config_run.yaml")
 

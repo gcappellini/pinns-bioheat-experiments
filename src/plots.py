@@ -459,7 +459,7 @@ def plot_validation_3d(e, t_true, t_pred, run_figs, label):
     # Column titles for each subplot
     if label == "ground_truth":
         col_titles = ["Matlab System", "Matlab MM-Observer", "Error"]
-    elif label == "simulation_mm_obs":
+    elif label.startswith("simulation"):
         col_titles = ["Matlab", "PINNs", "Error"]
     elif label.startswith("meas"):
         col_titles = ["Measurements", "PINNs", "Error"]

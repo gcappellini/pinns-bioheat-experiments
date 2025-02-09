@@ -68,7 +68,10 @@ def run_simulation_system(config, out_dir, system_gt):
     label = "simulation_system"
     output_dir_system, cfg_system = co.set_run(out_dir, config, label)
     pinns_sys = uu.train_model(cfg_system)
-    system = uu.get_pred(pinns_sys, system_gt["grid"], output_dir_system, "system")
+    system = uu.get_pred(pinns_sys, system_gt["grid"], out_dir, "system")
+    [], system = uu.calculate_l2(system_gt, [], system)
+    [], system = uu.compute_obs_err(system_gt, [], system)
+
 
     uu.compute_metrics([system_gt, system], config, out_dir)
 
@@ -158,16 +161,18 @@ def main():
     gt_path=f"{tests_dir}/cooling_ground_truth_5e-04"
 
     if dict_exp["simulation"]:
-        if dict_exp["ground_truth"]:
-            output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, run_out_dir)
-        else:
-            system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config, path=gt_path)
-        # Simulation System
+                # Simulation System
         if n_ins==2:
-            run_simulation_system(config, run_out_dir, system_gt, gt_path)
+            system_gt, _, _ = uu.gen_testdata(config, path=gt_path)
+            run_simulation_system(config, run_out_dir, system_gt)
 
         # Simulation Multi-Observer
         else:
+            if dict_exp["ground_truth"]:
+                output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, run_out_dir)
+            else:
+                system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config, path=gt_path)
+
             run_simulation_mm_obs(config, run_out_dir, system_gt, mm_obs_gt, observers_gt, gt_path)
     
     elif dict_exp["run"].startswith("meas"):
