@@ -688,8 +688,9 @@ def execute(config, label):
     # Define output directories
     out_dir = config.output_dir
     simul_dir = os.path.join(out_dir, label)
+    pars = config.model_parameters
 
-    n_obs = cc.n_obs
+    n_obs = pars.n_obs
 
     if n_obs == 1:
 
@@ -1066,7 +1067,7 @@ def compute_y_theory(grid, sys, obs):
     return theory, bound
 
 
-def calculate_l2(system, observers, mm_obs):
+def calculate_l2(system: dict, observers: list, mm_obs: dict):
 
     matching = [system, *observers, mm_obs]
     g = extract_matching(matching)

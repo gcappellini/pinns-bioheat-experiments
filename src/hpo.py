@@ -1,6 +1,3 @@
-
-
-
 import utils as uu
 import common as co
 from matplotlib import pyplot as plt
@@ -15,6 +12,7 @@ import deepxde as dde
 import wandb
 import plots as pp
 from omegaconf import OmegaConf
+from hydra import compose
 import datetime
 
 # Function 'gp_minimize' of package 'skopt(scikit-optimize)' is used in this example.
@@ -56,12 +54,13 @@ dimensions = [
 default_parameters = [0.001, 4, 50, "tanh", "Glorot normal"]
 
 conf_dir = os.path.join(src_dir, "configs")
-conf = OmegaConf.load(f"{conf_dir}/config_run.yaml")
+conf = compose(config_name="config_run")
 output_dir = conf.output_dir
 props = conf.model_properties
+gt_path=f"{tests_dir}/cooling_ground_truth_5e-04"
 
-system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(conf, path=f"{tests_dir}/cooling_simulation")
-x_obs = uu.gen_obsdata(conf, path=f"{tests_dir}/cooling_simulation")
+system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(conf, path=gt_path)
+x_obs = uu.gen_obsdata(conf, path=gt_path)
 
 @use_named_args(dimensions=dimensions)
 def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation, initialization):
@@ -92,14 +91,19 @@ def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation, initia
         print(f"num_dense_nodes: {num_dense_nodes}")
 
         # Generate and check observers if needed
-        multi_obs = uu.mm_observer(conf)
-        pred = multi_obs.predict(x_obs)
+        multi_obs = uu.execute(conf, ITERATION)
+        _, obs_pred = uu.get_observers_preds(system_gt, multi_obs, x_obs, run_figs, config, "simulation")
 
-        error = np.sum(uu.calculate_l2(system_gt["grid"], mm_obs_gt["theta"], pred))
-        metrics_tot = uu.compute_metrics(system_gt["grid"], mm_obs_gt["theta"], pred, run_figs, system=system_gt["theta"])
+        error = np.sum(uu.calculate_l2(system_gt, [], obs_pred))
+        metrics_tot = uu.compute_metrics([mm_obs_gt, obs_pred], conf, run_figs)
         metrics = {"L2RE": error, "L2RE_sys": metrics_tot["total_L2RE_sys"]}
 
+    
         wandb.log(metrics)
+    pp.plot_multiple_series([system_gt, [], obs_pred, mm_obs_gt], run_figs, ITERATION)
+    pp.plot_l2(system_gt, [obs_pred, mm_obs_gt], run_figs, ITERATION)
+    pp.plot_obs_err([obs_pred, mm_obs_gt], run_figs, ITERATION)
+
 
     if np.isnan(error):
         error = 10**5

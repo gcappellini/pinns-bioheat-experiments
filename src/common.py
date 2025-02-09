@@ -78,7 +78,9 @@ def set_run(prj_figs, cfg, run):
     elif run.startswith("hpo"):
         pars.n_obs = 1
         cfg.experiment.ground_truth = False
-        cfg.model_properties.W = cfg.model_parameters.W3
+        run_figs = os.path.join(prj_figs, run)
+        os.makedirs(run_figs, exist_ok=True)
+        cfg.output_dir = run_figs
 
     OmegaConf.save(cfg, f"{prj_figs}/config_{run}.yaml")
     # OmegaConf.save(cfg, f"{conf_dir}/config_{run}.yaml")
