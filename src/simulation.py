@@ -93,25 +93,50 @@ def run_simulation_mm_obs(config, out_dir, system_gt, mm_obs_gt, observers_gt, g
     x_obs = uu.gen_obsdata(config_inverse, system_gt)
     observers, mm_obs = uu.get_observers_preds(system_gt, multi_obs, x_obs, out_dir, config_inverse, label)
 
-    # uu.compute_metrics([system_gt, *observers, mm_obs], config, out_dir)
+    uu.compute_metrics([mm_obs_gt, mm_obs], config, out_dir)
 
     if config.experiment.plot:
 
         if config.plot.show_obs:
-            # pp.plot_multiple_series([system_gt, *observers, mm_obs_gt, mm_obs], out_dir, label)
-            # pp.plot_l2(system_gt, [*observers, mm_obs_gt, mm_obs], out_dir, label)
-            pp.plot_multiple_series([system_gt, *observers, mm_obs], out_dir, label)
-            pp.plot_l2(system_gt, [*observers, mm_obs], out_dir, label)
-            pp.plot_obs_err([*observers, mm_obs], out_dir, label)
-            if 1 < config.model_parameters.n_obs <= 8:
-                pp.plot_weights([*observers], out_dir, label)
+            if config.plot.show_gt:
+                if config.plot.show_sys:
+                    pp.plot_multiple_series([system_gt, *observers, mm_obs_gt, mm_obs], out_dir, label)
+                    pp.plot_l2(system_gt, [*observers, mm_obs_gt, mm_obs], out_dir, label)
+                    pp.plot_obs_err([*observers, mm_obs_gt, mm_obs], out_dir, label)
+                else:
+                    pp.plot_multiple_series([*observers, mm_obs_gt, mm_obs], out_dir, label)
+                    pp.plot_l2(system_gt, [*observers, mm_obs_gt, mm_obs], out_dir, label)
+                    pp.plot_obs_err([*observers, mm_obs_gt, mm_obs], out_dir, label)
+            else:
+                if config.plot.show_sys:
+                    pp.plot_multiple_series([system_gt, *observers, mm_obs], out_dir, label)
+                    pp.plot_l2(system_gt, [*observers, mm_obs], out_dir, label)
+                    pp.plot_obs_err([*observers, mm_obs], out_dir, label)
+                else:
+                    pp.plot_multiple_series([*observers, mm_obs], out_dir, label)
+                    pp.plot_l2(system_gt, [*observers, mm_obs], out_dir, label)
+                    pp.plot_obs_err([*observers, mm_obs], out_dir, label)
+                if 1 < config.model_parameters.n_obs <= 8:
+                    pp.plot_weights([*observers], out_dir, label)
         else:
-            # pp.plot_multiple_series([system_gt, mm_obs_gt, mm_obs], out_dir, label)
-            # pp.plot_l2(system_gt, [mm_obs_gt, mm_obs], out_dir, label)
-            # pp.plot_obs_err([mm_obs_gt, mm_obs], out_dir, label)
-            pp.plot_multiple_series([system_gt, mm_obs], out_dir, label)
-            pp.plot_l2(system_gt, [mm_obs], out_dir, label)
-            pp.plot_obs_err([mm_obs], out_dir, label)
+            if config.plot.show_gt:
+                if config.plot.show_sys:
+                    pp.plot_multiple_series([system_gt, mm_obs_gt, mm_obs], out_dir, label)
+                    pp.plot_l2(system_gt, [mm_obs_gt, mm_obs], out_dir, label)
+                    pp.plot_obs_err([mm_obs_gt, mm_obs], out_dir, label)
+                else:
+                    pp.plot_multiple_series([mm_obs_gt, mm_obs], out_dir, label)
+                    pp.plot_l2(system_gt, [mm_obs_gt, mm_obs], out_dir, label)
+                    pp.plot_obs_err([mm_obs_gt, mm_obs], out_dir, label)
+            else:
+                if config.plot.show_sys:
+                    pp.plot_multiple_series([system_gt, mm_obs], out_dir, label)
+                    pp.plot_l2(system_gt, [mm_obs], out_dir, label)
+                    pp.plot_obs_err([mm_obs], out_dir, label)
+                else:
+                    pp.plot_multiple_series([mm_obs], out_dir, label)
+                    pp.plot_l2(system_gt, [mm_obs], out_dir, label)
+                    pp.plot_obs_err([mm_obs], out_dir, label)
 
         pp.plot_validation_3d(system_gt["grid"], system_gt["theta"], mm_obs["theta"], out_dir, label)
 

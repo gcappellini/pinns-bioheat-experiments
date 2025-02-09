@@ -64,7 +64,7 @@ def set_run(prj_figs, cfg, run):
     elif run.startswith("simulation"):
         
         props.Ty10, props.Ty20, props.Ty30, props.Tgt20 = simu_settings.Ty10, simu_settings.Ty20, simu_settings.Ty30, simu_settings.Tgt20
-        pars.lam, pars.upsilon, pars.n_obs = simu_settings.lam, simu_settings.upsilon, simu_settings.n_obs
+        pars.lam, pars.upsilon = simu_settings.lam, simu_settings.upsilon
         if run == "simulation_mm_obs":
             cfg.output_dir = prj_figs
 

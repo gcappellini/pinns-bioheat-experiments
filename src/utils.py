@@ -433,8 +433,9 @@ def train_model(conf):
 
 def gen_testdata(conf, path=None):
     
-    n_ins = conf.model_properties.n_ins
-    n = 0 if n_ins == 2 else conf.model_parameters.n_obs
+    props, pars = conf.model_properties, conf.model_parameters
+    n_ins = props.n_ins
+    n = 0 if n_ins == 2 else pars.n_obs
 
     dir_name = path if path is not None else conf.output_dir
 
@@ -447,7 +448,8 @@ def gen_testdata(conf, path=None):
     system_gt = {"grid": X, "theta": y_sys, "label": "system_gt"}
 
     if n == 1:
-        y_obs = data[:, 3:4].T
+        obs_id = pars.W_index
+        y_obs = data[:, 3+obs_id].T
         y_obs = y_obs.flatten()[:, None]
         y_mm_obs = y_obs
     elif n > 1:
@@ -837,9 +839,9 @@ def get_observers_preds(ground_truth, multi_obs, x_obs, output_dir, conf, label)
         {
             "grid": preds[:, :2],
             "theta": preds[:, 2 + i],
-            "label": f"observer_{i}"
+            "label": f"observer_{i if n_obs > 1 else pars.W_index}"
         }
-        for i in range(n_obs)
+        for i in range(n_obs) 
     ]
 
     mm_obs = None
