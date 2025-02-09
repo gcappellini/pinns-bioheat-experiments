@@ -23,7 +23,7 @@ model_properties:
   learning_rate: 0.001
   num_dense_layers: 4
   num_dense_nodes: 50
-  num_domain: 12000
+  num_domain: 1800
   num_boundary: 1000
   num_initial: 0
   num_test: 1000
@@ -418,4 +418,4 @@ experiment_type:
     phantom: B
 run:
   dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /home/guglielmo/pinns-bioheat-experiments/multirun/2025-02-09/14-15-22/14
+output_dir: /home/guglielmo/pinns-bioheat-experiments/outputs/2025-02-09/16-06-44

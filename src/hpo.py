@@ -33,7 +33,7 @@ src_dir = os.path.dirname(current_file)
 git_dir = os.path.dirname(src_dir)
 tests_dir = os.path.join(git_dir, "tests")
 
-prj = f"hpo_{datetime.date.today()}"
+prj = f"hpo_{datetime.date.today()}_ok"
 
 # HPO setting
 n_calls = 50
@@ -60,7 +60,7 @@ props = conf.model_properties
 gt_path=f"{tests_dir}/cooling_ground_truth_5e-04"
 
 system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(conf, path=gt_path)
-x_obs = uu.gen_obsdata(conf, path=gt_path)
+x_obs = uu.gen_obsdata(conf, system_gt)
 
 @use_named_args(dimensions=dimensions)
 def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation, initialization):
@@ -72,17 +72,18 @@ def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation, initia
     props.num_dense_nodes = int(num_dense_nodes)
     props.initialization = str(initialization)
 
-    run_figs = co.set_run(output_dir, conf, f"hpo_{ITERATION}")
+    run_figs, _ = co.set_run(output_dir, conf, f"hpo_{ITERATION}")
 
-    config = {
+    config_wb = {
         "activation": activation,
         "learning_rate": learning_rate,
         "num_dense_layers": num_dense_layers,
         "num_dense_nodes": num_dense_nodes,
         "initialization": initialization
     }
+    label = f"{ITERATION}"
 
-    with wandb.init(project=prj, name=f"{ITERATION}", config=config):
+    with wandb.init(project=prj, name=label, config=config_wb):
         print(f"Iteration {ITERATION}")
         print(f"activation: {activation}")
         print(f"initialization: {initialization}")
@@ -91,18 +92,19 @@ def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation, initia
         print(f"num_dense_nodes: {num_dense_nodes}")
 
         # Generate and check observers if needed
-        multi_obs = uu.execute(conf, ITERATION)
-        _, obs_pred = uu.get_observers_preds(system_gt, multi_obs, x_obs, run_figs, config, "simulation")
+        multi_obs = uu.execute(conf, label)
+        _, obs_pred = uu.get_observers_preds(system_gt, multi_obs, x_obs, run_figs, conf, "simulation")
 
-        error = np.sum(uu.calculate_l2(system_gt, [], obs_pred))
+        _, obs_pred = uu.calculate_l2(system_gt, [], obs_pred)
+        # error = np.sum(obs_pred["L2_err"])
         metrics_tot = uu.compute_metrics([mm_obs_gt, obs_pred], conf, run_figs)
-        metrics = {"L2RE": error, "L2RE_sys": metrics_tot["total_L2RE_sys"]}
-
-    
-        wandb.log(metrics)
-    pp.plot_multiple_series([system_gt, [], obs_pred, mm_obs_gt], run_figs, ITERATION)
-    pp.plot_l2(system_gt, [obs_pred, mm_obs_gt], run_figs, ITERATION)
-    pp.plot_obs_err([obs_pred, mm_obs_gt], run_figs, ITERATION)
+        error = metrics_tot["observer_4_L2RE"]
+        metrics_tot = {key.replace("observer_4_", ""): value for key, value in metrics_tot.items()}
+   
+        wandb.log(metrics_tot)
+    pp.plot_multiple_series([obs_pred, mm_obs_gt], run_figs, label)
+    pp.plot_l2(system_gt, [obs_pred, mm_obs_gt], run_figs, label)
+    pp.plot_obs_err([obs_pred, mm_obs_gt], run_figs, label)
 
 
     if np.isnan(error):
@@ -135,8 +137,8 @@ plt.savefig(f"{output_dir}/plot_obj.png",
 plt.show()
 plt.close()
 
-partial_dependence_fig = partial_dependence(res)
-partial_dependence_fig.figure.savefig(f"{output_dir}/partial_dependenc.png")
+# partial_dependence_fig = partial_dependence(res)
+# partial_dependence_fig.figure.savefig(f"{output_dir}/partial_dependenc.png")
 
 convergence_fig = plot_convergence(res)
 convergence_fig.figure.savefig(f"{output_dir}/convergence_plot.png")
