@@ -5,6 +5,7 @@ from hydra import compose
 import utils as uu
 import common as co
 import plots as pp
+import deepxde as dde
 from common import setup_log
 
 # Directories Setup
@@ -81,6 +82,63 @@ def run_simulation_system(config, out_dir, system_gt):
         pp.plot_validation_3d(system_gt["grid"], system_gt["theta"], system["theta"], out_dir, label)
         pp.plot_obs_err([system], out_dir, label)
 
+
+def run_simulation_inverse(config, out_dir, system_gt):
+    # out_dir = "/home/guglielmo/pinns-bioheat-experiments/outputs/2025-02-10/11-31-24"
+    """Run simulation for the system and plot results."""
+    setup_log("Running simulation for the inverse problem.")
+    label = "inverse"
+    output_dir_system, cfg_inverse = co.set_run(out_dir, config, label)
+    model, W = uu.create_model(cfg_inverse)
+    props, pars = config.model_properties, config.model_parameters
+
+    model.compile(
+    "adam", lr=props.learning_rate, external_trainable_variables=W, loss_weights=[1, 1, 20]
+    )
+    variable1 = dde.callbacks.VariableValue(W, period=200, filename=f"{out_dir}/variable_W_adam.txt")
+
+    losshistory, train_state = model.train(iterations=props.iters, callbacks=[variable1], model_save_path=f"{out_dir}/model.pt")
+
+    model.compile(
+    "L-BFGS", external_trainable_variables=W, loss_weights=[1, 1, 20]
+    )
+    variable1 = dde.callbacks.VariableValue(W, period=200, filename=f"{out_dir}/variable_W_lbfgs.txt")
+
+    losshistory, train_state = model.train(iterations=props.iters_lbfgs, callbacks=[variable1], model_save_path=f"{out_dir}/model.pt")
+
+    # dde.saveplot(losshistory, train_state, issave=True, isplot=True, output_dir=out_dir)
+
+    # pinns_sys = uu.train_model(cfg_inverse)
+    system = uu.get_pred(model, system_gt["grid"], out_dir, "system")
+    [], system = uu.calculate_l2(system_gt, [], system)
+    [], system = uu.compute_obs_err(system_gt, [], system)
+
+    data1 = np.loadtxt(f"{out_dir}/variable_W_adam.txt", delimiter=' ', converters={1: lambda s: float(s.strip('[]'))})
+    iters1 = np.array(data1[:, 0]).reshape(len(data1), 1)
+    values1 = np.array(data1[:, 1]).reshape(len(data1), 1)
+    data2 = np.loadtxt(f"{out_dir}/variable_W_lbfgs.txt", delimiter=' ', converters={1: lambda s: float(s.strip('[]'))})
+    iters2 = np.array(data2[:, 0]).reshape(len(data2), 1)
+    values2 = np.array(data2[:, 1]).reshape(len(data2), 1)
+    iters = np.concatenate((iters1, iters2), axis=0)
+    values = np.concatenate((values1, values2), axis=0)
+
+    # true = np.full_like(values, config.model_parameters.W_sys)
+
+    # uu.compute_metrics([system_gt, system], config, out_dir)
+
+    if config.experiment.plot:
+        pp.plot_multiple_series([system_gt, system], out_dir, label)
+        pp.plot_l2(system_gt, [system], out_dir, label)
+        pp.plot_validation_3d(system_gt["grid"], system_gt["theta"], system["theta"], out_dir, label)
+        pp.plot_obs_err([system], out_dir, label)
+        pp.plot_loss_components(np.array(losshistory.loss_train), np.array(losshistory.loss_test), np.array(losshistory.steps), "inverse", fold=out_dir)
+        # pp.plot_generic(x=[iters, iters], y=[values, true], title="Recovered W value", xlabel="Iterations", ylabel=r"$W \quad [s^{-1}]$", legend_labels=["PINNs", "MATLAB"], log_scale=True, log_xscale=False, 
+        #     #  size=(6, 5), filename=f"{out_dir}/variable_W.png", colors=["cornflowerblue", "lightsteelblue"], linestyles=["-", ":"], markers=None,
+        #     size=(6, 5), filename=f"{out_dir}/variable_W.png", colors=["cornflowerblue", "lightsteelblue"], linestyles=["-", ":"], markers=None,
+        #      linewidths=None, markersizes=None, alphas=None, markevery=50)
+        pp.plot_generic(x=[iters], y=[values], title="Recovered W value", xlabel="Iterations", ylabel=r"$W \quad [s^{-1}]$", legend_labels=["PINNs"], log_scale=True, log_xscale=False, 
+            size=(6, 5), filename=f"{out_dir}/variable_W.png", colors=["cornflowerblue"], linestyles=["-"], markers=None,
+             linewidths=None, markersizes=None, alphas=None, markevery=50)
 
 
 
@@ -186,25 +244,32 @@ def main():
     gt_path=f"{tests_dir}/cooling_ground_truth_5e-04"
 
     if dict_exp["simulation"]:
-                # Simulation System
-        if n_ins==2:
+        # Simulation System
+        if n_ins==2 and not dict_exp["inverse"]:
             system_gt, _, _ = uu.gen_testdata(config, path=gt_path)
             run_simulation_system(config, run_out_dir, system_gt)
-
-        # Simulation Multi-Observer
-        else:
-            if dict_exp["ground_truth"]:
-                output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, run_out_dir)
+        
+        elif n_ins==2 and dict_exp["inverse"]:
+            if dict_exp["run"].startswith("meas"):
+                system_gt, _ = uu.import_testdata(config)
             else:
-                system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config, path=gt_path)
+                system_gt, _, _ = uu.gen_testdata(config, path=gt_path)
+            run_simulation_inverse(config, run_out_dir, system_gt)
 
-            run_simulation_mm_obs(config, run_out_dir, system_gt, mm_obs_gt, observers_gt, gt_path)
+    #     # Simulation Multi-Observer
+    #     else:
+    #         if dict_exp["ground_truth"]:
+    #             output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, run_out_dir)
+    #         else:
+    #             system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config, path=gt_path)
+
+    #         run_simulation_mm_obs(config, run_out_dir, system_gt, mm_obs_gt, observers_gt, gt_path)
     
-    elif dict_exp["run"].startswith("meas"):
-        if dict_exp["ground_truth"]:
-            output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, run_out_dir)
+    # elif dict_exp["run"].startswith("meas"):
+    #     if dict_exp["ground_truth"]:
+    #         output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, run_out_dir)
             
-        run_measurement_mm_obs(config, run_out_dir)
+    #     run_measurement_mm_obs(config, run_out_dir)
 
 
 if __name__ == "__main__":

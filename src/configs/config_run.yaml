@@ -9,14 +9,14 @@ model_properties:
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
-  Ty10: 21.5
-  Ty20: 30.2
+  Ty10: 22.17
+  Ty20: 27.43
   Ty30: 21.5
   Tgt20: 31.5
   alfa: 50.0
   activation: tanh
   initial_weights_regularizer: false
-  initialization: Glorot uniform
+  initialization: Glorot normal
   optimizer: L-BFGS
   iters: 3000
   iters_lbfgs: 15000
@@ -38,14 +38,14 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b1: -1.27778
-  b2: -0.51746
-  b3: 0.96667
-  b4: 0.82857
-  c1: -1.79524
-  c2: 0.96667
-  c3: 0.82857
-  n_ins: 4
+  b1: -18.13111
+  b2: 16.97127
+  b3: 0.65889
+  b4: 0.56476
+  c1: null
+  c2: null
+  c3: null
+  n_ins: 2
   np_seed: 500
   sigma: 1.0
   n_anchor_points: 0
@@ -63,7 +63,7 @@ model_parameters:
   W6: 0.001035
   W7: 0.00165
   W_sys: 0.0005
-  W_index: 4
+  W_index: 7
   n_obs: 1
   x_gt: 0.01
   x_w: 0.025
@@ -335,7 +335,8 @@ plot:
 experiment:
   ground_truth: false
   simulation: true
-  run: simulation
+  inverse: true
+  run: meas_cool_1
   plot: true
 experiment_type:
   import_data: false
@@ -418,4 +419,4 @@ experiment_type:
     phantom: B
 run:
   dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /home/guglielmo/pinns-bioheat-experiments/outputs/2025-02-09/23-47-09
+output_dir: /home/guglielmo/pinns-bioheat-experiments/multirun/2025-02-10/14-50-56/0

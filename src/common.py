@@ -81,6 +81,12 @@ def set_run(prj_figs, cfg, run):
         run_figs = os.path.join(prj_figs, run)
         os.makedirs(run_figs, exist_ok=True)
         cfg.output_dir = run_figs
+    
+    elif run.startswith("inverse"):
+        pars.n_obs = 0
+        props.n_ins = 2
+        props.W = pars.W7
+
 
     OmegaConf.save(cfg, f"{prj_figs}/config_{run}.yaml")
     # OmegaConf.save(cfg, f"{conf_dir}/config_{run}.yaml")

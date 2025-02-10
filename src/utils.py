@@ -30,6 +30,7 @@ src_dir = os.path.dirname(current_file)
 git_dir = os.path.dirname(src_dir)
 conf_dir = os.path.join(src_dir, "configs")
 models = os.path.join(git_dir, "models")
+tests_dir = os.path.join(git_dir, "tests")
 os.makedirs(models, exist_ok=True)
 
 f1, f2, f3 = [None]*3
@@ -170,6 +171,17 @@ def create_model(config):
     """
     # Load configuration
     model_props = config.model_properties
+    inverse = config.experiment.inverse
+    run = config.experiment.run
+
+    if inverse and run.startswith("meas"):
+        meas, _ = import_testdata(config)
+        mask = np.isin(meas["grid"][:, 1], [0])
+        x_points = meas["grid"][mask][:, 0]
+        ic_meas = meas["theta"][mask]
+        x_points=x_points.reshape(ic_meas.shape)
+        ic_meas_interp = interp1d(x_points.flatten(), ic_meas.flatten(), kind="quadratic", fill_value="extrapolate")
+        ic_meas = ic_meas_interp(x_points.flatten())
 
     # Extract shared parameters from the configuration
     n_ins = model_props.n_ins
@@ -188,41 +200,24 @@ def create_model(config):
     K = cc.K
     # delta_x = cc.delta_x
 
-    W = model_props.W
-
+    W = dde.Variable(cc.W_min) if inverse else model_props.W
     theta10, theta20, theta30 = cc.theta10, cc.theta20, cc.theta30
-
     time_index = n_ins -1
 
-    # def g1(x):
-
-    #     return theta20 - a5 * (theta30 - theta20) * x
-
-    # def g2(x, delta_x):
-
-    #     return (theta10 - g1(delta_x)) * (x - delta_x) / (1 - delta_x) + g1(delta_x)
-
-    # def obs_ic(x):
-
-    #     thetahat0 = torch.zeros_like(x).to(dev)  # Initialize thetahat0 with the same size as x
-
-    #     # Apply conditions element-wise
-    #     thetahat0[x <= delta_x] = g1(x[x <= delta_x])
-    #     thetahat0[x > delta_x] = g2(x[x > delta_x], delta_x)
-        
-        # return thetahat0
 
     def ic_fun(x):
         z = x if len(x.shape) == 1 else x[:, :1]
 
-        if n_ins==2:
+        if n_ins==2 and run.startswith("meas"):
+            e = ic_meas_interp(z.cpu().detach())
+            e = torch.tensor(ic_meas_interp(z.cpu().detach()), device=x.device)
+            return e
+
+        elif n_ins==2 and not run.startswith("meas"):
             return b1 * z**3 + b2 * z**2 + b3 * z + b4
         else:
             return c1 * z**2 + c2 * z + c3
         
-
-
-
     def bc0_fun(x, theta, _):
         
         dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0)
@@ -237,27 +232,20 @@ def create_model(config):
         else:
             return dtheta_x + flusso - K * (theta - y2)
 
-    # def bc1_fun(x, theta, _):
-    #     y1 = theta10 if n_ins <=3 else x[:, 1:2]
-    #     return theta - y1
-
 
     def output_transform(x, y):
         y1 = cc.theta10 if n_ins<=3 else x[:, 1:2]
-        # y2 = cc.theta20 if n_ins<=2 else x[:, 1:2] if n_ins==3 else x[:, 2:3]
-        # y3 = cc.theta30 if n_ins<=4 else x[:, 3:4]
         t = x[:, time_index:]
         x1 = x[:, 0:1]
         
         return t * (x1 - 1) * y + ic_fun(x) + y1 - cc.theta10
-        # return (x1 - 1) * y + y1
-    
 
+    
     def rff_transform(inputs):
-        # print(inputs.shape, cc.b.shape)
+
         b = torch.Tensor(cc.b).to(device=dev)
         vp = 2 * np.pi * inputs @ b.T
-        # print(vp.shape)
+
         return torch.cat((torch.cos(vp), torch.sin(vp)), dim=-1)
         
     
@@ -282,17 +270,28 @@ def create_model(config):
     timedomain = dde.geometry.TimeDomain(0, 1.5)
     geomtime = dde.geometry.GeometryXTime(geom, timedomain)
 
-    ic = dde.icbc.IC(geomtime, ic_fun, lambda _, on_initial: on_initial)
-    # bc_1 = dde.icbc.OperatorBC(geomtime, bc1_fun, boundary_1)
+    # ic = dde.icbc.IC(geomtime, ic_fun, lambda _, on_initial: on_initial)
     bc_0 = dde.icbc.OperatorBC(geomtime, bc0_fun, boundary_0)
-    X_anchor = create_X_anchor(n_ins)
+    
+
+    gt_path=f"{tests_dir}/cooling_ground_truth_5e-04"
+    # a, _, _ = gen_testdata(config, path=gt_path)
+    # mask = np.isin(a["grid"][:, 0], [0.0, 0.14, 1.0])
+    # a["grid"]=a["grid"][mask]
+    # a["theta"]=a["theta"][mask]
+    a, _ = import_testdata(config)
+
+    observe_x = a["grid"]
+    observe_y = dde.icbc.PointSetBC(observe_x, a["theta"], component=0)
+
+    losses = [bc_0, observe_y] if inverse else [bc_0]
+    X_anchor = observe_x if inverse else create_X_anchor(n_ins)
 
     # Data object
     data = dde.data.TimePDE(
         geomtime,
         lambda x, theta: pde(x, theta),
-        # [bc_0, bc_1, ic],
-        [bc_0],
+        losses,
         num_domain=num_domain, 
         num_boundary=num_boundary,
         num_initial=num_initial,
@@ -309,7 +308,10 @@ def create_model(config):
     # Compile the model
     model = dde.Model(data, net)
 
-    return model
+    if inverse: 
+        return model, W 
+    else: 
+        return model
 
 def compile_optimizer_and_losses(model, conf):
     model_props = conf.model_properties

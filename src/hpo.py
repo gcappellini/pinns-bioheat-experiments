@@ -33,7 +33,7 @@ src_dir = os.path.dirname(current_file)
 git_dir = os.path.dirname(src_dir)
 tests_dir = os.path.join(git_dir, "tests")
 
-prj = f"hpo_{datetime.date.today()}_2"
+prj = f"hpo_{datetime.date.today()}"
 
 # HPO setting
 n_calls = 50

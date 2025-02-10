@@ -151,7 +151,7 @@ def save_loss_components(iters, y_values, legend_labels, nam):
 
 
 # Main plot functions
-def plot_loss_components(loss_train, loss_test, iters, nam):
+def plot_loss_components(loss_train, loss_test, iters, nam, fold=None):
     # Prepare the loss data
     train = loss_train.sum(axis=1).ravel()
     test = loss_test.sum(axis=1).ravel()
@@ -175,6 +175,7 @@ def plot_loss_components(loss_train, loss_test, iters, nam):
     # colors = conf.plot.colors.losses
 
     save_loss_components(iters, loss_terms, legend_labels, nam)
+    fold = models_dir if fold is None else fold
 
     # Call the generic plotting function
     plot_generic(
@@ -185,7 +186,7 @@ def plot_loss_components(loss_train, loss_test, iters, nam):
         ylabel="loss",
         legend_labels=legend_labels,
         log_scale=True,  # We want a log scale on the y-axis
-        filename=f"{models_dir}/{str(datetime.date.today())}_losses_{nam}.png",
+        filename=f"{fold}/{str(datetime.date.today())}_losses_{nam}.png",
         colors=colors
     )
 
@@ -459,7 +460,7 @@ def plot_validation_3d(e, t_true, t_pred, run_figs, label):
     # Column titles for each subplot
     if label == "ground_truth":
         col_titles = ["Matlab System", "Matlab MM-Observer", "Error"]
-    elif label.startswith("simulation"):
+    elif label.startswith("simulation") or label.startswith("inverse"):
         col_titles = ["Matlab", "PINNs", "Error"]
     elif label.startswith("meas"):
         col_titles = ["Measurements", "PINNs", "Error"]
