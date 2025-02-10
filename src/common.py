@@ -77,6 +77,7 @@ def set_run(prj_figs, cfg, run):
 
     elif run.startswith("hpo"):
         pars.n_obs = 1
+        props.n_ins = 4
         cfg.experiment.ground_truth = False
         run_figs = os.path.join(prj_figs, run)
         os.makedirs(run_figs, exist_ok=True)

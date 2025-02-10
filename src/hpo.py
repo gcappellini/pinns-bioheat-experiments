@@ -33,7 +33,6 @@ src_dir = os.path.dirname(current_file)
 git_dir = os.path.dirname(src_dir)
 tests_dir = os.path.join(git_dir, "tests")
 
-prj = f"hpo_{datetime.date.today()}"
 
 # HPO setting
 n_calls = 50
@@ -57,7 +56,10 @@ conf_dir = os.path.join(src_dir, "configs")
 conf = compose(config_name="config_run")
 output_dir = conf.output_dir
 props = conf.model_properties
+pars = conf.model_parameters
 gt_path=f"{tests_dir}/cooling_ground_truth_5e-04"
+
+prj = f"hpo_{datetime.date.today()}_Obs{pars.W_index}"
 
 system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(conf, path=gt_path)
 x_obs = uu.gen_obsdata(conf, system_gt)
@@ -98,8 +100,8 @@ def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation, initia
         _, obs_pred = uu.calculate_l2(mm_obs_gt, [], obs_pred)
         # error = np.sum(obs_pred["L2_err"])
         metrics_tot = uu.compute_metrics([mm_obs_gt, obs_pred], conf, run_figs)
-        error = metrics_tot["observer_4_L2RE"]
-        metrics_tot = {key.replace("observer_4_", ""): value for key, value in metrics_tot.items()}
+        metrics_tot = {key.replace(f"observer_{pars.W_index}_", ""): value for key, value in metrics_tot.items()}
+        error = metrics_tot["L2RE"]
    
         wandb.log(metrics_tot)
     pp.plot_multiple_series([obs_pred, mm_obs_gt], run_figs, label)

@@ -274,18 +274,25 @@ def create_model(config):
     bc_0 = dde.icbc.OperatorBC(geomtime, bc0_fun, boundary_0)
     
 
-    gt_path=f"{tests_dir}/cooling_ground_truth_5e-04"
-    # a, _, _ = gen_testdata(config, path=gt_path)
-    # mask = np.isin(a["grid"][:, 0], [0.0, 0.14, 1.0])
-    # a["grid"]=a["grid"][mask]
-    # a["theta"]=a["theta"][mask]
-    a, _ = import_testdata(config)
+    losses = [bc_0]
+    X_anchor = create_X_anchor(n_ins)
 
-    observe_x = a["grid"]
-    observe_y = dde.icbc.PointSetBC(observe_x, a["theta"], component=0)
+    if inverse:
+        if run.startswith("meas"):
+            a, _ = import_testdata(config)
 
-    losses = [bc_0, observe_y] if inverse else [bc_0]
-    X_anchor = observe_x if inverse else create_X_anchor(n_ins)
+        elif run.startswith("simulation"):
+            gt_path=f"{tests_dir}/cooling_ground_truth_5e-04"
+            a, _, _ = gen_testdata(config, path=gt_path)
+            mask = np.isin(a["grid"][:, 0], [0.0, 0.14, 1.0])
+            a["grid"]=a["grid"][mask]
+            a["theta"]=a["theta"][mask]
+
+        observe_x = a["grid"]
+        observe_y = dde.icbc.PointSetBC(observe_x, a["theta"], component=0)
+
+        losses = [bc_0, observe_y]
+        X_anchor = observe_x
 
     # Data object
     data = dde.data.TimePDE(
