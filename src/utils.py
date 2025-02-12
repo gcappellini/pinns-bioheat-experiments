@@ -116,6 +116,11 @@ def compute_metrics(series_to_plot, cfg, run_figs):
 
     # Save the metrics dictionary as a YAML file
     # Convert metrics values to float (Hydra supports float, not float64)
+    # Remove metrics for conditions "bc1" and "initial_condition"
+    for key in list(metrics.keys()):
+        if "bc1" in key or "initial_condition" in key:
+            del metrics[key]
+            
     metrics = {k: float(v) for k, v in metrics.items()}
     with open(f"{run_figs}/metrics.yaml", "w") as file:
         OmegaConf.save(config=OmegaConf.create(metrics), f=file)
