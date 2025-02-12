@@ -429,8 +429,9 @@ def train_model(conf):
         model, losshistory = train_and_save_model(conf, "L-BFGS", config_hash, model_path_lbfgs, pre_trained_model=model)
 
     pp.plot_loss_components(np.array(losshistory.loss_train), np.array(losshistory.loss_test), np.array(losshistory.steps), config_hash)
+    test = np.array(losshistory.loss_test).sum(axis=1).ravel()
 
-    return model
+    return model, test.min()
 
 
 def gen_testdata(conf, path=None):
