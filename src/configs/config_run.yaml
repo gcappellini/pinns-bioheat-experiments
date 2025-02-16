@@ -24,7 +24,7 @@ model_properties:
   num_dense_layers: 4
   num_dense_nodes: 50
   num_domain: 100
-  num_boundary: 60
+  num_boundary: 250
   num_initial: 0
   num_test: 1000
   resampling: true
@@ -419,4 +419,4 @@ experiment_type:
     phantom: B
 run:
   dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /home/guglielmo/pinns-bioheat-experiments/multirun/2025-02-16/10-05-13/0
+output_dir: /home/guglielmo/pinns-bioheat-experiments/multirun/2025-02-16/10-31-51/0

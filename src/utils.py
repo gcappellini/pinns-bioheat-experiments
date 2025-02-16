@@ -414,7 +414,7 @@ def train_model(conf):
     if trained_model:
         # Return the trained model directly if found
         setup_log("Found a pre-trained model.")
-        return trained_model
+        return trained_model, None
 
     # Step 1: Train with Adam optimizer
     setup_log("Training a new model with Adam optimizer.")

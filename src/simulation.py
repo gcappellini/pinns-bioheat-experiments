@@ -155,10 +155,10 @@ def run_simulation_mm_obs(config, out_dir, system_gt, mm_obs_gt, observers_gt, g
         "num_boundary": props.num_boundary,
         "n_anchor_points": props.n_anchor_points,
     }
-    wandb.init(project=f"{datetime.date.today()}_optimize_sp", name=label, config=config_wb)
+    wandb.init(project=f"{datetime.date.today()}_opt_sp", name=label, config=config_wb)
     multi_obs, test_loss = uu.execute(config_inverse, label)
     x_obs = uu.gen_obsdata(config_inverse, system_gt)
-    observers, mm_obs = uu.get_observers_preds(system_gt, multi_obs, x_obs, out_dir, config_inverse, label)
+    observers, mm_obs = uu.get_observers_preds(mm_obs_gt, multi_obs, x_obs, out_dir, config_inverse, label)
 
     metrics = uu.compute_metrics([mm_obs_gt, mm_obs], config, out_dir)
     metrics = {key.replace(f"observer_{pars.W_index}_", ""): value for key, value in metrics.items()}
