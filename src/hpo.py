@@ -98,19 +98,19 @@ def fitness(num_dense_layers, num_dense_nodes, activation, initialization):
 
         # Generate and check observers if needed
         multi_obs, error = uu.execute(conf, label)
-        _, obs_pred = uu.get_observers_preds(mm_obs_gt, multi_obs, x_obs, run_figs, conf, "simulation")
+        observers, mm_obs = uu.get_observers_preds(mm_obs_gt, multi_obs, x_obs, run_figs, conf, "simulation")
 
         # _, obs_pred = uu.calculate_l2(mm_obs_gt, [], obs_pred)
         # error = np.sum(obs_pred["L2_err"])
-        metrics_tot = uu.compute_metrics([mm_obs_gt, obs_pred], conf, run_figs)
+        metrics_tot = uu.compute_metrics([mm_obs_gt, mm_obs], conf, run_figs)
         metrics_tot = {key.replace(f"observer_{pars.W_index}_", ""): value for key, value in metrics_tot.items()}
         # error = metrics_tot["L2RE"]
         metrics_tot["test"] = error
    
         wandb.log(metrics_tot)
-    pp.plot_multiple_series([obs_pred, mm_obs_gt], run_figs, label)
-    pp.plot_l2(system_gt, [obs_pred, mm_obs_gt], run_figs, label)
-    pp.plot_obs_err([obs_pred, mm_obs_gt], run_figs, label)
+    pp.plot_multiple_series([mm_obs, mm_obs_gt], run_figs, label)
+    pp.plot_l2(system_gt, [mm_obs, mm_obs_gt], run_figs, label)
+    pp.plot_obs_err([mm_obs, mm_obs_gt], run_figs, label)
 
 
     if np.isnan(error):
