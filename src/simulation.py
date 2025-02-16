@@ -7,6 +7,8 @@ import common as co
 import plots as pp
 import deepxde as dde
 from common import setup_log
+import wandb
+import datetime
 
 # Directories Setup
 current_file = os.path.abspath(__file__)
@@ -147,11 +149,21 @@ def run_simulation_mm_obs(config, out_dir, system_gt, mm_obs_gt, observers_gt, g
     setup_log("Running simulation for multi-observer.")
     label = "simulation_mm_obs"
     output_dir_inverse, config_inverse = co.set_run(out_dir, config, label)
-    multi_obs = uu.execute(config_inverse, label)
+    props, pars = config_inverse.model_properties, config_inverse.model_parameters
+    config_wb = {
+        "num_domain": props.num_domain,
+        "num_boundary": props.num_boundary,
+        "n_anchor_points": props.n_anchor_points,
+    }
+    wandb.init(project=f"{datetime.date.today()}_optimize_sp", name=label, config=config_wb)
+    multi_obs, test_loss = uu.execute(config_inverse, label)
     x_obs = uu.gen_obsdata(config_inverse, system_gt)
     observers, mm_obs = uu.get_observers_preds(system_gt, multi_obs, x_obs, out_dir, config_inverse, label)
 
-    uu.compute_metrics([mm_obs_gt, mm_obs], config, out_dir)
+    metrics = uu.compute_metrics([mm_obs_gt, mm_obs], config, out_dir)
+    metrics = {key.replace(f"observer_{pars.W_index}_", ""): value for key, value in metrics.items()}
+    metrics["test"] = test_loss
+    wandb.log(metrics)
 
     if config.experiment.plot:
 
@@ -256,14 +268,14 @@ def main():
                 system_gt, _, _ = uu.gen_testdata(config, path=gt_path)
             run_simulation_inverse(config, run_out_dir, system_gt)
 
-    #     # Simulation Multi-Observer
-    #     else:
-    #         if dict_exp["ground_truth"]:
-    #             output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, run_out_dir)
-    #         else:
-    #             system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config, path=gt_path)
+        # Simulation Multi-Observer
+        else:
+            if dict_exp["ground_truth"]:
+                output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, run_out_dir)
+            else:
+                system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config, path=gt_path)
 
-    #         run_simulation_mm_obs(config, run_out_dir, system_gt, mm_obs_gt, observers_gt, gt_path)
+            run_simulation_mm_obs(config, run_out_dir, system_gt, mm_obs_gt, observers_gt, gt_path)
     
     # elif dict_exp["run"].startswith("meas"):
     #     if dict_exp["ground_truth"]:

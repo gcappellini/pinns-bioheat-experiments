@@ -59,7 +59,7 @@ props = conf.model_properties
 pars = conf.model_parameters
 gt_path=f"{tests_dir}/cooling_ground_truth_5e-04"
 
-prj = f"hpo_{datetime.date.today()}_Obs{pars.W_index}"
+prj = f"{datetime.date.today()}_Obs{pars.W_index}"
 
 system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(conf, path=gt_path)
 x_obs = uu.gen_obsdata(conf, system_gt)
