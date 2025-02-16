@@ -50,7 +50,7 @@ model_properties:
   sigma: 1.0
   n_anchor_points: 0
 model_parameters:
-  lam: 100
+  lam: 1
   upsilon: 100.0
   W_min: 6.3e-05
   W_max: 0.00165
@@ -64,7 +64,7 @@ model_parameters:
   W7: 0.00165
   W_sys: 0.0005
   W_index: 3
-  n_obs: 1
+  n_obs: 8
   x_gt: 0.01
   x_w: 0.025
   x_gt1: 0.04
@@ -347,7 +347,7 @@ experiment_type:
     Ty20: 30.2
     Ty30: 21.5
     Tgt20: 31.5
-    lam: 100
+    lam: 1
     upsilon: 100.0
     n_obs: 8
   meas_cool_1:
@@ -419,6 +419,4 @@ experiment_type:
     phantom: B
 run:
   dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-02-16/11-18-09
-defaults: 
-  - model_properties: exp
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-02-16/11-30-24
