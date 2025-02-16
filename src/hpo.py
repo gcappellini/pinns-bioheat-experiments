@@ -36,21 +36,23 @@ tests_dir = os.path.join(git_dir, "tests")
 
 # HPO setting
 n_calls = 50
-dim_learning_rate = Real(high=0.01, low=0.00005, name="learning_rate", prior="log-uniform")
-dim_num_dense_layers = Integer(low=2, high=8, name="num_dense_layers")
-dim_num_dense_nodes = Integer(low=5, high=250, name="num_dense_nodes")
-dim_activation = Categorical(categories=["ELU", "GELU", "ReLU", "SELU", "Sigmoid", "SiLU", "sin", "Swish", "tanh"], name="activation")
+# dim_learning_rate = Real(high=0.01, low=0.00005, name="learning_rate", prior="log-uniform")
+dim_num_dense_layers = Integer(low=1, high=6, name="num_dense_layers")
+dim_num_dense_nodes = Integer(low=10, high=320, name="num_dense_nodes")
+# dim_activation = Categorical(categories=["ELU", "GELU", "ReLU", "SELU", "Sigmoid", "SiLU", "sin", "Swish", "tanh"], name="activation")
+dim_activation = Categorical(categories=["Sigmoid", "sin", "Swish", "tanh"], name="activation")
 dim_initialization = Categorical(categories=["Glorot normal", "Glorot uniform", "He normal", "He uniform"], name="initialization")
 
 dimensions = [
-    dim_learning_rate,
+    # dim_learning_rate,
     dim_num_dense_layers,
     dim_num_dense_nodes,
     dim_activation,
     dim_initialization
 ]
 
-default_parameters = [0.001, 4, 50, "tanh", "Glorot normal"]
+# default_parameters = [0.001, 4, 50, "tanh", "Glorot normal"]
+default_parameters = [4, 50, "tanh", "Glorot normal"]
 
 conf_dir = os.path.join(src_dir, "configs")
 conf = compose(config_name="config_run")
@@ -59,17 +61,18 @@ props = conf.model_properties
 pars = conf.model_parameters
 gt_path=f"{tests_dir}/cooling_ground_truth_5e-04"
 
-prj = f"{datetime.date.today()}_Obs{pars.W_index}"
+prj = f"{datetime.date.today()}_hpo_Obs{pars.W_index}"
 
 system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(conf, path=gt_path)
 x_obs = uu.gen_obsdata(conf, system_gt)
 
 @use_named_args(dimensions=dimensions)
-def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation, initialization):
+# def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation, initialization):
+def fitness(num_dense_layers, num_dense_nodes, activation, initialization):
     global ITERATION
 
     props.activation = str(activation)
-    props.learning_rate = learning_rate
+    # props.learning_rate = learning_rate
     props.num_dense_layers = int(num_dense_layers)
     props.num_dense_nodes = int(num_dense_nodes)
     props.initialization = str(initialization)
@@ -78,7 +81,7 @@ def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation, initia
 
     config_wb = {
         "activation": activation,
-        "learning_rate": learning_rate,
+        # "learning_rate": learning_rate,
         "num_dense_layers": num_dense_layers,
         "num_dense_nodes": num_dense_nodes,
         "initialization": initialization
@@ -89,15 +92,15 @@ def fitness(learning_rate, num_dense_layers, num_dense_nodes, activation, initia
         print(f"Iteration {ITERATION}")
         print(f"activation: {activation}")
         print(f"initialization: {initialization}")
-        print(f"learning rate: {learning_rate:.1e}")
+        # print(f"learning rate: {learning_rate:.1e}")
         print(f"num_dense_layers: {num_dense_layers}")
         print(f"num_dense_nodes: {num_dense_nodes}")
 
         # Generate and check observers if needed
         multi_obs, error = uu.execute(conf, label)
-        _, obs_pred = uu.get_observers_preds(system_gt, multi_obs, x_obs, run_figs, conf, "simulation")
+        _, obs_pred = uu.get_observers_preds(mm_obs_gt, multi_obs, x_obs, run_figs, conf, "simulation")
 
-        _, obs_pred = uu.calculate_l2(mm_obs_gt, [], obs_pred)
+        # _, obs_pred = uu.calculate_l2(mm_obs_gt, [], obs_pred)
         # error = np.sum(obs_pred["L2_err"])
         metrics_tot = uu.compute_metrics([mm_obs_gt, obs_pred], conf, run_figs)
         metrics_tot = {key.replace(f"observer_{pars.W_index}_", ""): value for key, value in metrics_tot.items()}
@@ -121,10 +124,10 @@ ITERATION = 0
 res = gp_minimize(
     func=fitness,
     dimensions=dimensions,
-    acq_func="EI",  # Expected Improvement.
+    acq_func="gp_hedge",  # Expected Improvement.
     n_calls=n_calls,
     x0=default_parameters,
-    random_state=1444,
+    random_state=145,
 )
 
 print(res.x)
