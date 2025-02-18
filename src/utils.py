@@ -13,7 +13,7 @@ import coeff_calc as cc
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-# import matlab.engine
+import matlab.engine
 from hydra import initialize, compose
 from common import setup_log
 
@@ -456,7 +456,7 @@ def gen_testdata(conf, path=None):
     system_gt = {"grid": X, "theta": y_sys, "label": "system_gt"}
 
     if n == 1:
-        obs_id = pars.W_index
+        obs_id = 0 if data.shape[1]==4 else pars.W_index
         y_obs = data[:, 3+obs_id].T
         y_obs = y_obs.flatten()[:, None]
         y_mm_obs = y_obs
@@ -485,8 +485,8 @@ def gen_testdata(conf, path=None):
 
     observers_gt, mm_obs_gt = calculate_l2(system_gt, observers_gt, mm_obs_gt)
     observers_gt, mm_obs_gt = compute_obs_err(system_gt, observers_gt, mm_obs_gt)
-    # if n > 1:
-    #     observers_gt = load_weights(observers_gt, conf, "ground_truth", path=path)
+    if n > 1:
+        observers_gt = load_weights(observers_gt, conf, "ground_truth", path=path)
     
     return system_gt, observers_gt, mm_obs_gt
 

@@ -149,25 +149,33 @@ def run_simulation_mm_obs(config, out_dir, system_gt, mm_obs_gt, observers_gt, g
     setup_log("Running simulation for multi-observer.")
     label = "simulation_mm_obs"
     output_dir_inverse, config_inverse = co.set_run(out_dir, config, label)
-    props, pars = config_inverse.model_properties, config_inverse.model_parameters
+    props, pars, exp = config_inverse.model_properties, config_inverse.model_parameters, config.experiment
     config_wb = {
         "num_domain": props.num_domain,
         "num_boundary": props.num_boundary,
-        "n_anchor_points": props.n_anchor_points,
+        # "n_anchor_points": props.n_anchor_points,
+        "alfa": props.alfa,
+        "obs": pars.W_index,
     }
-    wandb.init(project=f"{datetime.date.today()}_opt_sp", config=config_wb)
-    multi_obs, test_loss = uu.execute(config_inverse, label)
+    if exp.wandb:
+        wandb.init(project=f"{datetime.date.today()}_{exp.wandb_name}", config=config_wb)
+    output = uu.execute(config_inverse, label)
+    multi_obs = output[0] if pars.n_obs==1 else [e[0] for e in output]
+    test_loss = output[1] if pars.n_obs==1 else [e[1] for e in output]
     x_obs = uu.gen_obsdata(config_inverse, system_gt)
     observers, mm_obs = uu.get_observers_preds(mm_obs_gt, multi_obs, x_obs, out_dir, config_inverse, label)
 
     metrics = uu.compute_metrics([mm_obs_gt, mm_obs], config, out_dir)
     metrics = {key.replace(f"observer_{pars.W_index}_", ""): value for key, value in metrics.items()}
     metrics["test"] = test_loss
-    wandb.log(metrics)
+    if exp.wandb:
+        wandb.log(metrics)
 
     if config.experiment.plot:
 
         if config.plot.show_obs:
+            if 1 < config.model_parameters.n_obs <= 8:
+                    pp.plot_weights([*observers], out_dir, label)
             if config.plot.show_gt:
                 if config.plot.show_sys:
                     pp.plot_multiple_series([system_gt, *observers, mm_obs_gt, mm_obs], out_dir, label)
@@ -186,8 +194,6 @@ def run_simulation_mm_obs(config, out_dir, system_gt, mm_obs_gt, observers_gt, g
                     pp.plot_multiple_series([*observers, mm_obs], out_dir, label)
                     pp.plot_l2(system_gt, [*observers, mm_obs], out_dir, label)
                     pp.plot_obs_err([*observers, mm_obs], out_dir, label)
-                if 1 < config.model_parameters.n_obs <= 8:
-                    pp.plot_weights([*observers], out_dir, label)
         else:
             if config.plot.show_gt:
                 if config.plot.show_sys:
@@ -253,7 +259,7 @@ def main():
     dict_exp = config.experiment
     n_ins = config.model_properties.n_ins
 
-    gt_path=f"{tests_dir}/cooling_ground_truth_5e-04"
+    gt_path=f"{tests_dir}/{dict_exp.gt_path}"
 
     if dict_exp["simulation"]:
         # Simulation System

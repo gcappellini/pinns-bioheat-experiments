@@ -13,7 +13,7 @@ model_properties:
   Ty20: 30.2
   Ty30: 21.5
   Tgt20: 31.5
-  alfa: 50.0
+  alfa: 15
   activation: tanh
   initial_weights_regularizer: false
   initialization: Glorot normal
@@ -23,8 +23,8 @@ model_properties:
   learning_rate: 0.001
   num_dense_layers: 4
   num_dense_nodes: 50
-  num_domain: 100
-  num_boundary: 1000
+  num_domain: 5000
+  num_boundary: 5000
   num_initial: 0
   num_test: 1000
   resampling: true
@@ -48,7 +48,7 @@ model_properties:
   n_ins: 4
   np_seed: 500
   sigma: 1.0
-  n_anchor_points: 2
+  n_anchor_points: 0
 model_parameters:
   lam: 1
   upsilon: 100.0
@@ -329,19 +329,21 @@ plot:
         linestyle: '-'
         linewidth: 1.2
         alpha: 1.0
-  show_obs: false
+  show_obs: true
   show_gt: true
-  show_sys: false
+  show_sys: true
 experiment:
-  ground_truth: false
+  ground_truth: true
+  gt_path: cooling_ground_truth_5e-04
   simulation: true
   inverse: false
   run: simulation
   plot: true
+  wandb: true
+  wandb_name: opt_k
 experiment_type:
   import_data: false
   save_pickle: true
-  run_wandb: false
   simulation:
     Ty10: 21.5
     Ty20: 30.2
@@ -418,4 +420,4 @@ experiment_type:
     phantom: B
 run:
   dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /home/guglielmo/pinns-bioheat-experiments/outputs/2025-02-16/20-22-23
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/multirun/2025-02-17/11-16-25/24
