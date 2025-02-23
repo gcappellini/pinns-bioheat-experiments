@@ -78,13 +78,12 @@ def run_simulation_system(config, out_dir, system_gt):
     }
     if exp.wandb:
         wandb.init(project=f"{datetime.date.today()}_{exp.wandb_name}", config=config_wb)
-    pinns_sys, test_loss = uu.train_model(cfg_system)
+    pinns_sys, train_info = uu.train_model(cfg_system)
     system = uu.get_pred(pinns_sys, system_gt["grid"], out_dir, "system")
     [], system = uu.calculate_l2(system_gt, [], system)
     [], system = uu.compute_obs_err(system_gt, [], system)
 
-    metrics = uu.compute_metrics([system_gt, system], config, out_dir)
-    metrics["test"] = test_loss
+    metrics = uu.compute_metrics([system_gt, system], train_info, config, out_dir)
     if exp.wandb:
         wandb.log(metrics)
 

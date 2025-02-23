@@ -136,7 +136,8 @@ def configure_subplot(ax, XS, surface, xlabel, ylabel, zlabel):
 
 
 # Main plot functions
-def plot_loss_components(loss_train, loss_test, iters, nam, fold=None):
+def plot_loss_components(losshistory, runtime, nam, fold=None):
+    loss_train, loss_test, iters = np.array(losshistory.loss_train), np.array(losshistory.loss_test), np.array(losshistory.steps)
     # Prepare the loss data
     train = loss_train.sum(axis=1).ravel()
     test = loss_test.sum(axis=1).ravel()
@@ -160,7 +161,7 @@ def plot_loss_components(loss_train, loss_test, iters, nam, fold=None):
     # colors = conf.plot.colors.losses
 
     data_filename = f"{models_dir}/{str(datetime.date.today())}_losses_{nam}.npz"
-    np.savez(data_filename, iterations=iters, loss_res=loss_res, loss_bc0=loss_bc0, test=test, train=train)
+    np.savez(data_filename, iterations=iters, loss_res=loss_res, loss_bc0=loss_bc0, test=test, train=train, runtime=runtime)
     fold = models_dir if fold is None else fold
 
     # Call the generic plotting function

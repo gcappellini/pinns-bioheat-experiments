@@ -16,6 +16,7 @@ from omegaconf import OmegaConf
 # import matlab.engine
 from hydra import initialize, compose
 from common import setup_log
+import time
 
 
 dde.config.set_random_seed(200)
@@ -43,7 +44,7 @@ def get_initial_loss(model):
     return round(losshistory.loss_train[0], 3)
 
 
-def compute_metrics(series_to_plot, cfg, run_figs):
+def compute_metrics(series_to_plot, train_info, cfg, run_figs):
     # Load loss weights from configuration
     matching = extract_matching(series_to_plot)
     props = cfg.model_properties
@@ -121,6 +122,7 @@ def compute_metrics(series_to_plot, cfg, run_figs):
         if "bc1" in key or "initial_condition" in key:
             del metrics[key]
             
+    metrics.update(train_info)
     metrics = {k: float(v) for k, v in metrics.items()}
     with open(f"{run_figs}/metrics.yaml", "w") as file:
         OmegaConf.save(config=OmegaConf.create(metrics), f=file)
@@ -382,15 +384,15 @@ def check_for_trained_model(conf):
     if filtered_losses:
         loss_file = os.path.join(models, filtered_losses[0])
         loss_data = np.load(loss_file)
-        min_test_loss = np.min(loss_data['test'])
+        info_train = {"loss": np.min(loss_data['test']), "runtime": loss_data['runtime']}
     else:
-        min_test_loss = None
+        info_train = {"loss": None, "runtime": None}
     # Return the path to the first sorted model
     sorted_files = sorted(filtered_models)
     model_path = os.path.join(models, sorted_files[0])
     model = restore_model(conf, model_path)
 
-    return model, min_test_loss
+    return model, info_train
 
 
 def train_and_save_model(conf, optimizer, config_hash, save_path, pre_trained_model=None):
@@ -425,6 +427,7 @@ def train_model(conf):
         return trained_model
 
     # Step 1: Train with Adam optimizer
+    start_time = time.time()
     setup_log("Training a new model with Adam optimizer.")
     conf.model_properties.optimizer = "adam"
     config_hash = co.generate_config_hash(conf.model_properties)
@@ -441,10 +444,12 @@ def train_model(conf):
         dde.optimizers.config.set_LBFGS_options(maxcor=100, ftol=1e-08, gtol=1e-08, maxiter=iters_lbfgs, maxfun=None, maxls=50)
         model, losshistory = train_and_save_model(conf, "L-BFGS", config_hash, model_path_lbfgs, pre_trained_model=model)
 
-    pp.plot_loss_components(np.array(losshistory.loss_train), np.array(losshistory.loss_test), np.array(losshistory.steps), config_hash)
     test = np.array(losshistory.loss_test).sum(axis=1).ravel()
+    runtime = time.time() - start_time
+    pp.plot_loss_components(losshistory, runtime, config_hash)
+    info_train = {"loss": test.min(), "runtime": runtime}
 
-    return model, test.min()
+    return model, info_train
 
 
 def gen_testdata(conf, path=None):
