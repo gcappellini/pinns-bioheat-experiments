@@ -69,14 +69,24 @@ def run_simulation_system(config, out_dir, system_gt):
     """Run simulation for the system and plot results."""
     setup_log("Running simulation for the system.")
     label = "simulation_system"
+    props, exp = config.model_properties, config.experiment
     output_dir_system, cfg_system = co.set_run(out_dir, config, label)
-    pinns_sys = uu.train_model(cfg_system)
+    config_wb = {
+    "num_domain": props.num_domain,
+    "num_boundary": props.num_boundary,
+    "resampling": props.resampling,
+    }
+    if exp.wandb:
+        wandb.init(project=f"{datetime.date.today()}_{exp.wandb_name}", config=config_wb)
+    pinns_sys, test_loss = uu.train_model(cfg_system)
     system = uu.get_pred(pinns_sys, system_gt["grid"], out_dir, "system")
     [], system = uu.calculate_l2(system_gt, [], system)
     [], system = uu.compute_obs_err(system_gt, [], system)
 
-
-    uu.compute_metrics([system_gt, system], config, out_dir)
+    metrics = uu.compute_metrics([system_gt, system], config, out_dir)
+    metrics["test"] = test_loss
+    if exp.wandb:
+        wandb.log(metrics)
 
     if config.experiment.plot:
         pp.plot_multiple_series([system_gt, system], out_dir, label)
@@ -153,9 +163,7 @@ def run_simulation_mm_obs(config, out_dir, system_gt, mm_obs_gt, observers_gt, g
     config_wb = {
         "num_domain": props.num_domain,
         "num_boundary": props.num_boundary,
-        # "n_anchor_points": props.n_anchor_points,
-        "alfa": props.alfa,
-        "obs": pars.W_index,
+        "resampling": props.resampling,
     }
     if exp.wandb:
         wandb.init(project=f"{datetime.date.today()}_{exp.wandb_name}", config=config_wb)
@@ -166,7 +174,6 @@ def run_simulation_mm_obs(config, out_dir, system_gt, mm_obs_gt, observers_gt, g
     observers, mm_obs = uu.get_observers_preds(mm_obs_gt, multi_obs, x_obs, out_dir, config_inverse, label)
 
     metrics = uu.compute_metrics([mm_obs_gt, mm_obs], config, out_dir)
-    metrics = {key.replace(f"observer_{pars.W_index}_", ""): value for key, value in metrics.items()}
     metrics["test"] = test_loss
     if exp.wandb:
         wandb.log(metrics)

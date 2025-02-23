@@ -13,7 +13,7 @@ import coeff_calc as cc
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-import matlab.engine
+# import matlab.engine
 from hydra import initialize, compose
 from common import setup_log
 
@@ -58,61 +58,61 @@ def compute_metrics(series_to_plot, cfg, run_figs):
     parts = []
 
     # Iterate over each part in series_to_plot[1:]
+    # for i in range(1, len(series_to_plot)):
+        # part_name = series_to_plot[i]["label"]
+        # parts.append(part_name)
+    i=1
+    pred = matching[:, 2 + i]
+    pred_nonzero = np.where(pred != 0, pred, small_number)
+    
+    # Part 1: General metrics for pred (Observer PINNs vs Observer MATLAB)
+    L2RE = np.sum(series_to_plot[i]["L2_err"])
+    MSE = calculate_mse(true, pred)
+    max_err = np.max(np.abs(true_nonzero - pred))
+    mean_err = np.mean(np.abs(true_nonzero - pred))
+    
+    metrics.update({
+        f"L2RE": L2RE,
+        f"MSE": MSE,
+        f"max": max_err,
+        f"mean": mean_err,
+    })
+    
+    # Define conditions for initial, left boundary, right boundary, and domain
+    conditions = {
+        "initial_condition": grid[:, 1] == 0,  # Time t = 0
+        "bc0": grid[:, 0] == 0,                # Left boundary x = 0
+        "bc1": grid[:, 0] == 1,                # Right boundary x = 1
+    }
+    domain_condition = ~(conditions["initial_condition"] | conditions["bc0"] | conditions["bc1"])
+    conditions["domain"] = domain_condition
 
-    for i in range(1, len(series_to_plot)):
-        part_name = series_to_plot[i]["label"]
-        parts.append(part_name)
-        pred = matching[:, 2 + i]
-        pred_nonzero = np.where(pred != 0, pred, small_number)
+    # Compute metrics for each condition and add to metrics dictionary
+    for cond_name, condition in conditions.items():
+        true_cond = true[condition]
+        pred_cond = pred[condition]
+        true_nonzero_cond = np.where(true_cond != 0, true_cond, small_number)
         
-        # Part 1: General metrics for pred (Observer PINNs vs Observer MATLAB)
-        L2RE = np.sum(series_to_plot[i]["L2_err"])
-        MSE = calculate_mse(true, pred)
-        max_err = np.max(np.abs(true_nonzero - pred))
-        mean_err = np.mean(np.abs(true_nonzero - pred))
+        # Calculate metrics for pred under this specific condition
+
+        L2RE_cond = 0
+        MSE_cond = calculate_mse(true_cond, pred_cond)
+        max_err_cond = np.max(np.abs(true_nonzero_cond - pred_cond))
+        mean_err_cond = np.mean(np.abs(true_nonzero_cond - pred_cond))
         
+        # Store these metrics in the dictionary
         metrics.update({
-            f"{part_name}_L2RE": L2RE,
-            f"{part_name}_MSE": MSE,
-            f"{part_name}_max": max_err,
-            f"{part_name}_mean": mean_err,
+            f"{cond_name}_L2RE": L2RE_cond,
+            f"{cond_name}_MSE": MSE_cond,
+            f"{cond_name}_max": max_err_cond,
+            f"{cond_name}_mean": mean_err_cond,
         })
-        
-        # Define conditions for initial, left boundary, right boundary, and domain
-        conditions = {
-            "initial_condition": grid[:, 1] == 0,  # Time t = 0
-            "bc0": grid[:, 0] == 0,                # Left boundary x = 0
-            "bc1": grid[:, 0] == 1,                # Right boundary x = 1
-        }
-        domain_condition = ~(conditions["initial_condition"] | conditions["bc0"] | conditions["bc1"])
-        conditions["domain"] = domain_condition
 
-        # Compute metrics for each condition and add to metrics dictionary
-        for cond_name, condition in conditions.items():
-            true_cond = true[condition]
-            pred_cond = pred[condition]
-            true_nonzero_cond = np.where(true_cond != 0, true_cond, small_number)
-            
-            # Calculate metrics for pred under this specific condition
-
-            L2RE_cond = 0
-            MSE_cond = calculate_mse(true_cond, pred_cond)
-            max_err_cond = np.max(np.abs(true_nonzero_cond - pred_cond))
-            mean_err_cond = np.mean(np.abs(true_nonzero_cond - pred_cond))
-            
-            # Store these metrics in the dictionary
-            metrics.update({
-                f"{part_name}_{cond_name}_L2RE": L2RE_cond,
-                f"{part_name}_{cond_name}_MSE": MSE_cond,
-                f"{part_name}_{cond_name}_max": max_err_cond,
-                f"{part_name}_{cond_name}_mean": mean_err_cond,
-            })
-
-        # Calculate and store LOSS metric for each condition
-        LOSS_pred = np.sum(loss_weights * np.array([metrics[f"{part_name}_{cond}_MSE"] for cond in ["domain", "bc0", "bc1", "initial_condition"]]))
-        metrics[f"{part_name}_LOSS"] = LOSS_pred
-        for cond_name in conditions.keys():
-            metrics[f"{part_name}_{cond_name}_LOSS"] = loss_weights[0] * metrics.get(f"{part_name}_{cond_name}_MSE", 0)
+    # Calculate and store LOSS metric for each condition
+    LOSS_pred = np.sum(loss_weights * np.array([metrics[f"{cond}_MSE"] for cond in ["domain", "bc0", "bc1", "initial_condition"]]))
+    metrics[f"LOSS"] = LOSS_pred
+    for cond_name in conditions.keys():
+        metrics[f"{cond_name}_LOSS"] = loss_weights[0] * metrics.get(f"{cond_name}_MSE", 0)
 
     # Save the metrics dictionary as a YAML file
     # Convert metrics values to float (Hydra supports float, not float64)
@@ -378,11 +378,19 @@ def check_for_trained_model(conf):
     filtered_models = [file for file in models_files if config_hash_lbfgs in file and file.endswith(".pt")]
     if not filtered_models:
         return None
+    filtered_losses = [file for file in models_files if config_hash_lbfgs in file and file.endswith(".npz")]
+    if filtered_losses:
+        loss_file = os.path.join(models, filtered_losses[0])
+        loss_data = np.load(loss_file)
+        min_test_loss = np.min(loss_data['test'])
+    else:
+        min_test_loss = None
     # Return the path to the first sorted model
     sorted_files = sorted(filtered_models)
     model_path = os.path.join(models, sorted_files[0])
     model = restore_model(conf, model_path)
-    return model
+
+    return model, min_test_loss
 
 
 def train_and_save_model(conf, optimizer, config_hash, save_path, pre_trained_model=None):
@@ -414,7 +422,7 @@ def train_model(conf):
     if trained_model:
         # Return the trained model directly if found
         setup_log("Found a pre-trained model.")
-        return trained_model, None
+        return trained_model
 
     # Step 1: Train with Adam optimizer
     setup_log("Training a new model with Adam optimizer.")

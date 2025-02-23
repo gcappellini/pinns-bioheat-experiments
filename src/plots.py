@@ -135,21 +135,6 @@ def configure_subplot(ax, XS, surface, xlabel, ylabel, zlabel):
     ax.set_zlabel(zlabel, fontsize=7, labelpad=-4)
 
 
-def save_loss_components(iters, y_values, legend_labels, nam):
-    # Save the data to a text file
-    data_filename = f"{models_dir}/{str(datetime.date.today())}_losses_{nam}.txt"
-    with open(data_filename, "w") as file:
-        file.write("Loss Components Data\n")
-        file.write("=" * 50 + "\n")
-        file.write(f"{'Iteration':>12}  {'Loss Type':>12}  {'Loss Value':>20}\n")
-        file.write("-" * 50 + "\n")
-        
-        for i, label in enumerate(legend_labels):
-            for step, value in zip(iters, y_values[i]):
-                file.write(f"{step:>12}  {label:>12}  {value:>20.8e}\n")
-            file.write("-" * 50 + "\n")
-
-
 # Main plot functions
 def plot_loss_components(loss_train, loss_test, iters, nam, fold=None):
     # Prepare the loss data
@@ -174,7 +159,8 @@ def plot_loss_components(loss_train, loss_test, iters, nam, fold=None):
     legend_labels = [plot_params[lab]["label"] for lab in loss_names]
     # colors = conf.plot.colors.losses
 
-    save_loss_components(iters, loss_terms, legend_labels, nam)
+    data_filename = f"{models_dir}/{str(datetime.date.today())}_losses_{nam}.npz"
+    np.savez(data_filename, iterations=iters, loss_res=loss_res, loss_bc0=loss_bc0, test=test, train=train)
     fold = models_dir if fold is None else fold
 
     # Call the generic plotting function

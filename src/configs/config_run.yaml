@@ -19,15 +19,15 @@ model_properties:
   initialization: Glorot normal
   optimizer: L-BFGS
   iters: 3000
-  iters_lbfgs: 14997
+  iters_lbfgs: 15000
   learning_rate: 0.001
   num_dense_layers: 4
   num_dense_nodes: 50
-  num_domain: 5000
-  num_boundary: 5000
+  num_domain: 1000
+  num_boundary: 1000
   num_initial: 0
   num_test: 1000
-  resampling: true
+  resampling: false
   resampler_period: 100
   w_res: 1
   w_bc0: 1
@@ -42,10 +42,10 @@ model_properties:
   b2: -0.51746
   b3: 0.96667
   b4: 0.82857
-  c1: -1.79524
-  c2: 0.96667
-  c3: 0.82857
-  n_ins: 4
+  c1: null
+  c2: null
+  c3: null
+  n_ins: 2
   np_seed: 500
   sigma: 1.0
   n_anchor_points: 0
@@ -333,14 +333,14 @@ plot:
   show_gt: true
   show_sys: true
 experiment:
-  ground_truth: true
+  ground_truth: false
   gt_path: cooling_ground_truth_5e-04
   simulation: true
   inverse: false
   run: simulation
   plot: true
   wandb: true
-  wandb_name: opt_k
+  wandb_name: opt_sp_direct
 experiment_type:
   import_data: false
   save_pickle: true
@@ -420,4 +420,4 @@ experiment_type:
     phantom: B
 run:
   dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/multirun/2025-02-17/11-16-25/24
+output_dir: /home/guglielmo/pinns-bioheat-experiments/multirun/2025-02-23/12-18-36/17
