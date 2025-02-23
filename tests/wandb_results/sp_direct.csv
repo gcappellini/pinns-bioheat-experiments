@@ -1,4 +1,4 @@
-nres,nb,resampling,runtime,losstest,mse
+nres,nb,resampling,runtime,testloss,mse
 1000,1000,True,77.0,0.0002703,4e-08
 1000,200,False,92.7,0.00028841,1e-07
 500,200,True,77.4,0.00034577,2e-08
