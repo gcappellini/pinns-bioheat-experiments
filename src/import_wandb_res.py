@@ -92,7 +92,8 @@ with open(f"{conf_dir}/model_properties/simulation.yaml", "r") as file:  # Chang
         "Troom": "Tf",
         "pwr_fact": "p",
         "PD": "pd",
-        "W_sys": "wb"
+        "W_sys": "wb",
+        "Tgt20": "Tgt0",
     }
 
     # Remove underscores from other entries
