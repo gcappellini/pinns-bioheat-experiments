@@ -19,9 +19,9 @@ from common import setup_log
 import time
 
 
-dde.config.set_random_seed(200)
-np.random.seed(200)
-torch.manual_seed(200)
+dde.config.set_random_seed(300)
+np.random.seed(300)
+torch.manual_seed(300)
 dde.config.set_default_float("float64")
 
 dev = "cuda" if torch.cuda.is_available() else "cpu"
@@ -109,11 +109,11 @@ def compute_metrics(series_to_plot, train_info, cfg, run_figs):
             f"{cond_name}_mean": mean_err_cond,
         })
 
-    # Calculate and store LOSS metric for each condition
-    LOSS_pred = np.sum(loss_weights * np.array([metrics[f"{cond}_MSE"] for cond in ["domain", "bc0", "bc1", "initial_condition"]]))
-    metrics[f"LOSS"] = LOSS_pred
-    for cond_name in conditions.keys():
-        metrics[f"{cond_name}_LOSS"] = loss_weights[0] * metrics.get(f"{cond_name}_MSE", 0)
+    # # Calculate and store LOSS metric for each condition
+    # LOSS_pred = np.sum(loss_weights * np.array([metrics[f"{cond}_MSE"] for cond in ["domain", "bc0", "bc1", "initial_condition"]]))
+    # metrics[f"LOSS"] = LOSS_pred
+    # for cond_name in conditions.keys():
+    #     metrics[f"{cond_name}_LOSS"] = loss_weights[0] * metrics.get(f"{cond_name}_MSE", 0)
 
     # Save the metrics dictionary as a YAML file
     # Convert metrics values to float (Hydra supports float, not float64)
@@ -384,9 +384,9 @@ def check_for_trained_model(conf):
     if filtered_losses:
         loss_file = os.path.join(models, filtered_losses[0])
         loss_data = np.load(loss_file)
-        info_train = {"loss": np.min(loss_data['test']), "runtime": loss_data['runtime']}
+        info_train = {"testloss": np.min(loss_data['test']), "runtime": loss_data['runtime']}
     else:
-        info_train = {"loss": None, "runtime": None}
+        info_train = {"testloss": None, "runtime": None}
     # Return the path to the first sorted model
     sorted_files = sorted(filtered_models)
     model_path = os.path.join(models, sorted_files[0])
@@ -447,7 +447,7 @@ def train_model(conf):
     test = np.array(losshistory.loss_test).sum(axis=1).ravel()
     runtime = time.time() - start_time
     pp.plot_loss_components(losshistory, runtime, config_hash)
-    info_train = {"loss": test.min(), "runtime": runtime}
+    info_train = {"testloss": test.min(), "runtime": runtime}
 
     return model, info_train
 
