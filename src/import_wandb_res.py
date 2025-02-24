@@ -60,44 +60,44 @@ out_dir = f"{tests_dir}/wandb_results"
 
 
 
-# # Load YAML file
-# with open(f"{conf_dir}/pinn_hp/config_direct.yaml", "r") as file:  # Change filename if needed
-#     data = yaml.safe_load(file)
-#     # Rename keys in data
-#     key_mapping = {
-#         "activation": "af",
-#         "initial_weights_regularizer": "iwr",
-#         "initialization": "init",
-#         "learning_rate": "lr",
-#         "num_dense_layers": "depth",
-#         "num_dense_nodes": "width",
-#         "num_domain": "nres",
-#         "num_boundary": "nb",
-#         "num_test": "ntest",
-#         "w_res": "wres",
-#         "w_bc0": "wbc0",
-#         "n_ins": "nins",
-#         "n_anchor_points": "nanc"
-#     }
-
-#     # Remove underscores from other entries
-#     data = {key_mapping.get(k, k.replace('_', '')): v for k, v in data.items()}
-
 # Load YAML file
-with open(f"{conf_dir}/model_properties/simulation.yaml", "r") as file:  # Change filename if needed
+with open(f"{conf_dir}/pinn_hp/config_simulation.yaml", "r") as file:  # Change filename if needed
     data = yaml.safe_load(file)
     # Rename keys in data
     key_mapping = {
-        "tauf": "tf",
-        "Troom": "Tf",
-        "pwr_fact": "p",
-        "PD": "pd",
-        "W_sys": "wb",
-        "Tgt20": "Tgt0",
+        "activation": "af",
+        "initial_weights_regularizer": "iwr",
+        "initialization": "init",
+        "learning_rate": "lr",
+        "num_dense_layers": "depth",
+        "num_dense_nodes": "width",
+        "num_domain": "nres",
+        "num_boundary": "nb",
+        "num_test": "ntest",
+        "w_res": "wres",
+        "w_bc0": "wbc0",
+        "n_ins": "nins",
+        "n_anchor_points": "nanc"
     }
 
     # Remove underscores from other entries
     data = {key_mapping.get(k, k.replace('_', '')): v for k, v in data.items()}
+
+# # Load YAML file
+# with open(f"{conf_dir}/model_properties/simulation.yaml", "r") as file:  # Change filename if needed
+#     data = yaml.safe_load(file)
+#     # Rename keys in data
+#     key_mapping = {
+#         "tauf": "tf",
+#         "Troom": "Tf",
+#         "pwr_fact": "p",
+#         "PD": "pd",
+#         "W_sys": "wb",
+#         "Tgt20": "Tgt0",
+#     }
+
+#     # Remove underscores from other entries
+#     data = {key_mapping.get(k, k.replace('_', '')): v for k, v in data.items()}
 # Write to CSV file
 csv_filename = f"{out_dir}/props_direct.csv"
 with open(csv_filename, "w", newline="") as file:
