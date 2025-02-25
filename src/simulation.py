@@ -295,6 +295,15 @@ def main():
             
     #     run_measurement_mm_obs(config, run_out_dir)
 
+    if dict_exp["ground_truth"]:
+        ks = [1, 2, 3, 4, 5, 6, 7, 8,10,13,15,18,22,25,30,32,35]
+        for el in ks:
+            config.model_properties.alfa = el
+            run_out_dir = f"{tests_dir}/gt_k/{el}"
+            os.makedirs(run_out_dir, exist_ok=True)
+            config.output_dir = run_out_dir
+            output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, run_out_dir)
+
 
 if __name__ == "__main__":
     main()

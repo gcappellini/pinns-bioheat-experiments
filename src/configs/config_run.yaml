@@ -13,7 +13,7 @@ model_properties:
   Ty20: 30.2
   Ty30: 21.5
   Tgt20: 31.5
-  alfa: 15
+  alfa: 35
   activation: tanh
   initial_weights_regularizer: false
   initialization: Glorot normal
@@ -333,13 +333,13 @@ plot:
   show_gt: true
   show_sys: true
 experiment:
-  ground_truth: false
-  gt_path: cooling_ground_truth_5e-04
-  simulation: true
+  ground_truth: true
+  gt_path: None
+  simulation: false
   inverse: false
   run: simulation
   plot: true
-  wandb: true
+  wandb: false
   wandb_name: opt_k
 experiment_type:
   import_data: false
@@ -420,4 +420,4 @@ experiment_type:
     phantom: B
 run:
   dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /home/guglielmo/pinns-bioheat-experiments/multirun/2025-02-25/01-06-34/0
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/gt_k/35

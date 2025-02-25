@@ -13,7 +13,7 @@ model_properties:
   Ty20: 30.2
   Ty30: 21.5
   Tgt20: 31.5
-  alfa: 35
+  alfa: 25
   activation: tanh
   initial_weights_regularizer: false
   initialization: Glorot normal
@@ -68,5 +68,5 @@ model_parameters:
   x_gt: 0.01
   x_w: 0.025
   x_gt1: 0.04
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/gt_k/35
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/gt_k/25
 experiment: simulation
