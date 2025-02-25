@@ -9,6 +9,6 @@ nb,200
 ntest,1000
 resampling,True
 wres,1
-wbc0,1
+wbc,1
 nins,2
 nanc,0

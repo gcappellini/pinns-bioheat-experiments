@@ -23,7 +23,7 @@ model_properties:
   learning_rate: 0.001
   num_dense_layers: 4
   num_dense_nodes: 50
-  num_domain: 200
+  num_domain: 500
   num_boundary: 200
   num_initial: 0
   num_test: 1000
@@ -333,14 +333,14 @@ plot:
   show_gt: true
   show_sys: true
 experiment:
-  ground_truth: true
-  gt_path: None
-  simulation: false
+  ground_truth: false
+  gt_path: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/gt_k/$model_properties.alfa
+  simulation: true
   inverse: false
   run: simulation
   plot: true
-  wandb: false
-  wandb_name: opt_k
+  wandb: true
+  wandb_name: opt_alfa
 experiment_type:
   import_data: false
   save_pickle: true
@@ -420,4 +420,4 @@ experiment_type:
     phantom: B
 run:
   dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/gt_k/35
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/multirun/2025-02-25/14-40-52/16

@@ -160,9 +160,9 @@ def run_simulation_mm_obs(config, out_dir, system_gt, mm_obs_gt, observers_gt, g
     output_dir_inverse, config_inverse = co.set_run(out_dir, config, label)
     props, pars, exp = config_inverse.model_properties, config_inverse.model_parameters, config.experiment
     config_wb = {
-        "num_domain": props.num_domain,
-        "num_boundary": props.num_boundary,
-        "resampling": props.resampling,
+        # "num_domain": props.num_domain,
+        # "num_boundary": props.num_boundary,
+        # "resampling": props.resampling,
         "alfa": props.alfa
     }
     if exp.wandb:
@@ -260,12 +260,17 @@ def main():
     """
     Main function to run the testing of the network, MATLAB ground truth, observer checks, and PINNs.
     """
+    # ks = [1, 2, 3, 4, 5, 6, 7, 8,10,13,15,18,22,25,30,32,35]
+    # for el in ks:
     config = compose(config_name="config_run")
+    kk = config.model_properties.alfa
+    gt_path = f"{tests_dir}/gt_k/{kk}"
+    
     run_out_dir = config.output_dir
     dict_exp = config.experiment
     n_ins = config.model_properties.n_ins
 
-    gt_path=f"{tests_dir}/{dict_exp.gt_path}"
+    # gt_path=f"{tests_dir}/{dict_exp.gt_path}"
 
     if dict_exp["simulation"]:
         # Simulation System
@@ -295,14 +300,14 @@ def main():
             
     #     run_measurement_mm_obs(config, run_out_dir)
 
-    if dict_exp["ground_truth"]:
-        ks = [1, 2, 3, 4, 5, 6, 7, 8,10,13,15,18,22,25,30,32,35]
-        for el in ks:
-            config.model_properties.alfa = el
-            run_out_dir = f"{tests_dir}/gt_k/{el}"
-            os.makedirs(run_out_dir, exist_ok=True)
-            config.output_dir = run_out_dir
-            output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, run_out_dir)
+    # if dict_exp["ground_truth"]:
+    #     ks = [1, 2, 3, 4, 5, 6, 7, 8,10,13,15,18,22,25,30,32,35]
+    #     for el in ks:
+    #         config.model_properties.alfa = el
+    #         run_out_dir = f"{tests_dir}/gt_k/{el}"
+    #         os.makedirs(run_out_dir, exist_ok=True)
+    #         config.output_dir = run_out_dir
+    #         output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, run_out_dir)
 
 
 if __name__ == "__main__":
