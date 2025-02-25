@@ -23,11 +23,11 @@ model_properties:
   learning_rate: 0.001
   num_dense_layers: 4
   num_dense_nodes: 50
-  num_domain: 1000
+  num_domain: 200
   num_boundary: 200
   num_initial: 0
   num_test: 1000
-  resampling: false
+  resampling: true
   resampler_period: 100
   w_res: 1
   w_bc0: 1
@@ -42,10 +42,10 @@ model_properties:
   b2: -0.51746
   b3: 0.96667
   b4: 0.82857
-  c1: null
-  c2: null
-  c3: null
-  n_ins: 2
+  c1: -1.79524
+  c2: 0.96667
+  c3: 0.82857
+  n_ins: 4
   np_seed: 500
   sigma: 1.0
   n_anchor_points: 0
@@ -339,8 +339,8 @@ experiment:
   inverse: false
   run: simulation
   plot: true
-  wandb: false
-  wandb_name: opt_sp_direct_1
+  wandb: true
+  wandb_name: opt_k
 experiment_type:
   import_data: false
   save_pickle: true
@@ -420,4 +420,4 @@ experiment_type:
     phantom: B
 run:
   dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /home/guglielmo/pinns-bioheat-experiments/tests/cooling_simulation_direct
+output_dir: /home/guglielmo/pinns-bioheat-experiments/multirun/2025-02-25/01-06-34/0

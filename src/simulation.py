@@ -163,17 +163,17 @@ def run_simulation_mm_obs(config, out_dir, system_gt, mm_obs_gt, observers_gt, g
         "num_domain": props.num_domain,
         "num_boundary": props.num_boundary,
         "resampling": props.resampling,
+        "alfa": props.alfa
     }
     if exp.wandb:
         wandb.init(project=f"{datetime.date.today()}_{exp.wandb_name}", config=config_wb)
     output = uu.execute(config_inverse, label)
     multi_obs = output[0] if pars.n_obs==1 else [e[0] for e in output]
-    test_loss = output[1] if pars.n_obs==1 else [e[1] for e in output]
+    train_info = output[1] if pars.n_obs==1 else [e[1] for e in output]
     x_obs = uu.gen_obsdata(config_inverse, system_gt)
     observers, mm_obs = uu.get_observers_preds(mm_obs_gt, multi_obs, x_obs, out_dir, config_inverse, label)
 
-    metrics = uu.compute_metrics([mm_obs_gt, mm_obs], config, out_dir)
-    metrics["test"] = test_loss
+    metrics = uu.compute_metrics([mm_obs_gt, mm_obs], train_info, config, out_dir)
     if exp.wandb:
         wandb.log(metrics)
 
