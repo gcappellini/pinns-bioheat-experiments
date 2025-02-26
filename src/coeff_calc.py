@@ -85,7 +85,7 @@ def rescale_t(t: float)->float:
 
 def scale_t(t: float)->float:
 
-    return (t - Troom)/(Tmax - Troom)
+    return round((t - Troom)/(Tmax - Troom), 5)
 
 "coefficients a1, a2, a3, a4, a5"
 
@@ -153,3 +153,7 @@ v_cooling_2 = round(Q_cooling_2/A_cooling_2, 3) # Velocity Cooling 2 (m/s)
 
 if __name__ == "__main__":
     print(os.path.abspath(cfg.run.dir))
+    # print(f"{a1} & {a2} & {a3} & {a4} & {a5}")
+    # print(f"{theta10} & {theta20} & {theta30} & {theta_gt20}")
+    # print(f"{b1} & {b2} & {b3} & {b4}")
+    print(f"{c1} & {c2} & {c3} & {upsilon} & {lamb}")

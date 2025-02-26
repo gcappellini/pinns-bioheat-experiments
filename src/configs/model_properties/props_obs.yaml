@@ -339,7 +339,7 @@ experiment:
   inverse: false
   run: simulation
   plot: true
-  wandb: false
+  wandb: true
   wandb_name: opt_alfa
 experiment_type:
   import_data: false
@@ -420,4 +420,4 @@ experiment_type:
     phantom: B
 run:
   dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-02-26/01-03-11
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/multirun/2025-02-25/14-40-52/16
