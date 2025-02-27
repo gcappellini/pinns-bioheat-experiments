@@ -616,8 +616,8 @@ def get_tc_positions():
     x_gt1 = (cc.x_gt1)/L0
     x_y1 = 1.0
 
-    return {"y2": x_y2, "gt": round(x_gt, 2), "y1": x_y1}
-    # return {"y2": x_y2, "gt": round(x_gt, 2), "gt1": round(x_gt1, 2),"y1": x_y1}
+    # return {"y2": x_y2, "gt": round(x_gt, 2), "y1": x_y1}
+    return {"y2": x_y2, "gt": round(x_gt, 2), "gt1": round(x_gt1, 2),"y1": x_y1}
 
 def get_loss_names():
     # return ["residual", "bc0", "bc1", "ic", "test", "train"]
@@ -1347,7 +1347,8 @@ def extract_matching(dicts):
         result = np.hstack((grid, dicts[0]['theta'].reshape(-1, 1)))
         theta_obsvs = np.zeros((len(grid), len(dicts)-1))
         for i in range(1, len(dicts)):
-            theta_obsvs[:, i-1] = dicts[i]['theta']
+            a = dicts[i]['theta'].reshape(theta_obsvs[:, i-1].shape)
+            theta_obsvs[:, i-1] = a
     else:
         # counter = 0
         ref_index = 1 if flag<=0 else 0

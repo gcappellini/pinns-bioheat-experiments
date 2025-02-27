@@ -229,29 +229,36 @@ def run_measurement_mm_obs(config, out_dir):
     label = config.experiment.run
     setup_log(f"Running measurement {label} for multi-observer")
     output_dir_meas, config_meas = co.set_run(out_dir, config, label)
-    multi_obs = uu.execute(config_meas, label)
+    # multi_obs = uu.execute(config_meas, label)
     system_meas, _ = uu.import_testdata(config_meas)
-    x_obs = uu.import_obsdata(config_meas)
-    observers, mm_obs = uu.get_observers_preds(system_meas, multi_obs, x_obs, out_dir, config_meas, label)
+    # x_obs = uu.import_obsdata(config_meas)
+    # observers, mm_obs = uu.get_observers_preds(system_meas, multi_obs, x_obs, out_dir, config_meas, label)
     # load_dir = f"{tests_dir}/meas_cool_bone_tum_{config.model_parameters.n_obs}obs/0" if label.endswith("1") else f"{tests_dir}/meas_cool_bone_tum_{config.model_parameters.n_obs}obs/1"
     # observers, mm_obs = uu.load_observers_preds(load_dir, config_meas, label)
+    load_path = f"/Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/meas_cool_bone_tum_64obs/1/multi_observer_{label}.txt"
+    data = np.loadtxt(load_path)
+    x, t, sys = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T
+    X = np.vstack((x, t)).T
+    y_sys = sys.flatten()[:, None]
+    mm_obs = {"grid": X, "theta": y_sys, "label": "multi_observer"}
+    observers = []
 
-    uu.compute_metrics([system_meas, *observers, mm_obs], config, out_dir)
+    # uu.compute_metrics([system_meas, mm_obs], {}, config, out_dir)
 
     if config.experiment.plot:
 
         if config.plot.show_obs:
             pp.plot_multiple_series([system_meas, *observers, mm_obs], out_dir, label)
-            pp.plot_l2(system_meas, [*observers, mm_obs], out_dir, label)
+            # pp.plot_l2(system_meas, [*observers, mm_obs], out_dir, label)
             # pp.plot_validation_3d(system_meas["grid"], system_meas["theta"], mm_obs["theta"], out_dir, label)
-            pp.plot_obs_err([*observers, mm_obs], out_dir, label)
-            if 1 < config.model_parameters.n_obs <= 8: 
-                pp.plot_weights([*observers], out_dir, label)
+            # pp.plot_obs_err([*observers, mm_obs], out_dir, label)
+            # if 1 < config.model_parameters.n_obs <= 8: 
+            #     pp.plot_weights([*observers], out_dir, label)
         else:
             pp.plot_multiple_series([system_meas, mm_obs], out_dir, label)
-            pp.plot_l2(system_meas, [mm_obs], out_dir, label)
+            # pp.plot_l2(system_meas, [mm_obs], out_dir, label)
             # pp.plot_validation_3d(system_meas["grid"], system_meas["theta"], mm_obs["theta"], out_dir, label)
-            pp.plot_obs_err([mm_obs], out_dir, label)
+            # pp.plot_obs_err([mm_obs], out_dir, label)
 
         pp.plot_timeseries_with_predictions(system_meas, mm_obs, config, out_dir)
 
@@ -294,11 +301,11 @@ def main():
 
             run_simulation_mm_obs(config, run_out_dir, system_gt, mm_obs_gt, observers_gt, gt_path)
     
-    # elif dict_exp["run"].startswith("meas"):
-    #     if dict_exp["ground_truth"]:
-    #         output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, run_out_dir)
+    elif dict_exp["run"].startswith("meas"):
+        if dict_exp["ground_truth"]:
+            output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, run_out_dir)
             
-    #     run_measurement_mm_obs(config, run_out_dir)
+        run_measurement_mm_obs(config, run_out_dir)
 
     # if dict_exp["ground_truth"]:
     #     ks = [1, 2, 3, 4, 5, 6, 7, 8,10,13,15,18,22,25,30,32,35]

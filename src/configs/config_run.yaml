@@ -9,8 +9,8 @@ model_properties:
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
-  Ty10: 21.5
-  Ty20: 30.2
+  Ty10: 22.84
+  Ty20: 28.6
   Ty30: 21.5
   Tgt20: 31.5
   alfa: 35
@@ -38,13 +38,13 @@ model_properties:
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b1: -1.27781
-  b2: -0.51742
-  b3: 0.96667
-  b4: 0.82857
-  c1: -1.79524
-  c2: 0.96667
-  c3: 0.82857
+  b1: -10.90664
+  b2: 9.56918
+  b3: 0.78889
+  b4: 0.67619
+  c1: -1.33746
+  c2: 0.78889
+  c3: 0.67619
   n_ins: 4
   np_seed: 500
   sigma: 1.0
@@ -329,15 +329,15 @@ plot:
         linestyle: '-'
         linewidth: 1.2
         alpha: 1.0
-  show_obs: true
-  show_gt: true
+  show_obs: false
+  show_gt: false
   show_sys: true
 experiment:
   ground_truth: false
   gt_path: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/gt_k/$model_properties.alfa
-  simulation: true
+  simulation: false
   inverse: false
-  run: simulation
+  run: meas_cool_2
   plot: true
   wandb: false
   wandb_name: opt_alfa
@@ -420,4 +420,4 @@ experiment_type:
     phantom: B
 run:
   dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-02-26/01-03-11
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-02-27/18-33-34
