@@ -1,0 +1,14 @@
+af,tanh
+iwr,False
+init,Glorot uniform
+lr,0.001
+depth,4
+width,50
+nres,1800
+nb,1000
+ntest,1000
+resampling,True
+wres,1
+wbc,1
+nins,4
+nanc,0

@@ -14,7 +14,7 @@ tests_dir = os.path.join(git_dir, "tests")
 api = wandb.Api()
 
 # Project is specified by <entity/project-name>
-runs = api.runs("ht-pinns/2025-02-25_opt_sp")
+runs = api.runs("ht-pinns/2025-02-26_opt_width_depth")
 
 summary_list, config_list, name_list = [], [], []
 for run in runs: 
@@ -46,9 +46,11 @@ for summary, config, name in zip(summary_list, config_list, name_list):
 # Create a DataFrame from the flattened data
 runs_df = pd.DataFrame(flattened_data)
 # Order the DataFrame by the 'test' column from lower to greater
-runs_df.rename(columns={'MSE':'mse','num_domain':'nres', 'num_boundary':'nb'}, inplace=True)
+# runs_df.rename(columns={'MSE':'mse','num_domain':'nres', 'num_boundary':'nb'}, inplace=True)
+runs_df.rename(columns={'MSE':'mse'}, inplace=True)
 cols = runs_df.columns.tolist()
-new_cols = ['nres','nb','resampling','runtime','testloss','mse']
+# new_cols = ['nres','nb','resampling','runtime','testloss','mse']
+new_cols = ['width', 'depth', 'runtime','testloss','mse']
 runs_df = runs_df[new_cols]
 
 pd.options.display.float_format = '{:.1e}'.format
@@ -56,7 +58,7 @@ runs_df["runtime"] = runs_df["runtime"].apply(lambda x: f"{x:.1f}")
 runs_df = runs_df.sort_values(by='testloss', ascending=True)
 out_dir = f"{tests_dir}/wandb_results"
 os.makedirs(out_dir, exist_ok=True)
-runs_df.to_csv(f"{out_dir}/sp_nbho.csv", index=False)
+runs_df.to_csv(f"{out_dir}/width_depth_nbho.csv", index=False)
 
 
 
