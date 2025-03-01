@@ -31,12 +31,12 @@ def run_ground_truth(config, out_dir):
 
     # uu.compute_metrics([system_gt, *observers_gt, mm_obs_gt], config, out_dir)
 
-    if config.experiment.plot:
-        if config.model_parameters.n_obs == 0:
+    if config.plot.show:
+        if config.model_parameters.nobs == 0:
             system_meas, _ = uu.import_testdata(config)
             pp.plot_multiple_series([system_gt, system_meas], out_dir, label)
 
-        elif config.model_parameters.n_obs == 1:
+        elif config.model_parameters.nobs == 1:
             pp.plot_multiple_series([system_gt, *observers_gt], out_dir, label)
             pp.plot_l2(system_gt, [*observers_gt], out_dir, label)
             pp.plot_validation_3d(system_gt["grid"], system_gt["theta"], mm_obs_gt["theta"], out_dir, label)
@@ -48,7 +48,7 @@ def run_ground_truth(config, out_dir):
                 pp.plot_l2(system_gt, [*observers_gt, mm_obs_gt], out_dir, label)
                 pp.plot_validation_3d(system_gt["grid"], system_gt["theta"], mm_obs_gt["theta"], out_dir, label)
                 pp.plot_obs_err([*observers_gt, mm_obs_gt], out_dir, label)
-                if 1 < config.model_parameters.n_obs <= 8:
+                if 1 < config.model_parameters.nobs <= 8:
                     pp.plot_weights([*observers_gt], out_dir, label)
         
             else:
@@ -245,7 +245,7 @@ def run_measurement_mm_obs(config, out_dir):
 
     # uu.compute_metrics([system_meas, mm_obs], {}, config, out_dir)
 
-    if config.experiment.plot:
+    if config.plot.show:
 
         if config.plot.show_obs:
             pp.plot_multiple_series([system_meas, *observers, mm_obs], out_dir, label)
@@ -270,22 +270,22 @@ def main():
     # ks = [1, 2, 3, 4, 5, 6, 7, 8,10,13,15,18,22,25,30,32,35]
     # for el in ks:
     config = compose(config_name="config_run")
-    kk = config.model_properties.alfa
+    kk = config.model_properties.oig
     gt_path = f"{tests_dir}/gt_k/{kk}"
     
     run_out_dir = config.output_dir
     dict_exp = config.experiment
-    n_ins = config.model_properties.n_ins
+    nins = config.model_properties.nins
 
     # gt_path=f"{tests_dir}/{dict_exp.gt_path}"
 
     if dict_exp["simulation"]:
         # Simulation System
-        if n_ins==2 and not dict_exp["inverse"]:
+        if nins==2 and not dict_exp["inverse"]:
             system_gt, _, _ = uu.gen_testdata(config, path=gt_path)
             run_simulation_system(config, run_out_dir, system_gt)
         
-        elif n_ins==2 and dict_exp["inverse"]:
+        elif nins==2 and dict_exp["inverse"]:
             if dict_exp["run"].startswith("meas"):
                 system_gt, _ = uu.import_testdata(config)
             else:

@@ -1,0 +1,258 @@
+entities:
+  system:
+    color: C3
+    label: System PINNs
+    linestyle: '-'
+    linewidth: 1.2
+    alpha: 1.0
+  multi_observer:
+    color: darkblue
+    label: MultiObs PINNs
+    linestyle: ':'
+    linewidth: 1.2
+    alpha: 1.0
+  loss_terms:
+    color:
+    - '#9ACD32'
+    - '#FF6347'
+    - '#FFD700'
+    - '#FF1493'
+    label:
+    - Residual
+    - BC X=0
+    - BC X=1
+    - IC
+    linestyle:
+    - '-'
+    - --
+    - '-'
+    - --
+    linewidth:
+    - 1.2
+    - 1.2
+    - 1.2
+    - 1.2
+    alpha:
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+  train_loss:
+    color: '#D2691E'
+    label: Train Loss
+    linestyle: '-'
+    linewidth: 1.0
+    alpha: 1.0
+  test_loss:
+    color: '#D2691E'
+    label: Test Loss
+    linestyle: ':'
+    linewidth: 1.0
+    alpha: 0.8
+  observers:
+    color:
+    - C0
+    - C1
+    - C2
+    - C9
+    - C4
+    - C5
+    - C6
+    - C7
+    label:
+    - Obs 0 PINNs
+    - Obs 1 PINNs
+    - Obs 2 PINNs
+    - Obs 3 PINNs
+    - Obs 4 PINNs
+    - Obs 5 PINNs
+    - Obs 6 PINNs
+    - Obs 7 PINNs
+    linestyle:
+    - '-'
+    - -.
+    - '-'
+    - -.
+    - --
+    - '-'
+    - --
+    - '-'
+    linewidth:
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+    - 1.0
+    alpha:
+    - 0.9
+    - 0.9
+    - 0.9
+    - 0.9
+    - 0.9
+    - 0.9
+    - 0.9
+    - 0.9
+  system_gt:
+    color: C3
+    label: System MATLAB
+    linestyle: --
+    linewidth: 1.0
+    alpha: 0.8
+  system_meas:
+    color: red
+    label: Measurement
+    linestyle: --
+    linewidth: 1.0
+    alpha: 0.3
+    marker: '*'
+  theory:
+    color: purple
+    label: Theory
+    linestyle: --
+    linewidth: 1.0
+    alpha: 1.0
+  bound:
+    color: chocolate
+    label: Bound
+    linestyle: -.
+    linewidth: 1.0
+    alpha: 1.0
+  multi_observer_gt:
+    color: orange
+    label: MultiObs MATLAB
+    linestyle: --
+    linewidth: 1.0
+    alpha: 0.8
+  observers_gt:
+    color:
+    - C0
+    - C1
+    - C2
+    - C9
+    - C4
+    - C5
+    - C6
+    - C7
+    label:
+    - Obs 0 MATLAB
+    - Obs 1 MATLAB
+    - Obs 2 MATLAB
+    - Obs 3 MATLAB
+    - Obs 4 MATLAB
+    - Obs 5 MATLAB
+    - Obs 6 MATLAB
+    - Obs 7 MATLAB
+    linestyle:
+    - ':'
+    - ':'
+    - ':'
+    - ':'
+    - ':'
+    - ':'
+    - ':'
+    - ':'
+    linewidth:
+    - 1.2
+    - 1.2
+    - 1.2
+    - 1.2
+    - 1.2
+    - 1.2
+    - 1.2
+    - 1.2
+    alpha:
+    - 0.7
+    - 0.7
+    - 0.7
+    - 0.7
+    - 0.7
+    - 0.7
+    - 0.7
+    - 0.7
+  meas_points:
+    y1:
+      color: '#F7CAC9'
+    gt1:
+      color: '#92A8D1'
+    gt:
+      color: '#FF6F61'
+    y2:
+      color: '#EE82EE'
+    y3:
+      color: '#88B04B'
+    A0:
+      color: '#FF4500'
+    A1:
+      color: '#32CD32'
+    A2:
+      color: '#1E90FF'
+    A3:
+      color: '#FFD700'
+    A4:
+      color: '#FF69B4'
+    A5:
+      color: '#8A2BE2'
+    A6:
+      color: '#8B0000'
+    B0:
+      color: '#00008B'
+    B1:
+      color: '#8B008B'
+    B2:
+      color: '#556B2F'
+    B3:
+      color: '#FF8C00'
+    B4:
+      color: '#9932CC'
+    B5:
+      color: '#8B4513'
+    B6:
+      color: '#2F4F4F'
+    bol1_d:
+      color: '#FF8C00'
+    bol1_u:
+      color: '#ADFF2F'
+    bol2_d:
+      color: '#00CED1'
+    bol2_u:
+      color: '#FF00FF'
+  losses:
+    residual:
+      color: '#9ACD32'
+      label: $\mathcal{L}_{res}$
+      linestyle: '-'
+      linewidth: 1.2
+      alpha: 1.0
+    bc0:
+      color: '#FF6347'
+      label: $\mathcal{L}_{bc0}$
+      linestyle: '-'
+      linewidth: 1.2
+      alpha: 1.0
+    bc1:
+      color: '#FFD700'
+      label: $\mathcal{L}_{bc1}$
+      linestyle: '-'
+      linewidth: 1.2
+      alpha: 1.0
+    ic:
+      color: '#FF1493'
+      label: $\mathcal{L}_{ic}$
+      linestyle: '-'
+      linewidth: 1.2
+      alpha: 1.0
+    test:
+      color: '#D2691E'
+      label: test loss
+      linestyle: ':'
+      linewidth: 1.2
+      alpha: 1.0
+    train:
+      color: '#A0522D'
+      label: train loss
+      linestyle: '-'
+      linewidth: 1.2
+      alpha: 1.0

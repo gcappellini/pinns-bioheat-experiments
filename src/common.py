@@ -49,7 +49,7 @@ def set_run(prj_figs, cfg, run):
         cfg.output_dir = os.path.abspath(prj_figs)
         # cfg.output_dir = os.path.abspath(os.path.join(prj_figs, run))
         os.makedirs(cfg.output_dir, exist_ok=True)
-        props.Ty10, props.Ty20, props.Ty30, props.Tgt20 = simu_settings.Ty10, simu_settings.Ty20, simu_settings.Ty30, simu_settings.Tgt20
+        props.Ty10, props.Ty20, props.Ty30, props.Tgt0 = simu_settings.Ty10, simu_settings.Ty20, simu_settings.Ty30, simu_settings.Tgt20
         pars.lam, pars.upsilon = simu_settings.lam, simu_settings.upsilon
         OmegaConf.save(cfg, f"{conf_dir}/config_run.yaml")
         cfg = filter_config_for_matlab(cfg)

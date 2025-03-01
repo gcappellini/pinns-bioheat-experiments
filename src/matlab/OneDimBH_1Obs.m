@@ -25,7 +25,7 @@ function [sol] = OneDimBH_1Obs
 
     %-----------------
     function [c,f,s] = OneDimBHpde_1Obs(x,t,u,dudx)
-    global a1 a2 a3 a4 W_obs W_sys incr_fact
+    global a1 a2 a3 a4 wbobs wbsys incr_fact
     %la prima equazione è quella del sistema, a seguire gli osservatori
     t
     if x >= 0.2 && x <= 0.5
@@ -42,8 +42,8 @@ function [sol] = OneDimBH_1Obs
     
     % den=u(5)*exp(-om0)+u(6)*exp(-om1)+u(7)*exp(-om2);
     
-    s = [-W_sys*a2*u(1)+a3*exp(-a4*x); 
-        -W_obs*a2_*u(2)+a3_*exp(-a4*x);
+    s = [-wbsys*a2*u(1)+a3*exp(-a4*x); 
+        -wbobs*a2_*u(2)+a3_*exp(-a4*x);
         ];
     % --------------------------------------------------------------------------
 
@@ -56,7 +56,7 @@ function [sol] = OneDimBH_1Obs
     
     
     function [pl,ql,pr,qr] = OneDimBHbc_1Obs(xl,ul,xr,ur,t)
-    global K a5
+    global oig a5
     
     % p(x,t,u) + q(x,t)f(x,t,u,dudx)=0
 
@@ -64,7 +64,7 @@ function [sol] = OneDimBH_1Obs
     [~, ~, ~, ~, y3] = ic_bc(xl, t);
     flusso = a5*(y3 - ul(1));
     
-    pl = [flusso; flusso-K*(ul(2)-ul(1))];
+    pl = [flusso; flusso-oig*(ul(2)-ul(1))];
     ql = [1; 1];
 
     pr = [ur(1) - y1; ur(2) - y1];

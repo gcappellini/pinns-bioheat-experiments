@@ -50,7 +50,7 @@ function [sol] = OneDimBH_3Obs
     
     %-----------------
     function [c,f,s] = OneDimBHpde_3Obs(x,t,u,dudx)
-    global lambda om0 om1 om2 W_sys W0 W4 W7 a1 a2 a3 a4 incr_fact
+    global lambda om0 om1 om2 wbsys wb0 wb4 wb7 a1 a2 a3 a4 incr_fact
     %la prima equazione è quella del sistema, a seguire gli osservatoris
     t
     if x >= 0.2 && x <= 0.5
@@ -63,10 +63,10 @@ function [sol] = OneDimBH_3Obs
     
     den=u(5)*exp(-om0)+u(6)*exp(-om1)+u(7)*exp(-om2);
     
-    s = [-W_sys*a2*u(1)+a3*exp(-a4*x); 
-        -W0*a2*u(2)+a3*exp(-a4*x); 
-        -W4*a2*u(3)+a3*exp(-a4*x); 
-        -W7*a2*u(4)+a3*exp(-a4*x); 
+    s = [-wbsys*a2*u(1)+a3*exp(-a4*x); 
+        -wb0*a2*u(2)+a3*exp(-a4*x); 
+        -wb4*a2*u(3)+a3*exp(-a4*x); 
+        -wb7*a2*u(4)+a3*exp(-a4*x); 
         -lambda*u(5)*(1-(exp(-om0)/den));
         -lambda*u(6)*(1-(exp(-om1)/den)); 
         -lambda*u(7)*(1-(exp(-om2)/den))
@@ -82,7 +82,7 @@ function [sol] = OneDimBH_3Obs
     
     
     function [pl,ql,pr,qr] = OneDimBHbc_3Obs(xl,ul,xr,ur,t)
-    global K om0 om1 om2 upsilon a5 str_exp
+    global oig om0 om1 om2 upsilon a5 str_exp
     [~, ~, y1, ~, ~] = ic_bc(xr, t);
     [~, ~, ~, y2, y3] = ic_bc(xl, t);
 
@@ -95,9 +95,9 @@ function [sol] = OneDimBH_3Obs
     flusso = a5*(y3-sup_y);
     
     pl = [flusso;
-        flusso-K*(ul(2)-sup_y);
-        flusso-K*(ul(3)-sup_y);
-        flusso-K*(ul(4)-sup_y);
+        flusso-oig*(ul(2)-sup_y);
+        flusso-oig*(ul(3)-sup_y);
+        flusso-oig*(ul(4)-sup_y);
         0;0;0];
     ql = [1;1;1;1;1;1;1];
     pr = [ur(1) - y1; 

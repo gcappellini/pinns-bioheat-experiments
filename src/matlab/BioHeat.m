@@ -1,7 +1,7 @@
 clear all
 close all
 
-global K lambda upsilon W_obs W_sys W0 W1 W2 W3 W4 W5 W6 W7 c1 c2 c3 b1 b2 b3 b4 theta10 theta20 theta30 incr_fact theta_gt10 theta_gt20 X_gt1 X_gt2 om0 om1 om2 om3 om4 om5 om6 om7 a1 a2 a3 a4 a5 str_exp path_exp output_path delta_x str_exp n_obs
+global oig lambda upsilon wbobs wbsys wb0 wb1 wb2 wb3 wb4 wb5 wb6 wb7 c1 c2 c3 b1 b2 b3 b4 theta10 theta20 theta30 incr_fact thetagt10 thetagt0 Xgt1 Xgt om0 om1 om2 om3 om4 om5 om6 om7 a1 a2 a3 a4 a5 str_exp path_exp output_path nobs
 
 % Replace the following with the path to readyaml (find link on the internet)
 addpath('/Users/guglielmocappellini/Desktop/research/code/readyaml')
@@ -13,23 +13,12 @@ filename = sprintf('%s/src/configs/config_ground_truth.yaml', git_dir);
 % Read and parse the YAML file into a MATLAB struct
 config_data = readyaml(filename);
 % Extract parameters from the struct
-n_obs = config_data.model_parameters.n_obs;
-L0 = config_data.model_properties.L0;
-tauf = config_data.model_properties.tauf;
-k = config_data.model_properties.k;
-alfa = config_data.model_properties.alfa;
-rho = config_data.model_properties.rho;
-cp = config_data.model_properties.c;
-incr_fact = config_data.model_properties.incr_fact;
-rho_b = rho;
-c_b = cp;
-t_room = config_data.model_properties.Troom;
-t_y10 = config_data.model_properties.Ty10;
-t_gt20 = config_data.model_properties.Tgt20;
-t_y20 = config_data.model_properties.Ty20;
-t_y30 = config_data.model_properties.Ty30;
-t_max = config_data.model_properties.Tmax;
-h = config_data.model_properties.h;
+nobs = config_data.model_parameters.nobs;
+theta10 = config_data.model_properties.theta10;
+thetagt0 = config_data.model_properties.thetagt0;
+theta20 = config_data.model_properties.theta20;
+theta30 = config_data.model_properties.theta30;
+thetagt10 = config_data.model_properties.thetagt10;
 b1 = config_data.model_properties.b1;
 b2 = config_data.model_properties.b2;
 b3 = config_data.model_properties.b3;
@@ -37,64 +26,46 @@ b4 = config_data.model_properties.b4;
 c1 = config_data.model_properties.c1;
 c2 = config_data.model_properties.c2;
 c3 = config_data.model_properties.c3;
-% experiment_name = config_data.experiment;
+incr_fact = config_data.model_properties.incr_fact;
+
 output_path = config_data.output_dir;
 % output_path = fullfile(fileparts(git_dir), output_dir);
-
 str_exp = config_data.experiment;
 path_exp = sprintf('%s/src/data/vessel/%s.txt', git_dir, str_exp);
 % output_path = sprintf('%s/', output_dir);
 
-W0 = config_data.model_parameters.W0;
-W1 = config_data.model_parameters.W1;
-W2 = config_data.model_parameters.W2;
-W3 = config_data.model_parameters.W3;
-W4 = config_data.model_parameters.W4;
-W5 = config_data.model_parameters.W5;
-W6 = config_data.model_parameters.W6;
-W7 = config_data.model_parameters.W7;
+wb0 = config_data.model_parameters.wb0;
+wb1 = config_data.model_parameters.wb1;
+wb2 = config_data.model_parameters.wb2;
+wb3 = config_data.model_parameters.wb3;
+wb4 = config_data.model_parameters.wb4;
+wb5 = config_data.model_parameters.wb5;
+wb6 = config_data.model_parameters.wb6;
+wb7 = config_data.model_parameters.wb7;
 
-W_sys = config_data.model_parameters.W_sys;
-W_index = config_data.model_parameters.W_index;
+wbsys = config_data.model_parameters.wbsys;
+wbindex = config_data.model_parameters.wbindex;
 
 % Combine the perfusions into an array
-obs = [W0, W1, W2, W3, W4, W5, W6, W7];
-matlab_index=W_index+1;
-W_obs = obs(matlab_index);
+obs = [wb0, wb1, wb2, wb3, wb4, wb5, wb6, wb7];
+matlab_index=wbindex+1;
+wbobs = obs(matlab_index);
 
-% Other parameters
-% delta = config_data.model_properties.delta;
 lambda = config_data.model_parameters.lam;
 upsilon = config_data.model_parameters.upsilon;
 
-beta = config_data.model_properties.beta;
-pwr_fact = config_data.model_properties.pwr_fact;
-SAR_0 = config_data.model_properties.SAR_0;
-PD = config_data.model_properties.PD;
-x0 = config_data.model_properties.x0;
+Xgt1 = config_data.model_parameters.Xgt1;
+Xgt = config_data.model_parameters.Xgt;
+Xw = config_data.model_parameters.Xw;
 
-x_gt1 = config_data.model_parameters.x_gt1;
-x_gt = config_data.model_parameters.x_gt;
+a1 = config_data.model_properties.a1;
+a2 = config_data.model_properties.a2;
+a3 = config_data.model_properties.a3;
+a4 = config_data.model_properties.a4;
+a5 = config_data.model_properties.a5;
 
-X_gt1 = x_gt1/L0;
-X_gt = x_gt/L0;
+oig = config_data.model_properties.oig;
 
-cc = log(2)/(PD - x0*10^(-2));
-dT = t_max - t_room;
-
-% Compute constants a1, a2, a3
-a1 = (L0^2/tauf)*(rho*cp/k);
-a2 = L0^2*rho_b*c_b/k;
-a3 = pwr_fact*rho*(L0^2)*beta*SAR_0*exp(cc*x0)/k*dT;
-a4 = cc*L0;
-a5 = (h*L0)/k;
-K = alfa*L0;
-theta10 = (t_y10 - t_room)/(t_max - t_room);
-theta20 = (t_y20 - t_room)/(t_max - t_room);
-theta30 = (t_y30 - t_room)/(t_max - t_room);
-theta_gt20 = (t_gt20 - t_room)/(t_max - t_room);
-
-% Initialize observer weights and constants
 om0 = 0;
 om1 = 0;
 om2 = 0;
@@ -104,17 +75,15 @@ om5 = 0;
 om6 = 0;
 om7 = 0;
 
-
-
 % Call the correct solver based on the number of observers
-if n_obs == 0
+if nobs == 0
     sol = OneDimBH;
-elseif n_obs == 1
+elseif nobs == 1
     sol = OneDimBH_1Obs;
-elseif n_obs == 3
+elseif nobs == 3
     sol = OneDimBH_3Obs;
-elseif n_obs == 4
+elseif nobs == 4
     sol = OneDimBH_4Obs;
-elseif n_obs == 8
+elseif nobs == 8
     sol = OneDimBH_8Obs;
 end

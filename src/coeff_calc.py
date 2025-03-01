@@ -21,16 +21,17 @@ exp = cfg.experiment
 meas_settings = getattr(cfg.experiment_type, exp.run)
 props.Ty10, props.Ty20, props.Ty30 = meas_settings.Ty10, meas_settings.Ty20, meas_settings.Ty30
 
-n_ins: int = props.n_ins
-n_anchor_points: int = props.n_anchor_points
+nins: int = props.nins
+nanc: int = props.nanc
+seed: int = props.seed
 
 L0: float = props.L0
-tauf: float = props.tauf
+tf: float = props.tf
 k: float = props.k
 c: float = props.c
 rho: float = props.rho
-c_b: float = c
-rho_b: float = rho
+cb: float = c
+rhob: float = rho
 h: float = props.h
 
 beta: float = props.beta
@@ -43,11 +44,11 @@ Tmax: float = props.Tmax
 Troom: float = props.Troom
 Ty10: float = props.Ty10
 Ty20: float = props.Ty20
-Tgt20: float = props.Tgt20
+Tgt0: float = props.Tgt0
 Ty30: float = props.Ty30
 dT: float = (Tmax-Troom)
 
-alfa: float = props.alfa
+oig: float = props.oig
 b1: float = props.b1
 b2: float = props.b2
 b3: float = props.b3
@@ -57,24 +58,31 @@ c1: float = props.c1
 c2: float = props.c2
 c3: float = props.c3
 
-x_gt1: float = pars.x_gt1
-x_w: float = pars.x_w
-x_gt: float = pars.x_gt
+xgt1: float = pars.xgt1
+xw: float = pars.xw
+xgt: float = pars.xgt
+Xgt = round(float(xgt / L0), 5)
+Xw = round(float(xw / L0), 5)
+Xgt1 = round(float(xgt1 / L0), 5)
 
+pars.Xgt = Xgt
+pars.Xw = Xw
+pars.Xgt1 = Xgt1
 
-W_min: float = pars.W_min
-W_max: float = pars.W_max
-W_sys: float = pars.W_sys
-W_index: int = pars.W_index
-n_obs: int = pars.n_obs
+wbmin: float = pars.wbmin
+wbmax: float = pars.wbmax
+wbsys: float = pars.wbsys
+wbindex: int = pars.wbindex
+nobs: int = pars.nobs
 
-obs_steps = 8 if n_obs<=8 else n_obs
-obs = np.logspace(np.log10(W_min), np.log10(W_max), obs_steps).round(6)
-W_obs = float(obs[W_index])
+obs_steps = 8 if nobs<=8 else nobs
+obs = np.logspace(np.log10(wbmin), np.log10(wbmax), obs_steps).round(6)
+wbobs = float(obs[wbindex])
+pars.wbobs = wbobs
 
-eight_obs = np.logspace(np.log10(W_min), np.log10(W_max), 8).round(6)
+eight_obs = np.logspace(np.log10(wbmin), np.log10(wbmax), 8).round(6)
 for i in range(8):
-    setattr(pars, f'W{i}', float(eight_obs[i]))
+    setattr(pars, f'wb{i}', float(eight_obs[i]))
 
 lamb: float = pars.lam  # Access the lambda parameter
 upsilon: float = pars.upsilon
@@ -89,35 +97,44 @@ def scale_t(t: float)->float:
 
 "coefficients a1, a2, a3, a4, a5"
 
-a1: float = round((L0**2/tauf)*((rho*c)/k), 7)
-a2: float = round(L0**2*rho_b*c_b/k, 7)
-cc: float = np.log(2)/(PD - 10**(-2)*x0)
+a1: float = round((L0**2/tf)*((rho*c)/k), 7)
+a2: float = round(L0**2*rhob*cb/k, 7)
+cc: float = round(np.log(2)/(PD - 10**(-2)*x0), 7)
 a3: float = round(pwr_fact*rho*L0**2*beta*SAR_0*np.exp(cc*x0)/k*dT, 7)
 a4: float = round(cc*L0, 7)
 a5: float = round(L0*h/k, 7)
-K: float = alfa*L0
+props.a1 = float(a1)
+props.a2 = float(a2)
+props.a3 = float(a3)
+props.a4 = float(a4)
+props.a5 = float(a5)
+props.cc = float(cc)
 
+pwic: float = np.where(oig>=(np.pi**2)/4, (np.pi**2)/4, oig)
 
-eta: float = np.where(K>=(np.pi**2)/4, (np.pi**2)/4, K)
+decay_rate_exact: float = (pwic/a1+wbsys*a2/a1)
 
-decay_rate_exact: float = (eta/a1+W_sys*a2/a1)
+c0: float = (np.abs(wbobs*a2/a1 - wbsys*a2/a1)**2)/(pwic/a1 + wbobs*a2/a1)**2
 
-c_0: float = (np.abs(W_obs*a2/a1 - W_sys*a2/a1)**2)/(eta/a1 + W_obs*a2/a1)**2
+decay_rate_diff: float = (pwic/a1+wbobs*a2/a1)/2
 
-decay_rate_diff: float = (eta/a1+W_obs*a2/a1)/2
+theta10, theta20, theta30, thetagt0 = scale_t(Ty10), scale_t(Ty20), scale_t(Ty30), scale_t(Tgt0)
 
-theta10, theta20, theta30, theta_gt20 = scale_t(Ty10), scale_t(Ty20), scale_t(Ty30), scale_t(Tgt20)
-X_gt = x_gt/L0
+props.theta10 = float(theta10)
+props.theta20 = float(theta20)
+props.theta30 = float(theta30)
+props.thetagt0 = float(thetagt0)
+
 
 # Define the equations in matrix form
 A = np.array([
     [1, 1, 1, 1],
     [0, 0, 0, 1],
     [0, 0, 1, 0],
-    [X_gt**3, X_gt**2, X_gt, 1]
+    [xgt**3, xgt**2, xgt, 1]
 ])
 
-B = np.array([theta10, theta20, -a5 * (theta30 - theta20), theta_gt20])
+B = np.array([theta10, theta20, -a5 * (theta30 - theta20), thetagt0])
 
 # Solve the system of equations
 sol = np.linalg.solve(A, B)
@@ -125,7 +142,7 @@ sol = np.linalg.solve(A, B)
 # Extract the solutions
 b1, b2, b3, b4 = [round(val, 5) for val in sol]
 
-if n_ins>2:
+if nins>2:
     c3 = round(theta20, 5)
     c2 = round(-a5 * (theta30 - theta20), 5)
     c1 = round(theta10 - c2 - c3, 5)

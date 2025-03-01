@@ -454,7 +454,7 @@ def plot_validation_3d(e, t_true, t_pred, run_figs, label):
     
 
     rescale = conf.plot.rescale
-    n = conf.model_parameters.n_obs
+    n = conf.model_parameters.nobs
 
     fname = f"{run_figs}/validation_3d_{label}.png"
 
@@ -484,13 +484,13 @@ def plot_timeseries_with_predictions(system_meas, mm_obs, conf, out_dir):
     for entry in x_points.keys():
         closest_indices_pred = np.where(np.abs(mm_obs["grid"][:, 0] - x_points[entry]) == np.min(np.abs(mm_obs["grid"][:, 0] - x_points[entry])))
         dict_pred = {
-            "tau": np.unique(system_meas["grid"][:, 1])*conf.model_properties.tauf / 60,
+            "tau": np.unique(system_meas["grid"][:, 1])*conf.model_properties.tf / 60,
             "theta": mm_obs["theta"][closest_indices_pred],
             "label": f"{entry} (Matlab)" if gt else f"{entry} (Pred)"
         }
         closest_indices_meas = np.where(np.abs(system_meas["grid"][:, 0] - x_points[entry]) == np.min(np.abs(system_meas["grid"][:, 0] - x_points[entry])))
         dict_meas = {
-            "tau": np.unique(system_meas["grid"][:, 1])*conf.model_properties.tauf / 60,
+            "tau": np.unique(system_meas["grid"][:, 1])*conf.model_properties.tf / 60,
             "theta": system_meas["theta"][closest_indices_meas],
             "label": f"{entry} (Meas)"
         }

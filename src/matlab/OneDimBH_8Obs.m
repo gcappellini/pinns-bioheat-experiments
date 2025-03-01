@@ -61,7 +61,7 @@ function [sol] = OneDimBH_8Obs
     
     %-----------------
     function [c,f,s] = OneDimBHpde(x,t,u,dudx)
-    global lambda om0 om1 om2 om3 om4 om5 om6 om7 W_sys W0 W1 W2 W3 W4 W5 W6 W7 a1 a2 a3 a4 incr_fact
+    global lambda om0 om1 om2 om3 om4 om5 om6 om7 wbsys wb0 wb1 wb2 wb3 wb4 wb5 wb6 wb7 a1 a2 a3 a4 incr_fact
     %la prima equazione è quella del sistema, a seguire gli osservatoris
     t
     if x >= 0.2 && x <= 0.5
@@ -75,15 +75,15 @@ function [sol] = OneDimBH_8Obs
     den=u(10)*exp(-om0)+u(11)*exp(-om1)+u(12)*exp(-om2)+u(13)*exp(-om3)+...
         u(14)*exp(-om4)+u(15)*exp(-om5)+u(16)*exp(-om6)+u(17)*exp(-om7);
     
-    s = [-W_sys*a2*u(1)+a3*exp(-a4*x); 
-        -W0*a2*u(2)+a3*exp(-a4*x); 
-        -W1*a2*u(3)+a3*exp(-a4*x); 
-        -W2*a2*u(4)+a3*exp(-a4*x); 
-        -W3*a2*u(5)+a3*exp(-a4*x); 
-        -W4*a2*u(6)+a3*exp(-a4*x); 
-        -W5*a2*u(7)+a3*exp(-a4*x); 
-        -W6*a2*u(8)+a3*exp(-a4*x); 
-        -W7*a2*u(9)+a3*exp(-a4*x); 
+    s = [-wbsys*a2*u(1)+a3*exp(-a4*x); 
+        -wb0*a2*u(2)+a3*exp(-a4*x); 
+        -wb1*a2*u(3)+a3*exp(-a4*x); 
+        -wb2*a2*u(4)+a3*exp(-a4*x); 
+        -wb3*a2*u(5)+a3*exp(-a4*x); 
+        -wb4*a2*u(6)+a3*exp(-a4*x); 
+        -wb5*a2*u(7)+a3*exp(-a4*x); 
+        -wb6*a2*u(8)+a3*exp(-a4*x); 
+        -wb7*a2*u(9)+a3*exp(-a4*x); 
         -lambda*u(10)*(1-(exp(-om0)/den));
         -lambda*u(11)*(1-(exp(-om1)/den)); 
         -lambda*u(12)*(1-(exp(-om2)/den)); 
@@ -103,20 +103,20 @@ function [sol] = OneDimBH_8Obs
     
     
     function [pl,ql,pr,qr] = OneDimBHbc(xl,ul,xr,ur,t)
-    global K om0 om1 om2 om3 om4 om5 om6 om7 upsilon a5
+    global oig om0 om1 om2 om3 om4 om5 om6 om7 upsilon a5
     [~, ~, y1, ~, ~] = ic_bc(xr, t);
     [~, ~, ~, ~, y3] = ic_bc(xl, t);
     flusso = a5*(y3-ul(1));
     
     pl = [flusso;
-        flusso+K*(ul(1)-ul(2));
-        flusso+K*(ul(1)-ul(3));
-        flusso+K*(ul(1)-ul(4));
-        flusso+K*(ul(1)-ul(5));
-        flusso+K*(ul(1)-ul(6));
-        flusso+K*(ul(1)-ul(7));
-        flusso+K*(ul(1)-ul(8));
-        flusso+K*(ul(1)-ul(9));
+        flusso+oig*(ul(1)-ul(2));
+        flusso+oig*(ul(1)-ul(3));
+        flusso+oig*(ul(1)-ul(4));
+        flusso+oig*(ul(1)-ul(5));
+        flusso+oig*(ul(1)-ul(6));
+        flusso+oig*(ul(1)-ul(7));
+        flusso+oig*(ul(1)-ul(8));
+        flusso+oig*(ul(1)-ul(9));
         0;0;0;0;0;0;0;0];
     ql = [1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1];
     pr = [ur(1) - y1; 

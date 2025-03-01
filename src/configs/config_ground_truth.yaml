@@ -1,72 +1,84 @@
 model_properties:
   L0: 0.07
-  tauf: 1800.0
+  tf: 1800.0
   k: 0.6
   rho: 1000.0
   c: 4186.0
   incr_fact: 1.0
-  W: 0.0033
+  wb: 0.0033
   h: 10.0
   Troom: 21.5
   Tmax: 32.0
   Ty10: 21.5
   Ty20: 30.2
   Ty30: 21.5
-  Tgt20: 31.5
-  alfa: 35
-  activation: tanh
-  initial_weights_regularizer: false
-  initialization: Glorot normal
+  Tgt0: 31.5
+  theta10: 0.12762
+  theta20: 0.67619
+  theta30: 0.0
+  thetagt0: 0.95238
+  thetagt10: 0.95238
+  oig: 2.46
+  af: tanh
+  iwr: false
+  init: Glorot normal
   optimizer: L-BFGS
   iters: 3000
   iters_lbfgs: 15000
-  learning_rate: 0.001
-  num_dense_layers: 4
-  num_dense_nodes: 50
-  num_domain: 200
-  num_boundary: 200
-  num_initial: 0
-  num_test: 1000
+  lr: 0.001
+  depth: 4
+  width: 50
+  nres: 500
+  nb: 200
+  ntest: 1000
   resampling: true
   resampler_period: 100
-  w_res: 1
-  w_bc0: 1
-  w_bc1: 1
-  w_ic: 1
+  wres: 1
+  wbc0: 1
   beta: 0.9
   pwr_fact: 0.0
   SAR_0: 50.0
   PD: 0.025
   x0: 0.001
-  b1: -1.27778
-  b2: -0.51746
-  b3: 0.96667
-  b4: 0.82857
-  c1: -1.79524
-  c2: 0.96667
-  c3: 0.82857
-  n_ins: 4
-  np_seed: 500
+  a1: 18.992037
+  a2: 34185.6666667
+  a3: 0.0
+  a4: 1.9415887
+  a5: 1.1666667
+  cc: 27.736982
+  b1: -2711.46326
+  b2: 2710.1258
+  b3: 0.78889
+  b4: 0.67619
+  c1: -1.33746
+  c2: 0.78889
+  c3: 0.67619
+  nins: 4
+  seed: 500
   sigma: 1.0
-  n_anchor_points: 0
+  nanc: 0
 model_parameters:
   lam: 1
   upsilon: 100.0
-  W_min: 6.3e-05
-  W_max: 0.00165
-  W0: 6.3e-05
-  W1: 0.0001
-  W2: 0.00016
-  W3: 0.000255
-  W4: 0.000407
-  W5: 0.000649
-  W6: 0.001035
-  W7: 0.00165
-  W_sys: 0.0005
-  W_index: 3
-  n_obs: 1
-  x_gt: 0.01
-  x_w: 0.025
-  x_gt1: 0.04
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/gt_k/35
-experiment: simulation
+  wbmin: 6.3e-05
+  wbmax: 0.00165
+  wb0: 6.3e-05
+  wb1: 0.0001
+  wb2: 0.00016
+  wb3: 0.000255
+  wb4: 0.000407
+  wb5: 0.000649
+  wb6: 0.001035
+  wb7: 0.00165
+  wbsys: 0.0005
+  wbobs: 0.000255
+  wbindex: 3
+  nobs: 1
+  xgt: 0.01
+  xw: 0.025
+  xgt1: 0.04
+  Xgt: 0.14286
+  Xw: 0.35714
+  Xgt1: 0.57143
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-03-01/22-39-42
+experiment: meas_cool_2

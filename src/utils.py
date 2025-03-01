@@ -19,9 +19,17 @@ from common import setup_log
 import time
 
 
-dde.config.set_random_seed(300)
-np.random.seed(300)
-torch.manual_seed(300)
+def set_seed(seed):
+    dde.config.set_random_seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+
+set_seed(cc.seed)
+
+
 dde.config.set_default_float("float64")
 
 dev = "cuda" if torch.cuda.is_available() else "cpu"
@@ -48,7 +56,7 @@ def compute_metrics(series_to_plot, train_info, cfg, run_figs):
     # Load loss weights from configuration
     matching = extract_matching(series_to_plot)
     props = cfg.model_properties
-    loss_weights = [props.w_res, props.w_bc0, props.w_bc1, props.w_ic]
+    # loss_weights = [props.wres, props.wbc, props.w_bc1, props.w_ic]
     small_number = 1e-8
     
     grid = matching[:, :2]
@@ -138,7 +146,7 @@ def boundary_1(x, on_boundary):
     return on_boundary and np.isclose(x[0], 1)
 
 
-def create_X_anchor(n_ins, num_points=cc.n_anchor_points):
+def create_X_anchor(nins, num_points=cc.nanc):
     if num_points == 0:
         return None
     # Create the time component ranging from 0 to 1
@@ -147,21 +155,21 @@ def create_X_anchor(n_ins, num_points=cc.n_anchor_points):
     # Create the space component ranging from 0 to 0.3
     space = np.linspace(0, 0.3, num_points)
 
-    if n_ins == 2:
+    if nins == 2:
         # Create the second component ranging from 0 to 0.6
-        X_anchor = np.array(np.meshgrid(space, time)).T.reshape(-1, n_ins)
+        X_anchor = np.array(np.meshgrid(space, time)).T.reshape(-1, nins)
 
-    elif n_ins == 3:
+    elif nins == 3:
         # Create the second component ranging from 0 to 0.6
         y_2 = np.linspace(0, 0.6, num_points)
-        X_anchor = np.array(np.meshgrid(space, y_2, time)).T.reshape(-1, n_ins)
+        X_anchor = np.array(np.meshgrid(space, y_2, time)).T.reshape(-1, nins)
     
-    elif n_ins == 4:
+    elif nins == 4:
         # Create the second component ranging from 0 to 0.2
         y_1 = np.linspace(0, 0.2, num_points)
         # Create the third component ranging from 0 to 0.6
         y_2 = np.linspace(0, 0.6, num_points)
-        X_anchor = np.array(np.meshgrid(space, y_1, y_2, time)).T.reshape(-1, n_ins)
+        X_anchor = np.array(np.meshgrid(space, y_1, y_2, time)).T.reshape(-1, nins)
 
     
     return X_anchor
@@ -177,7 +185,8 @@ def create_model(config):
     :return: A compiled DeepXDE model.
     """
     # Load configuration
-    model_props = config.model_properties
+    props = config.model_properties
+    pars = config.model_parameters
     inverse = config.experiment.inverse
     run = config.experiment.run
 
@@ -191,36 +200,36 @@ def create_model(config):
         ic_meas = ic_meas_interp(x_points.flatten())
 
     # Extract shared parameters from the configuration
-    n_ins = model_props.n_ins
-    activation = model_props.activation  
-    initialization = model_props.initialization
-    num_dense_layers = model_props.num_dense_layers
-    num_dense_nodes = model_props.num_dense_nodes
-    num_domain, num_boundary, num_initial, num_test = (
-        model_props.num_domain, model_props.num_boundary,
-        model_props.num_initial, model_props.num_test,
+    nins = props.nins
+    af = props.af  
+    init = props.init
+    depth = props.depth
+    width = props.width
+    nres, nb, ntest = (
+        props.nres, props.nb,
+        props.ntest,
     )
 
-    a1, a2, a3, a4, a5 = cc.a1, cc.a2, cc.a3, cc.a4, cc.a5
-    b1, b2, b3, b4 = cc.b1, cc.b2, cc.b3, cc.b4
-    c1, c2, c3 = cc.c1, cc.c2, cc.c3 
-    K = cc.K
+    a1, a2, a3, a4, a5 = props.a1, props.a2, props.a3, props.a4, props.a5
+    b1, b2, b3, b4 = props.b1, props.b2, props.b3, props.b4
+    c1, c2, c3 = props.c1, props.c2, props.c3 
+    oig = props.oig
     # delta_x = cc.delta_x
 
-    W = dde.Variable(cc.W_min) if inverse else model_props.W
-    theta10, theta20, theta30 = cc.theta10, cc.theta20, cc.theta30
-    time_index = n_ins -1
+    wb = dde.Variable(pars.wbmin) if inverse else props.wb
+    theta10, theta20, theta30 = props.theta10, props.theta20, props.theta30
+    time_index = nins -1
 
 
     def ic_fun(x):
         z = x if len(x.shape) == 1 else x[:, :1]
 
-        if n_ins==2 and run.startswith("meas"):
+        if nins==2 and run.startswith("meas"):
             e = ic_meas_interp(z.cpu().detach())
             e = torch.tensor(ic_meas_interp(z.cpu().detach()), device=x.device)
             return e
 
-        elif n_ins==2 and not run.startswith("meas"):
+        elif nins==2 and not run.startswith("meas"):
             return b1 * z**3 + b2 * z**2 + b3 * z + b4
         else:
             return c1 * z**2 + c2 * z + c3
@@ -229,19 +238,19 @@ def create_model(config):
         
         dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0)
         
-        y3 = cc.theta30 #if n_ins == 2 else x[:, 3:4] if n_ins == 5 else x[:, 2:3]
-        y2 = None if n_ins == 2 else x[:, 1:2] if n_ins==3 else x[:, 2:3]
+        y3 = cc.theta30 #if nins == 2 else x[:, 3:4] if nins == 5 else x[:, 2:3]
+        y2 = None if nins == 2 else x[:, 1:2] if nins==3 else x[:, 2:3]
         
-        flusso = a5 * (y3 - theta) if n_ins==2 else a5 * (y3 - y2)
+        flusso = a5 * (y3 - theta) if nins==2 else a5 * (y3 - y2)
 
-        if n_ins == 2:
+        if nins == 2:
             return dtheta_x + flusso
         else:
-            return dtheta_x + flusso - K * (theta - y2)
+            return dtheta_x + flusso - oig * (theta - y2)
 
 
     def output_transform(x, y):
-        y1 = cc.theta10 if n_ins<=3 else x[:, 1:2]
+        y1 = cc.theta10 if nins<=3 else x[:, 1:2]
         t = x[:, time_index:]
         x1 = x[:, 0:1]
         
@@ -262,7 +271,7 @@ def create_model(config):
         dtheta_xx = dde.grad.hessian(theta, x, i=0, j=0)
         source_term = -a3 * torch.exp(-a4 * x[:, :1])
 
-        return a1 * dtheta_tau - dtheta_xx + W * a2 * theta + source_term
+        return a1 * dtheta_tau - dtheta_xx + wb * a2 * theta + source_term
 
 
     geom_mapping = {
@@ -272,7 +281,7 @@ def create_model(config):
         5: dde.geometry.Hypercube([0, 0, 0, 0], [1, 0.2, 1, 1])
     }
 
-    geom = geom_mapping.get(n_ins, None)
+    geom = geom_mapping.get(nins, None)
 
     timedomain = dde.geometry.TimeDomain(0, 1.5)
     geomtime = dde.geometry.GeometryXTime(geom, timedomain)
@@ -282,7 +291,7 @@ def create_model(config):
     
 
     losses = [bc_0]
-    X_anchor = create_X_anchor(n_ins)
+    X_anchor = create_X_anchor(nins)
 
     if inverse:
         if run.startswith("meas"):
@@ -306,16 +315,15 @@ def create_model(config):
         geomtime,
         lambda x, theta: pde(x, theta),
         losses,
-        num_domain=num_domain, 
-        num_boundary=num_boundary,
-        num_initial=num_initial,
-        num_test=num_test,
+        num_domain=nres, 
+        num_boundary=nb,
+        num_test=ntest,
         anchors=X_anchor,
     )
 
     # Define the network
-    layer_size = [n_ins] + [num_dense_nodes] * num_dense_layers + [1]
-    net = dde.nn.FNN(layer_size, activation, initialization)
+    layer_size = [nins] + [width] * depth + [1]
+    net = dde.nn.FNN(layer_size, af, init)
 
     net.apply_output_transform(output_transform)
     # net.apply_feature_transform(rff_transform)
@@ -323,30 +331,30 @@ def create_model(config):
     model = dde.Model(data, net)
 
     if inverse: 
-        return model, W 
+        return model, wb 
     else: 
         return model
 
 def compile_optimizer_and_losses(model, conf):
-    model_props = conf.model_properties
-    initial_weights_regularizer = model_props.initial_weights_regularizer
-    learning_rate = model_props.learning_rate
-    # loss_weights = [model_props.w_res, model_props.w_bc0, model_props.w_bc1, model_props.w_ic]
-    loss_weights = [model_props.w_res, model_props.w_bc0]
+    props = conf.model_properties
+    iwr = props.iwr
+    lr = props.lr
+    # loss_weights = [props.wres, props.wbc, props.w_bc1, props.w_ic]
+    loss_weights = [props.wres, props.wbc]
     optimizer = conf.model_properties.optimizer
 
     if optimizer == "adam":
-        if initial_weights_regularizer:
+        if iwr:
             initial_losses = get_initial_loss(model)
             loss_weights = [
                 lw * len(initial_losses) / il
                 for lw, il in zip(loss_weights, initial_losses)
             ]
             loss_weights=round(loss_weights, 3)
-            model.compile(optimizer, lr=learning_rate, loss_weights=loss_weights)
+            model.compile(optimizer, lr=lr, loss_weights=loss_weights)
         else:
             loss_weights=[round(el, 3) for el in loss_weights]
-            model.compile(optimizer, lr=learning_rate, loss_weights=loss_weights)
+            model.compile(optimizer, lr=lr, loss_weights=loss_weights)
         return model
 
     else:
@@ -455,8 +463,8 @@ def train_model(conf):
 def gen_testdata(conf, path=None):
     
     props, pars = conf.model_properties, conf.model_parameters
-    n_ins = props.n_ins
-    n = 0 if n_ins == 2 else pars.n_obs
+    nins = props.nins
+    n = 0 if nins == 2 else pars.nobs
 
     dir_name = path if path is not None else conf.output_dir
 
@@ -469,7 +477,7 @@ def gen_testdata(conf, path=None):
     system_gt = {"grid": X, "theta": y_sys, "label": "system_gt"}
 
     if n == 1:
-        obs_id = 0 if data.shape[1]==4 else pars.W_index
+        obs_id = 0 if data.shape[1]==4 else pars.wbindex
         y_obs = data[:, 3+obs_id].T
         y_obs = y_obs.flatten()[:, None]
         y_mm_obs = y_obs
@@ -483,7 +491,7 @@ def gen_testdata(conf, path=None):
     
     out = np.hstack((X, y_sys, y_obs, y_mm_obs))
 
-    label_mm_obs_gt = f"observer_{cc.W_index}_gt" if n==1 else "multi_observer_gt"
+    label_mm_obs_gt = f"observer_{cc.wbindex}_gt" if n==1 else "multi_observer_gt"
 
     mm_obs_gt = { "grid": out[:, :2], "theta": out[:, -1], "label": label_mm_obs_gt}
 
@@ -491,7 +499,7 @@ def gen_testdata(conf, path=None):
         {
             "grid": out[:, :2], 
             "theta": out[:, 3+i], 
-            "label": f"observer_{cc.W_index}_gt" if n == 1 else f"observer_{i}_gt"
+            "label": f"observer_{cc.wbindex}_gt" if n == 1 else f"observer_{i}_gt"
         }
         for i in range(n)
     ]
@@ -507,7 +515,7 @@ def gen_testdata(conf, path=None):
 def gen_obsdata(conf, system_gt):
     global f1, f2, f3
 
-    n_ins = conf.model_properties.n_ins
+    nins = conf.model_properties.nins
 
     # Prepare grid and theta data
     g = np.hstack((system_gt["grid"], system_gt["theta"].reshape(len(system_gt["grid"]), 1)))
@@ -531,12 +539,12 @@ def gen_obsdata(conf, system_gt):
     }
 
     # Generate and return observations based on the number of inputs
-    return input_mapping.get(n_ins, lambda: None)()
+    return input_mapping.get(nins, lambda: None)()
 
 
 def load_weights(observers, conf, label, path=None):
     pars = conf.model_parameters
-    n = pars.n_obs
+    n = pars.nobs
     # dir_name = path if path is not None else conf.output_dir
     lamb = pars.lam
     ups = pars.upsilon
@@ -596,28 +604,25 @@ def rescale_x(X):
 
 def rescale_time(tau):
     tau = np.array(tau)
-    tauf = cc.tauf
-    j = tau*tauf
+    tf = cc.tf
+    j = tau*tf
 
     return np.round(j, 0)
 
 
 def scale_time(t):
-    tauf = cc.tauf
-    j = t/tauf
+    tf = cc.tf
+    j = t/tf
 
     return np.round(j, n_digits)
 
 
 def get_tc_positions():
-    L0 = cc.L0
-    x_y2 = 0.0
-    x_gt = (cc.x_gt)/L0
-    x_gt1 = (cc.x_gt1)/L0
-    x_y1 = 1.0
+    Xy2 = 0.0
+    Xy1 = 1.0
 
     # return {"y2": x_y2, "gt": round(x_gt, 2), "y1": x_y1}
-    return {"y2": x_y2, "gt": round(x_gt, 2), "gt1": round(x_gt1, 2),"y1": x_y1}
+    return {"y2": Xy2, "gt": round(cc.Xgt, 2), "gt1": round(cc.Xgt1, 2),"y1": Xy1}
 
 def get_loss_names():
     # return ["residual", "bc0", "bc1", "ic", "test", "train"]
@@ -710,21 +715,22 @@ def execute(config, label):
     out_dir = config.output_dir
     simul_dir = os.path.join(out_dir, label)
     pars = config.model_parameters
+    props = config.model_properties
 
-    n_obs = pars.n_obs
+    nobs = pars.nobs
 
-    if n_obs == 1:
+    if nobs == 1:
 
-        config.model_properties.W = cc.W_obs
-        setup_log(f"Training single observer with perfusion {cc.W_obs}.")
+        props.wb = pars.wbobs
+        setup_log(f"Training single observer with perfusion {pars.wbobs}.")
         output_model = train_model(config)
         return output_model
 
     multi_obs = []
-    for j in range(n_obs):
-        obs = cc.obs if label.startswith("simulation") else np.linspace(cc.W_min, cc.W_max, n_obs)
+    for j in range(nobs):
+        obs = cc.obs if label.startswith("simulation") else np.logspace(np.log10(pars.wbmin), np.log10(pars.wbmax), nobs)
         perf = obs[j]
-        config.model_properties.W = float(perf)
+        config.model_properties.wb = float(perf)
         setup_log(f"Training observer {j} with perfusion {perf}.")
         model = train_model(config)
         multi_obs.append(model)
@@ -804,8 +810,8 @@ def compute_obs_err(system, observers_data=None, mm_obs=None):
         sys_xref = rows_xref[:, 2]
 
         if observers_data:
-            n_obs = len(observers_data)
-            obs_err = np.abs(rows_xref[:, 3:3+n_obs] - sys_xref[:, None])
+            nobs = len(observers_data)
+            obs_err = np.abs(rows_xref[:, 3:3+nobs] - sys_xref[:, None])
             for i, observer in enumerate(observers_data):
                 observer[f'obs_err_{x_ref}'] = obs_err[:, i]
 
@@ -843,12 +849,12 @@ def get_observers_preds(ground_truth, multi_obs, x_obs, output_dir, conf, label)
         mm_obs: Dictionary for multi-observer's predictions.
     """
     pars = conf.model_parameters
-    n_obs = pars.n_obs
+    nobs = pars.nobs
     preds = [x_obs[:, 0], x_obs[:, -1]]
 
     # Process for multiple observers
     if isinstance(multi_obs, list):
-        for el in range(n_obs):
+        for el in range(nobs):
             obs_pred = multi_obs[el].predict(x_obs).reshape(-1)
             preds.append(obs_pred)
     else:
@@ -861,16 +867,16 @@ def get_observers_preds(ground_truth, multi_obs, x_obs, output_dir, conf, label)
         {
             "grid": preds[:, :2],
             "theta": preds[:, 2 + i],
-            "label": f"observer_{i if n_obs > 1 else pars.W_index}"
+            "label": f"observer_{i if nobs > 1 else pars.wbindex}"
         }
-        for i in range(n_obs) 
+        for i in range(nobs) 
     ]
 
     mm_obs = None
 
     obs_dict, mm_obs = compute_obs_err(ground_truth, obs_dict, mm_obs)
 
-    if n_obs==1:
+    if nobs==1:
         mm_obs = obs_dict[0]
     else:
         obs_dict = solve_ivp(obs_dict, output_dir, conf, x_obs, label)
@@ -910,10 +916,10 @@ def load_observers_preds(output_dir, conf, label):
         mm_obs: Dictionary for multi-observer's predictions.
     """
     pars = conf.model_parameters
-    n_obs = pars.n_obs
+    nobs = pars.nobs
 
     obs_dict = []
-    for i in range(n_obs):
+    for i in range(nobs):
         file_path = os.path.join(output_dir, f"observer_{i}_{label}.txt")
         data = np.loadtxt(file_path)
         obs_dict.append({
@@ -950,7 +956,7 @@ def create_params(entity, default_marker=None):
     }
 
 
-def get_plot_params(conf):
+def get_plot_params(conf_run):
     """
     Load plot parameters based on configuration for each entity (system, observers, etc.),
     and set up characteristics such as colors, linestyles, linewidths, and alphas.
@@ -958,8 +964,9 @@ def get_plot_params(conf):
     :param conf: Configuration object loaded from YAML.
     :return: Dictionary containing plot parameters for each entity.
     """
+    conf = OmegaConf.load(f"{src_dir}/configs/plot.yaml")
 
-    entities = conf.plot.entities
+    entities = conf.entities
 
     # System parameters
     system_params = create_params(entities.system)
@@ -973,16 +980,15 @@ def get_plot_params(conf):
     multi_observer_gt_params = create_params(entities.multi_observer_gt)
 
     # Observers parameters (dynamically adjust for number of observers)
-    n_obs = conf.model_parameters.n_obs
-    pos = get_tc_positions()
+    nobs = conf_run.model_parameters.nobs
     observer_params = {}
     observer_gt_params = {}
     meas_points_params = getattr(entities, "meas_points")
     losses_params = getattr(entities, "losses")
 
-    if 1<=n_obs<=8:
-        for j in range(n_obs):
-            i = cc.W_index if n_obs == 1 else j
+    if 1<=nobs<=8:
+        for j in range(nobs):
+            i = cc.wbindex if nobs == 1 else j
             observer_params[f"observer_{i}"] = {
                 "color": entities.observers.color[i],
                 "label": entities.observers.label[i],
@@ -1024,11 +1030,11 @@ def solve_ivp(multi_obs: list, fold: str, conf: dict, x_obs, label: str):
     """
     setup_log("Solving the IVP for observer weights...")
     pars = conf.model_parameters
-    n_obs = pars.n_obs
+    nobs = pars.nobs
     lam = pars.lam
     ups = pars.upsilon
 
-    p0 = np.full((n_obs,), 1/n_obs)
+    p0 = np.full((nobs,), 1/nobs)
 
     # t_eval = np.linspace(0, 1, 100)
     t_eval = np.unique(multi_obs[0]["grid"][:, 1])
@@ -1071,7 +1077,7 @@ def run_matlab_ground_truth():
 
 
 def compute_y_theory(grid, sys, obs):
-    str = np.where(np.abs(cc.W_sys - cc.W_obs) <= 1e-08, 'exact', 'diff')
+    str = np.where(np.abs(cc.wbsys - cc.wbobs) <= 1e-08, 'exact', 'diff')
     x = np.unique(grid[:, 0])
     t = np.unique(grid[:, -1])
     sys_0 = sys[:len(x)]
