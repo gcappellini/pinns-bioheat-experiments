@@ -454,7 +454,6 @@ def plot_validation_3d(e, t_true, t_pred, run_figs, label):
     
 
     rescale = conf.plot.rescale
-    n = conf.model_parameters.nobs
 
     fname = f"{run_figs}/validation_3d_{label}.png"
 

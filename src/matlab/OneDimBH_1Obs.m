@@ -11,7 +11,7 @@ function [sol] = OneDimBH_1Obs
     u1 = sol(:,:,1); %soluzione del sistema
     u2 = sol(:,:,2); %soluzione dell'osservatore 0
 
-    fileID = fopen(sprintf('%s/output_matlab_1Obs.txt', output_path),'w');
+    fileID = fopen(sprintf('%s', output_path),'w');
     
     for i = 1:101
        for j = 1:101
@@ -25,18 +25,18 @@ function [sol] = OneDimBH_1Obs
 
     %-----------------
     function [c,f,s] = OneDimBHpde_1Obs(x,t,u,dudx)
-    global a1 a2 a3 a4 wbobs wbsys incr_fact
+    global a1 a2 a3 a4 wbobs wbsys incrfact
     %la prima equazione è quella del sistema, a seguire gli osservatori
     t
-    if x >= 0.2 && x <= 0.5
-    a1_ = a1 / incr_fact;
-    a2_ = a2 / incr_fact;
-    a3_ = a3 / incr_fact;
-    else
+    % if x >= 0.2 && x <= 0.5
+    % a1_ = a1 / incrfact;
+    % a2_ = a2 / incrfact;
+    % a3_ = a3 / incrfact;
+    % else
     a1_ = a1;
     a2_ = a2;
     a3_ = a3;
-    end
+    % end
     c = [a1; a1_];
     f = [1; 1].* dudx;
     

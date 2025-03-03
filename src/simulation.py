@@ -1,12 +1,11 @@
 import os, logging
 import numpy as np
-from omegaconf import OmegaConf
-from hydra import compose
+from omegaconf import DictConfig, OmegaConf
+import hydra
 import utils as uu
 import common as co
 import plots as pp
 import deepxde as dde
-from common import setup_log
 import wandb
 import datetime
 
@@ -16,27 +15,40 @@ src_dir = os.path.dirname(current_file)
 git_dir = os.path.dirname(src_dir)
 tests_dir = os.path.join(git_dir, "tests")
 conf_dir = os.path.join(src_dir, "configs")
+gt_dir = os.path.join(git_dir, "gt")
 os.makedirs(tests_dir, exist_ok=True)
 
 
 def run_ground_truth(config, out_dir):
     """Run MATLAB ground truth simulation, load data, and plot results."""
-    setup_log("Running MATLAB ground truth simulation.")
-    label = "ground_truth"
-    dict_exp = config.experiment
+    # setup_log("Running MATLAB ground truth simulation.")
+    label = "simulation_ground_truth"
     output_dir_gt, config_matlab = co.set_run(out_dir, config, label)
-    uu.run_matlab_ground_truth()
-    system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config_matlab, path=out_dir)
+    matlab_data = OmegaConf.create({
+        "pdecoeff": config_matlab.pdecoeff,
+        "parameters": config_matlab.parameters
+        })
+    
+    matlab_hash = co.generate_config_hash(matlab_data)
+    gt_path = f"{gt_dir}/gt_{matlab_hash}.txt"
+    matlab_data.gt_path = gt_path
+    OmegaConf.save(matlab_data, f"{conf_dir}/config_ground_truth.yaml")
+    OmegaConf.save(matlab_data, f"{gt_dir}/cfg_{matlab_hash}.yaml")
 
+    if not os.path.exists(gt_path):
+        uu.run_matlab_ground_truth()
+
+    system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config_matlab, gt_path)
+    pars = config.parameters
 
     # uu.compute_metrics([system_gt, *observers_gt, mm_obs_gt], config, out_dir)
 
     if config.plot.show:
-        if config.model_parameters.nobs == 0:
+        if pars.nobs == 0:
             system_meas, _ = uu.import_testdata(config)
             pp.plot_multiple_series([system_gt, system_meas], out_dir, label)
 
-        elif config.model_parameters.nobs == 1:
+        elif pars.nobs == 1:
             pp.plot_multiple_series([system_gt, *observers_gt], out_dir, label)
             pp.plot_l2(system_gt, [*observers_gt], out_dir, label)
             pp.plot_validation_3d(system_gt["grid"], system_gt["theta"], mm_obs_gt["theta"], out_dir, label)
@@ -48,7 +60,7 @@ def run_ground_truth(config, out_dir):
                 pp.plot_l2(system_gt, [*observers_gt, mm_obs_gt], out_dir, label)
                 pp.plot_validation_3d(system_gt["grid"], system_gt["theta"], mm_obs_gt["theta"], out_dir, label)
                 pp.plot_obs_err([*observers_gt, mm_obs_gt], out_dir, label)
-                if 1 < config.model_parameters.nobs <= 8:
+                if 1 < pars.nobs <= 8:
                     pp.plot_weights([*observers_gt], out_dir, label)
         
             else:
@@ -67,7 +79,7 @@ def run_ground_truth(config, out_dir):
 
 def run_simulation_system(config, out_dir, system_gt):
     """Run simulation for the system and plot results."""
-    setup_log("Running simulation for the system.")
+    # setup_log("Running simulation for the system.")
     label = "simulation_system"
     props, exp = config.model_properties, config.experiment
     output_dir_system, cfg_system = co.set_run(out_dir, config, label)
@@ -97,7 +109,7 @@ def run_simulation_system(config, out_dir, system_gt):
 def run_simulation_inverse(config, out_dir, system_gt):
     # out_dir = "/home/guglielmo/pinns-bioheat-experiments/outputs/2025-02-10/11-31-24"
     """Run simulation for the system and plot results."""
-    setup_log("Running simulation for the inverse problem.")
+    # setup_log("Running simulation for the inverse problem.")
     label = "inverse"
     output_dir_system, cfg_inverse = co.set_run(out_dir, config, label)
     model, W = uu.create_model(cfg_inverse)
@@ -155,7 +167,7 @@ def run_simulation_inverse(config, out_dir, system_gt):
 
 def run_simulation_mm_obs(config, out_dir, system_gt, mm_obs_gt, observers_gt, gt_path=None):
     """Run multi-observer simulation, load data, and plot results."""
-    setup_log("Running simulation for multi-observer.")
+    # setup_log("Running simulation for multi-observer.")
     label = "simulation_mm_obs"
     output_dir_inverse, config_inverse = co.set_run(out_dir, config, label)
     props, pars, exp = config_inverse.model_properties, config_inverse.model_parameters, config.experiment
@@ -227,7 +239,7 @@ def run_simulation_mm_obs(config, out_dir, system_gt, mm_obs_gt, observers_gt, g
 def run_measurement_mm_obs(config, out_dir):
     """Run multi-observer simulation, load data, and plot results."""
     label = config.experiment.run
-    setup_log(f"Running measurement {label} for multi-observer")
+    # setup_log(f"Running measurement {label} for multi-observer")
     output_dir_meas, config_meas = co.set_run(out_dir, config, label)
     # multi_obs = uu.execute(config_meas, label)
     system_meas, _ = uu.import_testdata(config_meas)
@@ -262,22 +274,21 @@ def run_measurement_mm_obs(config, out_dir):
 
         pp.plot_timeseries_with_predictions(system_meas, mm_obs, config, out_dir)
 
-
-def main():
+@hydra.main(version_base=None, config_path=conf_dir, config_name="config_run")
+def main(config: DictConfig):
     """
     Main function to run the testing of the network, MATLAB ground truth, observer checks, and PINNs.
     """
-    # ks = [1, 2, 3, 4, 5, 6, 7, 8,10,13,15,18,22,25,30,32,35]
-    # for el in ks:
-    config = compose(config_name="config_run")
-    kk = config.model_properties.oig
-    gt_path = f"{tests_dir}/gt_k/{kk}"
-    
+
+    # output_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
+    # config.output_dir = output_dir
+    # print(f'Working dir: {output_dir}')
+
     run_out_dir = config.output_dir
     dict_exp = config.experiment
-    nins = config.model_properties.nins
+    nins = config.hp.nins
 
-    # gt_path=f"{tests_dir}/{dict_exp.gt_path}"
+    gt_path=f"{tests_dir}/{dict_exp.gt_path}"
 
     if dict_exp["simulation"]:
         # Simulation System
@@ -306,15 +317,6 @@ def main():
             output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, run_out_dir)
             
         run_measurement_mm_obs(config, run_out_dir)
-
-    # if dict_exp["ground_truth"]:
-    #     ks = [1, 2, 3, 4, 5, 6, 7, 8,10,13,15,18,22,25,30,32,35]
-    #     for el in ks:
-    #         config.model_properties.alfa = el
-    #         run_out_dir = f"{tests_dir}/gt_k/{el}"
-    #         os.makedirs(run_out_dir, exist_ok=True)
-    #         config.output_dir = run_out_dir
-    #         output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, run_out_dir)
 
 
 if __name__ == "__main__":

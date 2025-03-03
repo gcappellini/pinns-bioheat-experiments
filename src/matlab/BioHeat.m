@@ -1,7 +1,7 @@
 clear all
 close all
 
-global oig lambda upsilon wbobs wbsys wb0 wb1 wb2 wb3 wb4 wb5 wb6 wb7 c1 c2 c3 b1 b2 b3 b4 theta10 theta20 theta30 incr_fact thetagt10 thetagt0 Xgt1 Xgt om0 om1 om2 om3 om4 om5 om6 om7 a1 a2 a3 a4 a5 str_exp path_exp output_path nobs
+global oig lambda upsilon wbobs wbsys wb0 wb1 wb2 wb3 wb4 wb5 wb6 wb7 c1 c2 c3 b1 b2 b3 b4 theta10 theta20 theta30 incrfact thetagt10 thetagt0 Xgt1 Xgt om0 om1 om2 om3 om4 om5 om6 om7 a1 a2 a3 a4 a5 str_exp output_path nobs
 
 % Replace the following with the path to readyaml (find link on the internet)
 addpath('/Users/guglielmocappellini/Desktop/research/code/readyaml')
@@ -33,10 +33,10 @@ c2 = config_data.pdecoeff.c2;
 c3 = config_data.pdecoeff.c3;
 incrfact = config_data.pdecoeff.incrfact;
 
-output_path = config_data.output_dir;
+output_path = config_data.gt_path;
 % output_path = fullfile(fileparts(git_dir), output_dir);
-str_exp = config_data.experiment;
-path_exp = sprintf('%s/src/data/vessel/%s.txt', git_dir, str_exp);
+str_exp = "simulation";
+% path_exp = sprintf('%s/src/data/vessel/%s.txt', git_dir, str_exp);
 % output_path = sprintf('%s/', output_dir);
 
 wb0 = config_data.parameters.wb0;
@@ -49,11 +49,11 @@ wb6 = config_data.parameters.wb6;
 wb7 = config_data.parameters.wb7;
 
 wbsys = config_data.parameters.wbsys;
-wbindex = config_data.parameters.wbindex;
+obsindex = config_data.parameters.obsindex;
 
 % Combine the perfusions into an array
 obs = [wb0, wb1, wb2, wb3, wb4, wb5, wb6, wb7];
-matlab_index=wbindex+1;
+matlab_index=obsindex+1;
 wbobs = obs(matlab_index);
 
 lambda = config_data.parameters.lam;

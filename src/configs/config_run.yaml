@@ -62,6 +62,7 @@ pdecoeff:
   thetagt0: 0.95238
   thetagt10: 0.95238
   incrfact: 1.0
+  wb: None
 parameters:
   lam: 1
   upsilon: 100.0
@@ -87,7 +88,7 @@ parameters:
   Xgt1: 0.57143
   drdiff: None
   drexact: None
-  c0 : None
+  c0: None
 plot:
   show: true
   show_obs: false
@@ -104,5 +105,5 @@ experiment:
   wandb: false
   wandb_name: opt_alfa
 run:
-  dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-03-01/22-39-42
+  dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-03-03/18-47-13

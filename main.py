@@ -2,7 +2,6 @@ import subprocess
 import os, logging
 import hydra
 from omegaconf import DictConfig, OmegaConf
-from src.common import setup_log
 
 
 git_dir = os.getcwd()
@@ -15,7 +14,7 @@ def initialize_run(cfg1):
     cfg1.output_dir = output_dir
     OmegaConf.save(cfg1,f"{output_dir}/config.yaml")
     OmegaConf.save(cfg1,f"{conf_dir}/config_run.yaml")
-    setup_log(f'Working dir: {output_dir}')
+    print(f'Working dir: {output_dir}')
 
     return cfg1, output_dir
 

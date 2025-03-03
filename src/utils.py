@@ -14,120 +14,8 @@ import plots as pp
 import common as co
 from omegaconf import OmegaConf
 import matlab.engine
-from hydra import initialize, compose
-from common import setup_log
+from hydra import compose
 import time
-
-
-def calculate_aicoeff(cfg):
-    props = cfg.properties
-    pdecoeff = cfg.pdecoeff
-    a1: float = round((props.L0**2/props.tf)*((props.rho*props.c)/props.k), 7)
-    a2: float = round(props.L0**2*props.rhob*props.cb/props.k, 7)
-    cc: float = round(np.log(2)/(props.PD - 10**(-2)*props.x0), 7)
-    a3: float = round(props.pwrfact*props.rho*props.L0**2*props.beta*props.SAR0*np.exp(cc*props.x0)/props.k*dT, 7)
-    a4: float = round(cc*props.L0, 7)
-    a5: float = round(props.L0*props.h/props.k, 7)
-    pdecoeff.a1 = float(a1)
-    pdecoeff.a2 = float(a2)
-    pdecoeff.a3 = float(a3)
-    pdecoeff.a4 = float(a4)
-    pdecoeff.a5 = float(a5)
-    return cfg
-
-
-def calculate_temps(cfg):
-    temps = cfg.temps
-    pdecoeff = cfg.pdecoeff
-    Troom = temps.Troom
-    Tmax = temps.Tmax
-
-    def scale_t(t: float) -> float:
-        return float(round((t - Troom) / (Tmax - Troom), 5))
-
-    scaled_temps = {key: scale_t(getattr(temps, key)) for key in ['Ty10', 'Ty20', 'Ty30', 'Tgt0', 'Tgt10']}
-    for key, value in scaled_temps.items():
-        setattr(pdecoeff, f'theta{key[1:]}', value)
-    return cfg
-
-
-def calculate_cicoeff(cfg):
-    props = cfg.properties
-    pdecoeff = cfg.pdecoeff
-    hp = cfg.hp
-    if hp.nins == 2:
-        props.c1, props.c2, props.c3 = None, None, None
-    elif hp.nins > 2:
-        props.c3 = float(round(pdecoeff.theta20, 5))
-        props.c2 = float(round(-pdecoeff.a5 * (pdecoeff.theta30 - pdecoeff.theta20), 5))
-        props.c1 = float(round(pdecoeff.theta10 - c2 - c3, 5))
-    return cfg
-
-
-def calculate_bicoeff(cfg):
-    pars = cfg.parameters
-    pdecoeff = cfg.pdecoeff
-
-    # Define the equations in matrix form
-    A = np.array([
-        [1, 1, 1, 1],
-        [0, 0, 0, 1],
-        [0, 0, 1, 0],
-        [pars.Xgt**3, pars.Xgt**2, pars.Xgt, 1]
-    ])
-
-    B = np.array([pdecoeff.theta10, pdecoeff.theta20, -pdecoeff.a5 * (pdecoeff.theta30 - pdecoeff.theta20), pdecoeff.thetagt0])
-    sol = np.linalg.solve(A, B)
-    pdecoeff.b1, pdecoeff.b2, pdecoeff.b3, pdecoeff.b4 = [float(round(val, 5)) for val in sol]
-    return cfg
-
-
-def calculate_pars(cfg):
-    pars = cfg.parameters
-    wbmin: float = pars.wbmin
-    wbmax: float = pars.wbmax
-    obsindex: int = pars.obsindex
-    nobs: int = pars.nobs
-
-    obs_steps = 8 if nobs<=8 else nobs
-    obs = np.logspace(np.log10(wbmin), np.log10(wbmax), obs_steps).round(6)
-    wbobs = float(obs[obsindex])
-    pars.wbobs = wbobs
-
-    eight_obs = np.logspace(np.log10(wbmin), np.log10(wbmax), 8).round(6)
-    for i in range(8):
-        setattr(pars, f'wb{i}', float(eight_obs[i]))
-
-    if nobs ==1:
-        cfg = calculate_conv_pars(cfg)
-    else:
-        pars.drdiff, pars.drexact, pars.c0 = None, None, None
-    return cfg
-
-
-def calculate_conv_pars(cfg):
-    pdecoeff = cfg.pdecoeff
-    pars = cfg.parameters
-    pwic: float = np.where(pdecoeff.oig>=(np.pi**2)/4, (np.pi**2)/4, pdecoeff.oig)
-
-    drexact: float = (pwic/pdecoeff.a1+pars.wbsys*pdecoeff.a2/pdecoeff.a1)
-    c0: float = (np.abs(pars.wbobs*pdecoeff.a2/pdecoeff.a1 - pars.wbsys*pdecoeff.a2/pdecoeff.a1)**2)/(pwic/pdecoeff.a1 + pars.wbobs*pdecoeff.a2/pdecoeff.a1)**2
-    drdiff: float = (pwic/pdecoeff.a1+pars.wbobs*pdecoeff.a2/pdecoeff.a1)/2
-    pars.drdiff = float(drdiff)
-    pars.drexact = float(drexact)
-    pars.c0 = float(c0)
-    return cfg
-
-
-def calc_coeff(cfg):
-    cfg = calculate_aicoeff(cfg)
-    cfg = calculate_temps(cfg)
-    cfg = calculate_cicoeff(cfg)
-    cfg = calculate_bicoeff(cfg)
-    cfg = calculate_pars(cfg)
-    cfg = calculate_conv_pars(cfg)
-    return cfg
-
 
 
 dde.config.set_default_float("float64")
@@ -144,6 +32,12 @@ os.makedirs(models, exist_ok=True)
 
 f1, f2, f3 = [None]*3
 n_digits = 6
+
+logger = logging.getLogger(__name__)
+
+def setup_log(str):
+
+    logger.info(str)
 
 
 def get_initial_loss(model):
@@ -246,7 +140,7 @@ def boundary_1(x, on_boundary):
     return on_boundary and np.isclose(x[0], 1)
 
 
-def create_X_anchor(nins, num_points=cc.nanc):
+def create_X_anchor(nins, num_points):
     if num_points == 0:
         return None
     # Create the time component ranging from 0 to 1
@@ -285,10 +179,12 @@ def create_model(config):
     :return: A compiled DeepXDE model.
     """
     # Load configuration
-    props = config.model_properties
-    pars = config.model_parameters
+    # props = config.model_properties
+    pars = config.parameters
     inverse = config.experiment.inverse
     run = config.experiment.run
+    hp = config.hp
+    pdecoeff = config.pdecoeff
 
     if inverse and run.startswith("meas"):
         meas, _ = import_testdata(config)
@@ -300,24 +196,24 @@ def create_model(config):
         ic_meas = ic_meas_interp(x_points.flatten())
 
     # Extract shared parameters from the configuration
-    nins = props.nins
-    af = props.af  
-    init = props.init
-    depth = props.depth
-    width = props.width
+    nins = hp.nins
+    af = hp.af  
+    init = hp.init
+    depth = hp.depth
+    width = hp.width
     nres, nb, ntest = (
-        props.nres, props.nb,
-        props.ntest,
+        hp.nres, hp.nb,
+        hp.ntest,
     )
 
-    a1, a2, a3, a4, a5 = props.a1, props.a2, props.a3, props.a4, props.a5
-    b1, b2, b3, b4 = props.b1, props.b2, props.b3, props.b4
-    c1, c2, c3 = props.c1, props.c2, props.c3 
-    oig = props.oig
+    a1, a2, a3, a4, a5 = pdecoeff.a1, pdecoeff.a2, pdecoeff.a3, pdecoeff.a4, pdecoeff.a5
+    b1, b2, b3, b4 = pdecoeff.b1, pdecoeff.b2, pdecoeff.b3, pdecoeff.b4
+    c1, c2, c3 = pdecoeff.c1, pdecoeff.c2, pdecoeff.c3 
+    oig = pdecoeff.oig
     # delta_x = cc.delta_x
 
-    wb = dde.Variable(pars.wbmin) if inverse else props.wb
-    theta10, theta20, theta30 = props.theta10, props.theta20, props.theta30
+    wb = dde.Variable(pars.wbmin) if inverse else pdecoeff.wb
+    theta10, theta20, theta30 = pdecoeff.theta10, pdecoeff.theta20, pdecoeff.theta30
     time_index = nins -1
 
 
@@ -338,7 +234,7 @@ def create_model(config):
         
         dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0)
         
-        y3 = cc.theta30 #if nins == 2 else x[:, 3:4] if nins == 5 else x[:, 2:3]
+        y3 = theta30 #if nins == 2 else x[:, 3:4] if nins == 5 else x[:, 2:3]
         y2 = None if nins == 2 else x[:, 1:2] if nins==3 else x[:, 2:3]
         
         flusso = a5 * (y3 - theta) if nins==2 else a5 * (y3 - y2)
@@ -350,19 +246,19 @@ def create_model(config):
 
 
     def output_transform(x, y):
-        y1 = cc.theta10 if nins<=3 else x[:, 1:2]
+        y1 = theta10 if nins<=3 else x[:, 1:2]
         t = x[:, time_index:]
         x1 = x[:, 0:1]
         
-        return t * (x1 - 1) * y + ic_fun(x) + y1 - cc.theta10
+        return t * (x1 - 1) * y + ic_fun(x) + y1 - theta10
 
     
-    def rff_transform(inputs):
+    # def rff_transform(inputs):
 
-        b = torch.Tensor(cc.b).to(device=dev)
-        vp = 2 * np.pi * inputs @ b.T
+    #     b = torch.Tensor(cc.b).to(device=dev)
+    #     vp = 2 * np.pi * inputs @ b.T
 
-        return torch.cat((torch.cos(vp), torch.sin(vp)), dim=-1)
+    #     return torch.cat((torch.cos(vp), torch.sin(vp)), dim=-1)
         
     
     def pde(x, theta):
@@ -391,7 +287,7 @@ def create_model(config):
     
 
     losses = [bc_0]
-    X_anchor = create_X_anchor(nins)
+    X_anchor = create_X_anchor(nins, config.hp.nanc)
 
     if inverse:
         if run.startswith("meas"):
@@ -436,11 +332,11 @@ def create_model(config):
         return model
 
 def compile_optimizer_and_losses(model, conf):
-    props = conf.model_properties
-    iwr = props.iwr
-    lr = props.lr
-    # loss_weights = [props.wres, props.wbc, props.w_bc1, props.w_ic]
-    loss_weights = [props.wres, props.wbc]
+    hp = conf.hp
+    iwr = hp.iwr
+    lr = hp.lr
+    # loss_weights = [hp.wres, hp.wbc, hp.w_bc1, hp.w_ic]
+    loss_weights = [hp.wres, hp.wbc]
     optimizer = conf.model_properties.optimizer
 
     if optimizer == "adam":
@@ -482,7 +378,11 @@ def restore_model(conf, model_path):
 def check_for_trained_model(conf):
     """Check if a model trained with LBFGS optimizer exists."""
     conf.model_properties.optimizer = "L-BFGS"
-    config_hash_lbfgs = co.generate_config_hash(conf.model_properties)
+    config_data = OmegaConf.create({
+        "pdecoeff": conf.pdecoeff,
+        "hp": conf.hp
+        })
+    config_hash_lbfgs = co.generate_config_hash(config_data)
     models_files = os.listdir(models)
     # Filter for matching files
     filtered_models = [file for file in models_files if config_hash_lbfgs in file and file.endswith(".pt")]
@@ -538,7 +438,7 @@ def train_model(conf):
     start_time = time.time()
     setup_log("Training a new model with Adam optimizer.")
     conf.model_properties.optimizer = "adam"
-    config_hash = co.generate_config_hash(conf.model_properties)
+    config_hash = co.generate_config_hash(conf)
     model_path_adam = os.path.join(models, f"model_{config_hash}.pt")
     model, losshistory = train_and_save_model(conf, "adam", config_hash, model_path_adam)
 
@@ -546,7 +446,7 @@ def train_model(conf):
         setup_log("Continue training the model with L-BFGS optimizer.")
         # Step 2: Train with LBFGS optimizer
         conf.model_properties.optimizer = "L-BFGS"
-        config_hash = co.generate_config_hash(conf.model_properties)
+        config_hash = co.generate_config_hash(conf)
         model_path_lbfgs = os.path.join(models, f"model_{config_hash}.pt")
         iters_lbfgs = conf.model_properties.iters_lbfgs
         dde.optimizers.config.set_LBFGS_options(maxcor=100, ftol=1e-08, gtol=1e-08, maxiter=iters_lbfgs, maxfun=None, maxls=50)
@@ -556,28 +456,30 @@ def train_model(conf):
     runtime = time.time() - start_time
     pp.plot_loss_components(losshistory, runtime, config_hash)
     info_train = {"testloss": test.min(), "runtime": runtime}
+    conf.update(info_train)
+    OmegaConf.save(conf, f"{conf.output_dir}/config_{config_hash}.yaml")
 
     return model, info_train
 
 
-def gen_testdata(conf, path=None):
+def gen_testdata(conf, path):
     
-    props, pars = conf.model_properties, conf.model_parameters
-    nins = props.nins
+    pars = conf.parameters
+    nins = conf.hp.nins
     n = 0 if nins == 2 else pars.nobs
 
-    dir_name = path if path is not None else conf.output_dir
+    # dir_name = path if path is not None else conf.output_dir
 
-    file_path = next((f"{dir_name}/{file}" for file in os.listdir(dir_name) if file.startswith("output_matlab") and file.endswith(".txt")), None)
+    # file_path = next((f"{dir_name}/{file}" for file in os.listdir(dir_name) if file.startswith("output_matlab") and file.endswith(".txt")), None)
 
-    data = np.loadtxt(file_path)
+    data = np.loadtxt(path)
     x, t, sys = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T
     X = np.vstack((x, t)).T
     y_sys = sys.flatten()[:, None]
     system_gt = {"grid": X, "theta": y_sys, "label": "system_gt"}
 
     if n == 1:
-        obs_id = 0 if data.shape[1]==4 else pars.wbindex
+        obs_id = 0 if data.shape[1]==4 else pars.obsindex
         y_obs = data[:, 3+obs_id].T
         y_obs = y_obs.flatten()[:, None]
         y_mm_obs = y_obs
@@ -591,7 +493,7 @@ def gen_testdata(conf, path=None):
     
     out = np.hstack((X, y_sys, y_obs, y_mm_obs))
 
-    label_mm_obs_gt = f"observer_{cc.wbindex}_gt" if n==1 else "multi_observer_gt"
+    label_mm_obs_gt = f"observer_{pars.obsindex}_gt" if n==1 else "multi_observer_gt"
 
     mm_obs_gt = { "grid": out[:, :2], "theta": out[:, -1], "label": label_mm_obs_gt}
 
@@ -599,7 +501,7 @@ def gen_testdata(conf, path=None):
         {
             "grid": out[:, :2], 
             "theta": out[:, 3+i], 
-            "label": f"observer_{cc.wbindex}_gt" if n == 1 else f"observer_{i}_gt"
+            "label": f"observer_{pars.obsindex}_gt" if n == 1 else f"observer_{i}_gt"
         }
         for i in range(n)
     ]
@@ -629,7 +531,7 @@ def gen_obsdata(conf, system_gt):
     # Define interpolation functions
     f1 = interp1d(instants, rows[1.0], kind="previous")
     f2 = interp1d(instants, rows[0.0], kind="previous")
-    f3 = interp1d(instants, np.full_like(rows[0.0], cc.theta30), kind="previous")
+    f3 = interp1d(instants, np.full_like(rows[0.0], conf.pdecoeff.theta30), kind="previous")
 
     # Mapping of inputs to feature configurations
     input_mapping = {
@@ -660,17 +562,19 @@ def load_weights(observers, conf, label, path=None):
 
     
 def scale_t(t):
-    Troom = cc.Troom
-    Tmax = cc.Tmax
+    conf = compose(config_name='config_run')
+    Troom = conf.temps.Troom
+    Tmax = conf.temps.Tmax
     k = (t - Troom) / (Tmax - Troom)
 
     return round(k, n_digits)
 
 
 def rescale_t(theta):
+    conf = compose(config_name='config_run')
 
-    Troom = cc.Troom
-    Tmax = cc.Tmax
+    Troom = conf.temps.Troom
+    Tmax = conf.temps.Tmax
 
     # Iterate through each component in theta and rescale if it is a list-like object
     rescaled_theta = []
@@ -688,41 +592,46 @@ def rescale_t(theta):
 
 
 def rescale_x(X):
+    conf = compose(config_name='config_run')
     # Check if X is a single float value
     if isinstance(X, (int, float)):
-        return X * cc.L0
+        return X * conf.properties.L0
 
     # Iterate through each component in X and rescale if it is a list-like object
     rescaled_X = []
     for part in X:
         part = np.array(part, dtype=float)  # Ensure each part is converted into a numpy array
-        rescaled_part = part * cc.L0        # Apply the scaling
+        rescaled_part = part * conf.properties.L0        # Apply the scaling
         rescaled_X.append(rescaled_part)    # Append rescaled part to the result list
 
     return rescaled_X
 
 
 def rescale_time(tau):
+    conf = compose(config_name='config_run')
     tau = np.array(tau)
-    tf = cc.tf
+    tf = conf.properties.tf
     j = tau*tf
 
     return np.round(j, 0)
 
 
 def scale_time(t):
-    tf = cc.tf
+    conf = compose(config_name='config_run')
+    tf = conf.properties.tf
     j = t/tf
 
     return np.round(j, n_digits)
 
 
 def get_tc_positions():
+    conf = compose(config_name='config_run')
+    pars = conf.parameters
     Xy2 = 0.0
     Xy1 = 1.0
 
     # return {"y2": x_y2, "gt": round(x_gt, 2), "y1": x_y1}
-    return {"y2": Xy2, "gt": round(cc.Xgt, 2), "gt1": round(cc.Xgt1, 2),"y1": Xy1}
+    return {"y2": Xy2, "gt": pars.Xgt, "gt1": pars.Xgt1,"y1": Xy1}
 
 def get_loss_names():
     # return ["residual", "bc0", "bc1", "ic", "test", "train"]
@@ -814,23 +723,23 @@ def execute(config, label):
     # Define output directories
     out_dir = config.output_dir
     simul_dir = os.path.join(out_dir, label)
-    pars = config.model_parameters
-    props = config.model_properties
+    pars = config.parameters
+    # props = config.model_properties
+    pdecoeff = config
 
     nobs = pars.nobs
 
     if nobs == 1:
-
-        props.wb = pars.wbobs
+        pdecoeff.wb = pars.wbobs
         setup_log(f"Training single observer with perfusion {pars.wbobs}.")
         output_model = train_model(config)
         return output_model
 
     multi_obs = []
     for j in range(nobs):
-        obs = cc.obs if label.startswith("simulation") else np.logspace(np.log10(pars.wbmin), np.log10(pars.wbmax), nobs)
+        obs = np.logspace(np.log10(pars.wbmin), np.log10(pars.wbmax), nobs)
         perf = obs[j]
-        config.model_properties.wb = float(perf)
+        pdecoeff.wb = float(perf)
         setup_log(f"Training observer {j} with perfusion {perf}.")
         model = train_model(config)
         multi_obs.append(model)
@@ -967,7 +876,7 @@ def get_observers_preds(ground_truth, multi_obs, x_obs, output_dir, conf, label)
         {
             "grid": preds[:, :2],
             "theta": preds[:, 2 + i],
-            "label": f"observer_{i if nobs > 1 else pars.wbindex}"
+            "label": f"observer_{i if nobs > 1 else pars.obsindex}"
         }
         for i in range(nobs) 
     ]
@@ -1080,7 +989,7 @@ def get_plot_params(conf_run):
     multi_observer_gt_params = create_params(entities.multi_observer_gt)
 
     # Observers parameters (dynamically adjust for number of observers)
-    nobs = conf_run.model_parameters.nobs
+    nobs = conf_run.parameters.nobs
     observer_params = {}
     observer_gt_params = {}
     meas_points_params = getattr(entities, "meas_points")
@@ -1088,7 +997,7 @@ def get_plot_params(conf_run):
 
     if 1<=nobs<=8:
         for j in range(nobs):
-            i = cc.wbindex if nobs == 1 else j
+            i = conf_run.parameters.obsindex if nobs == 1 else j
             observer_params[f"observer_{i}"] = {
                 "color": entities.observers.color[i],
                 "label": entities.observers.label[i],
@@ -1176,8 +1085,9 @@ def run_matlab_ground_truth():
     print("MATLAB ground truth calculation completed.")
 
 
-def compute_y_theory(grid, sys, obs):
-    str = np.where(np.abs(cc.wbsys - cc.wbobs) <= 1e-08, 'exact', 'diff')
+def compute_y_theory(grid, sys, obs, conf):
+    pars = conf.parameters
+    str = np.where(np.abs(pars.wbsys - pars.wbobs) <= 1e-08, 'exact', 'diff')
     x = np.unique(grid[:, 0])
     t = np.unique(grid[:, -1])
     sys_0 = sys[:len(x)]
@@ -1186,11 +1096,10 @@ def compute_y_theory(grid, sys, obs):
     obs_0 = obs_0.reshape(len(obs_0), 1)
     l2_0 = calculate_l2(grid[grid[:, 1]==0], sys_0, obs_0)
 
-    # decay = cc.decay_rate_exact if str=='exact' else cc.decay_rate_diff if str=='diff'
-    decay = getattr(cc, f"decay_rate_{str}")
+    decay = getattr(pars, f"dr{str}")
 
     theory = {"grid": grid, "theta": l2_0 * np.exp(-t*decay), "label": "theory"}
-    bound = {"grid": grid, "theta": np.full_like(t, cc.c0), "label": "bound"}
+    bound = {"grid": grid, "theta": np.full_like(t, pars.c0), "label": "bound"}
     return theory, bound
 
 
