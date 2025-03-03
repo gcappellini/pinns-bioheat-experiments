@@ -1,28 +1,24 @@
-properties:
+model_properties:
   L0: 0.07
   tf: 1800.0
   k: 0.6
   rho: 1000.0
-  rhob: 1000.0
   c: 4186.0
-  cb: 4186.0
+  incr_fact: 1.0
   wb: 0.0033
   h: 10.0
-  cc: 27.736982
-  beta: 0.9
-  pwrfact: 0.0
-  SAR0: 50.0
-  PD: 0.0136
-  x0: 0.001
-temps:
   Troom: 21.5
   Tmax: 32.0
   Ty10: 21.5
   Ty20: 30.2
   Ty30: 21.5
   Tgt0: 31.5
-  Tgt10: 31.5
-hp:
+  theta10: 0.12762
+  theta20: 0.67619
+  theta30: 0.0
+  thetagt0: 0.95238
+  thetagt10: 0.95238
+  oig: 2.46
   af: tanh
   iwr: false
   init: Glorot normal
@@ -39,15 +35,17 @@ hp:
   resampler_period: 100
   wres: 1
   wbc0: 1
-  nins: 4
-  seed: 500
-  nanc: 0
-pdecoeff:
+  beta: 0.9
+  pwr_fact: 0.0
+  SAR_0: 50.0
+  PD: 0.025
+  x0: 0.001
   a1: 18.992037
   a2: 34185.6666667
   a3: 0.0
   a4: 1.9415887
   a5: 1.1666667
+  cc: 27.736982
   b1: -2711.46326
   b2: 2710.1258
   b3: 0.78889
@@ -55,14 +53,11 @@ pdecoeff:
   c1: -1.33746
   c2: 0.78889
   c3: 0.67619
-  oig: 2.46
-  theta10: 0.12762
-  theta20: 0.67619
-  theta30: 0.0
-  thetagt0: 0.95238
-  thetagt10: 0.95238
-  incrfact: 1.0
-parameters:
+  nins: 4
+  seed: 500
+  sigma: 1.0
+  nanc: 0
+model_parameters:
   lam: 1
   upsilon: 100.0
   wbmin: 6.3e-05
@@ -77,7 +72,7 @@ parameters:
   wb7: 0.00165
   wbsys: 0.0005
   wbobs: 0.000255
-  obsindex: 3
+  wbindex: 3
   nobs: 1
   xgt: 0.01
   xw: 0.025
@@ -85,9 +80,6 @@ parameters:
   Xgt: 0.14286
   Xw: 0.35714
   Xgt1: 0.57143
-  drdiff: None
-  drexact: None
-  c0 : None
 plot:
   show: true
   show_obs: false

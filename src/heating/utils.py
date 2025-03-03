@@ -11,7 +11,7 @@ from scipy.interpolate import interp1d
 from scipy import integrate
 import pickle
 import pandas as pd
-import coeff_calc as cc
+# import v1v2_calc as cc
 
 dde.config.set_random_seed(200)
 
@@ -116,18 +116,6 @@ def create_default_config():
     }
     return network
 
-
-def create_default_properties():
-    properties = {
-        "a1": cc.a1,
-        "a2": cc.a2,
-        "a3": cc.a3,
-        "a4": cc.a4,
-        "a5": cc.a5,
-        "output_injection_gain": cc.K,
-        "delta": cc.delta
-    }
-    return properties
 
 def write_json(data, filename):
     global run_logs

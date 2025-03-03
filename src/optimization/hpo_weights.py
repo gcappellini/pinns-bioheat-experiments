@@ -2,7 +2,7 @@ from utils import scale_t, ic_obs, run_matlab_ground_truth
 import os
 import numpy as np
 from omegaconf import OmegaConf
-from coeff_calc import Ty10, Ty20, Ty30, a5
+# from v1v2_calc import Ty10, Ty20, Ty30, a5
 np.random.seed(237)
 import matplotlib.pyplot as plt
 from skopt import gp_minimize

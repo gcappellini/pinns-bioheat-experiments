@@ -1,6 +1,6 @@
 import utils as uu
 import os
-import coeff_calc as cc
+import v1v2_calc as cc
 import plots as pp
 import numpy as np
 from omegaconf import OmegaConf

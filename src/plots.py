@@ -9,10 +9,10 @@ import utils as uu
 from omegaconf import OmegaConf
 import datetime
 from hydra import compose
-import coeff_calc as cc 
+# import v1v2_calc as cc 
 
 # Set up directories and random seed
-dde.config.set_random_seed(200)
+# dde.config.set_random_seed(200)
 device = torch.device("cuda")
 
 current_file = os.path.abspath(__file__)
@@ -270,7 +270,7 @@ def plot_obs_err(series_data: list, run_figs: str, lal: str):
         # Define the title for the plot
         title = f"Observation errors, {round(uu.rescale_x(xref)*100,0)} cm depth" if rescale else f"Observation errors, X={xref}"
         # t = t.reshape(len(t), 1)
-        mus = np.array(uu.rescale_t(mus))-cc.Troom if rescale else np.array(mus)  
+        mus = np.array(uu.rescale_t(mus))-conf.temps.Troom if rescale else np.array(mus)  
 
         times_plot = np.array(uu.rescale_time(t_vals)) if rescale else np.array(t_vals)  
         _, xlabel, _ = uu.get_scaled_labels(rescale) 
@@ -630,9 +630,9 @@ def plot_multiple_series(series_data, prj_figs, lal):
             scales[i]=max_scale
         axes[i].set_ylim(y_min, y_min + scales[i])
     
-    axes[0].set_ylim(cc.Troom, cc.Tmax+0.7) if rescale else axes[0].set_ylim(0, 1)
+    axes[0].set_ylim(conf.temps.Troom, conf.temps.Tmax+0.7) if rescale else axes[0].set_ylim(0, 1)
     if conf.experiment.run.startswith("meas_cool"):
-        axes[0].set_ylim(cc.Troom, 30)
+        axes[0].set_ylim(conf.temps.Troom, 30)
         
     # Save and close figure
     filename = f"{prj_figs}/combined_plot_{lal}.png"

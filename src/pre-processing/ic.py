@@ -4,7 +4,7 @@ import pandas as pd
 import datetime
 import numpy as np
 import matplotlib.pyplot as plt
-import coeff_calc as cc
+import v1v2_calc as cc
 from uncertainties import ufloat
 from scipy.interpolate import interp1d
 

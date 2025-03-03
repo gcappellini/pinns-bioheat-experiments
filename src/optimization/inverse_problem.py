@@ -4,7 +4,7 @@ import deepxde as dde
 import numpy as np
 from deepxde.backend import torch
 from scipy.interpolate import interp1d
-import coeff_calc as cc
+# import v1v2_calc as cc
 from omegaconf import OmegaConf
 from hydra import compose
 import utils as uu

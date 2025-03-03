@@ -7,7 +7,6 @@ import hashlib
 import logging
 from omegaconf import OmegaConf
 
-dde.config.set_random_seed(200)
 
 # device = torch.device("cpu")
 device = torch.device("cuda")
@@ -33,19 +32,25 @@ os.makedirs(models, exist_ok=True)
 
 run_figs = [None]
 
+def set_seed(seed):
+    dde.config.set_random_seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
 
 def set_run(prj_figs, cfg, run):
     global run_figs
 
-    # run_figs = os.path.join(prj_figs, run)
-    # os.makedirs(run_figs, exist_ok=True)
+    experiments_cfg = OmegaConf.load(f"{conf_dir}/experiments.yaml")
 
     props = cfg.model_properties
     pars = cfg.model_parameters
-    simu_settings = getattr(cfg.experiment_type, "simulation")
+    set_seed(cfg.seed)
 
-    if run.startswith("ground_truth"):
-        
+    if run.startswith("ground_truth"):   
+        simu_settings = getattr(experiments_cfg, "simulation")
         cfg.output_dir = os.path.abspath(prj_figs)
         # cfg.output_dir = os.path.abspath(os.path.join(prj_figs, run))
         os.makedirs(cfg.output_dir, exist_ok=True)
@@ -56,24 +61,25 @@ def set_run(prj_figs, cfg, run):
         run_figs = cfg.output_dir
 
     elif run == "simulation_system":
+        simu_settings = getattr(experiments_cfg, "simulation")
         props.W = pars.W_sys
         props.Ty10, props.Ty20, props.Ty30 = simu_settings.Ty10, simu_settings.Ty20, simu_settings.Ty30
         pars.lam, pars.upsilon = simu_settings.lam, simu_settings.upsilon
         props.n_ins = 2
 
     elif run.startswith("simulation"):
-        
+        simu_settings = getattr(experiments_cfg, "simulation")
         props.Ty10, props.Ty20, props.Ty30, props.Tgt20 = simu_settings.Ty10, simu_settings.Ty20, simu_settings.Ty30, simu_settings.Tgt20
         pars.lam, pars.upsilon = simu_settings.lam, simu_settings.upsilon
         if run == "simulation_mm_obs":
             cfg.output_dir = prj_figs
 
     elif run.startswith("meas_cool"):
+        simu_settings = getattr(experiments_cfg, run)
         props.h, props.pwr_fact = 10.0, 0.0
         meas_settings = getattr(cfg.experiment_type, run)
         props.Ty10, props.Ty20, props.Ty30 = meas_settings.Ty10, meas_settings.Ty20, meas_settings.Ty30
         pars.lam, pars.upsilon = meas_settings.lam, meas_settings.upsilon
-
 
     elif run.startswith("hpo"):
         pars.n_obs = 1
@@ -97,11 +103,12 @@ def set_run(prj_figs, cfg, run):
 
 def filter_config_for_matlab(cfg):
     cfg_matlab = OmegaConf.create({
-        "model_properties": cfg.model_properties,
-        "model_parameters": cfg.model_parameters,
+        "pdecoeff": cfg.pdecoeff,
+        "parameters": cfg.parameters,
         "output_dir": cfg.output_dir,
         "experiment": cfg.experiment.run,
         })
+    
     OmegaConf.save(cfg_matlab, f"{conf_dir}/config_ground_truth.yaml")
     return cfg_matlab
 

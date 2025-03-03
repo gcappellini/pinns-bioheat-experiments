@@ -1,0 +1,76 @@
+import_data: false
+save_pickle: true
+simulation:
+  Ty10: 21.5
+  Ty20: 30.2
+  Ty30: 21.5
+  Tgt20: 31.5
+  lam: 1
+  upsilon: 100.0
+meas_cool_1:
+  title: Cooling 1
+  date: '20240930_1'
+  string: meas_cool_1
+  start_min: 43
+  end_min: 73
+  Ty10: 22.17
+  Tgt10: 24.23
+  Tgt20: 28.4
+  Ty20: 27.43
+  Ty30: 21.5
+  Tfl: 22.01
+  r1: 0.0005
+  lam: 10.0
+  upsilon: 100.0
+  n_obs: 64
+meas_cool_2:
+  title: Cooling 2
+  date: '20240930_3'
+  string: meas_cool_2
+  start_min: 30
+  end_min: 60
+  Ty10: 22.84
+  Ty20: 28.6
+  Ty30: 21.5
+  Tgt10: 24.56
+  Tgt20: 29.46
+  Tfl: 21.63
+  r1: 0.001
+  lam: 10.0
+  upsilon: 100.0
+  n_obs: 64
+agar_1:
+  date: 240124
+  string: agar_1
+  start_min: 0
+  end_min: 240
+  title: Agar 1
+  phantom: B
+agar_2:
+  date: 240125
+  string: agar_2
+  start_min: 0
+  end_min: 30
+  title: Agar 2
+  phantom: B
+agar_3:
+  date: 240125b
+  string: agar_3
+  start_min: 0
+  end_min: 240
+  title: Agar 3
+  phantom: B
+agar_4:
+  date: 240130
+  string: agar_4
+  start_min: 0
+  end_min: 240
+  title: Agar 4
+  phantom: B
+agar_5:
+  date: 240202
+  string: agar_5
+  start_min: 0
+  end_min: 240
+  title: Agar 5
+  phantom: B

@@ -9,7 +9,7 @@ from scipy import integrate
 import pickle
 import datetime
 import pandas as pd
-import coeff_calc as cc
+# import coeff_calc as cc
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
@@ -19,15 +19,115 @@ from common import setup_log
 import time
 
 
-def set_seed(seed):
-    dde.config.set_random_seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(seed)
+def calculate_aicoeff(cfg):
+    props = cfg.properties
+    pdecoeff = cfg.pdecoeff
+    a1: float = round((props.L0**2/props.tf)*((props.rho*props.c)/props.k), 7)
+    a2: float = round(props.L0**2*props.rhob*props.cb/props.k, 7)
+    cc: float = round(np.log(2)/(props.PD - 10**(-2)*props.x0), 7)
+    a3: float = round(props.pwrfact*props.rho*props.L0**2*props.beta*props.SAR0*np.exp(cc*props.x0)/props.k*dT, 7)
+    a4: float = round(cc*props.L0, 7)
+    a5: float = round(props.L0*props.h/props.k, 7)
+    pdecoeff.a1 = float(a1)
+    pdecoeff.a2 = float(a2)
+    pdecoeff.a3 = float(a3)
+    pdecoeff.a4 = float(a4)
+    pdecoeff.a5 = float(a5)
+    return cfg
 
 
-set_seed(cc.seed)
+def calculate_temps(cfg):
+    temps = cfg.temps
+    pdecoeff = cfg.pdecoeff
+    Troom = temps.Troom
+    Tmax = temps.Tmax
+
+    def scale_t(t: float) -> float:
+        return float(round((t - Troom) / (Tmax - Troom), 5))
+
+    scaled_temps = {key: scale_t(getattr(temps, key)) for key in ['Ty10', 'Ty20', 'Ty30', 'Tgt0', 'Tgt10']}
+    for key, value in scaled_temps.items():
+        setattr(pdecoeff, f'theta{key[1:]}', value)
+    return cfg
+
+
+def calculate_cicoeff(cfg):
+    props = cfg.properties
+    pdecoeff = cfg.pdecoeff
+    hp = cfg.hp
+    if hp.nins == 2:
+        props.c1, props.c2, props.c3 = None, None, None
+    elif hp.nins > 2:
+        props.c3 = float(round(pdecoeff.theta20, 5))
+        props.c2 = float(round(-pdecoeff.a5 * (pdecoeff.theta30 - pdecoeff.theta20), 5))
+        props.c1 = float(round(pdecoeff.theta10 - c2 - c3, 5))
+    return cfg
+
+
+def calculate_bicoeff(cfg):
+    pars = cfg.parameters
+    pdecoeff = cfg.pdecoeff
+
+    # Define the equations in matrix form
+    A = np.array([
+        [1, 1, 1, 1],
+        [0, 0, 0, 1],
+        [0, 0, 1, 0],
+        [pars.Xgt**3, pars.Xgt**2, pars.Xgt, 1]
+    ])
+
+    B = np.array([pdecoeff.theta10, pdecoeff.theta20, -pdecoeff.a5 * (pdecoeff.theta30 - pdecoeff.theta20), pdecoeff.thetagt0])
+    sol = np.linalg.solve(A, B)
+    pdecoeff.b1, pdecoeff.b2, pdecoeff.b3, pdecoeff.b4 = [float(round(val, 5)) for val in sol]
+    return cfg
+
+
+def calculate_pars(cfg):
+    pars = cfg.parameters
+    wbmin: float = pars.wbmin
+    wbmax: float = pars.wbmax
+    obsindex: int = pars.obsindex
+    nobs: int = pars.nobs
+
+    obs_steps = 8 if nobs<=8 else nobs
+    obs = np.logspace(np.log10(wbmin), np.log10(wbmax), obs_steps).round(6)
+    wbobs = float(obs[obsindex])
+    pars.wbobs = wbobs
+
+    eight_obs = np.logspace(np.log10(wbmin), np.log10(wbmax), 8).round(6)
+    for i in range(8):
+        setattr(pars, f'wb{i}', float(eight_obs[i]))
+
+    if nobs ==1:
+        cfg = calculate_conv_pars(cfg)
+    else:
+        pars.drdiff, pars.drexact, pars.c0 = None, None, None
+    return cfg
+
+
+def calculate_conv_pars(cfg):
+    pdecoeff = cfg.pdecoeff
+    pars = cfg.parameters
+    pwic: float = np.where(pdecoeff.oig>=(np.pi**2)/4, (np.pi**2)/4, pdecoeff.oig)
+
+    drexact: float = (pwic/pdecoeff.a1+pars.wbsys*pdecoeff.a2/pdecoeff.a1)
+    c0: float = (np.abs(pars.wbobs*pdecoeff.a2/pdecoeff.a1 - pars.wbsys*pdecoeff.a2/pdecoeff.a1)**2)/(pwic/pdecoeff.a1 + pars.wbobs*pdecoeff.a2/pdecoeff.a1)**2
+    drdiff: float = (pwic/pdecoeff.a1+pars.wbobs*pdecoeff.a2/pdecoeff.a1)/2
+    pars.drdiff = float(drdiff)
+    pars.drexact = float(drexact)
+    pars.c0 = float(c0)
+    return cfg
+
+
+def calc_coeff(cfg):
+    cfg = calculate_aicoeff(cfg)
+    cfg = calculate_temps(cfg)
+    cfg = calculate_cicoeff(cfg)
+    cfg = calculate_bicoeff(cfg)
+    cfg = calculate_pars(cfg)
+    cfg = calculate_conv_pars(cfg)
+    return cfg
+
 
 
 dde.config.set_default_float("float64")
@@ -1090,7 +1190,7 @@ def compute_y_theory(grid, sys, obs):
     decay = getattr(cc, f"decay_rate_{str}")
 
     theory = {"grid": grid, "theta": l2_0 * np.exp(-t*decay), "label": "theory"}
-    bound = {"grid": grid, "theta": np.full_like(t, cc.c_0), "label": "bound"}
+    bound = {"grid": grid, "theta": np.full_like(t, cc.c0), "label": "bound"}
     return theory, bound
 
 
@@ -1376,4 +1476,6 @@ def extract_matching(dicts):
     result = np.hstack((result, theta_obsvs))
 
     return result
+
+
 

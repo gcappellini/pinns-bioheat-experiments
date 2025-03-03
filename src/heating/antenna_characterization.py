@@ -1,16 +1,9 @@
 # N.B.: Antenna can be optimized using scikit optimize!!
 
-
-
-
-
-
-
-
 import os
 import utils as uu
 import common as co
-import coeff_calc as cc
+# import v1v2_calc as cc
 from omegaconf import OmegaConf
 import numpy as np
 import matplotlib.pyplot as plt

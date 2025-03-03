@@ -8,7 +8,7 @@ from skopt.space import Real, Categorical, Integer
 from skopt.utils import use_named_args
 import os
 import deepxde as dde
-import coeff_calc as cc
+import v1v2_calc as cc
 
 
 # Function 'gp_minimize' of package 'skopt(scikit-optimize)' is used in this example.
