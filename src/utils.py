@@ -387,20 +387,20 @@ def check_for_trained_model(conf):
     # Filter for matching files
     filtered_models = [file for file in models_files if config_hash_lbfgs in file and file.endswith(".pt")]
     if not filtered_models:
-        return None
+        return None, None
     filtered_losses = [file for file in models_files if config_hash_lbfgs in file and file.endswith(".npz")]
     if filtered_losses:
         loss_file = os.path.join(models, filtered_losses[0])
-        loss_data = np.load(loss_file)
-        info_train = {"testloss": np.min(loss_data['test']), "runtime": loss_data['runtime']}
-    else:
-        info_train = {"testloss": None, "runtime": None}
+        loss_history = np.load(loss_file)
+        # info_train = {"testloss": np.min(loss_data['test']), "runtime": loss_data['runtime']}
+    # else:
+    #     info_train = {"testloss": None, "runtime": None}
     # Return the path to the first sorted model
     sorted_files = sorted(filtered_models)
     model_path = os.path.join(models, sorted_files[0])
     model = restore_model(conf, model_path)
 
-    return model, info_train
+    return model, loss_history
 
 
 def train_and_save_model(conf, optimizer, config_hash, save_path, pre_trained_model=None):
@@ -409,6 +409,7 @@ def train_and_save_model(conf, optimizer, config_hash, save_path, pre_trained_mo
     conf.model_properties.optimizer = optimizer
     model = compile_optimizer_and_losses(model, conf)
     callbacks = create_callbacks(conf)
+    start_time = time.time()
 
     losshistory, _ = model.train(
         iterations=conf.model_properties.iters,
@@ -416,9 +417,14 @@ def train_and_save_model(conf, optimizer, config_hash, save_path, pre_trained_mo
         model_save_path=save_path,
         display_every=conf.plot.display_every
     )
+    test = np.array(losshistory.loss_test).sum(axis=1).ravel()
+    runtime = time.time() - start_time
     setup_log(f"Model trained with {optimizer} optimizer.")
     # Save configuration
+    conf.update({"testloss": test.min(), "runtime": runtime})
+    # OmegaConf.save(conf, confi_path)
     confi_path = os.path.join(models, f"config_{config_hash}.yaml")
+    np.savez(f"{save_path}_losshistory.npz", train=losshistory.loss_train, test=losshistory.loss_test, runtime=runtime)
     OmegaConf.save(conf, confi_path)
 
     return model, losshistory
@@ -432,34 +438,38 @@ def train_model(conf):
     if trained_model:
         # Return the trained model directly if found
         setup_log("Found a pre-trained model.")
-        return trained_model
-
-    # Step 1: Train with Adam optimizer
-    start_time = time.time()
-    setup_log("Training a new model with Adam optimizer.")
-    conf.model_properties.optimizer = "adam"
-    config_hash = co.generate_config_hash(conf)
-    model_path_adam = os.path.join(models, f"model_{config_hash}.pt")
-    model, losshistory = train_and_save_model(conf, "adam", config_hash, model_path_adam)
-
-    if conf.model_properties.iters_lbfgs>0:
-        setup_log("Continue training the model with L-BFGS optimizer.")
-        # Step 2: Train with LBFGS optimizer
-        conf.model_properties.optimizer = "L-BFGS"
+        model, losshistory = trained_model
+        # return trained_model
+    else:
+        # Step 1: Train with Adam optimizer
+        # start_time = time.time()
+        setup_log("Training a new model with Adam optimizer.")
+        conf.model_properties.optimizer = "adam"
         config_hash = co.generate_config_hash(conf)
-        model_path_lbfgs = os.path.join(models, f"model_{config_hash}.pt")
-        iters_lbfgs = conf.model_properties.iters_lbfgs
-        dde.optimizers.config.set_LBFGS_options(maxcor=100, ftol=1e-08, gtol=1e-08, maxiter=iters_lbfgs, maxfun=None, maxls=50)
-        model, losshistory = train_and_save_model(conf, "L-BFGS", config_hash, model_path_lbfgs, pre_trained_model=model)
+        model_path_adam = os.path.join(models, f"model_{config_hash}.pt")
+        model, losshistory = train_and_save_model(conf, "adam", config_hash, model_path_adam)
 
-    test = np.array(losshistory.loss_test).sum(axis=1).ravel()
-    runtime = time.time() - start_time
-    pp.plot_loss_components(losshistory, runtime, config_hash)
-    info_train = {"testloss": test.min(), "runtime": runtime}
-    conf.update(info_train)
+        if conf.model_properties.iters_lbfgs>0:
+            setup_log("Continue training the model with L-BFGS optimizer.")
+            # Step 2: Train with LBFGS optimizer
+            conf.model_properties.optimizer = "L-BFGS"
+            config_hash = co.generate_config_hash(conf)
+            model_path_lbfgs = os.path.join(models, f"model_{config_hash}.pt")
+            iters_lbfgs = conf.model_properties.iters_lbfgs
+            dde.optimizers.config.set_LBFGS_options(maxcor=100, ftol=1e-08, gtol=1e-08, maxiter=iters_lbfgs, maxfun=None, maxls=50)
+            model, losshistory = train_and_save_model(conf, "L-BFGS", config_hash, model_path_lbfgs, pre_trained_model=model)
+
+        # test = np.array(losshistory.loss_test).sum(axis=1).ravel()
+        # runtime = time.time() - start_time
+    
+        # info_train = {"testloss": test.min(), "runtime": runtime}
+        # conf.update(info_train)
+        # OmegaConf.save(conf, f"{models}/config_{config_hash}.yaml")
+
+    pp.plot_loss_components(losshistory, config_hash, fold=conf.output_dir)
     OmegaConf.save(conf, f"{conf.output_dir}/config_{config_hash}.yaml")
 
-    return model, info_train
+    return model, losshistory
 
 
 def gen_testdata(conf, path):
