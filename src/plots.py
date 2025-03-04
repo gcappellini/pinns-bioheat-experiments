@@ -244,6 +244,7 @@ def plot_obs_err(series_data: list, run_figs: str, lal: str):
     x_ref = uu.get_tc_positions()
     intern_positions_dict = {k: v for k, v in x_ref.items() if k not in [ "y1"]}
     obs_positions = list(intern_positions_dict.values())
+    obs_positions = [round(el, 2) for el in obs_positions]
 
     for xref in obs_positions:
 
@@ -473,23 +474,24 @@ def plot_validation_3d(e, t_true, t_pred, run_figs, label):
     )
     
 
-def plot_timeseries_with_predictions(system_meas, mm_obs, conf, out_dir):
+def plot_timeseries_with_predictions(system_meas: dict, mm_obs: dict, conf, out_dir):
 
     label = conf.experiment.run
     gt = mm_obs["label"].endswith("gt")
     x_points = uu.get_tc_positions()
+    tf = conf.properties.tf
 
     y_data = []
     for entry in x_points.keys():
         closest_indices_pred = np.where(np.abs(mm_obs["grid"][:, 0] - x_points[entry]) == np.min(np.abs(mm_obs["grid"][:, 0] - x_points[entry])))
         dict_pred = {
-            "tau": np.unique(system_meas["grid"][:, 1])*conf.model_properties.tf / 60,
+            "tau": np.unique(system_meas["grid"][:, 1])*tf / 60,
             "theta": mm_obs["theta"][closest_indices_pred],
             "label": f"{entry} (Matlab)" if gt else f"{entry} (Pred)"
         }
         closest_indices_meas = np.where(np.abs(system_meas["grid"][:, 0] - x_points[entry]) == np.min(np.abs(system_meas["grid"][:, 0] - x_points[entry])))
         dict_meas = {
-            "tau": np.unique(system_meas["grid"][:, 1])*conf.model_properties.tf / 60,
+            "tau": np.unique(system_meas["grid"][:, 1])*tf / 60,
             "theta": system_meas["theta"][closest_indices_meas],
             "label": f"{entry} (Meas)"
         }
@@ -530,7 +532,8 @@ def plot_timeseries_with_predictions(system_meas, mm_obs, conf, out_dir):
 
     y_data_plot = [uu.rescale_t(p["theta"]) for p in y_data] if rescale else [p["theta"] for p in y_data]
 
-    meas_dict = getattr(conf.experiment_type, label)
+    conf_meas = OmegaConf.load(f"{src_dir}/configs/experiments.yaml")
+    meas_dict = getattr(conf_meas, label)
     name = meas_dict["title"]
     # if gt:
     #     legend_labels = ['y1 (Meas)', 'gt2 (Meas)', 'y2 (Meas)', 
@@ -710,5 +713,110 @@ def plot_l2(series_sys, series_data, folder, lal):
     )
 
 
+def plot_inv_var(cfg, var):
+    iters = var["iters"]
+    values = var["values"]
+    true = np.full_like(values, cfg.parameters.wbsys)
+    out_dir = cfg.output_dir
+    plot_generic(
+        x=[iters, iters] if cfg.run.startswith("simulation") else [iters],
+        y=[values, true] if cfg.run.startswith("simulation") else [values],
+        title=r"Recovered $w_b$ value",
+        xlabel="Iterations",
+        ylabel=r"$w_b \quad [s^{-1}]$",
+        legend_labels=["PINNs", "MATLAB"] if cfg.run.startswith("simulation") else ["PINNs"],
+        log_scale=True,
+        log_xscale=False,
+        size=(6, 5),
+        filename=f"{out_dir}/variable_wb.png",
+        colors=["cornflowerblue", "lightsteelblue"] if cfg.run.startswith("simulation") else ["cornflowerblue"],
+        linestyles=["-", ":"] if cfg.run.startswith("simulation") else ["-"],
+        markers=None,
+        linewidths=None,
+        markersizes=None,
+        alphas=None,
+        markevery=50
+    )
+
+
+
+
+def plot_res(config, system_gt=None, system=None, system_meas=None, observers_gt=None, observers=None, mm_obs=None, mm_obs_gt=None, var=None):
+    hp, pars, plot = config.hp, config.parameters, config.plot
+    out_dir = config.output_dir
+    run = config.experiment.run
+    weights_list = None
+# blocco gt
+    if plot.plot_gt:
+        label = "ground_truth"
+        multiple_series = [mm_obs_gt, system_gt]
+        l2_ref_dict = system_gt
+        ref_dict = mm_obs_gt
+        validation_dict = mm_obs_gt
+        l2_plot = [mm_obs_gt]
+        timeseries_gt = system_gt
+        timeseries_pred = mm_obs_gt
+        if plot.show_obs:
+            multiple_series.extend(observers_gt )
+            l2_plot.extend(observers_gt)
+            weights_list = observers_gt
+
+        all_plots(multiple_series, out_dir, label, l2_ref_dict, l2_plot, ref_dict, validation_dict, config, timeseries_gt, timeseries_pred, weights_list)
+
+# blocco direct
+    if hp.nins==2:
+        label = "direct"
+        multiple_series = [system]
+        l2_ref_dict = system_gt
+        ref_dict = l2_ref_dict
+        validation_dict = system
+        l2_plot = [system]
+        timeseries_gt = system_gt
+        timeseries_pred = system
+# blocco inverse
+        if var is not None:
+            label= "inverse"
+            plot_inv_var(config, var)
+# blocco simulation_mm_obs    
+    if hp.nins>2 and run.startswith("simulation"):
+        label = "simulation_mm_obs"
+        multiple_series = [mm_obs, system_gt]
+        l2_ref_dict = system_gt
+        validation_dict = mm_obs
+        l2_plot = [mm_obs]
+        timeseries_gt = system_gt
+        timeseries_pred = mm_obs
+        ref_dict = mm_obs_gt
+# blocco measurement_mm_obs
+    if hp.nins>2 and run.startswith("meas"):
+        label = run
+        multiple_series = [mm_obs, system_meas]
+        l2_ref_dict = system_meas
+        validation_dict = mm_obs
+        l2_plot = [mm_obs]
+        timeseries_gt = system_meas
+        timeseries_pred = mm_obs
+        ref_dict = mm_obs_gt
+# blocco show_obs
+    if plot.show_obs:
+        multiple_series.extend(observers)
+        l2_plot.extend(observers)
+        weights_list = observers
+    if plot.show_gt:
+        multiple_series.append(mm_obs_gt)
+        l2_plot.append(mm_obs_gt)
+
+    all_plots(multiple_series, out_dir, label, l2_ref_dict, l2_plot, ref_dict, validation_dict, config, timeseries_gt, timeseries_pred, weights_list)
+
+
+def all_plots(multiple_series, out_dir, label, l2_ref_dict, l2_plot, ref_dict, validation_dict, config, timeseries_gt, timeseries_pred, weights_list):
+    nobs = config.parameters.nobs
+    plot_multiple_series(multiple_series, out_dir, label)
+    plot_l2(l2_ref_dict, l2_plot, out_dir, label)
+    plot_validation_3d(ref_dict["grid"], ref_dict["theta"], validation_dict["theta"], out_dir, label)
+    plot_obs_err(multiple_series, out_dir, label)
+    plot_timeseries_with_predictions(timeseries_gt, timeseries_pred, config, out_dir) 
+    if 1 < nobs <= 8:
+        plot_weights([*weights_list], out_dir, label)
 
 # if __name__ == "__main__":

@@ -11,7 +11,7 @@ function [sol] = OneDimBH_1Obs
     u1 = sol(:,:,1); %soluzione del sistema
     u2 = sol(:,:,2); %soluzione dell'osservatore 0
 
-    fileID = fopen(sprintf('%s', output_path),'w');
+    fileID = fopen(sprintf('%s.txt', output_path),'w');
     
     for i = 1:101
        for j = 1:101

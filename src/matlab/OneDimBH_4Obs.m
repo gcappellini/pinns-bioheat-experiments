@@ -25,7 +25,7 @@ function [sol] = OneDimBH_4Obs
     
     
     % Print Solution PDE
-    filename = sprintf('%s/output_matlab_4Obs.txt', output_path);
+    filename = sprintf('%s.txt', output_path);
     fileID = fopen(filename,'w');
     
     for i = 1:101
@@ -37,7 +37,7 @@ function [sol] = OneDimBH_4Obs
     end
     
     
-    filename2 = sprintf('%s/ground_truth/weights_l_%.1f_u_%.1f_ground_truth.txt', output_path, lambda, upsilon);
+    filename2 = sprintf('%s_weights.txt', output_path);
     fileID = fopen(filename2,'w');
     
     for i = 1:101

@@ -1,6 +1,7 @@
 import_data: false
 save_pickle: true
 simulation:
+  title: Simulation
   Ty10: 21.5
   Ty20: 30.2
   Ty30: 21.5

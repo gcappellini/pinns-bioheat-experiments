@@ -45,4 +45,4 @@ parameters:
   drdiff: 0.294264
   drexact: 1.029528
   c0: 0.5614912
-gt_path: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/gt/gt_eb49117d3366b5923212f2b6f6b84fe2.txt
+gt_path: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/gt/gt_eb49117d3366b5923212f2b6f6b84fe2

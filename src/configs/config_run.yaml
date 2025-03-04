@@ -92,19 +92,16 @@ parameters:
 plot:
   show: true
   show_obs: false
-  show_gt: false
+  plot_gt: false
+  show_gt: true
   show_sys: true
   rescale: true
   display_every: 200
 experiment:
-  ground_truth: true
-  simulation: true
   inverse: false
   run: simulation
   wandb: false
   wandb_name: opt_alfa
 run:
   dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-03-04/01-17-28
-testloss: 0.0
-runtime: 0.0
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-03-04/11-10-29

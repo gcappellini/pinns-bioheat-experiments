@@ -497,9 +497,9 @@ def gen_testdata(conf):
         "parameters": conf.parameters})
     
     matlab_hash = co.generate_config_hash(conf_gt)
-    path = f"{gt_dir}/gt_{matlab_hash}.txt"
+    path = f"{gt_dir}/gt_{matlab_hash}"
 
-    data = np.loadtxt(path)
+    data = np.loadtxt(f"{path}.txt")
     x, t, sys = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T
     X = np.vstack((x, t)).T
     y_sys = sys.flatten()[:, None]
@@ -536,7 +536,7 @@ def gen_testdata(conf):
     observers_gt, mm_obs_gt = calculate_l2(system_gt, observers_gt, mm_obs_gt)
     observers_gt, mm_obs_gt = compute_obs_err(system_gt, observers_gt, mm_obs_gt)
     if n > 1:
-        observers_gt = load_weights(observers_gt, conf, "ground_truth", path=path)
+        observers_gt = load_weights(observers_gt, conf, path)
     
     return system_gt, observers_gt, mm_obs_gt
 
@@ -571,16 +571,11 @@ def gen_obsdata(conf, system_gt):
     return input_mapping.get(nins, lambda: None)()
 
 
-def load_weights(observers, conf, label, path=None):
-    pars = conf.model_parameters
-    n = pars.nobs
-    # dir_name = path if path is not None else conf.output_dir
-    lamb = pars.lam
-    ups = pars.upsilon
+def load_weights(observers, conf, path):
 
-    dir_name = path if path is not None else conf.output_dir
+    n = conf.parameters.nobs
 
-    data = np.loadtxt(f"{dir_name}/weights_l_{lamb:.1f}_u_{ups:.1f}_{label}.txt")
+    data = np.loadtxt(f"{path}_weights.txt")
 
     for j in range(n):
         observers[j]["weights"] = data[:, j+1].reshape(data[:, 0:1].shape)
@@ -841,7 +836,7 @@ def compute_obs_err(system, observers_data=None, mm_obs=None):
 
     g = extract_matching(matching)
 
-    for x_ref in xref_dict.values():
+    for x_ref in [round(el, 2) for el in xref_dict.values()]:
         rows_xref = g[g[:, 0] == x_ref]
         sys_xref = rows_xref[:, 2]
 
