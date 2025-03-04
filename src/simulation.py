@@ -1,7 +1,7 @@
 import os, logging
 import numpy as np
 from omegaconf import DictConfig, OmegaConf
-import hydra
+from hydra import compose, initialize
 import utils as uu
 import common as co
 import plots as pp
@@ -38,7 +38,7 @@ def run_ground_truth(config, out_dir):
     if not os.path.exists(gt_path):
         uu.run_matlab_ground_truth()
 
-    system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config_matlab, gt_path)
+    system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config_matlab)
     pars = config.parameters
 
     # uu.compute_metrics([system_gt, *observers_gt, mm_obs_gt], config, out_dir)
@@ -52,7 +52,7 @@ def run_ground_truth(config, out_dir):
             pp.plot_multiple_series([system_gt, *observers_gt], out_dir, label)
             pp.plot_l2(system_gt, [*observers_gt], out_dir, label)
             pp.plot_validation_3d(system_gt["grid"], system_gt["theta"], mm_obs_gt["theta"], out_dir, label)
-            pp.plot_obs_err([*observers_gt], out_dir, label)
+            # pp.plot_obs_err(mm_obs_gt, out_dir, label)
 
         else:
             if config.plot.show_obs:
@@ -69,9 +69,9 @@ def run_ground_truth(config, out_dir):
                 pp.plot_validation_3d(system_gt["grid"], system_gt["theta"], mm_obs_gt["theta"], out_dir, label)
                 pp.plot_obs_err([mm_obs_gt], out_dir, label)
 
-        if dict_exp["run"].startswith("meas"):
-            system_meas, _ = uu.import_testdata(config)
-            pp.plot_timeseries_with_predictions(system_meas, system_gt, config, out_dir)     
+        # if dict_exp["run"].startswith("meas"):
+        #     system_meas, _ = uu.import_testdata(config)
+        #     pp.plot_timeseries_with_predictions(system_meas, system_gt, config, out_dir)     
         
     
     return output_dir_gt, system_gt, observers_gt, mm_obs_gt
@@ -169,27 +169,28 @@ def run_simulation_mm_obs(config, out_dir, system_gt, mm_obs_gt, observers_gt, g
     """Run multi-observer simulation, load data, and plot results."""
     # setup_log("Running simulation for multi-observer.")
     label = "simulation_mm_obs"
-    output_dir_inverse, config_inverse = co.set_run(out_dir, config, label)
-    props, pars, exp = config_inverse.model_properties, config_inverse.model_parameters, config.experiment
+    _, cfg_sim = co.set_run(out_dir, config, label)
+    pdecoeff, hp, pars, exp = cfg_sim.pdecoeff,cfg_sim.hp, cfg_sim.parameters, config.experiment
+    nobs = pars.nobs
     config_wb = {
         # "num_domain": props.num_domain,
         # "num_boundary": props.num_boundary,
         # "resampling": props.resampling,
-        "alfa": props.alfa
+        "oig": pdecoeff.oig
     }
     if exp.wandb:
         wandb.init(project=f"{datetime.date.today()}_{exp.wandb_name}", config=config_wb)
-    output = uu.execute(config_inverse, label)
-    multi_obs = output[0] if pars.n_obs==1 else [e[0] for e in output]
-    train_info = output[1] if pars.n_obs==1 else [e[1] for e in output]
-    x_obs = uu.gen_obsdata(config_inverse, system_gt)
-    observers, mm_obs = uu.get_observers_preds(mm_obs_gt, multi_obs, x_obs, out_dir, config_inverse, label)
+    output = uu.execute(cfg_sim, label)
+    multi_obs = output[0] if nobs==1 else [e[0] for e in output]
+    # train_info = output[1] if nobs==1 else [e[1] for e in output]
+    x_obs = uu.gen_obsdata(cfg_sim, system_gt)
+    observers, mm_obs = uu.get_observers_preds(mm_obs_gt, multi_obs, x_obs, out_dir, cfg_sim, label)
 
-    metrics = uu.compute_metrics([mm_obs_gt, mm_obs], train_info, config, out_dir)
+    metrics = uu.compute_metrics([mm_obs_gt, mm_obs], {}, config, out_dir)
     if exp.wandb:
         wandb.log(metrics)
 
-    if config.experiment.plot:
+    if config.plot.show:
 
         if config.plot.show_obs:
             if 1 < config.model_parameters.n_obs <= 8:
@@ -274,7 +275,7 @@ def run_measurement_mm_obs(config, out_dir):
 
         pp.plot_timeseries_with_predictions(system_meas, mm_obs, config, out_dir)
 
-@hydra.main(version_base=None, config_path=conf_dir, config_name="config_run")
+# @hydra.main(version_base=None, config_path=conf_dir, config_name="config_run")
 def main(config: DictConfig):
     """
     Main function to run the testing of the network, MATLAB ground truth, observer checks, and PINNs.
@@ -288,19 +289,19 @@ def main(config: DictConfig):
     dict_exp = config.experiment
     nins = config.hp.nins
 
-    gt_path=f"{tests_dir}/{dict_exp.gt_path}"
+    # gt_path=f"{tests_dir}/{dict_exp.gt_path}"
 
     if dict_exp["simulation"]:
         # Simulation System
         if nins==2 and not dict_exp["inverse"]:
-            system_gt, _, _ = uu.gen_testdata(config, path=gt_path)
+            system_gt, _, _ = uu.gen_testdata(config)
             run_simulation_system(config, run_out_dir, system_gt)
         
         elif nins==2 and dict_exp["inverse"]:
             if dict_exp["run"].startswith("meas"):
                 system_gt, _ = uu.import_testdata(config)
             else:
-                system_gt, _, _ = uu.gen_testdata(config, path=gt_path)
+                system_gt, _, _ = uu.gen_testdata(config)
             run_simulation_inverse(config, run_out_dir, system_gt)
 
         # Simulation Multi-Observer
@@ -308,9 +309,9 @@ def main(config: DictConfig):
             if dict_exp["ground_truth"]:
                 output_dir_gt, system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, run_out_dir)
             else:
-                system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config, path=gt_path)
+                system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config)
 
-            run_simulation_mm_obs(config, run_out_dir, system_gt, mm_obs_gt, observers_gt, gt_path)
+            run_simulation_mm_obs(config, run_out_dir, system_gt, mm_obs_gt, observers_gt)
     
     elif dict_exp["run"].startswith("meas"):
         if dict_exp["ground_truth"]:
@@ -320,4 +321,6 @@ def main(config: DictConfig):
 
 
 if __name__ == "__main__":
-    main()
+    initialize('./configs', version_base=None) 
+    conf = compose(config_name='config_run')
+    main(conf)

@@ -137,7 +137,7 @@ def configure_subplot(ax, XS, surface, xlabel, ylabel, zlabel):
 
 # Main plot functions
 def plot_loss_components(losshistory, nam, fold):
-    loss_train, loss_test, iters = np.array(losshistory.loss_train), np.array(losshistory.loss_test), np.array(losshistory.steps)
+    loss_train, loss_test, iters = losshistory["train"], losshistory["test"], losshistory["steps"]
     # Prepare the loss data
     train = loss_train.sum(axis=1).ravel()
     test = loss_test.sum(axis=1).ravel()
@@ -617,17 +617,17 @@ def plot_multiple_series(series_data, prj_figs, lal):
         axes[i].grid(True)
         lims.append(axes[i].get_ylim())
 
-    scales = []
-    # Apply adjusted limits with harmonized scales to each subplot
-    for i, (y_min, y_max) in enumerate(lims):
-        scales.append(y_max-y_min)
+    # scales = []
+    # # Apply adjusted limits with harmonized scales to each subplot
+    # for i, (y_min, y_max) in enumerate(lims):
+    #     scales.append(y_max-y_min)
 
-    max_scale = 6 if rescale else 0.5
+    # max_scale = 6 if rescale else 0.5
 
-    for i, scale in enumerate(scales):
-        if scale<=max_scale:
-            scales[i]=max_scale
-        axes[i].set_ylim(y_min, y_min + scales[i])
+    # for i, scale in enumerate(scales):
+    #     if scale<=max_scale:
+    #         scales[i]=max_scale
+    #     axes[i].set_ylim(y_min, y_min + scales[i])
     
     axes[0].set_ylim(conf.temps.Troom, conf.temps.Tmax+0.7) if rescale else axes[0].set_ylim(0, 1)
     if conf.experiment.run.startswith("meas_cool"):

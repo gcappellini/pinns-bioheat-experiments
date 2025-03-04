@@ -25,6 +25,7 @@ dev = "cuda" if torch.cuda.is_available() else "cpu"
 current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
 git_dir = os.path.dirname(src_dir)
+gt_dir = os.path.join(git_dir, "gt")
 conf_dir = os.path.join(src_dir, "configs")
 models = os.path.join(git_dir, "models")
 tests_dir = os.path.join(git_dir, "tests")
@@ -49,7 +50,7 @@ def get_initial_loss(model):
 def compute_metrics(series_to_plot, train_info, cfg, run_figs):
     # Load loss weights from configuration
     matching = extract_matching(series_to_plot)
-    props = cfg.model_properties
+    # props = cfg.properties
     # loss_weights = [props.wres, props.wbc, props.w_bc1, props.w_ic]
     small_number = 1e-8
     
@@ -336,8 +337,8 @@ def compile_optimizer_and_losses(model, conf):
     iwr = hp.iwr
     lr = hp.lr
     # loss_weights = [hp.wres, hp.wbc, hp.w_bc1, hp.w_ic]
-    loss_weights = [hp.wres, hp.wbc]
-    optimizer = conf.model_properties.optimizer
+    loss_weights = [hp.wres, hp.wbc0]
+    optimizer = conf.hp.optimizer
 
     if optimizer == "adam":
         if iwr:
@@ -360,8 +361,8 @@ def compile_optimizer_and_losses(model, conf):
 
 
 def create_callbacks(config):
-    resampler = config.model_properties.resampling
-    resampler_period = config.model_properties.resampler_period
+    resampler = config.hp.resampling
+    resampler_period = config.hp.resampler_period
 
     callbacks = [dde.callbacks.PDEPointResampler(period=resampler_period)] if resampler else []
     return callbacks
@@ -377,7 +378,7 @@ def restore_model(conf, model_path):
 
 def check_for_trained_model(conf):
     """Check if a model trained with LBFGS optimizer exists."""
-    conf.model_properties.optimizer = "L-BFGS"
+    conf.hp.optimizer = "L-BFGS"
     config_data = OmegaConf.create({
         "pdecoeff": conf.pdecoeff,
         "hp": conf.hp
@@ -387,7 +388,7 @@ def check_for_trained_model(conf):
     # Filter for matching files
     filtered_models = [file for file in models_files if config_hash_lbfgs in file and file.endswith(".pt")]
     if not filtered_models:
-        return None, None
+        return None
     filtered_losses = [file for file in models_files if config_hash_lbfgs in file and file.endswith(".npz")]
     if filtered_losses:
         loss_file = os.path.join(models, filtered_losses[0])
@@ -406,25 +407,27 @@ def check_for_trained_model(conf):
 def train_and_save_model(conf, optimizer, config_hash, save_path, pre_trained_model=None):
     """Helper function to train and save a model."""
     model = create_model(conf) if pre_trained_model is None else pre_trained_model
-    conf.model_properties.optimizer = optimizer
+    conf.hp.optimizer = optimizer
     model = compile_optimizer_and_losses(model, conf)
     callbacks = create_callbacks(conf)
-    start_time = time.time()
+    # start_time = time.time()
 
     losshistory, _ = model.train(
-        iterations=conf.model_properties.iters,
+        iterations=conf.hp.iters,
         callbacks=callbacks,
         model_save_path=save_path,
         display_every=conf.plot.display_every
     )
     test = np.array(losshistory.loss_test).sum(axis=1).ravel()
-    runtime = time.time() - start_time
+    # runtime = time.time() - start_time
     setup_log(f"Model trained with {optimizer} optimizer.")
     # Save configuration
-    conf.update({"testloss": test.min(), "runtime": runtime})
+    conf.testloss = round(float(test.min()), 6)
+    # conf.runtime = round(float(runtime), 3)
+    # conf.update({"testloss": test.min(), "runtime": runtime})
     # OmegaConf.save(conf, confi_path)
     confi_path = os.path.join(models, f"config_{config_hash}.yaml")
-    np.savez(f"{save_path}_losshistory.npz", train=losshistory.loss_train, test=losshistory.loss_test, runtime=runtime)
+    np.savez(f"{save_path}_losshistory.npz", train=losshistory.loss_train, test=losshistory.loss_test, steps=losshistory.steps)
     OmegaConf.save(conf, confi_path)
 
     return model, losshistory
@@ -434,37 +437,49 @@ def train_model(conf):
     """Train a model, checking for existing LBFGS-trained models first."""
     # Step 0: Check for LBFGS-trained model
     trained_model = check_for_trained_model(conf)
-
+    
     if trained_model:
         # Return the trained model directly if found
         setup_log("Found a pre-trained model.")
         model, losshistory = trained_model
         # return trained_model
     else:
+        start_time=time.time()
         # Step 1: Train with Adam optimizer
         # start_time = time.time()
         setup_log("Training a new model with Adam optimizer.")
-        conf.model_properties.optimizer = "adam"
-        config_hash = co.generate_config_hash(conf)
+        conf.hp.optimizer = "adam"
+        conf_data = OmegaConf.create({
+            "hp": conf.hp,
+            "pdecoeff": conf.pdecoeff
+        })
+        config_hash = co.generate_config_hash(conf_data)
         model_path_adam = os.path.join(models, f"model_{config_hash}.pt")
         model, losshistory = train_and_save_model(conf, "adam", config_hash, model_path_adam)
 
-        if conf.model_properties.iters_lbfgs>0:
+        if conf.hp.iters_lbfgs>0:
             setup_log("Continue training the model with L-BFGS optimizer.")
             # Step 2: Train with LBFGS optimizer
-            conf.model_properties.optimizer = "L-BFGS"
-            config_hash = co.generate_config_hash(conf)
+            conf.hp.optimizer = "L-BFGS"
+            conf_data = OmegaConf.create({
+                "hp": conf.hp,
+                "pdecoeff": conf.pdecoeff
+                })
+            config_hash = co.generate_config_hash(conf_data)
             model_path_lbfgs = os.path.join(models, f"model_{config_hash}.pt")
-            iters_lbfgs = conf.model_properties.iters_lbfgs
+            iters_lbfgs = conf.hp.iters_lbfgs
             dde.optimizers.config.set_LBFGS_options(maxcor=100, ftol=1e-08, gtol=1e-08, maxiter=iters_lbfgs, maxfun=None, maxls=50)
             model, losshistory = train_and_save_model(conf, "L-BFGS", config_hash, model_path_lbfgs, pre_trained_model=model)
+            end_time = time.time()
+            runtime=end_time-start_time
+            conf.runtime=runtime
+            setup_log(f"Training completed in {round(end_time-start_time, 3)} seconds.")
 
-        # test = np.array(losshistory.loss_test).sum(axis=1).ravel()
-        # runtime = time.time() - start_time
-    
-        # info_train = {"testloss": test.min(), "runtime": runtime}
-        # conf.update(info_train)
-        # OmegaConf.save(conf, f"{models}/config_{config_hash}.yaml")
+    conf_data = OmegaConf.create({
+        "hp": conf.hp,
+        "pdecoeff": conf.pdecoeff
+        })
+    config_hash = co.generate_config_hash(conf_data)
 
     pp.plot_loss_components(losshistory, config_hash, fold=conf.output_dir)
     OmegaConf.save(conf, f"{conf.output_dir}/config_{config_hash}.yaml")
@@ -472,15 +487,17 @@ def train_model(conf):
     return model, losshistory
 
 
-def gen_testdata(conf, path):
+def gen_testdata(conf):
     
     pars = conf.parameters
     nins = conf.hp.nins
-    n = 0 if nins == 2 else pars.nobs
-
-    # dir_name = path if path is not None else conf.output_dir
-
-    # file_path = next((f"{dir_name}/{file}" for file in os.listdir(dir_name) if file.startswith("output_matlab") and file.endswith(".txt")), None)
+    n = pars.nobs
+    conf_gt = OmegaConf.create({
+        "pdecoeff": conf.pdecoeff,
+        "parameters": conf.parameters})
+    
+    matlab_hash = co.generate_config_hash(conf_gt)
+    path = f"{gt_dir}/gt_{matlab_hash}.txt"
 
     data = np.loadtxt(path)
     x, t, sys = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T
@@ -527,7 +544,7 @@ def gen_testdata(conf, path):
 def gen_obsdata(conf, system_gt):
     global f1, f2, f3
 
-    nins = conf.model_properties.nins
+    nins = conf.hp.nins
 
     # Prepare grid and theta data
     g = np.hstack((system_gt["grid"], system_gt["theta"].reshape(len(system_gt["grid"]), 1)))
@@ -735,7 +752,7 @@ def execute(config, label):
     simul_dir = os.path.join(out_dir, label)
     pars = config.parameters
     # props = config.model_properties
-    pdecoeff = config
+    pdecoeff = config.pdecoeff
 
     nobs = pars.nobs
 
@@ -867,7 +884,7 @@ def get_observers_preds(ground_truth, multi_obs, x_obs, output_dir, conf, label)
         obs_dict: List of dictionaries for each observer's predictions.
         mm_obs: Dictionary for multi-observer's predictions.
     """
-    pars = conf.model_parameters
+    pars = conf.parameters
     nobs = pars.nobs
     preds = [x_obs[:, 0], x_obs[:, -1]]
 
@@ -934,7 +951,7 @@ def load_observers_preds(output_dir, conf, label):
         obs_dict: List of dictionaries for each observer's predictions.
         mm_obs: Dictionary for multi-observer's predictions.
     """
-    pars = conf.model_parameters
+    pars = conf.parameters
     nobs = pars.nobs
 
     obs_dict = []
@@ -1048,7 +1065,7 @@ def solve_ivp(multi_obs: list, fold: str, conf: dict, x_obs, label: str):
     Solve the IVP for observer weights and plot the results.
     """
     setup_log("Solving the IVP for observer weights...")
-    pars = conf.model_parameters
+    pars = conf.parameters
     nobs = pars.nobs
     lam = pars.lam
     ups = pars.upsilon
