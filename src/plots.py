@@ -749,7 +749,7 @@ def plot_res(config, system_gt=None, system=None, system_meas=None, observers_gt
 # blocco gt
     if plot.plot_gt:
         label = "ground_truth"
-        multiple_series = [mm_obs_gt, system_gt]
+        multiple_series = [system_gt, mm_obs_gt]
         l2_ref_dict = system_gt
         ref_dict = mm_obs_gt
         validation_dict = mm_obs_gt
@@ -766,7 +766,7 @@ def plot_res(config, system_gt=None, system=None, system_meas=None, observers_gt
 # blocco direct
     if hp.nins==2:
         label = "direct"
-        multiple_series = [system]
+        multiple_series = [system_gt, system]
         l2_ref_dict = system_gt
         ref_dict = l2_ref_dict
         validation_dict = system
@@ -780,7 +780,7 @@ def plot_res(config, system_gt=None, system=None, system_meas=None, observers_gt
 # blocco simulation_mm_obs    
     if hp.nins>2 and run.startswith("simulation"):
         label = "simulation_mm_obs"
-        multiple_series = [mm_obs, system_gt]
+        multiple_series = [system_gt, mm_obs]
         l2_ref_dict = system_gt
         validation_dict = mm_obs
         l2_plot = [mm_obs]
@@ -790,7 +790,7 @@ def plot_res(config, system_gt=None, system=None, system_meas=None, observers_gt
 # blocco measurement_mm_obs
     if hp.nins>2 and run.startswith("meas"):
         label = run
-        multiple_series = [mm_obs, system_meas]
+        multiple_series = [system_meas, mm_obs]
         l2_ref_dict = system_meas
         validation_dict = mm_obs
         l2_plot = [mm_obs]
@@ -814,7 +814,7 @@ def all_plots(multiple_series, out_dir, label, l2_ref_dict, l2_plot, ref_dict, v
     plot_multiple_series(multiple_series, out_dir, label)
     plot_l2(l2_ref_dict, l2_plot, out_dir, label)
     plot_validation_3d(ref_dict["grid"], ref_dict["theta"], validation_dict["theta"], out_dir, label)
-    plot_obs_err(multiple_series, out_dir, label)
+    plot_obs_err(multiple_series[1:], out_dir, label)
     plot_timeseries_with_predictions(timeseries_gt, timeseries_pred, config, out_dir) 
     if 1 < nobs <= 8:
         plot_weights([*weights_list], out_dir, label)
