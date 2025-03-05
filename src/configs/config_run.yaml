@@ -56,9 +56,9 @@ pdecoeff:
   c2: 0.78889
   c3: 0.67619
   oig: 2.46
-  theta10: 0.12762
-  theta20: 0.67619
-  theta30: 0.0
+  y10: 0.12762
+  y20: 0.67619
+  y30: 0.0
   thetagt0: 0.95238
   thetagt10: 0.95238
   incrfact: 1.0
