@@ -1,23 +1,24 @@
 clear all
 close all
 
-global oig lambda upsilon wbobs wbsys wb0 wb1 wb2 wb3 wb4 wb5 wb6 wb7 c1 c2 c3 b1 b2 b3 b4 theta10 theta20 theta30 incrfact thetagt10 thetagt0 Xgt1 Xgt om0 om1 om2 om3 om4 om5 om6 om7 a1 a2 a3 a4 a5 str_exp output_path nobs
+global oig ag ups wbobs wbsys wb0 wb1 wb2 wb3 wb4 wb5 wb6 wb7 c1 c2 c3 b1 b2 b3 b4 y10 y20 y30 incrfact thetagt10 thetagt0 Xgt1 Xgt om0 om1 om2 om3 om4 om5 om6 om7 a1 a2 a3 a4 a5 str_exp output_path path_exp nobs
 
 % Replace the following with the path to readyaml (find link on the internet)
 addpath('/Users/guglielmocappellini/Desktop/research/code/readyaml')
 
 src_dir = fileparts(cd);
 git_dir = fileparts(src_dir);
-filename = sprintf('%s/src/configs/config_ground_truth.yaml', git_dir);
+% filename = sprintf('/Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/src/configs/config_ground_truth.yaml', git_dir);
+filename = sprintf('/Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/src/configs/config_ground_truth.yaml');
 
 % Read and parse the YAML file into a MATLAB struct
 config_data = readyaml(filename);
 % Extract parameters from the struct
 nobs = config_data.parameters.nobs;
-theta10 = config_data.pdecoeff.theta10;
+y10 = config_data.pdecoeff.y10;
 thetagt0 = config_data.pdecoeff.thetagt0;
-theta20 = config_data.pdecoeff.theta20;
-theta30 = config_data.pdecoeff.theta30;
+y20 = config_data.pdecoeff.y20;
+y30 = config_data.pdecoeff.y30;
 thetagt10 = config_data.pdecoeff.thetagt10;
 a1 = config_data.pdecoeff.a1;
 a2 = config_data.pdecoeff.a2;
@@ -36,7 +37,7 @@ incrfact = config_data.pdecoeff.incrfact;
 output_path = config_data.gt_path;
 % output_path = fullfile(fileparts(git_dir), output_dir);
 str_exp = "simulation";
-% path_exp = sprintf('%s/src/data/vessel/%s.txt', git_dir, str_exp);
+path_exp = sprintf('%s/src/data/vessel/%s.txt', git_dir, str_exp);
 % output_path = sprintf('%s/', output_dir);
 
 wb0 = config_data.parameters.wb0;
@@ -56,8 +57,8 @@ obs = [wb0, wb1, wb2, wb3, wb4, wb5, wb6, wb7];
 matlab_index=obsindex+1;
 wbobs = obs(matlab_index);
 
-lambda = config_data.parameters.lam;
-upsilon = config_data.parameters.upsilon;
+ag = config_data.parameters.ag;
+ups = config_data.parameters.ups;
 
 Xgt1 = config_data.parameters.Xgt1;
 Xgt = config_data.parameters.Xgt;

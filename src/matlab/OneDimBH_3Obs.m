@@ -1,5 +1,5 @@
 function [sol] = OneDimBH_3Obs
-    global output_path lambda upsilon
+    global output_path ag ups
 
     m = 0;
     x = linspace(0,1,101);
@@ -50,7 +50,7 @@ function [sol] = OneDimBH_3Obs
     
     %-----------------
     function [c,f,s] = OneDimBHpde_3Obs(x,t,u,dudx)
-    global lambda om0 om1 om2 wbsys wb0 wb4 wb7 a1 a2 a3 a4 incr_fact
+    global ag om0 om1 om2 wbsys wb0 wb4 wb7 a1 a2 a3 a4 incr_fact
     %la prima equazione è quella del sistema, a seguire gli osservatoris
     t
     if x >= 0.2 && x <= 0.5
@@ -67,9 +67,9 @@ function [sol] = OneDimBH_3Obs
         -wb0*a2*u(2)+a3*exp(-a4*x); 
         -wb4*a2*u(3)+a3*exp(-a4*x); 
         -wb7*a2*u(4)+a3*exp(-a4*x); 
-        -lambda*u(5)*(1-(exp(-om0)/den));
-        -lambda*u(6)*(1-(exp(-om1)/den)); 
-        -lambda*u(7)*(1-(exp(-om2)/den))
+        -ag*u(5)*(1-(exp(-om0)/den));
+        -ag*u(6)*(1-(exp(-om1)/den)); 
+        -ag*u(7)*(1-(exp(-om2)/den))
         ];
     % --------------------------------------------------------------------------
 
@@ -82,7 +82,7 @@ function [sol] = OneDimBH_3Obs
     
     
     function [pl,ql,pr,qr] = OneDimBHbc_3Obs(xl,ul,xr,ur,t)
-    global oig om0 om1 om2 upsilon a5 str_exp
+    global oig om0 om1 om2 ups a5 str_exp
     [~, ~, y1, ~, ~] = ic_bc(xr, t);
     [~, ~, ~, y2, y3] = ic_bc(xl, t);
 
@@ -107,6 +107,6 @@ function [sol] = OneDimBH_3Obs
         0;0;0];
     
     qr = [0;0;0;0; 1;1;1];
-    om0=upsilon*((ul(2)-sup_y))^2;
-    om1=upsilon*((ul(3)-sup_y))^2;
-    om2=upsilon*((ul(4)-sup_y))^2;
+    om0=ups*((ul(2)-sup_y))^2;
+    om1=ups*((ul(3)-sup_y))^2;
+    om2=ups*((ul(4)-sup_y))^2;

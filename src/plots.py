@@ -62,13 +62,13 @@ def plot_generic(x, y, title, xlabel, ylabel, legend_labels=None, log_scale=Fals
         ax.plot(xi, yi, label=label, color=color, linestyle=linestyle, marker=marker, linewidth=linewidth, 
                 markersize=markersize, alpha=alpha, markevery=markevery)
 
-    ax.set_title(title, fontweight='bold')
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
+    ax.set_title(title, fontweight='bold', fontsize=26)
+    ax.set_xlabel(xlabel, fontweight='bold', fontsize=20)
+    ax.set_ylabel(ylabel, fontweight='bold', fontsize=20)
 
     # Add legend if labels are provided
     if legend_labels:
-        ax.legend()
+        ax.legend(loc='best', fontsize=18)
 
     # Set y-axis to log scale if specified
     if log_scale:
@@ -76,7 +76,7 @@ def plot_generic(x, y, title, xlabel, ylabel, legend_labels=None, log_scale=Fals
     
     if log_xscale:
         ax.set_xscale('log')
-
+    ax.tick_params(axis='both', which='both', labelsize=18) 
     ax.grid(True)
 
     # Save and close the figure if filename is provided
@@ -137,7 +137,11 @@ def configure_subplot(ax, XS, surface, xlabel, ylabel, zlabel):
 
 # Main plot functions
 def plot_loss_components(losshistory, nam, fold):
-    loss_train, loss_test, iters = losshistory["train"], losshistory["test"], losshistory["steps"]
+    if isinstance(losshistory, np.lib.npyio.NpzFile):
+        loss_train, loss_test, iters = losshistory["train"], losshistory["test"], losshistory["steps"]
+    else:
+        loss_train, loss_test, iters = np.array(losshistory.loss_train), np.array(losshistory.loss_test), np.array(losshistory.steps)
+
     # Prepare the loss data
     train = loss_train.sum(axis=1).ravel()
     test = loss_test.sum(axis=1).ravel()
@@ -269,7 +273,7 @@ def plot_obs_err(series_data: list, run_figs: str, lal: str):
             legend_labels.append(plot_params[label]["label"])
 
         # Define the title for the plot
-        title = f"Observation errors, {round(uu.rescale_x(xref)*100,0)} cm depth" if rescale else f"Observation errors, X={xref}"
+        title = f"{round(uu.rescale_x(xref)*100,0)} cm depth" if rescale else f"X={xref}"
         # t = t.reshape(len(t), 1)
         mus = np.array(uu.rescale_t(mus))-conf.temps.Troom if rescale else np.array(mus)  
 
@@ -448,7 +452,7 @@ def plot_validation_3d(e, t_true, t_pred, run_figs, label):
     # Column titles for each subplot
     if label == "ground_truth":
         col_titles = ["Matlab System", "Matlab MM-Observer", "Error"]
-    elif label.startswith("simulation") or label.startswith("inverse"):
+    elif label.startswith("simulation") or label.startswith("inverse") or label.startswith("direct"):
         col_titles = ["Matlab", "PINNs", "Error"]
     elif label.startswith("meas"):
         col_titles = ["Measurements", "PINNs", "Error"]
@@ -476,7 +480,7 @@ def plot_validation_3d(e, t_true, t_pred, run_figs, label):
 
 def plot_timeseries_with_predictions(system_meas: dict, mm_obs: dict, conf, out_dir):
 
-    label = conf.experiment.run
+    label = "simulation" if conf.experiment.run.startswith("simulation") else conf.experiment.run
     gt = mm_obs["label"].endswith("gt")
     x_points = uu.get_tc_positions()
     tf = conf.properties.tf
@@ -608,33 +612,25 @@ def plot_multiple_series(series_data, prj_figs, lal):
         
         # Set time, labels, and title for each subplot
         time = uu.rescale_time(tx) if rescale else tx
-        title = f"Time t={time} s" if rescale else fr"Time $\tau$={tx}"
+        title = f"t={time} s" if rescale else fr"$\tau$={tx}"
         xlabel, _, ylabel = uu.get_scaled_labels(rescale)
         
         # Configure subplot labels and title
-        axes[i].set_xlabel(xlabel)
+        axes[i].set_xlabel(xlabel, fontweight='bold', fontsize=20)
         if i == 0:
-            axes[i].set_ylabel(ylabel)
-            axes[i].legend(loc='best')
-        axes[i].set_title(title, fontweight='bold')
+            axes[i].set_ylabel(ylabel, fontweight='bold', fontsize=20)
+            axes[i].legend(loc='best', fontsize=18)
+        axes[i].set_title(title, fontweight='bold', fontsize=26)
         axes[i].grid(True)
         lims.append(axes[i].get_ylim())
-
-    # scales = []
-    # # Apply adjusted limits with harmonized scales to each subplot
-    # for i, (y_min, y_max) in enumerate(lims):
-    #     scales.append(y_max-y_min)
-
-    # max_scale = 6 if rescale else 0.5
-
-    # for i, scale in enumerate(scales):
-    #     if scale<=max_scale:
-    #         scales[i]=max_scale
-    #     axes[i].set_ylim(y_min, y_min + scales[i])
-    
-    axes[0].set_ylim(conf.temps.Troom, conf.temps.Tmax+0.7) if rescale else axes[0].set_ylim(0, 1)
-    if conf.experiment.run.startswith("meas_cool"):
-        axes[0].set_ylim(conf.temps.Troom, 30)
+        axes[i].tick_params(axis='both', which='both', labelsize=18) 
+    # Apply limits to axes
+    lims_big = lims[0]
+    lims_small = lims[2]
+    for j in range(3):
+        axes[j].set_ylim(lims_big)
+    for j in range(3, 5):
+        axes[j].set_ylim(lims_big)
         
     # Save and close figure
     filename = f"{prj_figs}/combined_plot_{lal}.png"
@@ -751,13 +747,14 @@ def plot_res(config, system_gt=None, system=None, system_meas=None, observers_gt
         label = "ground_truth"
         multiple_series = [system_gt, mm_obs_gt]
         l2_ref_dict = system_gt
-        ref_dict = mm_obs_gt
-        validation_dict = mm_obs_gt
-        l2_plot = [mm_obs_gt]
+        ref_dict = mm_obs_gt if pars.nobs>0 else system_gt
+        validation_dict = mm_obs_gt if pars.nobs>0 else system_gt
+        l2_plot = [mm_obs_gt] if pars.nobs>0 else [system_gt]
         timeseries_gt = system_gt
-        timeseries_pred = mm_obs_gt
-        if plot.show_obs:
-            multiple_series.extend(observers_gt )
+        timeseries_pred = mm_obs_gt if pars.nobs>0 else system_gt
+
+        if pars.nobs>0 and plot.show_obs:
+            multiple_series.extend(observers_gt)
             l2_plot.extend(observers_gt)
             weights_list = observers_gt
 
@@ -778,7 +775,7 @@ def plot_res(config, system_gt=None, system=None, system_meas=None, observers_gt
             label= "inverse"
             plot_inv_var(config, var)
 # blocco simulation_mm_obs    
-    if hp.nins>2 and run.startswith("simulation"):
+    elif hp.nins>2 and run.startswith("simulation"):
         label = "simulation_mm_obs"
         multiple_series = [system_gt, mm_obs]
         l2_ref_dict = system_gt
@@ -788,7 +785,7 @@ def plot_res(config, system_gt=None, system=None, system_meas=None, observers_gt
         timeseries_pred = mm_obs
         ref_dict = mm_obs_gt
 # blocco measurement_mm_obs
-    if hp.nins>2 and run.startswith("meas"):
+    elif hp.nins>2 and run.startswith("meas"):
         label = run
         multiple_series = [system_meas, mm_obs]
         l2_ref_dict = system_meas
@@ -798,11 +795,11 @@ def plot_res(config, system_gt=None, system=None, system_meas=None, observers_gt
         timeseries_pred = mm_obs
         ref_dict = mm_obs_gt
 # blocco show_obs
-    if plot.show_obs:
+    if pars.nobs>0 and plot.show_obs:
         multiple_series.extend(observers)
         l2_plot.extend(observers)
         weights_list = observers
-    if plot.show_gt:
+    if pars.nobs>0 and plot.show_gt:
         multiple_series.append(mm_obs_gt)
         l2_plot.append(mm_obs_gt)
 

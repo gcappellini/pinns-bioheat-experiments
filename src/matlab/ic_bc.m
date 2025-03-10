@@ -1,12 +1,17 @@
 function [theta0, thetahat0, y1, y2, y3] = ic_bc(x, t)
-    thetahat0 = obs_ic(x);
+    global nobs
+    if nobs == 0
+        thetahat0 = 0 * x;
+    else
+        thetahat0 = obs_ic(x);
+    end
     theta0 = sys_ic(x);
     y1 = theta_1(t);
     y2 = theta_2(t);
     y3 = theta_3();
 
 function theta0 = sys_ic(x)
-    global b1 b2 b3 b4 path_exp str_exp n_obs
+    global b1 b2 b3 b4 path_exp str_exp
 
     if startsWith(str_exp, 'meas')
         data = load(path_exp);
@@ -29,31 +34,31 @@ function thetahat0 = obs_ic(x)
 
     
 function y1 = theta_1(t)
-    global theta10 path_exp str_exp
+    global y10 path_exp str_exp
     if startsWith(str_exp, 'meas')
         data = load(path_exp);
         time = data(:, 1);
         measurement_y1 = data(:, 2);
         y1 = interp1(time, measurement_y1, t, 'linear', 'extrap');
     else
-        y1 = theta10;
+        y1 = y10;
     end
 
 
     
 function y2 = theta_2(t)
-    global theta20 path_exp str_exp
+    global y20 path_exp str_exp
     if startsWith(str_exp, 'meas')
         data = load(path_exp);
         time = data(:, 1);
         measurement_y2 = data(:, 5);
         y2 = interp1(time, measurement_y2, t, 'linear', 'extrap');
     else
-        y2 = theta20;
+        y2 = y20;
     end
 
 function y3 = theta_3()
-    global theta30
+    global y30
 
-    y3 = theta30;
+    y3 = y30;
 

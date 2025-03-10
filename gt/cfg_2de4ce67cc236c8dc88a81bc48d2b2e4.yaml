@@ -1,12 +1,12 @@
 pdecoeff:
-  a1: 27.9621222
-  a2: 27138.4615385
+  a1: 21.3660417
+  a2: 31500.0
   a3: 0.0
   a4: 3.5702945
-  a5: 1.0769231
-  b1: -1.7982
-  b2: 0.07732
-  b3: 0.89231
+  a5: 1.25
+  b1: -0.79437
+  b2: -1.06991
+  b3: 1.03571
   b4: 0.82857
   c1: null
   c2: null
@@ -32,7 +32,7 @@ parameters:
   wb5: 0.000649
   wb6: 0.001035
   wb7: 0.00165
-  wbsys: 6.3e-05
+  wbsys: 0.003428
   wbobs: 0.000255
   obsindex: 3
   nobs: 0
@@ -42,7 +42,7 @@ parameters:
   Xgt: 0.14286
   Xw: 0.35714
   Xgt1: 0.57143
-  drdiff: 0.1677324
-  drexact: 0.1491204
-  c0: 0.3085594
-gt_path: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/gt/gt_9a11dcb7dbb56518097332ee7083ca45
+  drdiff: 0.2455415
+  drexact: 5.1690435
+  c0: 90.7409446
+gt_path: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/gt/gt_2de4ce67cc236c8dc88a81bc48d2b2e4

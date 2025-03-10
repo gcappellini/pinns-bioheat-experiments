@@ -17,7 +17,6 @@ import matlab.engine
 from hydra import compose
 import time
 
-
 dde.config.set_default_float("float64")
 
 dev = "cuda" if torch.cuda.is_available() else "cpu"
@@ -125,7 +124,8 @@ def compute_metrics(series_to_plot, train_info, cfg, run_figs):
         if "bc1" in key or "initial_condition" in key:
             del metrics[key]
             
-    metrics.update(train_info)
+    metrics.update({"testloss": train_info["test"].sum(axis=1).ravel().min()})
+
     metrics = {k: float(v) for k, v in metrics.items()}
     with open(f"{run_figs}/metrics.yaml", "w") as file:
         OmegaConf.save(config=OmegaConf.create(metrics), f=file)
@@ -214,7 +214,7 @@ def create_model(config):
     # delta_x = cc.delta_x
 
     wb = dde.Variable(pars.wbmin) if inverse else pdecoeff.wb
-    theta10, theta20, theta30 = pdecoeff.theta10, pdecoeff.theta20, pdecoeff.theta30
+    y10, y20, y30 = pdecoeff.y10, pdecoeff.y20, pdecoeff.y30
     time_index = nins -1
 
 
@@ -235,7 +235,7 @@ def create_model(config):
         
         dtheta_x = dde.grad.jacobian(theta, x, i=0, j=0)
         
-        y3 = theta30 #if nins == 2 else x[:, 3:4] if nins == 5 else x[:, 2:3]
+        y3 = y30 #if nins == 2 else x[:, 3:4] if nins == 5 else x[:, 2:3]
         y2 = None if nins == 2 else x[:, 1:2] if nins==3 else x[:, 2:3]
         
         flusso = a5 * (y3 - theta) if nins==2 else a5 * (y3 - y2)
@@ -247,11 +247,11 @@ def create_model(config):
 
 
     def output_transform(x, y):
-        y1 = theta10 if nins<=3 else x[:, 1:2]
+        y1 = y10 if nins<=3 else x[:, 1:2]
         t = x[:, time_index:]
         x1 = x[:, 0:1]
         
-        return t * (x1 - 1) * y + ic_fun(x) + y1 - theta10
+        return t * (x1 - 1) * y + ic_fun(x) + y1 - y10
 
     
     # def rff_transform(inputs):
@@ -558,7 +558,7 @@ def gen_obsdata(conf, system_gt):
     # Define interpolation functions
     f1 = interp1d(instants, rows[1.0], kind="previous")
     f2 = interp1d(instants, rows[0.0], kind="previous")
-    f3 = interp1d(instants, np.full_like(rows[0.0], conf.pdecoeff.theta30), kind="previous")
+    f3 = interp1d(instants, np.full_like(rows[0.0], conf.pdecoeff.y30), kind="previous")
 
     # Mapping of inputs to feature configurations
     input_mapping = {
@@ -857,7 +857,7 @@ def get_pred(model, X, output_dir, label):
 
     y_sys_pinns = model.predict(X)
     data_to_save = np.column_stack((X[:, 0].round(n_digits), X[:, -1].round(n_digits), y_sys_pinns.round(n_digits)))
-    np.savetxt(f'{output_dir}/prediction_{label}.txt', data_to_save, fmt='%.2f %.2f %.6f', delimiter=' ') 
+    np.savetxt(f'{output_dir}/prediction_{label}.txt', data_to_save, fmt='%.6f %.6f %.6f', delimiter=' ') 
 
     preds = np.array(data_to_save).reshape(len(X[:, 0]), 3).round(n_digits)
     preds_dict = {"grid": preds[:, :2], "theta": preds[:, 2], "label": label}

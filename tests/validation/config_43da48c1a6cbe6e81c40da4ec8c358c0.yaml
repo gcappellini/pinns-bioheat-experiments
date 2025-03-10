@@ -1,11 +1,12 @@
 properties:
   L0: 0.07
   tf: 1800.0
-  k: 0.65
-  rho: 1595.0
+  k: 0.6
+  rho: 1000.0
   rhob: 1000.0
   c: 4186.0
-  cb: 3600.0
+  cb: 4186.0
+  wb: 0.0033
   h: 10.0
   cc: 27.736982
   beta: 0.9
@@ -45,23 +46,23 @@ pdecoeff:
   a1: 18.992037
   a2: 34185.6666667
   a3: 0.0
-  a4: 1.9415887
+  a4: 3.5702945
   a5: 1.1666667
-  b1: -2711.46326
-  b2: 2710.1258
-  b3: 0.78889
-  b4: 0.67619
-  c1: -1.33746
-  c2: 0.78889
-  c3: 0.67619
+  b1: -1.27769
+  b2: -0.51754
+  b3: 0.96667
+  b4: 0.82857
+  c1: null
+  c2: null
+  c3: null
   oig: 2.46
-  y10: 0.12762
-  y20: 0.67619
+  y10: 0.0
+  y20: 0.82857
   y30: 0.0
   thetagt0: 0.95238
   thetagt10: 0.95238
   incrfact: 1.0
-  wb: None
+  wb: 0.0005
 parameters:
   ag: 1
   ups: 100.0
@@ -75,7 +76,7 @@ parameters:
   wb5: 0.000649
   wb6: 0.001035
   wb7: 0.00165
-  wbsys: 6.3e-05
+  wbsys: 0.0005
   wbobs: 0.000255
   obsindex: 3
   nobs: 0
@@ -85,9 +86,9 @@ parameters:
   Xgt: 0.14286
   Xw: 0.35714
   Xgt1: 0.57143
-  drdiff: None
-  drexact: None
-  c0: None
+  drdiff: 0.294264
+  drexact: 1.029528
+  c0: 0.5614912
 plot:
   show: true
   show_obs: false
@@ -103,6 +104,6 @@ experiment:
   wandb_name: opt_ai_direct
 run:
   dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-03-10/18-20-11
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/validation
 testloss: 0.0
 runtime: 0.0

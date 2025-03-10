@@ -1,5 +1,5 @@
 function [sol] = OneDimBH_8Obs
-    global output_path lambda upsilon
+    global output_path ag ups
 
     m = 0;
     x = linspace(0,1,101);
@@ -61,7 +61,7 @@ function [sol] = OneDimBH_8Obs
     
     %-----------------
     function [c,f,s] = OneDimBHpde(x,t,u,dudx)
-    global lambda om0 om1 om2 om3 om4 om5 om6 om7 wbsys wb0 wb1 wb2 wb3 wb4 wb5 wb6 wb7 a1 a2 a3 a4 incr_fact
+    global ag om0 om1 om2 om3 om4 om5 om6 om7 wbsys wb0 wb1 wb2 wb3 wb4 wb5 wb6 wb7 a1 a2 a3 a4 incr_fact
     %la prima equazione è quella del sistema, a seguire gli osservatoris
     t
     if x >= 0.2 && x <= 0.5
@@ -84,14 +84,14 @@ function [sol] = OneDimBH_8Obs
         -wb5*a2*u(7)+a3*exp(-a4*x); 
         -wb6*a2*u(8)+a3*exp(-a4*x); 
         -wb7*a2*u(9)+a3*exp(-a4*x); 
-        -lambda*u(10)*(1-(exp(-om0)/den));
-        -lambda*u(11)*(1-(exp(-om1)/den)); 
-        -lambda*u(12)*(1-(exp(-om2)/den)); 
-        -lambda*u(13)*(1-(exp(-om3)/den));
-        -lambda*u(14)*(1-(exp(-om4)/den));
-        -lambda*u(15)*(1-(exp(-om5)/den)); 
-        -lambda*u(16)*(1-(exp(-om6)/den)); 
-        -lambda*u(17)*(1-(exp(-om7)/den));
+        -ag*u(10)*(1-(exp(-om0)/den));
+        -ag*u(11)*(1-(exp(-om1)/den)); 
+        -ag*u(12)*(1-(exp(-om2)/den)); 
+        -ag*u(13)*(1-(exp(-om3)/den));
+        -ag*u(14)*(1-(exp(-om4)/den));
+        -ag*u(15)*(1-(exp(-om5)/den)); 
+        -ag*u(16)*(1-(exp(-om6)/den)); 
+        -ag*u(17)*(1-(exp(-om7)/den));
         ];
     % --------------------------------------------------------------------------
     
@@ -103,7 +103,7 @@ function [sol] = OneDimBH_8Obs
     
     
     function [pl,ql,pr,qr] = OneDimBHbc(xl,ul,xr,ur,t)
-    global oig om0 om1 om2 om3 om4 om5 om6 om7 upsilon a5
+    global oig om0 om1 om2 om3 om4 om5 om6 om7 ups a5
     [~, ~, y1, ~, ~] = ic_bc(xr, t);
     [~, ~, ~, ~, y3] = ic_bc(xl, t);
     flusso = a5*(y3-ul(1));
@@ -130,11 +130,11 @@ function [sol] = OneDimBH_8Obs
         ur(9) - y1; 0;0;0;0;0;0;0;0];
     
     qr = [0;0;0;0;0;0;0;0;0;1;1;1;1;1;1;1;1];
-    om0=upsilon*((ul(2)-ul(1)))^2;
-    om1=upsilon*((ul(3)-ul(1)))^2;
-    om2=upsilon*((ul(4)-ul(1)))^2;
-    om3=upsilon*((ul(5)-ul(1)))^2;
-    om4=upsilon*((ul(6)-ul(1)))^2;
-    om5=upsilon*((ul(7)-ul(1)))^2;
-    om6=upsilon*((ul(8)-ul(1)))^2;
-    om7=upsilon*((ul(9)-ul(1)))^2;
+    om0=ups*((ul(2)-ul(1)))^2;
+    om1=ups*((ul(3)-ul(1)))^2;
+    om2=ups*((ul(4)-ul(1)))^2;
+    om3=ups*((ul(5)-ul(1)))^2;
+    om4=ups*((ul(6)-ul(1)))^2;
+    om5=ups*((ul(7)-ul(1)))^2;
+    om6=ups*((ul(8)-ul(1)))^2;
+    om7=ups*((ul(9)-ul(1)))^2;

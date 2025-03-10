@@ -65,22 +65,23 @@ def set_run(prj_figs, cfg, run):
 
     if run == "simulation_system":
         simu_settings = getattr(experiments_cfg, "simulation")
+        pars.nobs=0
         pdecoeff.wb = pars.wbsys
         temps.Ty10, temps.Ty20, temps.Ty30 = simu_settings.Ty10, simu_settings.Ty20, simu_settings.Ty30
-        pars.lam, pars.upsilon = simu_settings.lam, simu_settings.upsilon
+        pars.ag, pars.ups = simu_settings.lam, simu_settings.upsilon
         hp.nins = 2
+
 
     elif run.startswith("simulation"):
         simu_settings = getattr(experiments_cfg, "simulation")
         temps.Ty10, temps.Ty20, temps.Ty30, temps.Tgt0 = simu_settings.Ty10, simu_settings.Ty20, simu_settings.Ty30, simu_settings.Tgt20
-        pars.lam, pars.upsilon = simu_settings.lam, simu_settings.upsilon
+        pars.ag, pars.ups = simu_settings.lam, simu_settings.upsilon
         if np.isin(run, ["simulation_mm_obs", "simulation_ground_truth"]):
             cfg.output_dir = os.path.abspath(prj_figs)
             os.makedirs(cfg.output_dir, exist_ok=True)
         elif run == "simulation_system":
             pdecoeff.wb = pars.wbsys
             hp.nins = 2
-
 
 
     elif run.startswith("meas_cool"):
@@ -98,6 +99,7 @@ def set_run(prj_figs, cfg, run):
         os.makedirs(run_figs, exist_ok=True)
         cfg.output_dir = run_figs
     
+
     elif run.startswith("inverse"):
         pars.nobs = 0
         hp.nins = 2
@@ -195,7 +197,7 @@ def calculate_temps(cfg):
     def scale_t(t: float) -> float:
         return float(round((t - Troom) / (Tmax - Troom), 5))
 
-    labels_theta = ['theta10', 'theta20', 'theta30', 'thetagt0', 'thetagt10']
+    labels_theta = ['y10', 'y20', 'y30', 'thetagt0', 'thetagt10']
     scaled_temps = {key: scale_t(getattr(temps, key)) for key in ['Ty10', 'Ty20', 'Ty30', 'Tgt0', 'Tgt10']}
     for key, value in scaled_temps.items():
         setattr(pdecoeff, labels_theta[['Ty10', 'Ty20', 'Ty30', 'Tgt0', 'Tgt10'].index(key)], value)
@@ -209,9 +211,9 @@ def calculate_cicoeff(cfg):
     if hp.nins == 2:
         pdecoeff.c1, pdecoeff.c2, pdecoeff.c3 = None, None, None
     elif hp.nins > 2:
-        pdecoeff.c3 = float(round(pdecoeff.theta20, 5))
-        pdecoeff.c2 = float(round(-pdecoeff.a5 * (pdecoeff.theta30 - pdecoeff.theta20), 5))
-        pdecoeff.c1 = float(round(pdecoeff.theta10 - pdecoeff.c2 - pdecoeff.c3, 5))
+        pdecoeff.c3 = float(round(pdecoeff.y20, 5))
+        pdecoeff.c2 = float(round(-pdecoeff.a5 * (pdecoeff.y30 - pdecoeff.y20), 5))
+        pdecoeff.c1 = float(round(pdecoeff.y10 - pdecoeff.c2 - pdecoeff.c3, 5))
     return cfg
 
 
@@ -227,7 +229,7 @@ def calculate_bicoeff(cfg):
         [pars.Xgt**3, pars.Xgt**2, pars.Xgt, 1]
     ])
 
-    B = np.array([pdecoeff.theta10, pdecoeff.theta20, -pdecoeff.a5 * (pdecoeff.theta30 - pdecoeff.theta20), pdecoeff.thetagt0])
+    B = np.array([pdecoeff.y10, pdecoeff.y20, -pdecoeff.a5 * (pdecoeff.y30 - pdecoeff.y20), pdecoeff.thetagt0])
     sol = np.linalg.solve(A, B)
     pdecoeff.b1, pdecoeff.b2, pdecoeff.b3, pdecoeff.b4 = [float(round(val, 5)) for val in sol]
     return cfg

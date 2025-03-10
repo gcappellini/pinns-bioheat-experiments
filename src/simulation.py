@@ -39,8 +39,11 @@ def run_ground_truth(config, out_dir):
         uu.run_matlab_ground_truth()
 
     system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config_matlab)
-    observers_gt, mm_obs_gt = uu.compute_obs_err(system_gt, observers_gt, mm_obs_gt) 
-    return system_gt, observers_gt, mm_obs_gt
+    if matlab_data.parameters.nobs==0:
+        return system_gt, observers_gt, mm_obs_gt
+    else:
+        observers_gt, mm_obs_gt = uu.compute_obs_err(system_gt, observers_gt, mm_obs_gt) 
+        return system_gt, observers_gt, mm_obs_gt
 
 
 
@@ -50,8 +53,10 @@ def run_simulation_system(config, out_dir, system_gt):
     label = "simulation_system"
     props, exp = config.hp, config.experiment
     output_dir_system, cfg_system = co.set_run(out_dir, config, label)
+
+    cfg_wandb = OmegaConf.to_container(config.pdecoeff)
     if exp.wandb:
-        wandb.init(project=f"{datetime.date.today()}_{exp.wandb_name}", config=config.hp)
+        wandb.init(project=f"{datetime.date.today()}_{exp.wandb_name}", config=cfg_wandb)
     pinns_sys, train_info = uu.train_model(cfg_system)
     system = uu.get_pred(pinns_sys, system_gt["grid"], out_dir, "system")
     [], system = uu.calculate_l2(system_gt, [], system)

@@ -1,15 +1,15 @@
 entities:
   system:
     color: C3
-    label: System PINNs
+    label: NBHS
     linestyle: '-'
-    linewidth: 1.2
+    linewidth: 2.0
     alpha: 1.0
   multi_observer:
     color: darkblue
-    label: MultiObs PINNs
+    label: MM-NBHO
     linestyle: ':'
-    linewidth: 1.2
+    linewidth: 2.0
     alpha: 1.0
   loss_terms:
     color:
@@ -28,10 +28,10 @@ entities:
     - '-'
     - --
     linewidth:
-    - 1.2
-    - 1.2
-    - 1.2
-    - 1.2
+    - 2.0
+    - 2.0
+    - 2.0
+    - 2.0
     alpha:
     - 1.0
     - 1.0
@@ -41,13 +41,13 @@ entities:
     color: '#D2691E'
     label: Train Loss
     linestyle: '-'
-    linewidth: 1.0
+    linewidth: 2.0
     alpha: 1.0
   test_loss:
     color: '#D2691E'
     label: Test Loss
     linestyle: ':'
-    linewidth: 1.0
+    linewidth: 2.0
     alpha: 0.8
   observers:
     color:
@@ -60,14 +60,14 @@ entities:
     - C6
     - C7
     label:
-    - Obs 0 PINNs
-    - Obs 1 PINNs
-    - Obs 2 PINNs
-    - Obs 3 PINNs
-    - Obs 4 PINNs
-    - Obs 5 PINNs
-    - Obs 6 PINNs
-    - Obs 7 PINNs
+    - NBHO 0
+    - NBHO 1
+    - NBHO 2
+    - NBHO 3
+    - NBHO 4
+    - NBHO 5
+    - NBHO 6
+    - NBHO 7
     linestyle:
     - '-'
     - -.
@@ -78,14 +78,14 @@ entities:
     - --
     - '-'
     linewidth:
-    - 1.0
-    - 1.0
-    - 1.0
-    - 1.0
-    - 1.0
-    - 1.0
-    - 1.0
-    - 1.0
+    - 2.0
+    - 2.0
+    - 2.0
+    - 2.0
+    - 2.0
+    - 2.0
+    - 2.0
+    - 2.0
     alpha:
     - 0.9
     - 0.9
@@ -97,34 +97,34 @@ entities:
     - 0.9
   system_gt:
     color: C3
-    label: System MATLAB
+    label: PBHE
     linestyle: --
-    linewidth: 1.0
+    linewidth: 2.0
     alpha: 0.8
   system_meas:
     color: red
     label: Measurement
     linestyle: --
-    linewidth: 1.0
+    linewidth: 2.0
     alpha: 0.3
     marker: '*'
   theory:
     color: purple
     label: Theory
     linestyle: --
-    linewidth: 1.0
+    linewidth: 2.0
     alpha: 1.0
   bound:
     color: chocolate
     label: Bound
     linestyle: -.
-    linewidth: 1.0
+    linewidth: 2.0
     alpha: 1.0
   multi_observer_gt:
     color: orange
-    label: MultiObs MATLAB
+    label: MM-Obs MATLAB
     linestyle: --
-    linewidth: 1.0
+    linewidth: 2.0
     alpha: 0.8
   observers_gt:
     color:
@@ -155,14 +155,14 @@ entities:
     - ':'
     - ':'
     linewidth:
-    - 1.2
-    - 1.2
-    - 1.2
-    - 1.2
-    - 1.2
-    - 1.2
-    - 1.2
-    - 1.2
+    - 2.0
+    - 2.0
+    - 2.0
+    - 2.0
+    - 2.0
+    - 2.0
+    - 2.0
+    - 2.0
     alpha:
     - 0.7
     - 0.7
@@ -224,35 +224,35 @@ entities:
       color: '#9ACD32'
       label: $\mathcal{L}_{res}$
       linestyle: '-'
-      linewidth: 1.2
+      linewidth: 2.0
       alpha: 1.0
     bc0:
       color: '#FF6347'
       label: $\mathcal{L}_{bc0}$
       linestyle: '-'
-      linewidth: 1.2
+      linewidth: 2.0
       alpha: 1.0
     bc1:
       color: '#FFD700'
       label: $\mathcal{L}_{bc1}$
       linestyle: '-'
-      linewidth: 1.2
+      linewidth: 2.0
       alpha: 1.0
     ic:
       color: '#FF1493'
       label: $\mathcal{L}_{ic}$
       linestyle: '-'
-      linewidth: 1.2
+      linewidth: 2.0
       alpha: 1.0
     test:
       color: '#D2691E'
       label: test loss
       linestyle: ':'
-      linewidth: 1.2
+      linewidth: 2.0
       alpha: 1.0
     train:
       color: '#A0522D'
       label: train loss
       linestyle: '-'
-      linewidth: 1.2
+      linewidth: 2.0
       alpha: 1.0
