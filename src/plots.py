@@ -19,6 +19,11 @@ current_file = os.path.abspath(__file__)
 src_dir = os.path.dirname(current_file)
 git_dir = os.path.dirname(src_dir)
 
+title_fs = 26
+axis_fs = 20
+tick_fs = 18
+legend_fs = 12
+
 models_dir = os.path.join(git_dir, "models")
 os.makedirs(models_dir, exist_ok=True)
 
@@ -62,13 +67,13 @@ def plot_generic(x, y, title, xlabel, ylabel, legend_labels=None, log_scale=Fals
         ax.plot(xi, yi, label=label, color=color, linestyle=linestyle, marker=marker, linewidth=linewidth, 
                 markersize=markersize, alpha=alpha, markevery=markevery)
 
-    ax.set_title(title, fontweight='bold', fontsize=26)
-    ax.set_xlabel(xlabel, fontweight='bold', fontsize=20)
-    ax.set_ylabel(ylabel, fontweight='bold', fontsize=20)
+    ax.set_title(title, fontweight='bold', fontsize=title_fs)
+    ax.set_xlabel(xlabel, fontweight='bold', fontsize=axis_fs)
+    ax.set_ylabel(ylabel, fontweight='bold', fontsize=axis_fs)
 
     # Add legend if labels are provided
     if legend_labels:
-        ax.legend(loc='best', fontsize=18)
+        ax.legend(loc='best', fontsize=legend_fs)
 
     # Set y-axis to log scale if specified
     if log_scale:
@@ -76,7 +81,7 @@ def plot_generic(x, y, title, xlabel, ylabel, legend_labels=None, log_scale=Fals
     
     if log_xscale:
         ax.set_xscale('log')
-    ax.tick_params(axis='both', which='both', labelsize=18) 
+    ax.tick_params(axis='both', which='both', labelsize=tick_fs) 
     ax.grid(True)
 
     # Save and close the figure if filename is provided
@@ -98,7 +103,7 @@ def plot_generic_3d(XY, Z1, Z2, xlabel, ylabel, zlabel, col_titles,  filename=No
         configure_subplot(ax, XY, surfaces[0][col], xlabel, ylabel, zlabel)
 
         # Set column titles
-        ax.set_title(col_titles[col], fontsize=8, y=.96, weight='semibold')
+        ax.set_title(col_titles[col], fontsize=title_fs, y=.96, weight='semibold')
 
     # Adjust spacing between subplots
     plt.subplots_adjust(wspace=0.15)
@@ -108,9 +113,9 @@ def plot_generic_3d(XY, Z1, Z2, xlabel, ylabel, zlabel, col_titles,  filename=No
 # Helper functions for common plotting tasks
 def create_plot(title, xlabel, ylabel, size=(6, 5)):
     fig, ax = plt.subplots(figsize=size)
-    ax.set_title(title, fontweight='bold')
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
+    ax.set_title(title, fontweight='bold', fontsize=title_fs)
+    ax.set_xlabel(xlabel, fontsize=axis_fs)
+    ax.set_ylabel(ylabel, fontsize=axis_fs)
     return fig, ax
 
 
@@ -130,9 +135,9 @@ def configure_subplot(ax, XS, surface, xlabel, ylabel, zlabel):
     ax.tick_params(axis='both', labelsize=7, pad=2)
     ax.dist = 10
     ax.view_init(20, -120)
-    ax.set_xlabel(xlabel, fontsize=7, labelpad=-1)
-    ax.set_ylabel(ylabel, fontsize=7, labelpad=-1)
-    ax.set_zlabel(zlabel, fontsize=7, labelpad=-4)
+    ax.set_xlabel(xlabel, fontsize=axis_fs, labelpad=-1)
+    ax.set_ylabel(ylabel, fontsize=axis_fs, labelpad=-1)
+    ax.set_zlabel(zlabel, fontsize=axis_fs, labelpad=-4)
 
 
 # Main plot functions
@@ -614,14 +619,14 @@ def plot_multiple_series(series_data, prj_figs, lal):
         xlabel, _, ylabel = uu.get_scaled_labels(rescale)
         
         # Configure subplot labels and title
-        axes[i].set_xlabel(xlabel, fontweight='bold', fontsize=20)
+        axes[i].set_xlabel(xlabel, fontweight='bold', fontsize=axis_fs)
         if i == 0:
-            axes[i].set_ylabel(ylabel, fontweight='bold', fontsize=20)
-            axes[i].legend(loc='best', fontsize=18)
-        axes[i].set_title(title, fontweight='bold', fontsize=26)
+            axes[i].set_ylabel(ylabel, fontweight='bold', fontsize=axis_fs)
+            axes[i].legend(loc='best', fontsize=legend_fs)
+        axes[i].set_title(title, fontweight='bold', fontsize=title_fs)
         axes[i].grid(True)
         lims.append(axes[i].get_ylim())
-        axes[i].tick_params(axis='both', which='both', labelsize=18) 
+        axes[i].tick_params(axis='both', which='both', labelsize=tick_fs) 
     # Apply limits to axes
     lims_big = lims[0]
     lims_small = lims[2]

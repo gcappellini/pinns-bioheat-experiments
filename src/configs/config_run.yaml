@@ -103,6 +103,6 @@ experiment:
   gt_path: None
 run:
   dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-03-11/20-25-17
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-03-11/21-14-08
 testloss: 0.0
 runtime: 0.0
