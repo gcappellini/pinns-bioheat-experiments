@@ -492,12 +492,13 @@ def gen_testdata(conf):
     pars = conf.parameters
     nins = conf.hp.nins
     n = pars.nobs
-    conf_gt = OmegaConf.create({
-        "pdecoeff": conf.pdecoeff,
-        "parameters": conf.parameters})
+    # conf_gt = OmegaConf.create({
+    #     "pdecoeff": conf.pdecoeff,
+    #     "parameters": conf.parameters})
     
-    matlab_hash = co.generate_config_hash(conf_gt)
-    path = f"{gt_dir}/gt_{matlab_hash}"
+    # matlab_hash = co.generate_config_hash(conf_gt)
+    # path = f"{gt_dir}/gt_{matlab_hash}"
+    path = conf.experiment.gt_path
 
     data = np.loadtxt(f"{path}.txt")
     x, t, sys = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T

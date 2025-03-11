@@ -121,8 +121,8 @@ entities:
     linewidth: 2.0
     alpha: 1.0
   multi_observer_gt:
-    color: orange
-    label: MM-Obs MATLAB
+    color: teal
+    label: MM-Obs
     linestyle: --
     linewidth: 2.0
     alpha: 0.8
@@ -137,14 +137,14 @@ entities:
     - C6
     - C7
     label:
-    - Obs 0 MATLAB
-    - Obs 1 MATLAB
-    - Obs 2 MATLAB
-    - Obs 3 MATLAB
-    - Obs 4 MATLAB
-    - Obs 5 MATLAB
-    - Obs 6 MATLAB
-    - Obs 7 MATLAB
+    - Obs 0
+    - Obs 1
+    - Obs 2
+    - Obs 3
+    - Obs 4
+    - Obs 5
+    - Obs 6
+    - Obs 7
     linestyle:
     - ':'
     - ':'

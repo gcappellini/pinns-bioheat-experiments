@@ -186,9 +186,7 @@ def plot_weights(series_data, run_figs, lal):
 
     conf = compose(config_name='config_run')
     plot_params = uu.get_plot_params(conf)
-    pars = conf.model_parameters
-    lam = pars.lam
-    ups = pars.upsilon
+    pars = conf.parameters
 
     times = np.unique(series_data[0]['grid'][:, 1])
 
@@ -215,7 +213,7 @@ def plot_weights(series_data, run_figs, lal):
         legend_labels.append(plot_params[label]["label"])
 
     # Define the title with the lambda value
-    title = fr"Dynamic weights, $\lambda={lam}$, $\upsilon={ups}$"
+    title = fr"Dynamic weights"
     
     times_plot = uu.rescale_time(t_vals) if rescale else t_vals
     _, xlabel, _ = uu.get_scaled_labels(rescale)
@@ -743,7 +741,7 @@ def plot_res(config, system_gt=None, system=None, system_meas=None, observers_gt
     run = config.experiment.run
     weights_list = None
 # blocco gt
-    if plot.plot_gt:
+    if config.experiment.run=="ground_truth":
         label = "ground_truth"
         multiple_series = [system_gt, mm_obs_gt]
         l2_ref_dict = system_gt
@@ -759,7 +757,8 @@ def plot_res(config, system_gt=None, system=None, system_meas=None, observers_gt
             weights_list = observers_gt
 
         all_plots(multiple_series, out_dir, label, l2_ref_dict, l2_plot, ref_dict, validation_dict, config, timeseries_gt, timeseries_pred, weights_list)
-
+        return
+        
 # blocco direct
     if hp.nins==2:
         label = "direct"
@@ -806,14 +805,13 @@ def plot_res(config, system_gt=None, system=None, system_meas=None, observers_gt
     all_plots(multiple_series, out_dir, label, l2_ref_dict, l2_plot, ref_dict, validation_dict, config, timeseries_gt, timeseries_pred, weights_list)
 
 
-def all_plots(multiple_series, out_dir, label, l2_ref_dict, l2_plot, ref_dict, validation_dict, config, timeseries_gt, timeseries_pred, weights_list):
-    nobs = config.parameters.nobs
+def all_plots(multiple_series, out_dir, label, l2_ref_dict, l2_plot, ref_dict, validation_dict, config, timeseries_gt, timeseries_pred, weights_list=None):
     plot_multiple_series(multiple_series, out_dir, label)
     plot_l2(l2_ref_dict, l2_plot, out_dir, label)
     plot_validation_3d(ref_dict["grid"], ref_dict["theta"], validation_dict["theta"], out_dir, label)
     plot_obs_err(multiple_series[1:], out_dir, label)
     plot_timeseries_with_predictions(timeseries_gt, timeseries_pred, config, out_dir) 
-    if 1 < nobs <= 8:
+    if weights_list is not None:
         plot_weights([*weights_list], out_dir, label)
 
 # if __name__ == "__main__":

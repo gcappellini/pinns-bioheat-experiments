@@ -29,16 +29,18 @@ def run_ground_truth(config, out_dir):
         "parameters": config_matlab.parameters
         })
     
-    matlab_hash = co.generate_config_hash(matlab_data)
-    gt_path = f"{gt_dir}/gt_{matlab_hash}"
-    matlab_data.gt_path = gt_path
-    OmegaConf.save(matlab_data, f"{conf_dir}/config_ground_truth.yaml")
-    OmegaConf.save(matlab_data, f"{gt_dir}/cfg_{matlab_hash}.yaml")
+    # matlab_hash = co.generate_config_hash(matlab_data)
+    # gt_path = f"{gt_dir}/gt_{matlab_hash}"
+    # matlab_data.gt_path = gt_path
+    # OmegaConf.save(matlab_data, f"{conf_dir}/config_ground_truth.yaml")
+    # OmegaConf.save(matlab_data, f"{gt_dir}/cfg_{matlab_hash}.yaml")
 
-    if not os.path.exists(f"{gt_path}.txt"):
-        uu.run_matlab_ground_truth()
+    # if not os.path.exists(f"{gt_path}.txt"):
+    #     uu.run_matlab_ground_truth()
 
+    config_matlab.experiment.gt_path = f"{tests_dir}/cooling_ground_truth_5e-04/output_matlab_8Obs"
     system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config_matlab)
+
     if matlab_data.parameters.nobs==0:
         return system_gt, observers_gt, mm_obs_gt
     else:
@@ -180,7 +182,11 @@ def run_simulation(config, out_dir):
 
 def main(config: DictConfig):
     """Main function to run simulations, measurements, and ground truth processing."""
-    if config.experiment.run.startswith("simulation"):
+    if config.experiment.run.startswith("ground_truth"):
+        system_gt, observers_gt, mm_obs_gt = run_ground_truth(config, config.output_dir)
+        if config.plot.show:
+            pp.plot_res(config, system_gt=system_gt, observers_gt=observers_gt, mm_obs_gt=mm_obs_gt )
+    elif config.experiment.run.startswith("simulation"):
         run_simulation(config, config.output_dir)
     elif config.experiment.run.startswith("meas"):
         run_measurement(config, config.output_dir)
