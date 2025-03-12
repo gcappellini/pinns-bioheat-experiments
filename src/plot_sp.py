@@ -2,6 +2,7 @@ import deepxde as dde
 import numpy as np
 import os
 import torch
+import glob
 import json
 import hashlib
 import logging
@@ -10,7 +11,6 @@ from hydra import compose
 import plots as pp
 import matplotlib.pyplot as plt
 
-dde.config.set_random_seed(200)
 
 # device = torch.device("cpu")
 device = torch.device("cuda")
@@ -22,33 +22,52 @@ tests_dir = os.path.join(git_dir, "tests")
 conf_dir = os.path.join(src_dir, "configs")
 os.makedirs(tests_dir, exist_ok=True)
 
-config = compose(config_name="config_run")
-output_folder = f"{tests_dir}/simulation_sp"
-res = []
-for el in os.listdir(output_folder):
-    el_path = os.path.join(output_folder, el)
-    metrics = OmegaConf.load(f"{el_path}/metrics.yaml")
-    pars = OmegaConf.load(f"{el_path}/.hydra/overrides.yaml")
-    metrics = {key.replace("observer_4_", ""): value for key, value in metrics.items()}
-    res.append([el, *pars, metrics])
+output_folder = f"{tests_dir}/l2_errs_meas"
+
+# Initialize dictionaries
+meas_cool_1 = {}
+meas_cool_2 = {}
+
+# Get all txt files in the directory
+txt_files = glob.glob(os.path.join(output_folder, "*.txt"))
+
+# Read each file and store its content in the appropriate dictionary
+for file_path in txt_files:
+    file_name = os.path.basename(file_path)  # Extract only the filename
+    file_key = os.path.splitext(file_name)[0]  # Remove .txt extension
+    
+    parts = file_key.split("_")  # Split by "_"
+    prefix = f"{parts[0]}_{parts[1]}_{parts[2]}"  # e.g., "meas_cool_1" or "meas_cool_2"
+    obs_key = f"{parts[3]}"  # e.g., "8obs", "16obs", "64obs"
+
+    with open(file_path, "r") as file:
+        value = file.read().strip()  # Read file content
+
+    # Store in the corresponding dictionary
+    if prefix == "meas_cool_1":
+        meas_cool_1[obs_key] = np.array(value)
+    elif prefix == "meas_cool_2":
+        meas_cool_2[obs_key] = np.array(value)
+
+# Print the results
+length = meas_cool_1["8"]
+print(length)
+# print("meas_cool_2:", meas_cool_2.keys())
 
 
-# Extract parameters and metrics
-x = [p[0] for p in res]
-y = [p[1] for p in res]
+# times = np.array([np.linspace(0, 1, num=len(meas_cool_1["8"]))]*3)
+# vals = [ v for v in meas_cool_1.values()]
+# legend_labels = [f"{k}" for k in meas_cool_1.keys()]
 
-# Iterate through all metrics keys
-for metric_key in res[0][2].keys():
-    z = [m[metric_key] for _, _, m in res]  # Extract metric values for the current key
-
-    # Create 2D plot
-    plt.figure(figsize=(10, 8))
-    sc = plt.scatter(x, y, c=z, cmap='viridis')
-    plt.colorbar(sc, label=f'Metric Value ({metric_key})')
-    plt.xlabel(f'{pars.keys()[0]}')
-    plt.ylabel(f'{pars.keys()[0]}')
-    plt.title(f'{metric_key}')
-    plt.show()
-    plt.tight_layout()
-    plt.savefig(f"{output_folder}/{metric_key}.png", dpi=120)
-    plt.close()
+# pp.plot_generic(
+#         x=times,
+#         y=vals,
+#         title="Prediction error norm",
+#         xlabel=r"$\tau$",
+#         ylabel=r"$L^2$ norm",
+#         legend_labels=legend_labels,
+#         log_scale=True,  # We want a log scale on the y-axis
+#         filename=f"{output_folder}/cooling_1.png",
+#         size=(6, 5),
+#         # colors=colors
+#     )
