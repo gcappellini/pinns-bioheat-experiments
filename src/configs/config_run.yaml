@@ -38,7 +38,7 @@ hp:
   resampler_period: 100
   wres: 1
   wbc0: 1
-  nins: 2
+  nins: 4
   seed: 500
   nanc: 0
 pdecoeff:
@@ -90,19 +90,20 @@ parameters:
   c0: None
 plot:
   show: true
-  show_obs: true
-  show_gt: true
+  show_obs: false
+  show_gt: false
   show_sys: true
   rescale: true
   display_every: 200
 experiment:
   inverse: false
-  run: ground_truth
+  run: meas_cool_2
   wandb: false
   wandb_name: opt_ai_direct
   gt_path: None
+  pred_fold: None
 run:
   dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-03-11/21-14-08
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-03-12/18-17-06
 testloss: 0.0
 runtime: 0.0

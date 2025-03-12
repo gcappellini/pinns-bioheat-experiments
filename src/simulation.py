@@ -119,17 +119,20 @@ def run_simulation_mm_obs(config, out_dir, system_gt, mm_obs_gt, observers_gt, g
     # setup_log("Running simulation for multi-observer.")
     label = "simulation_mm_obs"
     _, cfg_sim = co.set_run(out_dir, config, label)
+    cfg_sim.experiment.pred_fold = f"{tests_dir}/cooling_simulation_5e-04"
     pdecoeff, hp, pars, exp = cfg_sim.pdecoeff,cfg_sim.hp, cfg_sim.parameters, config.experiment
     nobs = pars.nobs
     if exp.wandb:
         wandb.init(project=f"{datetime.date.today()}_{exp.wandb_name}", config=config.hp)
-    output = uu.execute(cfg_sim, label)
-    multi_obs = output[0] if nobs==1 else [e[0] for e in output]
-    # train_info = output[1] if nobs==1 else [e[1] for e in output]
-    x_obs = uu.gen_obsdata(cfg_sim, system_gt)
-    observers, mm_obs = uu.get_observers_preds(mm_obs_gt, multi_obs, x_obs, out_dir, cfg_sim, label)
-
-    metrics = uu.compute_metrics([mm_obs_gt, mm_obs], {}, config, out_dir)
+    if conf.experiment.pred_fold is None:
+        output = uu.execute(cfg_sim, label)
+        multi_obs = output[0] if nobs==1 else [e[0] for e in output]
+        # train_info = output[1] if nobs==1 else [e[1] for e in output]
+        x_obs = uu.gen_obsdata(cfg_sim, system_gt)
+        observers, mm_obs = uu.get_observers_preds(mm_obs_gt, multi_obs, x_obs, out_dir, cfg_sim, label)
+    else:
+        observers, mm_obs = uu.load_observers_preds(system_gt, cfg_sim, label)
+    metrics = uu.compute_metrics([mm_obs_gt, mm_obs], None, config, out_dir)
 
     if exp.wandb:
         wandb.log(metrics)
@@ -148,15 +151,25 @@ def run_measurement(config, out_dir):
     # observers, mm_obs = uu.get_observers_preds(system_meas, multi_obs, x_obs, out_dir, config_meas, label)
     # load_dir = f"{tests_dir}/meas_cool_bone_tum_{config.model_parameters.n_obs}obs/0" if label.endswith("1") else f"{tests_dir}/meas_cool_bone_tum_{config.model_parameters.n_obs}obs/1"
     # observers, mm_obs = uu.load_observers_preds(load_dir, config_meas, label)
-    load_path = f"/Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/meas_cool_bone_tum_64obs/1/multi_observer_{label}.txt"
-    data = np.loadtxt(load_path)
-    x, t, sys = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T
-    X = np.vstack((x, t)).T
-    y_sys = sys.flatten()[:, None]
-    mm_obs = {"grid": X, "theta": y_sys, "label": "multi_observer"}
-    observers = []
 
-    uu.compute_metrics([system_meas, mm_obs], {}, config, out_dir)
+    # load_path = f"/Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/meas_cool_bone_tum_16obs/0/multi_observer_{label}.txt"
+    # data = np.loadtxt(load_path)
+    # x, t, sys = data[:, 0:1].T, data[:, 1:2].T, data[:, 2:3].T
+    # X = np.vstack((x, t)).T
+    # y_sys = sys.flatten()[:, None]
+    # mm_obs = {"grid": X, "theta": y_sys, "label": "multi_observer"}
+    # observers = {}
+    # obs_dict={}
+    # _, mm_obs = uu.compute_obs_err(system_meas, obs_dict, mm_obs)
+    # _, mm_obs = uu.calculate_l2(system_meas, obs_dict, mm_obs)
+
+    config_meas.experiment.pred_fold = f"{tests_dir}/meas_cool_bone_tum_64obs/1"
+    observers, mm_obs = uu.load_observers_preds(system_meas, config_meas, label)
+
+    with open(os.path.join(out_dir, "mm_obs_l2_err.txt"), "w") as f:
+        f.write(str(mm_obs["L2_err"]))
+
+    # uu.compute_metrics([system_meas, mm_obs], {}, config, out_dir)
     if config.plot.show:
         pp.plot_res(config, system_meas=system_meas, observers=observers, mm_obs=mm_obs)
     return observers, mm_obs
@@ -176,6 +189,7 @@ def run_simulation(config, out_dir):
             system = run_simulation_system(config, out_dir, system_gt)
     else:
         observers, mm_obs = run_simulation_mm_obs(config, out_dir, system_gt, mm_obs_gt, observers_gt)
+    
     if config.plot.show:
         pp.plot_res(config, system_gt=system_gt, system=system, observers=observers, observers_gt=observers_gt, mm_obs_gt=mm_obs_gt, mm_obs=mm_obs, var=var)
 

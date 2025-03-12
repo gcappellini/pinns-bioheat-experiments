@@ -124,7 +124,8 @@ def compute_metrics(series_to_plot, train_info, cfg, run_figs):
         if "bc1" in key or "initial_condition" in key:
             del metrics[key]
             
-    metrics.update({"testloss": train_info["test"].sum(axis=1).ravel().min()})
+    if train_info is not None:
+        metrics.update({"testloss": train_info["test"].sum(axis=1).ravel().min()})
 
     metrics = {k: float(v) for k, v in metrics.items()}
     with open(f"{run_figs}/metrics.yaml", "w") as file:
@@ -653,8 +654,8 @@ def get_tc_positions():
     Xy2 = 0.0
     Xy1 = 1.0
 
-    # return {"y2": x_y2, "gt": round(x_gt, 2), "y1": x_y1}
-    return {"y2": Xy2, "gt": pars.Xgt, "gt1": pars.Xgt1,"y1": Xy1}
+    return {"y2": Xy2, "gt": pars.Xgt, "y1": Xy1}
+    # return {"y2": Xy2, "gt": pars.Xgt, "gt1": pars.Xgt1,"y1": Xy1}
 
 def get_loss_names():
     # return ["residual", "bc0", "bc1", "ic", "test", "train"]
@@ -934,7 +935,7 @@ def get_observers_preds(ground_truth, multi_obs, x_obs, output_dir, conf, label)
     return obs_dict, mm_obs
 
 
-def load_observers_preds(output_dir, conf, label):
+def load_observers_preds(ground_truth, conf, label):
     """
     Load predictions for observers and multi-observer models from text files.
 
@@ -949,16 +950,26 @@ def load_observers_preds(output_dir, conf, label):
     """
     pars = conf.parameters
     nobs = pars.nobs
+    output_dir = conf.experiment.pred_fold
+    weights_path = f"{output_dir}/{label}"
 
+    mm_obs=None
     obs_dict = []
-    for i in range(nobs):
-        file_path = os.path.join(output_dir, f"observer_{i}_{label}.txt")
-        data = np.loadtxt(file_path)
-        obs_dict.append({
-            "grid": data[:, :2],
-            "theta": data[:, 2],
-            "label": f"observer_{i}"
-        })
+
+    if conf.plot.show_obs ==True:
+        for i in range(nobs):
+            file_path = os.path.join(output_dir, f"observer_{i}_{label}.txt")
+            data = np.loadtxt(file_path)
+            obs_dict.append({
+                "grid": data[:, :2],
+                "theta": data[:, 2],
+                "label": f"observer_{i}"
+            })
+        
+        
+        obs_dict, _ = compute_obs_err(ground_truth, obs_dict, mm_obs)
+    
+        obs_dict = load_weights(obs_dict, conf, weights_path)
 
     mm_obs_file_path = os.path.join(output_dir, f"multi_observer_{label}.txt")
     mm_obs_data = np.loadtxt(mm_obs_file_path)
@@ -967,6 +978,9 @@ def load_observers_preds(output_dir, conf, label):
         "theta": mm_obs_data[:, 2],
         "label": "multi_observer"
     }
+
+    _, mm_obs = compute_obs_err(ground_truth, obs_dict, mm_obs)
+    obs_dict, mm_obs = calculate_l2(ground_truth, obs_dict, mm_obs)
 
     return obs_dict, mm_obs
 
@@ -1404,7 +1418,7 @@ def extract_matching(dicts):
             
             
     # Stack the matched theta values
-    theta_obsvs=np.array(theta_obsvs)
+    theta_obsvs=np.array(theta_obsvs, dtype=float).reshape(len(result), len(dicts))
     result = np.hstack((result, theta_obsvs))
 
     return result

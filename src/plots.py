@@ -59,7 +59,7 @@ def plot_generic(x, y, title, xlabel, ylabel, legend_labels=None, log_scale=Fals
         label = legend_labels[i] if isinstance(legend_labels, list) and legend_labels else (legend_labels if legend_labels else None)
         color = colors[i] if isinstance(colors, list) and colors else None  # Use provided colors or default
         linestyle = linestyles[i] if isinstance(linestyles, list) and linestyles else (linestyles if linestyles else '-')  # Default to solid line
-        linewidth = linewidths[i] if isinstance(linewidths, list) and linewidths else (linewidths if linewidths else 1.2)
+        linewidth = linewidths[i] if isinstance(linewidths, list) and linewidths else (linewidths if linewidths else 2.0)
         marker = markers[i] if isinstance(markers, list) and markers else (markers if markers else None)
         markersize = markersizes[i] if markersizes else 12
         alpha=alphas[i] if isinstance(alphas, list) and alphas else (alphas if alphas else 1)
@@ -802,7 +802,8 @@ def plot_res(config, system_gt=None, system=None, system_meas=None, observers_gt
     if pars.nobs>0 and plot.show_obs:
         multiple_series.extend(observers)
         l2_plot.extend(observers)
-        weights_list = observers
+        if not run.startswith("meas"):
+            weights_list = observers
     if pars.nobs>0 and plot.show_gt:
         multiple_series.append(mm_obs_gt)
         l2_plot.append(mm_obs_gt)
@@ -813,8 +814,8 @@ def plot_res(config, system_gt=None, system=None, system_meas=None, observers_gt
 def all_plots(multiple_series, out_dir, label, l2_ref_dict, l2_plot, ref_dict, validation_dict, config, timeseries_gt, timeseries_pred, weights_list=None):
     plot_multiple_series(multiple_series, out_dir, label)
     plot_l2(l2_ref_dict, l2_plot, out_dir, label)
-    plot_validation_3d(ref_dict["grid"], ref_dict["theta"], validation_dict["theta"], out_dir, label)
-    plot_obs_err(multiple_series[1:], out_dir, label)
+    # plot_validation_3d(ref_dict["grid"], ref_dict["theta"], validation_dict["theta"], out_dir, label)
+    # plot_obs_err(multiple_series[1:], out_dir, label)
     plot_timeseries_with_predictions(timeseries_gt, timeseries_pred, config, out_dir) 
     if weights_list is not None:
         plot_weights([*weights_list], out_dir, label)

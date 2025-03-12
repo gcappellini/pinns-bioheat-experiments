@@ -87,9 +87,9 @@ def set_run(prj_figs, cfg, run):
     elif run.startswith("meas_cool"):
         simu_settings = getattr(experiments_cfg, run)
         props.h, props.pwrfact = 10.0, 0.0
-        meas_settings = getattr(cfg.experiment_type, run)
+        meas_settings = getattr(experiments_cfg, run)
         temps.Ty10, temps.Ty20, temps.Ty30 = meas_settings.Ty10, meas_settings.Ty20, meas_settings.Ty30
-        pars.lam, pars.upsilon = meas_settings.lam, meas_settings.upsilon
+        pars.ag, pars.ups = meas_settings.lam, meas_settings.upsilon
 
     elif run.startswith("hpo"):
         pars.nobs = 1
