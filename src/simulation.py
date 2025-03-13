@@ -119,7 +119,7 @@ def run_simulation_mm_obs(config, out_dir, system_gt, mm_obs_gt, observers_gt, g
     # setup_log("Running simulation for multi-observer.")
     label = "simulation_mm_obs"
     _, cfg_sim = co.set_run(out_dir, config, label)
-    cfg_sim.experiment.pred_fold = f"{tests_dir}/cooling_simulation_5e-04"
+    cfg_sim.experiment.pred_fold = f"{tests_dir}/cooling_simulation_5e-04_lam_100_obs"
     pdecoeff, hp, pars, exp = cfg_sim.pdecoeff,cfg_sim.hp, cfg_sim.parameters, config.experiment
     nobs = pars.nobs
     if exp.wandb:
@@ -163,7 +163,7 @@ def run_measurement(config, out_dir):
     # _, mm_obs = uu.compute_obs_err(system_meas, obs_dict, mm_obs)
     # _, mm_obs = uu.calculate_l2(system_meas, obs_dict, mm_obs)
 
-    config_meas.experiment.pred_fold = f"{tests_dir}/meas_cool_bone_tum/1_no_obs"
+    config_meas.experiment.pred_fold = f"{tests_dir}//meas_cool_bone_tum_64obs/1"
     observers, mm_obs = uu.load_observers_preds(system_meas, config_meas, label)
 
 

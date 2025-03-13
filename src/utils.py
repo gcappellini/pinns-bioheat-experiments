@@ -847,14 +847,14 @@ def compute_obs_err(system, observers_data=None, mm_obs=None):
             nobs = len(observers_data)
             obs_err = np.abs(rows_xref[:, 3:3+nobs] - sys_xref[:, None])
             for i, observer in enumerate(observers_data):
-                observer[f'obs_err_{x_ref}'] = obs_err[:, i]
+                observer[f'obs_err_{round(x_ref, 2)}'] = obs_err[:, i]
 
         if mm_obs:
             mm_obs_err = np.abs(rows_xref[:, -1] - sys_xref)
-            mm_obs[f'obs_err_{x_ref}'] = mm_obs_err
+            mm_obs[f'obs_err_{round(x_ref, 2)}'] = mm_obs_err
     
-            obs_dir = f"{tests_dir}/errs_meas"
-            np.savez(f"{obs_dir}/meas_cool_2_8_{round(x_ref, 2)}.npz", mm_obs_err)
+            # obs_dir = f"{tests_dir}/errs_meas"
+            # np.savez(f"{obs_dir}/meas_cool_2_8_{round(x_ref, 2)}.npz", mm_obs_err)
 
     return observers_data, mm_obs
 
@@ -1422,7 +1422,7 @@ def extract_matching(dicts):
             
             
     # Stack the matched theta values
-    theta_obsvs=np.array(theta_obsvs, dtype=float).reshape(len(result), len(dicts))
+    # theta_obsvs=np.array(theta_obsvs, dtype=float).reshape(len(result), len(dicts))
     result = np.hstack((result, theta_obsvs))
 
     return result

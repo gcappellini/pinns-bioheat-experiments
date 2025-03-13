@@ -29,7 +29,7 @@ os.makedirs(models_dir, exist_ok=True)
 
 def plot_generic(x, y, title, xlabel, ylabel, legend_labels=None, log_scale=False, log_xscale=False, 
                  size=(6, 5), filename=None, colors=None, linestyles=None, markers=None,
-                 linewidths=None, markersizes=None, alphas=None, markevery=50):
+                 linewidths=None, markersizes=None, alphas=None, markevery=50, legend_fontsize=None):
     """
     Create a generic 2D plot with support for multiple lines, colors, and linestyles.
 
@@ -73,7 +73,7 @@ def plot_generic(x, y, title, xlabel, ylabel, legend_labels=None, log_scale=Fals
 
     # Add legend if labels are provided
     if legend_labels:
-        ax.legend(loc='best', fontsize=legend_fs)
+        ax.legend(loc='best', fontsize=legend_fs if legend_fontsize is None else legend_fontsize)
 
     # Set y-axis to log scale if specified
     if log_scale:
@@ -489,18 +489,19 @@ def plot_timeseries_with_predictions(system_meas: dict, mm_obs: dict, conf, out_
     tf = conf.properties.tf
 
     y_data = []
+    entry_lab = {'y2':'y_2', 'gt':'\mathrm{gt}', 'y1':'y_1'}
     for entry in x_points.keys():
         closest_indices_pred = np.where(np.abs(mm_obs["grid"][:, 0] - x_points[entry]) == np.min(np.abs(mm_obs["grid"][:, 0] - x_points[entry])))
         dict_pred = {
             "tau": np.unique(system_meas["grid"][:, 1])*tf / 60,
             "theta": mm_obs["theta"][closest_indices_pred],
-            "label": f"{entry} (Matlab)" if gt else f"{entry} (Pred)"
+            "label": f"{entry_lab[entry]} (Matlab)" if gt else fr"$\hat{{{entry_lab[entry]}}}$"
         }
         closest_indices_meas = np.where(np.abs(system_meas["grid"][:, 0] - x_points[entry]) == np.min(np.abs(system_meas["grid"][:, 0] - x_points[entry])))
         dict_meas = {
             "tau": np.unique(system_meas["grid"][:, 1])*tf / 60,
             "theta": system_meas["theta"][closest_indices_meas],
-            "label": f"{entry} (Meas)"
+            "label": fr"${entry_lab[entry]}$"
         }
         y_data.append(dict_meas)
         y_data.append(dict_pred)
@@ -549,6 +550,7 @@ def plot_timeseries_with_predictions(system_meas: dict, mm_obs: dict, conf, out_
     #     legend_labels = ['y1 (Meas)', 'gt2 (Meas)', 'y2 (Meas)', 
     #                     'y1 (Pred)', 'gt2 (Pred)', 'y2 (Pred)']
     # Call the generic plotting function
+    legend_fs_incr = legend_fs + 4
     plot_generic(
         x=times,        # Time data
         y=y_data_plot,       # All y data (ground truth + predictions)
@@ -559,7 +561,8 @@ def plot_timeseries_with_predictions(system_meas: dict, mm_obs: dict, conf, out_
         colors=colors,
         linestyles=linestyles,
         size=(12, 6),
-        filename=f"{out_dir}/timeseries_vs_pinns_{label}_matlab.png" if gt else f"{out_dir}/timeseries_vs_pinns_{label}.png"
+        filename=f"{out_dir}/timeseries_vs_pinns_{label}_matlab.png" if gt else f"{out_dir}/timeseries_vs_pinns_{label}.png",
+        legend_fontsize = legend_fs_incr
     )
 
 
@@ -815,7 +818,7 @@ def all_plots(multiple_series, out_dir, label, l2_ref_dict, l2_plot, ref_dict, v
     plot_multiple_series(multiple_series, out_dir, label)
     plot_l2(l2_ref_dict, l2_plot, out_dir, label)
     # plot_validation_3d(ref_dict["grid"], ref_dict["theta"], validation_dict["theta"], out_dir, label)
-    plot_obs_err(multiple_series[1:], out_dir, label)
+    # plot_obs_err(multiple_series[1:], out_dir, label)
     plot_timeseries_with_predictions(timeseries_gt, timeseries_pred, config, out_dir) 
     if weights_list is not None:
         plot_weights([*weights_list], out_dir, label)
