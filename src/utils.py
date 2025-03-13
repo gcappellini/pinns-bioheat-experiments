@@ -594,8 +594,9 @@ def scale_t(t):
     return round(k, n_digits)
 
 
-def rescale_t(theta):
-    conf = compose(config_name='config_run')
+def rescale_t(theta, conf=None):
+    if conf is None:
+        conf = compose(config_name='config_run')
 
     Troom = conf.temps.Troom
     Tmax = conf.temps.Tmax
@@ -838,7 +839,7 @@ def compute_obs_err(system, observers_data=None, mm_obs=None):
 
     g = extract_matching(matching)
 
-    for x_ref in [round(el, 2) for el in xref_dict.values()]:
+    for x_ref in xref_dict.values():
         rows_xref = g[g[:, 0] == x_ref]
         sys_xref = rows_xref[:, 2]
 
@@ -851,6 +852,9 @@ def compute_obs_err(system, observers_data=None, mm_obs=None):
         if mm_obs:
             mm_obs_err = np.abs(rows_xref[:, -1] - sys_xref)
             mm_obs[f'obs_err_{x_ref}'] = mm_obs_err
+    
+            obs_dir = f"{tests_dir}/errs_meas"
+            np.savez(f"{obs_dir}/meas_cool_2_8_{round(x_ref, 2)}.npz", mm_obs_err)
 
     return observers_data, mm_obs
 

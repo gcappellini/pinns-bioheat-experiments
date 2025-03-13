@@ -163,11 +163,9 @@ def run_measurement(config, out_dir):
     # _, mm_obs = uu.compute_obs_err(system_meas, obs_dict, mm_obs)
     # _, mm_obs = uu.calculate_l2(system_meas, obs_dict, mm_obs)
 
-    config_meas.experiment.pred_fold = f"{tests_dir}/meas_cool_bone_tum_64obs/1"
+    config_meas.experiment.pred_fold = f"{tests_dir}/meas_cool_bone_tum/1_no_obs"
     observers, mm_obs = uu.load_observers_preds(system_meas, config_meas, label)
 
-    with open(os.path.join(out_dir, "mm_obs_l2_err.txt"), "w") as f:
-        f.write(str(mm_obs["L2_err"]))
 
     # uu.compute_metrics([system_meas, mm_obs], {}, config, out_dir)
     if config.plot.show:

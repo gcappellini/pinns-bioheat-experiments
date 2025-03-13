@@ -815,7 +815,7 @@ def all_plots(multiple_series, out_dir, label, l2_ref_dict, l2_plot, ref_dict, v
     plot_multiple_series(multiple_series, out_dir, label)
     plot_l2(l2_ref_dict, l2_plot, out_dir, label)
     # plot_validation_3d(ref_dict["grid"], ref_dict["theta"], validation_dict["theta"], out_dir, label)
-    # plot_obs_err(multiple_series[1:], out_dir, label)
+    plot_obs_err(multiple_series[1:], out_dir, label)
     plot_timeseries_with_predictions(timeseries_gt, timeseries_pred, config, out_dir) 
     if weights_list is not None:
         plot_weights([*weights_list], out_dir, label)
