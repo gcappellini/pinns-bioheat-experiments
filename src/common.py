@@ -261,14 +261,16 @@ def calculate_pars(cfg):
 def calculate_conv_pars(cfg):
     pdecoeff = cfg.pdecoeff
     pars = cfg.parameters
+    props = cfg.properties
+    conv = cfg.convergence
     pwic: float = np.where(pdecoeff.oig>=(np.pi**2)/4, (np.pi**2)/4, pdecoeff.oig)
 
-    drexact: float = (pwic/pdecoeff.a1+pars.wbsys*pdecoeff.a2/pdecoeff.a1)
-    c0: float = (np.abs(pars.wbobs*pdecoeff.a2/pdecoeff.a1 - pars.wbsys*pdecoeff.a2/pdecoeff.a1)**2)/(pwic/pdecoeff.a1 + pars.wbobs*pdecoeff.a2/pdecoeff.a1)**2
-    drdiff: float = (pwic/pdecoeff.a1+pars.wbobs*pdecoeff.a2/pdecoeff.a1)/2
-    pars.drdiff = float(round(drdiff, 7))
-    pars.drexact = float(round(drexact, 7))
-    pars.c0 = float(round(c0, 7))
+    drexact: float = 2*(pwic/pdecoeff.a1+pars.wbsys*props.tf)
+    c0: float = (np.abs(props.tf*(pars.wbobs - pars.wbsys)**2)/(pwic+ pars.wbobs*props.tf)**2)
+    drdiff: float = (pwic/pdecoeff.a1+pars.wbobs*props.tf)/2
+    conv.drdiff = float(round(drdiff, 7))
+    conv.drexact = float(round(drexact, 7))
+    conv.c0 = float(round(c0, 7))
     return cfg
 
 
@@ -281,4 +283,19 @@ def calc_coeff(cfg):
     cfg = calculate_conv_pars(cfg)
     return cfg
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
+    cfg = OmegaConf.load(f"{conf_dir}/config_run.yaml")
+    perfs = [6.3e-5, 1.207e-3, 1.651e-3, 3.303e-3]
+    for pp in perfs:
+        cfg.parameters.wbsys = 3.303e-3
+        cfg.parameters.wbobs = pp
+        # print("a1:", cfg.pdecoeff.a1)
+        # print("oig:", cfg.pdecoeff.oig)
+        # print("tf:", cfg.properties.tf)
+        print("wbsys:", cfg.parameters.wbsys)
+        print("wbobs:", cfg.parameters.wbobs)
+        cfg = calculate_conv_pars(cfg)
+        # print("drexact:", cfg.convergence.drexact)
+        # print("drdiff:", cfg.convergence.drdiff)
+        print("bounding error:", 4*cfg.convergence.c0)
+        print("-------")
