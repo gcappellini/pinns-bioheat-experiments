@@ -13,7 +13,7 @@ import pandas as pd
 import plots as pp
 import common as co
 from omegaconf import OmegaConf
-import matlab.engine
+
 from hydra import compose
 import time
 
@@ -1118,6 +1118,7 @@ def run_matlab_ground_truth():
     """
     setup_log("Running MATLAB ground truth calculation...")
     print("Running MATLAB ground truth calculation...")
+    import matlab.engine
     eng = matlab.engine.start_matlab()
     eng.cd(f"{src_dir}/matlab", nargout=0)
     eng.BioHeat(nargout=0)
