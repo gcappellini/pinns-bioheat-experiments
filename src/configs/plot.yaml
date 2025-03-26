@@ -104,9 +104,9 @@ entities:
   system_meas:
     color: red
     label: Measurement
-    linestyle: --
+    linestyle: ''
     linewidth: 2.0
-    alpha: 0.3
+    alpha: 1.0
     marker: '*'
   theory:
     color: purple

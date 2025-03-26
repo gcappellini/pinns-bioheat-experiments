@@ -24,6 +24,7 @@ axis_fs = 20
 axis3d_fs = 12
 tick_fs = 18
 legend_fs = 12
+mrksz = 20
 
 models_dir = os.path.join(git_dir, "models")
 os.makedirs(models_dir, exist_ok=True)
@@ -62,7 +63,7 @@ def plot_generic(x, y, title, xlabel, ylabel, legend_labels=None, log_scale=Fals
         linestyle = linestyles[i] if isinstance(linestyles, list) and linestyles else (linestyles if linestyles else '-')  # Default to solid line
         linewidth = linewidths[i] if isinstance(linewidths, list) and linewidths else (linewidths if linewidths else 2.0)
         marker = markers[i] if isinstance(markers, list) and markers else (markers if markers else None)
-        markersize = markersizes[i] if markersizes else 12
+        markersize = markersizes[i] if markersizes else mrksz
         alpha=alphas[i] if isinstance(alphas, list) and alphas else (alphas if alphas else 1)
 
         # ax.plot(xi, yi, label=label, color=color, linestyle=linestyle, marker=marker, linewidth=linewidth, 
@@ -626,7 +627,7 @@ def plot_multiple_series(series_data, prj_figs, lal):
             
             # Plot the series on the current subplot
             axes[i].plot(x_vals_plot, values_plot, label=plot_params[label]["label"],
-                         color=color, linestyle=linestyle, linewidth=linewidth, alpha=alpha, marker=marker)
+                         color=color, linestyle=linestyle, linewidth=linewidth, alpha=alpha, marker=marker, markersize=mrksz)
         
         # Set time, labels, and title for each subplot
         time = uu.rescale_time(tx) if rescale else tx
@@ -829,8 +830,8 @@ def plot_res(config, system_gt=None, system=None, system_meas=None, observers_gt
 def all_plots(multiple_series, out_dir, label, l2_ref_dict, l2_plot, ref_dict, validation_dict, config, timeseries_gt, timeseries_pred, weights_list=None):
     plot_multiple_series(multiple_series, out_dir, label)
     plot_l2(l2_ref_dict, l2_plot, out_dir, label)
-    plot_validation_3d(ref_dict["grid"], ref_dict["theta"], validation_dict["theta"], out_dir, label)
-    plot_obs_err(multiple_series[1:], out_dir, label)
+    # plot_validation_3d(ref_dict["grid"], ref_dict["theta"], validation_dict["theta"], out_dir, label)
+    # plot_obs_err(multiple_series[1:], out_dir, label)
     plot_timeseries_with_predictions(timeseries_gt, timeseries_pred, config, out_dir) 
     if weights_list is not None:
         plot_weights([*weights_list], out_dir, label)
