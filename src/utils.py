@@ -840,7 +840,8 @@ def compute_obs_err(system, observers_data=None, mm_obs=None):
     g = extract_matching(matching)
 
     for x_ref in xref_dict.values():
-        rows_xref = g[g[:, 0] == x_ref]
+        index = np.abs(g[:, 0] - x_ref).argmin()
+        rows_xref = g[g[:, 0] == g[:, 0][index]]   
         sys_xref = rows_xref[:, 2]
 
         if observers_data:

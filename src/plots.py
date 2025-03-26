@@ -21,6 +21,7 @@ git_dir = os.path.dirname(src_dir)
 
 title_fs = 26
 axis_fs = 20
+axis3d_fs = 12
 tick_fs = 18
 legend_fs = 12
 
@@ -151,9 +152,9 @@ def configure_subplot(ax, XS, surface, xlabel, ylabel, zlabel):
     ax.tick_params(axis='both', labelsize=7, pad=2)
     ax.dist = 10
     ax.view_init(20, -120)
-    ax.set_xlabel(xlabel, fontsize=axis_fs, labelpad=-1)
-    ax.set_ylabel(ylabel, fontsize=axis_fs, labelpad=-1)
-    ax.set_zlabel(zlabel, fontsize=axis_fs, labelpad=-4)
+    ax.set_xlabel(xlabel, fontsize=axis3d_fs, labelpad=-1)
+    ax.set_ylabel(ylabel, fontsize=axis3d_fs, labelpad=-1)
+    ax.set_zlabel(zlabel, fontsize=axis3d_fs, labelpad=-4)
 
 
 # Main plot functions
@@ -298,7 +299,7 @@ def plot_obs_err(series_data: list, run_figs: str, lal: str):
 
         times_plot = np.array(uu.rescale_time(t_vals)) if rescale else np.array(t_vals)  
         _, xlabel, _ = uu.get_scaled_labels(rescale) 
-
+        mus.reshape(times_plot.shape)
         # Call the generic plotting function
         plot_generic(
             x=times_plot,                       # Time data for the x-axis
@@ -833,8 +834,8 @@ def plot_res(config, system_gt=None, system=None, system_meas=None, observers_gt
 def all_plots(multiple_series, out_dir, label, l2_ref_dict, l2_plot, ref_dict, validation_dict, config, timeseries_gt, timeseries_pred, weights_list=None):
     plot_multiple_series(multiple_series, out_dir, label)
     plot_l2(l2_ref_dict, l2_plot, out_dir, label)
-    # plot_validation_3d(ref_dict["grid"], ref_dict["theta"], validation_dict["theta"], out_dir, label)
-    # plot_obs_err(multiple_series[1:], out_dir, label)
+    plot_validation_3d(ref_dict["grid"], ref_dict["theta"], validation_dict["theta"], out_dir, label)
+    plot_obs_err(multiple_series[1:], out_dir, label)
     plot_timeseries_with_predictions(timeseries_gt, timeseries_pred, config, out_dir) 
     if weights_list is not None:
         plot_weights([*weights_list], out_dir, label)
