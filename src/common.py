@@ -237,6 +237,7 @@ def calculate_bicoeff(cfg):
 
 def calculate_pars(cfg):
     pars = cfg.parameters
+    conv = cfg.convergence
     wbmin: float = pars.wbmin
     wbmax: float = pars.wbmax
     obsindex: int = pars.obsindex
@@ -254,7 +255,7 @@ def calculate_pars(cfg):
     if nobs ==1:
         cfg = calculate_conv_pars(cfg)
     else:
-        pars.drdiff, pars.drexact, pars.c0 = None, None, None
+        conv.drdiff, conv.drexact, conv.c0 = None, None, None
     return cfg
 
 
