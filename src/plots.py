@@ -30,7 +30,7 @@ os.makedirs(models_dir, exist_ok=True)
 
 def plot_generic(x, y, title, xlabel, ylabel, legend_labels=None, log_scale=False, log_xscale=False, 
                  size=(6, 5), filename=None, colors=None, linestyles=None, markers=None,
-                 linewidths=None, markersizes=None, alphas=None, markevery=50, legend_fontsize=None, sma=None):
+                 linewidths=None, markersizes=None, alphas=None, markevery=50, legend_fontsize=None, sma=False):
     """
     Create a generic 2D plot with support for multiple lines, colors, and linestyles.
 
@@ -70,15 +70,10 @@ def plot_generic(x, y, title, xlabel, ylabel, legend_labels=None, log_scale=Fals
         if sma:
             window_size = 15
             y_smooth = np.convolve(yi, np.ones(window_size)/window_size, mode='valid')
-            # alpha = 0.3  # Smoothing factor (adjustable)
-            # y_smooth = np.zeros_like(yi)
-            # y_smooth[0] = yi[0]  # Initialize first value
-
-            # for i in range(1, len(yi)):
-            #     y_smooth[i] = alpha * yi[i] + (1 - alpha) * y_smooth[i - 1]  # EMA formula
             ax.plot(xi[:len(y_smooth)], y_smooth, label=label, color=color, linestyle=linestyle, marker=marker, linewidth=linewidth, 
                 markersize=markersize, alpha=alpha, markevery=markevery)
             ax.scatter(xi, yi, color=color, alpha=0.15, s=16.2)
+
         else:
             ax.plot(xi, yi, label=label, color=color, linestyle=linestyle, marker=marker, linewidth=linewidth, 
                     markersize=markersize, alpha=alpha, markevery=markevery)

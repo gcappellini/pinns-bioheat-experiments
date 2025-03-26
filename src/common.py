@@ -268,7 +268,7 @@ def calculate_conv_pars(cfg):
 
     drexact: float = 2*(pwic/pdecoeff.a1+pars.wbsys*props.tf)
     c0: float = (np.abs(props.tf*(pars.wbobs - pars.wbsys)**2)/(pwic+ pars.wbobs*props.tf)**2)
-    drdiff: float = (pwic/pdecoeff.a1+pars.wbobs*props.tf)/2
+    drdiff: float = pwic/pdecoeff.a1+pars.wbobs*props.tf
     conv.drdiff = float(round(drdiff, 7))
     conv.drexact = float(round(drexact, 7))
     conv.c0 = float(round(c0, 7))
