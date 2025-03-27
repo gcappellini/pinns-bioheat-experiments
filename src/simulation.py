@@ -163,7 +163,7 @@ def run_measurement(config, out_dir):
     # _, mm_obs = uu.compute_obs_err(system_meas, obs_dict, mm_obs)
     # _, mm_obs = uu.calculate_l2(system_meas, obs_dict, mm_obs)
 
-    config_meas.experiment.pred_fold = f"{tests_dir}//meas_cool_bone_tum_64obs/1"
+    config_meas.experiment.pred_fold = f"{tests_dir}//meas_cool_bone_tum/0"
     observers, mm_obs = uu.load_observers_preds(system_meas, config_meas, label)
 
 

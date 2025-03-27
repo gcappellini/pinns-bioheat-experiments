@@ -815,7 +815,7 @@ def plot_res(config, system_gt=None, system=None, system_meas=None, observers_gt
         timeseries_pred = mm_obs
         ref_dict = mm_obs_gt
 # blocco show_obs
-    if pars.nobs>0 and plot.show_obs:
+    if pars.nobs>0 and pars.nobs<9 and plot.show_obs:
         multiple_series.extend(observers)
         l2_plot.extend(observers)
         if not run.startswith("meas"):

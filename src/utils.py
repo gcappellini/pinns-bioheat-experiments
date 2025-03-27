@@ -956,7 +956,7 @@ def load_observers_preds(ground_truth, conf, label):
     pars = conf.parameters
     nobs = pars.nobs
     output_dir = conf.experiment.pred_fold
-    weights_path = f"{output_dir}/{label}"
+
 
     mm_obs=None
     obs_dict = []
@@ -973,7 +973,7 @@ def load_observers_preds(ground_truth, conf, label):
         
         
         obs_dict, _ = compute_obs_err(ground_truth, obs_dict, mm_obs)
-    
+        weights_path = f"{output_dir}/{label}"
         obs_dict = load_weights(obs_dict, conf, weights_path)
 
     mm_obs_file_path = os.path.join(output_dir, f"multi_observer_{label}.txt")
