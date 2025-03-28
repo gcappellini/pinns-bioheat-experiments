@@ -82,6 +82,8 @@ def set_run(prj_figs, cfg, run):
         elif run == "simulation_system":
             pdecoeff.wb = pars.wbsys
             hp.nins = 2
+        elif pars.nobs == 1:
+            pdecoeff.wb = pars.wbobs
 
 
     elif run.startswith("meas_cool"):

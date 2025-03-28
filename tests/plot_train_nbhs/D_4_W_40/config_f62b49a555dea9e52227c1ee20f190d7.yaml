@@ -30,7 +30,7 @@ hp:
   iters_lbfgs: 15000
   lr: 0.001
   depth: 4
-  width: 50
+  width: 40
   nres: 500
   nb: 200
   ntest: 1000
@@ -38,30 +38,30 @@ hp:
   resampler_period: 100
   wres: 1
   wbc0: 1
-  nins: 4
+  nins: 2
   seed: 500
   nanc: 0
 pdecoeff:
   a1: 18.992037
   a2: 34185.6666667
   a3: 0.0
-  a4: 1.9415887
+  a4: 3.5702945
   a5: 1.1666667
-  b1: -2711.46326
-  b2: 2710.1258
-  b3: 0.78889
-  b4: 0.67619
-  c1: -1.33746
-  c2: 0.78889
-  c3: 0.67619
+  b1: -1.27769
+  b2: -0.51754
+  b3: 0.96667
+  b4: 0.82857
+  c1: null
+  c2: null
+  c3: null
   oig: 2.46
-  y10: 0.12762
-  y20: 0.67619
+  y10: 0.0
+  y20: 0.82857
   y30: 0.0
   thetagt0: 0.95238
   thetagt10: 0.95238
   incrfact: 1.0
-  wb: 0.000255
+  wb: 0.0005
 parameters:
   ag: 1
   ups: 100.0
@@ -78,7 +78,7 @@ parameters:
   wbsys: 0.0005
   wbobs: 0.000255
   obsindex: 3
-  nobs: 1
+  nobs: 0
   xgt: 0.01
   xw: 0.025
   xgt1: 0.04
@@ -86,9 +86,9 @@ parameters:
   Xw: 0.35714
   Xgt1: 0.57143
 convergence:
-  drdiff: None
-  drexact: None
-  c0: None
+  drdiff: 0.588528
+  drexact: 2.0590559
+  c0: 1.27e-05
 plot:
   show: true
   show_obs: true
@@ -105,6 +105,6 @@ experiment:
   pred_fold: None
 run:
   dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-03-28/15-23-04
-testloss: 0.0
-runtime: 0.0
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/plot_train/D_4_W_40
+testloss: 0.000385
+runtime: 28.168293952941895
