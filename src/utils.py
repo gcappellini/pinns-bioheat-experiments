@@ -655,8 +655,8 @@ def get_tc_positions():
     Xy2 = 0.0
     Xy1 = 1.0
 
-    return {"y2": Xy2, "gt": pars.Xgt, "y1": Xy1}
-    # return {"y2": Xy2, "gt": pars.Xgt, "gt1": pars.Xgt1,"y1": Xy1}
+    # return {"y2": Xy2, "gt": pars.Xgt, "y1": Xy1}
+    return {"y2": Xy2, "gt": pars.Xgt, "gt1": pars.Xgt1,"y1": Xy1}
 
 def get_loss_names():
     # return ["residual", "bc0", "bc1", "ic", "test", "train"]

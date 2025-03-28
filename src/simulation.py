@@ -162,8 +162,15 @@ def run_measurement(config, out_dir):
     # obs_dict={}
     # _, mm_obs = uu.compute_obs_err(system_meas, obs_dict, mm_obs)
     # _, mm_obs = uu.calculate_l2(system_meas, obs_dict, mm_obs)
+    nobs = config.parameters.nobs
+    exp_name = 0 if label.endswith("1") else 1
+    if nobs == 8:
+        config_meas.plot.show_obs = True
+    else:
+        config_meas.plot.show_obs = False
 
-    config_meas.experiment.pred_fold = f"{tests_dir}//meas_cool_bone_tum/0"
+
+    config_meas.experiment.pred_fold = f"{tests_dir}//meas_cool_bone_tum_{nobs}obs/{exp_name}"
     observers, mm_obs = uu.load_observers_preds(system_meas, config_meas, label)
 
 

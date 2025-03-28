@@ -502,7 +502,7 @@ def plot_timeseries_with_predictions(system_meas: dict, mm_obs: dict, conf, out_
     tf = conf.properties.tf
 
     y_data = []
-    entry_lab = {'y2':'y_2', 'gt':'\mathrm{gt}', 'y1':'y_1'}
+    entry_lab = {'y2':'y_2', 'gt':'\mathrm{gt}', 'gt1':'\mathrm{gt}_1', 'y1':'y_1'}
     for entry in x_points.keys():
         closest_indices_pred = np.where(np.abs(mm_obs["grid"][:, 0] - x_points[entry]) == np.min(np.abs(mm_obs["grid"][:, 0] - x_points[entry])))
         dict_pred = {
