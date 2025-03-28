@@ -30,14 +30,15 @@ tests_dir = os.path.join(git_dir, "tests")
 conf_dir = os.path.join(src_dir, "configs")
 os.makedirs(tests_dir, exist_ok=True)
 
-csv_folder = f"{tests_dir}/wandb_results"
-output_folder = f"{tests_dir}/plot_train_nbhs"
+pinns="nbho"
+
+output_folder = f"{tests_dir}/plot_train_{pinns}"
 os.makedirs(output_folder, exist_ok=True)
 
 # conf
 initialize('./configs', version_base=None) 
 config = compose(config_name='config_run')
-label = "simulation_mm_obs"
+label = "simulation_mm_obs" if pinns == "nbho" else "simulation_system"
 hps, exp = config.hp, config.experiment
 
 # widths = [10, 20, 40, 80, 160] 
@@ -80,36 +81,41 @@ hps, exp = config.hp, config.experiment
 a = np.load(os.path.join(output_folder, "res_data_W.npz"))
 
 
-# vals = [ v[1] for v in a.values()]
-# epochs = [ v[0] for v in a.values()]
-
-# legend_labels = list(a.keys())
-# colors = ['blue'] * len(legend_labels)
-# markers = ['v', '2', 'x', '^', 'o', 'p', '*', 'h', 'D', '+'][:len(legend_labels)]
-# markersizes = [5] * len(legend_labels)
-# linewidths = [0.2] * len(legend_labels)
-
-
-# pp.plot_generic(
-#     x=epochs,
-#     y=vals,
-#     title="NBHO - Varying Width",
-#     xlabel="Epoch",
-#     ylabel="Training Error",
-#     legend_labels=legend_labels,
-#     log_scale=True,  # We want a log scale on the y-axis
-#     filename=f"{output_folder}/nbho_width.png",
-#     size=(6, 5),
-#     colors=colors,
-#     markers=markers,
-#     markersizes=markersizes,
-#     linewidths=linewidths,)
-
 vals = [ v[1] for v in a.values()]
 epochs = [ v[0] for v in a.values()]
 
 legend_labels = list(a.keys())
-colors = ['blue'] * len(legend_labels) if output_folder.endswith("nbho") else ['black'] * len(legend_labels)
+legend_labels = [f"4 - {k.split('_')[-1][2:]}W" for k in legend_labels]
+colors = ['blue'] * len(legend_labels) if pinns=="nbho" else ['black'] * len(legend_labels)
+markers = ['s', 'd', 'o', 'h', '*', 'p', 'x', '^', 'v', '+'][:len(legend_labels)]
+markersizes = [5] * len(legend_labels)
+linewidths = [0.2] * len(legend_labels)
+
+pinns_title = "NBHO" if pinns == "nbho" else "NBHS"
+
+pp.plot_generic(
+    x=epochs,
+    y=vals,
+    title=f"{pinns_title} - Varying Width",
+    xlabel="Epoch",
+    ylabel="Training Error",
+    legend_labels=legend_labels,
+    log_scale=True,  # We want a log scale on the y-axis
+    filename=f"{output_folder}/{pinns}_width.png",
+    size=(6, 5),
+    colors=colors,
+    markers=markers,
+    markersizes=markersizes,
+    linewidths=linewidths,)
+
+b = np.load(os.path.join(output_folder, "res_data_D.npz"))
+
+vals = [ v[1] for v in b.values()]
+epochs = [ v[0] for v in b.values()]
+
+legend_labels = list(b.keys())
+legend_labels = [f"{k.split('_')[1][1:]}D - 50" for k in legend_labels]
+colors = ['blue'] * len(legend_labels) if pinns=="nbho" else ['black'] * len(legend_labels)
 markers = ['v', '2', 'x', '^', 'o', 'p', '*', 'h', 'D', '+'][:len(legend_labels)]
 markersizes = [5] * len(legend_labels)
 linewidths = [0.2] * len(legend_labels)
@@ -119,12 +125,12 @@ linewidths = [0.2] * len(legend_labels)
 pp.plot_generic(
     x=epochs,
     y=vals,
-    title="NBHS - Varying Width",
+    title=f"{pinns_title} - Varying Depth",
     xlabel="Epoch",
     ylabel="Training Error",
     legend_labels=legend_labels,
     log_scale=True,  # We want a log scale on the y-axis
-    filename=f"{output_folder}/nbhs_width.png",
+    filename=f"{output_folder}/{pinns}_depth.png",
     size=(6, 5),
     colors=colors,
     markers=markers,
