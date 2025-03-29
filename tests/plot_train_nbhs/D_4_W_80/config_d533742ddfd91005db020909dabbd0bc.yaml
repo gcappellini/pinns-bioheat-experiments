@@ -105,6 +105,6 @@ experiment:
   pred_fold: None
 run:
   dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/plot_train/D_4_W_80
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/plot_train_nbhs/D_4_W_80
 testloss: 0.000307
-runtime: 36.22745871543884
+runtime: 53.131136894226074

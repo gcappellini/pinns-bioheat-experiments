@@ -6,7 +6,6 @@ properties:
   rhob: 1000.0
   c: 4186.0
   cb: 4186.0
-  wb: 0.0033
   h: 10.0
   cc: 27.736982
   beta: 0.9
@@ -86,23 +85,26 @@ parameters:
   Xgt: 0.14286
   Xw: 0.35714
   Xgt1: 0.57143
-  drdiff: 0.294264
-  drexact: 1.029528
-  c0: 0.5614912
+convergence:
+  drdiff: 0.588528
+  drexact: 2.0590559
+  c0: 1.27e-05
 plot:
   show: true
-  show_obs: false
-  plot_gt: false
-  show_gt: true
+  show_obs: true
+  show_gt: false
   show_sys: true
   rescale: true
   display_every: 200
 experiment:
   inverse: false
-  run: simulation_system
+  run: simulation
   wandb: false
   wandb_name: opt_ai_direct
+  gt_path: None
+  pred_fold: None
 run:
   dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-03-10/16-30-46
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/plot_train_nbhs/D_4_W_50
 testloss: 0.127109
+runtime: 46.505412101745605

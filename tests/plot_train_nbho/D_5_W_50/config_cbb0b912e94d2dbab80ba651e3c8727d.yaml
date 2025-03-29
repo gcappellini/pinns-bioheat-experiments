@@ -106,5 +106,5 @@ experiment:
 run:
   dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
 output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/plot_train_nbho/D_5_W_50
-testloss: 0.0
-runtime: 0.0
+testloss: 0.000163
+runtime: 57.01339077949524

@@ -41,51 +41,50 @@ config = compose(config_name='config_run')
 label = "simulation_mm_obs" if pinns == "nbho" else "simulation_system"
 hps, exp = config.hp, config.experiment
 
-# widths = [10, 20, 40, 80, 160] 
-# depths = [1, 2, 3, 4, 5, 6]
-# res = {}
+widths = [10, 20, 40, 80, 160] 
+depths = [1, 2, 3, 4, 5, 6]
+res = {}
 
-# for depth in depths:
-#     hps.depth = depth
-#     hps.width = 50
-#     sub_output_folder = f"{output_folder}/D_{hps.depth}_W_{hps.width}"
-#     os.makedirs(sub_output_folder, exist_ok=True)
-#     config.output_dir = sub_output_folder
-#     output_dir_system, config = co.set_run(sub_output_folder, config, label)
+for depth in depths:
+    hps.depth = depth
+    hps.width = 50
+    sub_output_folder = f"{output_folder}/D_{hps.depth}_W_{hps.width}"
+    os.makedirs(sub_output_folder, exist_ok=True)
+    config.output_dir = sub_output_folder
+    output_dir_system, config = co.set_run(sub_output_folder, config, label)
 
-#     _, losshistory = uu.train_model(config)
-#     res[f"D_{depth}_W_{hps.width}"] = np.array([losshistory["steps"], losshistory["train"].sum(axis=1)])
+    _, losshistory = uu.train_model(config)
+    steps = losshistory["steps"]
+    train_loss = losshistory["train"].sum(axis=1)
+    mask = steps <= 7000
+    res[f"{depth}D - 50"] = np.array([losshistory["steps"], losshistory["train"].sum(axis=1)])
 
-# np.savez(os.path.join(output_folder, "res_data_D.npz"), **res)
+np.savez(os.path.join(output_folder, f"res_{pinns}_D.npz"), **res)
 
-# res = {}
+res = {}
 
-# for width in widths:
-#     hps.depth = 4
-#     hps.width = width
-#     sub_output_folder = f"{output_folder}/D_{hps.depth}_W_{hps.width}"
-#     os.makedirs(sub_output_folder, exist_ok=True)
-#     config.output_dir = sub_output_folder
-#     output_dir_system, config = co.set_run(sub_output_folder, config, label)
+for width in widths:
+    hps.depth = 4
+    hps.width = width
+    sub_output_folder = f"{output_folder}/D_{hps.depth}_W_{hps.width}"
+    os.makedirs(sub_output_folder, exist_ok=True)
+    config.output_dir = sub_output_folder
+    output_dir_system, config = co.set_run(sub_output_folder, config, label)
 
-#     _, losshistory = uu.train_model(config)
-#     res[f"D_{hps.depth}_W_{hps.width}"] = np.array([losshistory["steps"], losshistory["train"].sum(axis=1)])
+    _, losshistory = uu.train_model(config)
+    steps = losshistory["steps"]
+    train_loss = losshistory["train"].sum(axis=1)
+    mask = steps <= 7000
+    res[f"4 - {hps.width}W"] = np.array([steps[mask], train_loss[mask]])
 
-# np.savez(os.path.join(output_folder, "res_data_W.npz"), **res)
+np.savez(os.path.join(output_folder, f"res_{pinns}_W.npz"), **res)
 
-
-# a = np.load(os.path.join(output_folder, "res_data_W.npz"))
-# filtered_data = {k: v for k, v in a.items() if k.startswith("D_4")}
-# np.savez(os.path.join(output_folder, "res_data_W.npz"), **filtered_data)
-
-a = np.load(os.path.join(output_folder, "res_data_W.npz"))
-
+a = np.load(os.path.join(output_folder, f"res_{pinns}_W.npz"))
 
 vals = [ v[1] for v in a.values()]
 epochs = [ v[0] for v in a.values()]
 
-legend_labels = list(a.keys())
-legend_labels = [f"4 - {k.split('_')[-1][2:]}W" for k in legend_labels]
+legend_labels = [f"$\\mathrm{{{key}}}$" for key in a.keys()]
 colors = ['blue'] * len(legend_labels) if pinns=="nbho" else ['black'] * len(legend_labels)
 markers = ['s', 'd', 'o', 'h', '*', 'p', 'x', '^', 'v', '+'][:len(legend_labels)]
 markersizes = [5] * len(legend_labels)
@@ -108,18 +107,16 @@ pp.plot_generic(
     markersizes=markersizes,
     linewidths=linewidths,)
 
-b = np.load(os.path.join(output_folder, "res_data_D.npz"))
+b = np.load(os.path.join(output_folder, f"res_{pinns}_D.npz"))
 
 vals = [ v[1] for v in b.values()]
 epochs = [ v[0] for v in b.values()]
 
 legend_labels = list(b.keys())
-legend_labels = [f"{k.split('_')[1][1:]}D - 50" for k in legend_labels]
 colors = ['blue'] * len(legend_labels) if pinns=="nbho" else ['black'] * len(legend_labels)
 markers = ['v', '2', 'x', '^', 'o', 'p', '*', 'h', 'D', '+'][:len(legend_labels)]
 markersizes = [5] * len(legend_labels)
 linewidths = [0.2] * len(legend_labels)
-
 
 
 pp.plot_generic(

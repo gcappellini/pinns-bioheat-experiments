@@ -52,36 +52,20 @@ def set_run(prj_figs, cfg, run):
     hp = cfg.hp
     set_seed(cfg.hp.seed)
 
-    # if run.startswith("ground_truth"):   
-    #     simu_settings = getattr(experiments_cfg, "simulation")
-    #     cfg.output_dir = os.path.abspath(prj_figs)
-    #     # cfg.output_dir = os.path.abspath(os.path.join(prj_figs, run))
-    #     os.makedirs(cfg.output_dir, exist_ok=True)
-    #     temps.Ty10, temps.Ty20, temps.Ty30, temps.Tgt0 = simu_settings.Ty10, simu_settings.Ty20, simu_settings.Ty30, simu_settings.Tgt20
-    #     pars.lam, pars.upsilon = simu_settings.lam, simu_settings.upsilon
-    #     OmegaConf.save(cfg, f"{conf_dir}/config_run.yaml")
-    #     cfg_matlab = filter_config_for_matlab(cfg)
-    #     run_figs = cfg_matlab.output_dir
+    simu_settings = getattr(experiments_cfg, "simulation")
+    temps.Ty10, temps.Ty20, temps.Ty30 = simu_settings.Ty10, simu_settings.Ty20, simu_settings.Ty30
+    pars.ag, pars.ups = simu_settings.lam, simu_settings.upsilon
 
     if run == "simulation_system":
-        simu_settings = getattr(experiments_cfg, "simulation")
-        pars.nobs=0
+        pars.nobs = 0
         pdecoeff.wb = pars.wbsys
-        temps.Ty10, temps.Ty20, temps.Ty30 = simu_settings.Ty10, simu_settings.Ty20, simu_settings.Ty30
-        pars.ag, pars.ups = simu_settings.lam, simu_settings.upsilon
         hp.nins = 2
-
-
-    elif run.startswith("simulation"):
-        simu_settings = getattr(experiments_cfg, "simulation")
-        temps.Ty10, temps.Ty20, temps.Ty30, temps.Tgt0 = simu_settings.Ty10, simu_settings.Ty20, simu_settings.Ty30, simu_settings.Tgt20
-        pars.ag, pars.ups = simu_settings.lam, simu_settings.upsilon
-        if np.isin(run, ["simulation_mm_obs", "simulation_ground_truth"]):
+    elif run.startswith("simulation") and run != "simulation_system":
+        hp.nins = 4
+        temps.Tgt0 = simu_settings.Tgt20
+        if run in ["simulation_mm_obs", "simulation_ground_truth"]:
             cfg.output_dir = os.path.abspath(prj_figs)
             os.makedirs(cfg.output_dir, exist_ok=True)
-        elif run == "simulation_system":
-            pdecoeff.wb = pars.wbsys
-            hp.nins = 2
         elif pars.nobs == 1:
             pdecoeff.wb = pars.wbobs
 

@@ -485,7 +485,13 @@ def train_model(conf):
     pp.plot_loss_components(losshistory, config_hash, fold=conf.output_dir)
     OmegaConf.save(conf, f"{conf.output_dir}/config_{config_hash}.yaml")
 
-    return model, losshistory
+    # Convert losshistory to a dictionary
+    losshistory_dict = {
+        "train": np.array(losshistory.loss_train),
+        "test": np.array(losshistory.loss_test),
+        "steps": np.array(losshistory.steps),
+    }
+    return model, losshistory_dict
 
 
 def gen_testdata(conf):
