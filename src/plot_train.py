@@ -30,7 +30,7 @@ tests_dir = os.path.join(git_dir, "tests")
 conf_dir = os.path.join(src_dir, "configs")
 os.makedirs(tests_dir, exist_ok=True)
 
-pinns="nbho"
+pinns="nbhs"
 
 output_folder = f"{tests_dir}/plot_train_{pinns}"
 os.makedirs(output_folder, exist_ok=True)
@@ -41,96 +41,96 @@ config = compose(config_name='config_run')
 label = "simulation_mm_obs" if pinns == "nbho" else "simulation_system"
 hps, exp = config.hp, config.experiment
 
-widths = [10, 20, 40, 80, 160] 
-depths = [1, 2, 3, 4, 5, 6]
-res = {}
+# widths = [10, 20, 40, 80, 160] 
+# depths = [1, 2, 3, 4, 5, 6]
+# res = {}
 
-for depth in depths:
-    hps.depth = depth
-    hps.width = 50
-    sub_output_folder = f"{output_folder}/D_{hps.depth}_W_{hps.width}"
-    os.makedirs(sub_output_folder, exist_ok=True)
-    config.output_dir = sub_output_folder
-    output_dir_system, config = co.set_run(sub_output_folder, config, label)
+# for depth in depths:
+#     hps.depth = depth
+#     hps.width = 50
+#     sub_output_folder = f"{output_folder}/D_{hps.depth}_W_{hps.width}"
+#     os.makedirs(sub_output_folder, exist_ok=True)
+#     config.output_dir = sub_output_folder
+#     output_dir_system, config = co.set_run(sub_output_folder, config, label)
 
-    _, losshistory = uu.train_model(config)
-    steps = losshistory["steps"]
-    train_loss = losshistory["train"].sum(axis=1)
-    mask = steps <= 7000
-    res[f"{depth}D - 50"] = np.array([losshistory["steps"], losshistory["train"].sum(axis=1)])
+#     _, losshistory = uu.train_model(config)
+#     steps = losshistory["steps"]
+#     train_loss = losshistory["train"].sum(axis=1)
+#     mask = steps <= 7000
+#     res[f"{depth}D - 50"] = np.array([losshistory["steps"], losshistory["train"].sum(axis=1)])
 
-np.savez(os.path.join(output_folder, f"res_{pinns}_D.npz"), **res)
+# np.savez(os.path.join(output_folder, f"res_{pinns}_D.npz"), **res)
 
-res = {}
+# res = {}
 
-for width in widths:
-    hps.depth = 4
-    hps.width = width
-    sub_output_folder = f"{output_folder}/D_{hps.depth}_W_{hps.width}"
-    os.makedirs(sub_output_folder, exist_ok=True)
-    config.output_dir = sub_output_folder
-    output_dir_system, config = co.set_run(sub_output_folder, config, label)
+# for width in widths:
+#     hps.depth = 4
+#     hps.width = width
+#     sub_output_folder = f"{output_folder}/D_{hps.depth}_W_{hps.width}"
+#     os.makedirs(sub_output_folder, exist_ok=True)
+#     config.output_dir = sub_output_folder
+#     output_dir_system, config = co.set_run(sub_output_folder, config, label)
 
-    _, losshistory = uu.train_model(config)
-    steps = losshistory["steps"]
-    train_loss = losshistory["train"].sum(axis=1)
-    mask = steps <= 7000
-    res[f"4 - {hps.width}W"] = np.array([steps[mask], train_loss[mask]])
+#     _, losshistory = uu.train_model(config)
+#     steps = losshistory["steps"]
+#     train_loss = losshistory["train"].sum(axis=1)
+#     mask = steps <= 7000
+#     res[f"4 - {hps.width}W"] = np.array([steps[mask], train_loss[mask]])
 
-np.savez(os.path.join(output_folder, f"res_{pinns}_W.npz"), **res)
+# np.savez(os.path.join(output_folder, f"res_{pinns}_W.npz"), **res)
 
-a = np.load(os.path.join(output_folder, f"res_{pinns}_W.npz"))
+# a = np.load(os.path.join(output_folder, f"res_{pinns}_W.npz"))
 
-vals = [ v[1] for v in a.values()]
-epochs = [ v[0] for v in a.values()]
+# vals = [ v[1] for v in a.values()]
+# epochs = [ v[0] for v in a.values()]
 
-legend_labels = [f"$\\mathrm{{{key}}}$" for key in a.keys()]
-colors = ['blue'] * len(legend_labels) if pinns=="nbho" else ['black'] * len(legend_labels)
-markers = ['s', 'd', 'o', 'h', '*', 'p', 'x', '^', 'v', '+'][:len(legend_labels)]
-markersizes = [5] * len(legend_labels)
-linewidths = [0.2] * len(legend_labels)
+# legend_labels = [f"$\\mathrm{{{key}}}$" for key in a.keys()]
+# colors = ['blue'] * len(legend_labels) if pinns=="nbho" else ['black'] * len(legend_labels)
+# markers = ['s', '1', 'o', '3', '*', 'h', 'x', '^', 'v', '+'][:len(legend_labels)]
+# markersizes = [5] * len(legend_labels)
+# linewidths = [0.2] * len(legend_labels)
 
-pinns_title = "NBHO" if pinns == "nbho" else "NBHS"
+# pinns_title = "NBHO" if pinns == "nbho" else "NBHS"
 
-pp.plot_generic(
-    x=epochs,
-    y=vals,
-    title=f"{pinns_title} - Varying Width",
-    xlabel="Epoch",
-    ylabel="Training Error",
-    legend_labels=legend_labels,
-    log_scale=True,  # We want a log scale on the y-axis
-    filename=f"{output_folder}/{pinns}_width.png",
-    size=(6, 5),
-    colors=colors,
-    markers=markers,
-    markersizes=markersizes,
-    linewidths=linewidths,)
+# pp.plot_generic(
+#     x=epochs,
+#     y=vals,
+#     title=f"{pinns_title} - Varying Width",
+#     xlabel="Epoch",
+#     ylabel="Training Error",
+#     legend_labels=legend_labels,
+#     log_scale=True,  # We want a log scale on the y-axis
+#     filename=f"{output_folder}/{pinns}_width.png",
+#     size=(6, 5),
+#     colors=colors,
+#     markers=markers,
+#     markersizes=markersizes,
+#     linewidths=linewidths,)
 
-b = np.load(os.path.join(output_folder, f"res_{pinns}_D.npz"))
+# b = np.load(os.path.join(output_folder, f"res_{pinns}_D.npz"))
 
-vals = [ v[1] for v in b.values()]
-epochs = [ v[0] for v in b.values()]
+# vals = [ v[1] for v in b.values()]
+# epochs = [ v[0] for v in b.values()]
 
-legend_labels = list(b.keys())
-colors = ['blue'] * len(legend_labels) if pinns=="nbho" else ['black'] * len(legend_labels)
-markers = ['v', '2', 'x', '^', 'o', 'p', '*', 'h', 'D', '+'][:len(legend_labels)]
-markersizes = [5] * len(legend_labels)
-linewidths = [0.2] * len(legend_labels)
+# legend_labels = list(b.keys())
+# colors = ['blue'] * len(legend_labels) if pinns=="nbho" else ['black'] * len(legend_labels)
+# markers = ['v', '2', 'o', '+', 'p', 'x', '*', 'h', 'D', '+'][:len(legend_labels)]
+# markersizes = [5] * len(legend_labels)
+# linewidths = [0.2] * len(legend_labels)
 
 
-pp.plot_generic(
-    x=epochs,
-    y=vals,
-    title=f"{pinns_title} - Varying Depth",
-    xlabel="Epoch",
-    ylabel="Training Error",
-    legend_labels=legend_labels,
-    log_scale=True,  # We want a log scale on the y-axis
-    filename=f"{output_folder}/{pinns}_depth.png",
-    size=(6, 5),
-    colors=colors,
-    markers=markers,
-    markersizes=markersizes,
-    linewidths=linewidths,)
+# pp.plot_generic(
+#     x=epochs,
+#     y=vals,
+#     title=f"{pinns_title} - Varying Depth",
+#     xlabel="Epoch",
+#     ylabel="Training Error",
+#     legend_labels=legend_labels,
+#     log_scale=True,  # We want a log scale on the y-axis
+#     filename=f"{output_folder}/{pinns}_depth.png",
+#     size=(6, 5),
+#     colors=colors,
+#     markers=markers,
+#     markersizes=markersizes,
+#     linewidths=linewidths,)
 
