@@ -443,7 +443,7 @@ def train_model(conf):
         # Return the trained model directly if found
         setup_log("Found a pre-trained model.")
         model, losshistory = trained_model
-        # return trained_model
+        return model, losshistory
     else:
         start_time=time.time()
         # Step 1: Train with Adam optimizer
