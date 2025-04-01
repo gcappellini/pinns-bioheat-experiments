@@ -119,7 +119,7 @@ def run_simulation_mm_obs(config, out_dir, system_gt, mm_obs_gt, observers_gt, g
     # setup_log("Running simulation for multi-observer.")
     label = "simulation_mm_obs"
     _, cfg_sim = co.set_run(out_dir, config, label)
-    cfg_sim.experiment.pred_fold = f"{tests_dir}/cooling_simulation_5e-04_lam_100_obs"
+    cfg_sim.experiment.pred_fold = f"{tests_dir}/cooling_simulation_5e-04"
     pdecoeff, hp, pars, exp = cfg_sim.pdecoeff,cfg_sim.hp, cfg_sim.parameters, config.experiment
     nobs = pars.nobs
     if exp.wandb:

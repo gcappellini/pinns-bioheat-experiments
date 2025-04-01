@@ -704,7 +704,7 @@ def plot_l2(series_sys, series_data, folder, lal):
 
 
     # rescale = conf.plot.rescale if rescale==None else rescale
-    rescale=False
+    rescale=True
     _, xlabel, _ = uu.get_scaled_labels(rescale)
     t_vals_plot = np.array(uu.rescale_time(t_vals)) if rescale else np.array(t_vals)
     ll2 = np.array(ll2)

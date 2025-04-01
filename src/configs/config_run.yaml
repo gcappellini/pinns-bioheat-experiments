@@ -78,7 +78,7 @@ parameters:
   wbsys: 0.0005
   wbobs: 0.000255
   obsindex: 3
-  nobs: 1
+  nobs: 8
   xgt: 0.01
   xw: 0.025
   xgt1: 0.04
@@ -98,13 +98,13 @@ plot:
   display_every: 200
 experiment:
   inverse: false
-  run: simulation
+  run: ground_truth
   wandb: false
   wandb_name: opt_ai_direct
   gt_path: None
   pred_fold: None
 run:
   dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-03-28/15-23-04
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-04-01/17-02-51
 testloss: 0.0
 runtime: 0.0

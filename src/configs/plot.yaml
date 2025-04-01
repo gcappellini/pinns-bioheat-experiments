@@ -125,7 +125,7 @@ entities:
     label: MM-Obs
     linestyle: --
     linewidth: 2.0
-    alpha: 0.8
+    alpha: 1.0
   observers_gt:
     color:
     - C0
@@ -164,14 +164,14 @@ entities:
     - 2.0
     - 2.0
     alpha:
-    - 0.9
-    - 0.9
-    - 0.9
-    - 0.9
-    - 0.9
-    - 0.9
-    - 0.9
-    - 0.9
+    - 0.8
+    - 0.8
+    - 0.8
+    - 0.8
+    - 0.8
+    - 0.8
+    - 0.8
+    - 0.8
   meas_points:
     y1:
       color: '#F7CAC9'
