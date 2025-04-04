@@ -1,8 +1,6 @@
-nanc,warmstart,lbfgs,mse
-3,false,true,2.089e-07
-100,true,false,1.08152e-05
-100,false,false,2.07477e-05
-3,true,false,0.0001209128
-2,false,false,0.00013612
-3,false,false,0.0003250488
-2,true,false,0.0032727974
+nanc,warmstart,lbfgs,mse,wbf
+3,false,true,2.089e-07,5.01e-04
+3,true,false,0.0001209128,4.43e-04
+2,false,false,0.00013612,5.65e-04
+3,false,false,0.0003250488,4.46e-04
+2,true,false,0.0032727974,3.72e-04

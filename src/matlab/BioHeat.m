@@ -1,7 +1,7 @@
 clear all
 close all
 
-global oig ag ups wbobs wbsys wb0 wb1 wb2 wb3 wb4 wb5 wb6 wb7 c1 c2 c3 b1 b2 b3 b4 y10 y20 y30 incrfact thetagt10 thetagt0 Xgt1 Xgt om0 om1 om2 om3 om4 om5 om6 om7 a1 a2 a3 a4 a5 str_exp output_path path_exp nobs
+global oig ag ups wbobs wbsys wbt wb0 wb1 wb2 wb3 wb4 wb5 wb6 wb7 c1 c2 c3 b1 b2 b3 b4 y10 y20 y30 incrfact thetagt10 thetagt0 Xgt1 Xgt om0 om1 om2 om3 om4 om5 om6 om7 a1 a2 a3 a4 a5 str_exp output_path path_exp nobs
 
 % Replace the following with the path to readyaml (find link on the internet)
 addpath('/Users/guglielmocappellini/Desktop/research/code/readyaml')
@@ -50,6 +50,7 @@ wb6 = config_data.parameters.wb6;
 wb7 = config_data.parameters.wb7;
 
 wbsys = config_data.parameters.wbsys;
+wbt = config_data.parameters.wbt;
 obsindex = config_data.parameters.obsindex;
 
 % Combine the perfusions into an array

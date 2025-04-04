@@ -63,8 +63,8 @@ pdecoeff:
   incrfact: 1.0
   wb: 0.000255
 parameters:
-  ag: 10.0
-  ups: 1000.0
+  ag: 1.0
+  ups: 100.0
   wbmin: 6.3e-05
   wbmax: 0.00165
   wb0: 6.3e-05
@@ -99,13 +99,13 @@ plot:
   display_every: 200
 experiment:
   inverse: false
-  run: simulation
+  run: ground_truth
   wandb: false
   wandb_name: opt_ai_direct
   gt_path: None
   pred_fold: None
 run:
   dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/outputs/2025-04-04/17-02-29
+output_dir: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/tests/cooling_simulation_wbt
 testloss: 0.0
 runtime: 0.0

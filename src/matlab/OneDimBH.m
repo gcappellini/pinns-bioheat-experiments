@@ -24,7 +24,8 @@ function [sol] = OneDimBH_1Obs
 
     %-----------------
     function [c,f,s] = OneDimBHpde_1Obs(x,t,u,dudx)
-    global a1 a2 a3 a4 wbobs wbsys 
+    global a1 a2 a3 a4  
+    wb = perf(x,t);
     %la prima equazione è quella del sistema, a seguire gli osservatori
     t
     % if x >= 0.2 && x <= 0.5
@@ -39,7 +40,7 @@ function [sol] = OneDimBH_1Obs
     
     % den=u(5)*exp(-om0)+u(6)*exp(-om1)+u(7)*exp(-om2);
     
-    s = -wbsys*a2*u(1)+a3*exp(-a4*x);
+    s = -wb*a2*u(1)+a3*exp(-a4*x);
     % --------------------------------------------------------------------------
 
     

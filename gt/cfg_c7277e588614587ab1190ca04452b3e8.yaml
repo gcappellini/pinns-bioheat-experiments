@@ -21,7 +21,7 @@ pdecoeff:
   wb: 0.000255
 parameters:
   ag: 100.0
-  ups: 1.0
+  ups: 100.0
   wbmin: 6.3e-05
   wbmax: 0.00165
   wb0: 6.3e-05
@@ -43,4 +43,4 @@ parameters:
   Xgt: 0.14286
   Xw: 0.35714
   Xgt1: 0.57143
-gt_path: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/gt/gt_bfe23e979d9fe1a3628d266ae4f914a5
+gt_path: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/gt/gt_c7277e588614587ab1190ca04452b3e8

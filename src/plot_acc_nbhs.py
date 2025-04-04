@@ -20,7 +20,7 @@ csv_folder = f"{tests_dir}/wandb_results"
 output_folder = f"{tests_dir}/wandb_results"
 
 # Load new CSV file
-pinn = "nbhs"
+pinn = "nbho"
 csv_file = os.path.join(csv_folder, f"sp_{pinn}.csv")
 data = []
 headers = []

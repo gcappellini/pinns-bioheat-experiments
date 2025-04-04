@@ -54,7 +54,7 @@ def set_run(prj_figs, cfg, run):
 
     simu_settings = getattr(experiments_cfg, "simulation")
     temps.Ty10, temps.Ty20, temps.Ty30 = simu_settings.Ty10, simu_settings.Ty20, simu_settings.Ty30
-    pars.ag, pars.ups = simu_settings.lam, simu_settings.upsilon
+    # pars.ag, pars.ups = simu_settings.lam, simu_settings.upsilon
 
     if run == "simulation_system":
         pars.nobs = 0

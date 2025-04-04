@@ -499,11 +499,11 @@ def gen_testdata(conf):
     pars = conf.parameters
     nins = conf.hp.nins
     n = pars.nobs
-    # conf_gt = OmegaConf.create({
-    #     "pdecoeff": conf.pdecoeff,
-    #     "parameters": conf.parameters})
+    conf_gt = OmegaConf.create({
+        "pdecoeff": conf.pdecoeff,
+        "parameters": conf.parameters})
     
-    # matlab_hash = co.generate_config_hash(conf_gt)
+    matlab_hash = co.generate_config_hash(conf_gt)
     # path = f"{gt_dir}/gt_{matlab_hash}"
     path = conf.experiment.gt_path
 
@@ -661,8 +661,8 @@ def get_tc_positions():
     Xy2 = 0.0
     Xy1 = 1.0
 
-    # return {"y2": Xy2, "gt": pars.Xgt, "y1": Xy1}
-    return {"y2": Xy2, "gt": pars.Xgt, "gt1": pars.Xgt1,"y1": Xy1}
+    return {"y2": Xy2, "gt": pars.Xgt, "y1": Xy1}
+    # return {"y2": Xy2, "gt": pars.Xgt, "gt1": pars.Xgt1,"y1": Xy1}
 
 def get_loss_names():
     # return ["residual", "bc0", "bc1", "ic", "test", "train"]
@@ -1081,6 +1081,12 @@ def get_plot_params(conf_run):
         **losses_params
     }
 
+def sat(s, delta):
+    return np.minimum(delta, np.maximum(s, -delta))
+
+def dead(s, delta):
+    return s-sat(s, delta)
+
 def solve_ivp(multi_obs: list, fold: str, conf: dict, x_obs, label: str):
     """
     Solve the IVP for observer weights and plot the results.
@@ -1088,8 +1094,8 @@ def solve_ivp(multi_obs: list, fold: str, conf: dict, x_obs, label: str):
     setup_log("Solving the IVP for observer weights...")
     pars = conf.parameters
     nobs = pars.nobs
-    lam = pars.lam
-    ups = pars.upsilon
+    lam = pars.ag
+    ups = pars.ups
 
     p0 = np.full((nobs,), 1/nobs)
 
@@ -1104,7 +1110,24 @@ def solve_ivp(multi_obs: list, fold: str, conf: dict, x_obs, label: str):
 
         return -lam * (1 - (e / weighted_sum)) * p
     
-    sol = integrate.solve_ivp(f, (0, 1), p0, t_eval=t_eval)
+    def f_corrected(t, p):
+        q = f(t, p)  # Compute q_j
+        
+        r = np.zeros_like(q)
+        dpdt = np.zeros_like(q)  # Store derivatives
+        
+        for el in range(len(q)):
+            r[el] = np.sum([dead(q[i], 3 * nobs) for i in range(len(q)) if i != el])
+            dpdt[el] = sat(q[el], 3 * nobs) + r[el] / (nobs - 1)
+
+        return dpdt
+    
+    if pars.wbt:
+        sol = integrate.solve_ivp(f_corrected, (0, 1), p0, t_eval=t_eval)
+
+    else:
+        sol = integrate.solve_ivp(f, (0, 1), p0, t_eval=t_eval)
+
     weights = np.zeros((sol.y.shape[0] + 1, sol.y.shape[1]))
     weights[0] = sol.t
     weights[1:] = sol.y

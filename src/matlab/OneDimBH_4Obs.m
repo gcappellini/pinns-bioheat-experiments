@@ -52,8 +52,9 @@ function [sol] = OneDimBH_4Obs
     
     %-----------------
     function [c,f,s] = OneDimBHpde_4Obs(x,t,u,dudx)
-    global ag om0 om1 om2 om3 wbsys wb0 wb1 wb2 wb3 a1 a2 a3 a4 incr_fact
-    %la prima equazione è quella del sistema, a seguire gli osservatoris
+    global ag om0 om1 om2 om3 wb0 wb1 wb2 wb3 a1 a2 a3 a4 incr_fact
+    %la prima equazione è quella del sistema, a seguire gli osservatori
+    wb = perf(x,t);
     t
     if x >= 0.2 && x <= 0.5
         a1 = a1 / incr_fact;
@@ -65,7 +66,7 @@ function [sol] = OneDimBH_4Obs
     
     den=u(6)*exp(-om0)+u(7)*exp(-om1)+u(8)*exp(-om2)+u(9)*exp(-om3);
 
-    s = [-wbsys*a2*u(1)+a3*exp(-a4*x); 
+    s = [-wb*a2*u(1)+a3*exp(-a4*x); 
         -wb0*a2*u(2)+a3*exp(-a4*x); 
         -wb1*a2*u(3)+a3*exp(-a4*x); 
         -wb2*a2*u(4)+a3*exp(-a4*x); 

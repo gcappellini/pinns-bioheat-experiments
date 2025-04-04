@@ -20,8 +20,8 @@ pdecoeff:
   incrfact: 1.0
   wb: 0.000255
 parameters:
-  ag: 100.0
-  ups: 1.0
+  ag: 1
+  ups: 100.0
   wbmin: 6.3e-05
   wbmax: 0.00165
   wb0: 6.3e-05
@@ -32,7 +32,7 @@ parameters:
   wb5: 0.000649
   wb6: 0.001035
   wb7: 0.00165
-  wbt: true
+  wbt: false
   wbsys: 0.0005
   wbobs: 0.000255
   obsindex: 3
@@ -43,4 +43,4 @@ parameters:
   Xgt: 0.14286
   Xw: 0.35714
   Xgt1: 0.57143
-gt_path: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/gt/gt_bfe23e979d9fe1a3628d266ae4f914a5
+gt_path: /Users/guglielmocappellini/Desktop/research/code/pinns-bioheat-experiments/gt/gt_56c21ae55443c5612029ad0bdc1f96ef

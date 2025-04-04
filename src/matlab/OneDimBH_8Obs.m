@@ -61,21 +61,22 @@ function [sol] = OneDimBH_8Obs
     
     %-----------------
     function [c,f,s] = OneDimBHpde(x,t,u,dudx)
-    global ag om0 om1 om2 om3 om4 om5 om6 om7 wbsys wb0 wb1 wb2 wb3 wb4 wb5 wb6 wb7 a1 a2 a3 a4 incr_fact
-    %la prima equazione è quella del sistema, a seguire gli osservatoris
+    global ag om0 om1 om2 om3 om4 om5 om6 om7 wb0 wb1 wb2 wb3 wb4 wb5 wb6 wb7 a1 a2 a3 a4 incr_fact
+    %la prima equazione è quella del sistema, a seguire gli osservatori
+    wb = perf(x,t);
     t
-    if x >= 0.2 && x <= 0.5
-        a1 = a1 / incr_fact;
-        a2 = a2 / incr_fact;
-        a3 = a3 / incr_fact;
-    end
+    %if x >= 0.2 && x <= 0.5
+    %    a1 = a1 / incr_fact;
+    %    a2 = a2 / incr_fact;
+    %    a3 = a3 / incr_fact;
+    %end
     c = [a1; a1; a1; a1; a1; a1; a1; a1; a1; 1; 1; 1; 1; 1; 1; 1; 1];
     f = [1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1].* dudx;
     
     den=u(10)*exp(-om0)+u(11)*exp(-om1)+u(12)*exp(-om2)+u(13)*exp(-om3)+...
         u(14)*exp(-om4)+u(15)*exp(-om5)+u(16)*exp(-om6)+u(17)*exp(-om7);
     
-    s = [-wbsys*a2*u(1)+a3*exp(-a4*x); 
+    s = [-wb*a2*u(1)+a3*exp(-a4*x); 
         -wb0*a2*u(2)+a3*exp(-a4*x); 
         -wb1*a2*u(3)+a3*exp(-a4*x); 
         -wb2*a2*u(4)+a3*exp(-a4*x); 

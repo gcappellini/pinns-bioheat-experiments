@@ -50,8 +50,9 @@ function [sol] = OneDimBH_3Obs
     
     %-----------------
     function [c,f,s] = OneDimBHpde_3Obs(x,t,u,dudx)
-    global ag om0 om1 om2 wbsys wb0 wb4 wb7 a1 a2 a3 a4 incr_fact
-    %la prima equazione è quella del sistema, a seguire gli osservatoris
+    global ag om0 om1 om2 wb0 wb4 wb7 a1 a2 a3 a4 incr_fact
+    %la prima equazione è quella del sistema, a seguire gli osservatori
+    wb = perf(x,t);
     t
     if x >= 0.2 && x <= 0.5
         a1 = a1 / incr_fact;
@@ -63,7 +64,7 @@ function [sol] = OneDimBH_3Obs
     
     den=u(5)*exp(-om0)+u(6)*exp(-om1)+u(7)*exp(-om2);
     
-    s = [-wbsys*a2*u(1)+a3*exp(-a4*x); 
+    s = [-wb*a2*u(1)+a3*exp(-a4*x); 
         -wb0*a2*u(2)+a3*exp(-a4*x); 
         -wb4*a2*u(3)+a3*exp(-a4*x); 
         -wb7*a2*u(4)+a3*exp(-a4*x); 

@@ -31,6 +31,7 @@ def run_ground_truth(config, out_dir):
     
     # matlab_hash = co.generate_config_hash(matlab_data)
     # gt_path = f"{gt_dir}/gt_{matlab_hash}"
+    # print(gt_path)
     # matlab_data.gt_path = gt_path
     # OmegaConf.save(matlab_data, f"{conf_dir}/config_ground_truth.yaml")
     # OmegaConf.save(matlab_data, f"{gt_dir}/cfg_{matlab_hash}.yaml")
@@ -38,7 +39,7 @@ def run_ground_truth(config, out_dir):
     # if not os.path.exists(f"{gt_path}.txt"):
     #     uu.run_matlab_ground_truth()
 
-    config_matlab.experiment.gt_path = f"{tests_dir}/cooling_ground_truth_5e-04/output_matlab_8Obs"
+    config_matlab.experiment.gt_path = f"{tests_dir}/cooling_simulation_wbt/gt/gt"
     system_gt, observers_gt, mm_obs_gt = uu.gen_testdata(config_matlab)
 
     if matlab_data.parameters.nobs==0:
@@ -119,7 +120,8 @@ def run_simulation_mm_obs(config, out_dir, system_gt, mm_obs_gt, observers_gt, g
     # setup_log("Running simulation for multi-observer.")
     label = "simulation_mm_obs"
     _, cfg_sim = co.set_run(out_dir, config, label)
-    cfg_sim.experiment.pred_fold = f"{tests_dir}/cooling_simulation_5e-04"
+    # cfg_sim.experiment.pred_fold = f"{tests_dir}/cooling_simulation_5e-04"
+    conf.experiment.pred_fold = None
     pdecoeff, hp, pars, exp = cfg_sim.pdecoeff,cfg_sim.hp, cfg_sim.parameters, config.experiment
     nobs = pars.nobs
     if exp.wandb:
